@@ -219,8 +219,9 @@ class Domain(object):
         self.domainSize   = domainSize
         self.boundaries   = boundaries
         self.subDomains   = subDomains
-        self.subNodes     = np.zeros([3])
-        self.subNodesRem  = np.zeros([3])
+        self.numSubDomains = np.prod(subDomains)
+        self.subNodes     = np.zeros([3],dtype=np.uint64)
+        self.subNodesRem  = np.zeros([3],dtype=np.uint64)
         self.domainLength = np.zeros([3])
         self.inlet = inlet
         self.outlet = outlet
@@ -594,9 +595,7 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd
         if rank==0: 
             print("Number of Subdomains Must Equal Number of Processors!...Exiting")
         communication.raiseError()
-
-    totalNodes = np.prod(nodes)
-
+        
     ### Get Domain INFO for All Procs ###
     if file is not None:
         domainSize,sphereData = dataRead(file)

@@ -9,6 +9,11 @@ comm = MPI.COMM_WORLD
 
 
 class medialAxis(object):
+    """
+    Calculate Medial Axis and PostProcess
+    Nodes -> Sets -> Paths
+    Sets are broken into Reaches -> Medial Nodes -> Medial Clusters
+    """
     def __init__(self,Domain,subDomain):
         self.Domain = Domain
         self.subDomain = subDomain
@@ -62,7 +67,6 @@ class medialAxis(object):
         image_o = np.copy(self.haloGrid)
 
         # normalize to binary
-        maxval = image_o.max()
         image_o[image_o != 0] = 1
 
         # do the computation
@@ -71,8 +75,12 @@ class medialAxis(object):
         self.MA = image_o[self.halo[1]:dim[0]-self.halo[0],
                           self.halo[3]:dim[1]-self.halo[2],
                           self.halo[5]:dim[2]-self.halo[4]]
+        self.MA = np.ascontiguousarray(self.MA)
 
     def genPadding(self):
+        """
+        Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changes
+        """
         gridShape = self.Domain.subNodes
         factor = 0.95
         self.padding[0] = math.ceil(gridShape[0]*factor)
@@ -85,6 +93,9 @@ class medialAxis(object):
 
 
     def collectPaths(self):
+        """
+        Collect Sets into Paths
+        """
         self.paths = {}
         for nS in range(0,self.setCount):
             pathID = self.Sets[nS].pathID
@@ -136,8 +147,8 @@ class medialAxis(object):
                 setOutlet = globalPathBoundarySetID[ind,4]
 
                 if pathID not in self.paths.keys():
-                    self.paths[pathID] = {'Sets':[],'boundarySets':[],'inlet':setInlet,'outlet':setOutlet}
-                self.paths[pathID]['Sets'].append(self.Sets[nS].globalID)
+                    self.paths[pathID] = {'Sets':-1,'boundarySets':[],'inlet':setInlet,'outlet':setOutlet}
+                self.paths[pathID]['Sets'] = nS
 
                 if self.Sets[nS].boundary:
                     self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
@@ -146,7 +157,7 @@ class medialAxis(object):
                 c = c + 1
                 if pathID not in self.paths.keys():
                     self.paths[pathID] = {'Sets':[],'boundarySets':[],'inlet':False,'outlet':False}
-                self.paths[pathID]['Sets'].append(self.Sets[nS].globalID)
+                self.paths[pathID]['Sets'] = nS
 
                 if self.Sets[nS].boundary:
                     self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
@@ -157,31 +168,56 @@ class medialAxis(object):
                 if self.Sets[nS].outlet:
                     self.paths[pathID]['outlet'] = True
 
+    def trimSets(self):
+        """
+        Trim Set if Not Connected to Inlet/Outlet or Two Medial Nodes or Clusters
+        """
+        for p in self.paths.keys():
+            setID = self.paths[p]['Sets']
+            if self.Sets[setID].inlet or self.Sets[setID].outlet:
+                pass
+            else:
+                if self.Sets[setID].type == 0  and len(self.Sets[setID].globalConnectedSets) < 2:
+                    self.Sets[setID].trim = True
 
 
 
-def medialAxisEval(rank,size,Domain,subDomain,grid):
+
+
+
+def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
+
+    ### Initialize Classes
     sDMA = medialAxis(Domain = Domain,subDomain = subDomain)
     sDComm = communication.Comm(Domain = Domain,subDomain = subDomain,grid = grid)
 
-    ### Adding Padding so Identical MA at processer interfaces
+    ### Adding Padding so Identical MA at Processer Interfaces
     sDMA.genPadding()
 
-    ### Send Padding 
+    ### Send Padding Data to Neighbors
     sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
 
     ### Determine MA
     sDMA.skeletonize_3d()
 
+    ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
     sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(sDMA.MA,Domain,subDomain,subDomain.Orientation)
     sDMA.Sets,sDMA.setCount,sDMA.pathCount = nodes.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex)
+
     sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
+
+    ### Connect the Sets into Paths
     sDMA.collectPaths()
+
+    ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
     sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
-    sDMA.matchedSets,sDMA.matchedSetsConnections = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+    sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+    if error:
+        communication.raiseError()
     setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
     setData = comm.gather(setData, root=0)
 
+    ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
     connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
     globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
     sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
@@ -189,5 +225,14 @@ def medialAxisEval(rank,size,Domain,subDomain,grid):
     sDMA.updateConnectedSetsID(connectedSetData)
     connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
     sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
+
+    ### Trim Sets on Paths that are Dead Ends
+    sDMA.trimSets()
+
+    ### Get Min and MAx Distance for Every Set
+    for s in sDMA.Sets:
+        s.getDistMinMax(distance)
+        # if rank == 0:
+        #     print(s.localID,s.globalID,s.localConnectedSets,s.globalConnectedSets)
 
     return sDMA

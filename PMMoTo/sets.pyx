@@ -92,6 +92,10 @@ class Set(object):
       self.localConnectedSets = []
       self.globalConnectedSets = []
       self.trim = False
+      self.minDistance = math.inf
+      self.maxDistance = -math.inf
+      self.minDistanceNode = -1
+      self.maxDistanceNode = -1
 
 
     def getNodes(self,n,i,j,k):
@@ -111,6 +115,18 @@ class Set(object):
       self.boundaryNodeID[n,0] = i
       self.boundaryNodeID[n,1] = j
       self.boundaryNodeID[n,2] = k
+
+
+    def getDistMinMax(self,data):
+      for n in self.nodes:
+        if data[n[0],n[1],n[2]] < self.minDistance:
+          self.minDistance = data[n[0],n[1],n[2]]
+          self.minDistanceNode = n
+        if data[n[0],n[1],n[2]] > self.maxDistance:
+          self.maxDistance = data[n[0],n[1],n[2]]
+          self.maxDistanceNode = n
+
+
 
 
 def getBoundarySets(Sets,setCount,subDomain):
@@ -179,6 +195,7 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
   otherBD = {}
   matchedSets = []
   matchedSetsConnections = []
+  error = False
 
   ####################################################################
   ### Sort Out Own Proc Bondary Data and Other Procs Boundary Data ###
@@ -246,10 +263,11 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
         testSetKey += 1
 
       if not matchedOut:
-          print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownNodes,ownBD_Set['nodes'])
+        error = True 
+        print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownNodes,ownBD_Set['nodes'])
 
 
-  return matchedSets,matchedSetsConnections
+  return matchedSets,matchedSetsConnections,error
 
 
 

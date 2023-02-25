@@ -584,16 +584,20 @@ def getConnectedMedialAxis(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeD
         ### Add Cluster Set to List ###
         ###############################
         if numSetNodes > 0:
-          Sets.append(sets.Set(localID = setCount,
-                               pathID = pathCount,
-                               inlet = sInlet,
-                               outlet = sOutlet,
-                               boundary = sBound,
-                               numNodes = numSetNodes,
-                               numBoundaryNodes = numBNodes,
-                               type = 1,
-                               connectedNodes = pathLocalQueue))
+          setType = 1
+          if numSetNodes > 15:
+            setType = 2
 
+          Sets.append(sets.Set(localID = setCount,
+                              pathID = pathCount,
+                              inlet = sInlet,
+                              outlet = sOutlet,
+                              boundary = sBound,
+                              numNodes = numSetNodes,
+                              numBoundaryNodes = numBNodes,
+                              type = setType,
+                              connectedNodes = pathLocalQueue))
+                                
           getSetBoundaryNodes(Sets[setCount],numNodes,_nodeIndex)
           setCount = setCount + 1
 
