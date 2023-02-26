@@ -44,7 +44,7 @@ def my_function():
     #nodes = [464,464,670]
     #nodes = [232,232,335]
     #nodes = [116,116,168]
-    nodes = [51,51,51]
+    nodes = [251,251,251]
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]

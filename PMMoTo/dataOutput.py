@@ -14,7 +14,6 @@ def checkFilePath(fileName):
     pathWay = ""
     for p in paths:
         pathWay = pathWay+p+"/"
-    print(pathWay)
     if not os.path.isdir(pathWay):
         os.makedirs(pathWay)
     
@@ -106,9 +105,9 @@ def saveSetData(fileName,rank,Domain,subDomain,subDomainMedialAxis,**kwargs):
     c = 0
     for ss in range(0,subDomainMedialAxis.setCount):
         for no in subDomainMedialAxis.Sets[ss].nodes:
-            x[c] = subDomain.indexStart[0]+no[0]
-            y[c] = subDomain.indexStart[1]+no[1]
-            z[c] = subDomain.indexStart[2]+no[2]
+            x[c] = subDomain.x[no[0]]
+            y[c] = subDomain.y[no[1]]
+            z[c] = subDomain.z[no[2]]
             globalID[c] = subDomainMedialAxis.Sets[ss].globalID
             for key, value in kwargs.items():
                 pointData[key][c] = getattr(subDomainMedialAxis.Sets[ss],value)
