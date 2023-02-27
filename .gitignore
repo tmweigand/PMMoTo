@@ -9,7 +9,7 @@ references/
 PMMoTo.egg-info/
 PMMoTo/__pycache__/
 PMMoTo/tmp/
-PMMoTo/*.c	
+PMMoTo/*.c
 PMMoTo/*.html
 PMMoTo/distanceSAVE.pyx
 PMMoTo/medialAxis/_skeletonize_3d_cy.pyx
@@ -19,6 +19,7 @@ PMMoTo/medialAxis/_skeletonize_3d_SAVE_cy.pyx.in
 PMMoTo/medialAxis/_skeletonize_3d_cy.cpp
 PMMoTo/medialAxis/_skeletonize_3d_cy.html
 tests/dataDump/
+tests/dataOut/
 tests/inkBottle/
 tests/kelseySpherePackTests/
 tests/porousMediaGenerate/
