@@ -111,6 +111,7 @@ setup(
         'packaging>=21.3',
         'pykdtree>=0.1',
         'edt>=2.3.0',
-        'scipy>=1.9.3'
+        'scipy>=1.9.3',
+        'pyevtk>=1.5.0'
     ]
 )

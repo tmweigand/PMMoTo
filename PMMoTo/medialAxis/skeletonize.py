@@ -220,14 +220,16 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
     connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
     globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
-    sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-    sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
-    sDMA.updateConnectedSetsID(connectedSetData)
-    connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
-    sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
+    if size > 1:
+        sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
+        sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+        sDMA.updateConnectedSetsID(connectedSetData)
+        connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
+        sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
 
     ### Trim Sets on Paths that are Dead Ends
-    sDMA.trimSets()
+        ## TODO: Currently nonfunctional for single processor solves, not high priority
+        sDMA.trimSets()
 
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
