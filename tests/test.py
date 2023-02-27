@@ -49,9 +49,10 @@ def my_function():
     inlet  = [1,0,0]
     outlet = [-1,0,0]
     rLookupFile = './rLookups/PA.rLookup'
-    file = './testDomains/50pack.out'
-    file = './testDomains/membrane.out'
-    #file = './testDomains/pack_sub.dump.gz'
+    # rLookupFile = None
+    # file = './testDomains/50pack.out'
+    file = './testDomains/membrane.dump.gz'
+    # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
     res = 1 ### Assume that the reservoir is always at the inlet!
 
@@ -129,12 +130,11 @@ def my_function():
 
                 # _,sphereData = PMMoTo.readPorousMediaXYZR(file)
                 _,sphereData = PMMoTo.readPorousMediaLammpsDump(file,rLookupFile)
-
+                
                 ##### To GENERATE SINGLE PROC TEST CASE ######
-                x = np.linspace(domain.dX/2, domain.domainSize[0,1]-domain.dX/2, nodes[0])
-                y = np.linspace(domain.dY/2, domain.domainSize[1,1]-domain.dY/2, nodes[1])
-                z = np.linspace(domain.dZ/2, domain.domainSize[2,1]-domain.dZ/2, nodes[2])
-
+                x = np.linspace(domain.domainSize[0,0]+domain.dX/2, domain.domainSize[0,1]-domain.dX/2, nodes[0])
+                y = np.linspace(domain.domainSize[1,0]+domain.dY/2, domain.domainSize[1,1]-domain.dY/2, nodes[1])
+                z = np.linspace(domain.domainSize[2,0]+domain.dZ/2, domain.domainSize[2,1]-domain.dZ/2, nodes[2])
                 gridOut = PMMoTo.domainGen(x,y,z,sphereData)
                 gridOut = np.asarray(gridOut)
 
