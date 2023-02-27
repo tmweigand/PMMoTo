@@ -48,11 +48,38 @@ def readPorousMediaXYZR(file):
 
     return domainDim,sphereData
 
-def readPorousMediaLammpsDump(file, sigmaLJ=[0.25]):
+def readPorousMediaLammpsDump(file, rLookupFile=None):
     
     indexVars = ['x', 'y', 'z', 'type']
     indexes = []
+    if rLookupFile:
+        sigmaLJ = []
+        rLookup = open(rLookupFile,'r')
+        lookupLines = rLookup.readlines()
+        for line in lookupLines:
+            ### For the purposes of being able to specify arbitrarily
+            ### sized particles, this definition of cutoff location
+            ### relies on the assumption that the 'test particle'
+            ### (as LJ interactions occur only between > 1 particles)
+            ### has a LJsigma of 0. i.e. this evaluates the maximum possible
+            ### size of the free volume network
 
+            ### We could choose how to define the cutoff,
+            ### this implementation uses the abs value of LJ sigma
+            ### i.e., where the LJ potential fxn crosses 0
+
+            # sigmaLJ.append(float(line.split(" ")[2])/2)
+
+            ### The following would select the energy minimum, i.e.
+            ### movement of a particles center closer than this requires
+            ### input force
+
+            sigmaLJ.append(1.12246204830937*float(line.split(" ")[2])/2)
+
+
+
+    else:
+        sigmaLJ = [0.25]
     if file.endswith('.gz'):
         domainFile = gzip.open(file,'rt')
     else:

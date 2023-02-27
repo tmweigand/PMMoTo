@@ -587,7 +587,7 @@ class subDomain(object):
 
 
 
-def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd,dataFormat,file,dataRead):
+def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd,dataFormat,file,dataRead,dataReadkwargs=None):
 
     numSubDomains = np.prod(subDomains)
 
@@ -598,7 +598,10 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd
         
     ### Get Domain INFO for All Procs ###
     if file is not None:
-        domainSize,sphereData = dataRead(file)
+        if dataReadkwargs is None:
+            domainSize,sphereData = dataRead(file)
+        else:
+            domainSize,sphereData = dataRead(file,dataReadkwargs)
     if file is None:
         domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
     domain = Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)

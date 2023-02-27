@@ -172,6 +172,14 @@ class medialAxis(object):
         """
         Trim Set if Not Connected to Inlet/Outlet or Two Medial Nodes or Clusters
         """
+
+        ### Needs to iterate until no new sets are added to trim, i.e., if trimming
+        ### results in removing edges to a node that is now a dead end, that new dead
+        ### end also needs to be removed
+
+        ### Does not remove dead ends that originate at inlet or outlet but it should
+
+        
         for p in self.paths.keys():
             setID = self.paths[p]['Sets']
             if self.Sets[setID].inlet or self.Sets[setID].outlet:
