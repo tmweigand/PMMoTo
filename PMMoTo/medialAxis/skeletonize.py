@@ -168,25 +168,16 @@ class medialAxis(object):
                 if self.Sets[nS].outlet:
                     self.paths[pathID]['outlet'] = True
 
-    def trimSets(self):
+    def localTrimSets(self):
         """
-        Trim Set if Not Connected to Inlet/Outlet or Two Medial Nodes or Clusters
+        Trim Set if Not Connected to Two Medial Nodes or Clusters
         """
+        ### TODO: Ensure doesn't trim set connected to > 1 boundary
+        ### TODO: Iterate to remove pre-fork set
 
-        ### Needs to iterate until no new sets are added to trim, i.e., if trimming
-        ### results in removing edges to a node that is now a dead end, that new dead
-        ### end also needs to be removed
-
-        ### Does not remove dead ends that originate at inlet or outlet but it should
-
-        
-        for p in self.paths.keys():
-            setID = self.paths[p]['Sets']
-            if self.Sets[setID].inlet or self.Sets[setID].outlet:
-                pass
-            else:
-                if self.Sets[setID].type == 0  and len(self.Sets[setID].globalConnectedSets) < 2:
-                    self.Sets[setID].trim = True
+        for set in self.Sets:
+            if len(set.globalConnectedSets) < 2:
+                set.trim = True
 
 
 
@@ -237,7 +228,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
 
     ### Trim Sets on Paths that are Dead Ends
         ## TODO: Currently nonfunctional for single processor solves, not high priority
-        sDMA.trimSets()
+        sDMA.localTrimSets()
 
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
