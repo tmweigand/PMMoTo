@@ -5,8 +5,6 @@ import os
 import edt
 import time
 import PMMoTo
-from pyevtk.hl import pointsToVTK,gridToVTK, writeParallelVTKGrid,_addDataToParallelFile
-from pyevtk import vtk
 
 import cProfile
 
@@ -39,11 +37,6 @@ def my_function():
         start_time = time.time()
 
     subDomains = [2,2,2]
-    #nodes = [928,928,1340]
-    #nodes = [696,696,1005]
-    #nodes = [464,464,670]
-    #nodes = [232,232,335]
-    #nodes = [116,116,168]
     nodes = [251,251,251]
     boundaries = [0,0,0]
     inlet  = [1,0,0]
@@ -87,7 +80,7 @@ def my_function():
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim")
+    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",boundary="boundary",localID="localID",type="type",numBoundaries="numBoundaries")
 
     if testSerial:
 
@@ -160,8 +153,6 @@ def my_function():
                     pG[2] = pgSize
 
                 gridOut = np.pad (gridOut, ((pG[0], pG[0]), (pG[1], pG[1]), (pG[2], pG[2])), 'wrap')
-
-                print(pG)
 
                 if boundaries[0] == 1:
                     gridOut[0,:,:] = 0
@@ -269,6 +260,22 @@ def my_function():
                 print("LI EDT Error Norm",np.max(diffEDT) )
                 print("LI EDT Error Norm 2",np.max(diffEDT2) )
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
+
+                checkMA = np.zeros_like(realDT)
+                n = 0
+                for i in range(0,subDomains[0]):
+                    for j in range(0,subDomains[1]):
+                        for k in range(0,subDomains[2]):
+                            checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
+                                     sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
+                                     sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
+                                     = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
+                                                    sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
+                                                    sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
+                            n = n + 1
+
+                diffMA = np.abs(realMA-checkMA)
+                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
 
 

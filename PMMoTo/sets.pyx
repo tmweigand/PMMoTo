@@ -78,6 +78,7 @@ class Set(object):
       self.inlet = inlet
       self.outlet = outlet
       self.boundary = boundary
+      self.numBoundaries  = 0
       self.numNodes = numNodes
       self.localID = localID
       self.globalID = 0
@@ -107,6 +108,7 @@ class Set(object):
       faces = allFaces[ID]
       for f in faces:
         self.boundaryFaces[f] = 1
+      self.numBoundaries = np.sum(self.boundaryFaces)
 
     def getBoundaryNodes(self,n,ID,ID2,i,j,k):
       self.boundaryNodes[n] = ID

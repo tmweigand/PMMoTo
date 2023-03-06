@@ -242,7 +242,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
         s.getDistMinMax(distance)
-        # if rank == 0:
-        #     print(s.localID,s.globalID,s.localConnectedSets,s.globalConnectedSets)
+        if rank == 0:
+            print(s.localID,s.globalID,s.boundaryFaces,s.numBoundaries)
 
     return sDMA
