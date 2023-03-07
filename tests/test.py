@@ -48,10 +48,10 @@ def my_function():
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
-    # rLookupFile = './rLookups/PA.rLookup'
+    rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
-    # file = './testDomains/membrane.dump.gz'
+    # file = './testDomains/50pack.out'
+    file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
     res = 1 ### Assume that the reservoir is always at the inlet!
@@ -59,15 +59,15 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
+    testSerial = False
     testAlgo = True
 
     pC = [143]
 
     startTime = time.time()
 
-    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
+    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
 
@@ -79,7 +79,8 @@ def my_function():
     sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT)
 
     endTime = time.time()
-    print("Parallel Time:",endTime-startTime)
+    if testSerial:
+        print("Parallel Time:",endTime-startTime)
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
@@ -270,6 +271,22 @@ def my_function():
                 print("LI EDT Error Norm 2",np.max(diffEDT2) )
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
 
+                checkMA = np.zeros_like(realDT)
+                n = 0
+                for i in range(0,subDomains[0]):
+                    for j in range(0,subDomains[1]):
+                        for k in range(0,subDomains[2]):
+                            checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
+                                     sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
+                                     sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
+                                     = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
+                                                    sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
+                                                    sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
+                            n = n + 1
+
+                diffMA = np.abs(realMA-checkMA)
+                print(realMA.shape,checkMA.shape)
+                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
 
 if __name__ == "__main__":

@@ -172,13 +172,26 @@ class medialAxis(object):
         """
         Trim Set if Not Connected to Two Medial Nodes or Clusters
         """
-        ### TODO: Ensure doesn't trim set connected to > 1 boundary
-        ### TODO: Iterate to remove pre-fork set
 
         for set in self.Sets:
+            ### TODO: Ensure doesn't trim set connected to > 1 boundary
             if len(set.globalConnectedSets) < 2:
                 set.trim = True
 
+        ### TODO: Iterate to remove pre-fork stragglers
+        # for set in self.Sets:
+        #     if set.boundaries >= 2:
+        #         pass
+        #     else:
+        #         queue = set.globalConnectedSets
+        #         trim = False
+
+
+    def gatherSetInfo(self):
+        setData = []
+        for set in self.Sets:
+            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim,0,0])
+        return setData
 
 
 
@@ -230,6 +243,36 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
         ## TODO: Currently nonfunctional for single processor solves, not high priority
         sDMA.localTrimSets()
 
+        setData = sDMA.gatherSetInfo()
+        setData = comm.gather(setData,root=0)
+        if rank == 0:
+            setData = [i for j in setData for i in j]
+            setData.sort()
+            cleanSetData = []
+            seenID = []
+            for set in setData:
+                if not set[0] in seenID:
+                    seenID.append(set[0])
+                    cleanSetData.append(set)
+            setData = cleanSetData
+            del cleanSetData
+            
+            for set in setData:
+                if set[1] == []:
+                    set[5] = -1
+
+            for set in setData:
+                if set[5] != 0:
+                    pass
+                else:
+                    set[5] = 1
+            # print(setData)
+            ### TODO: DFS of setData, looking for neighbors 
+            ### to trim.
+            
+            ### TODO: DFS/BFS of setData, looking for paths
+            ### to create
+            
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
         s.getDistMinMax(distance)
