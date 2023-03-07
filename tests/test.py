@@ -285,7 +285,7 @@ def my_function():
                             n = n + 1
 
                 diffMA = np.abs(realMA-checkMA)
-                print(realMA.shape,checkMA.shape)
+
                 print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
 
