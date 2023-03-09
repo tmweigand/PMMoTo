@@ -80,7 +80,7 @@ def my_function():
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",boundary="boundary",localID="localID",type="type",numBoundaries="numBoundaries")
+    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",boundary="boundary",localID="localID",type="type",numBoundaries="numBoundaries",globalPathID="globalPathID")
 
     if testSerial:
 

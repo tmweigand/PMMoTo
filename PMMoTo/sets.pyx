@@ -98,6 +98,8 @@ class Set(object):
       self.minDistanceNode = -1
       self.maxDistanceNode = -1
 
+    def __lt__(self,obj):
+      return ((self.globalID) < (obj.globalID))
 
     def getNodes(self,n,i,j,k):
       self.nodes[n,0] = i

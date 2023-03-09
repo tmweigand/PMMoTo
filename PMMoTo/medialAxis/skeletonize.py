@@ -170,29 +170,69 @@ class medialAxis(object):
 
     def localTrimSets(self):
         """
-        Trim Set if Not Connected to Two Medial Nodes or Clusters
+        Iteratively flip trim flag at rank level until no new changes are made 
+        Trim flag is flipped from 0 to 1 if:
+        (1) set is a dead end (only one neighbor)
+        (2) set is upstream from a dead end (number of neighbors - 1 = number of neighbors flagged for trim)
+        (3) set is surrounded by trimmed sets (number of neighbors = number of neighbors flagged for trim)
+
+        At this stage, sets that touch > 1 boundary are skipped to prevent preemptive trims of sets that span
+        multiple subdomains
+        """
+        self.Sets.sort()
+        idHashTable = []
+        for set in self.Sets:
+            idHashTable.append(set.globalID)
+        trimsAdded = 1
+        while trimsAdded:
+            trimsAdded = 0
+            for set in self.Sets:
+                if set.trim or (set.numBoundaries > 1):
+                    continue
+                
+                nConnectedTrim = 0
+                
+                for connectedSet in set.globalConnectedSets:
+                    if (connectedSet in idHashTable):
+                        setsIndex = idHashTable.index(connectedSet)
+                        if self.Sets[setsIndex].trim:
+                            nConnectedTrim += 1
+
+                isoCheck = (nConnectedTrim == len(set.globalConnectedSets))
+                forkCheck = (nConnectedTrim == (len(set.globalConnectedSets)-1))
+                endCheck  = (len(set.globalConnectedSets) < 2)
+
+                if isoCheck or forkCheck or endCheck:
+                    set.trim = True
+                    trimsAdded = 1
+
+    def gatherSetInfo(self,rank):
+        """
+        Convert list of Set objects into a list of lists
+        containing only the information needed to trim and
+        set pathID
         """
 
-        for set in self.Sets:
-            ### TODO: Ensure doesn't trim set connected to > 1 boundary
-            if len(set.globalConnectedSets) < 2:
-                set.trim = True
-
-        ### TODO: Iterate to remove pre-fork stragglers
-        # for set in self.Sets:
-        #     if set.boundaries >= 2:
-        #         pass
-        #     else:
-        #         queue = set.globalConnectedSets
-        #         trim = False
-
-
-    def gatherSetInfo(self):
         setData = []
         for set in self.Sets:
-            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim,0,0])
+            ### globalID,globalID of connected sets, on inlet, on outlet, is trimmed, globalPathID init to -1, visited flag, rank of contributing for reconstruction via scatter
+            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim,-1,0,rank])
         return setData
+    
+    def updateSetInfo(self,setData):
+        """
+        Use list form of set information scattered from root to update
+        Set objects contained in a list on all ranks
+        """
+        self.Sets.sort()
+        setData.sort()
+        for i, set in enumerate(self.Sets):
+            set.trim = setData[i][4]
 
+            ### Not committing active pathID 
+            ### reassignment until working correctly
+            # set.globalPathID = setData[i][5]
+            
 
 
 
@@ -240,39 +280,120 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
         sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
 
     ### Trim Sets on Paths that are Dead Ends
+        
+        ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
         ## TODO: Currently nonfunctional for single processor solves, not high priority
         sDMA.localTrimSets()
 
-        setData = sDMA.gatherSetInfo()
+        ### Collect only necessary Set object data for transfer to root
+        setData = sDMA.gatherSetInfo(rank)
+
+        ### Gather all lists into one on root
         setData = comm.gather(setData,root=0)
+        
+        ### Initialize object for later scattering
+        if rank != 0:
+            listSetData = None
+
         if rank == 0:
+            ## Remove one level of list
             setData = [i for j in setData for i in j]
+
+            ## Sort by id
             setData.sort()
+
+            ## Remove repeated entries, based on 
+            ## sets added to local lists to check
+            ## connectivity
             cleanSetData = []
             seenID = []
             for set in setData:
                 if not set[0] in seenID:
                     seenID.append(set[0])
                     cleanSetData.append(set)
-            setData = cleanSetData
-            del cleanSetData
             
-            for set in setData:
-                if set[1] == []:
-                    set[5] = -1
+            # Initialize queue with inlet sets
+            # Each gets a positive integer pathID
+            setQueue = []
+            i = 0
+            for set in cleanSetData:
+                if set[2]:
+                    setQueue.append(set[0])
+                    set[5] = i
+                    i+=1
+            
+            # Start going through MA, inlet locations first
+            while setQueue:
+
+                # Get assc set information from setData list,
+                # mark as visited,
+                # and remove from queue
+                set = cleanSetData[setQueue[-1]]
+                set[6] = 1
+                setQueue.pop(-1)
+
+                # Check connected sets, 
+                # get assc set information from setData list,
+                # mark as being part of the same path,
+                # add set to queue if it hasn't been visited,
+                # count number of connected sets that are trim
+                nConnectedTrim = 0
+                for connectedSetID in set[1]:
+                    connectedSet = cleanSetData[connectedSetID]
+                    connectedSet[5] = set[5]
+                    if connectedSet[6] == 0:
+                        setQueue.append(connectedSet[0])
+                    if connectedSet[4]:
+                        nConnectedTrim += 1
+
+                # if the number of connected sets that
+                # are trimmed is equal to one less than
+                # the total number of connected sets,
+                # this set should also be trimmed
+                ## OR
+                # if the number of connected trim sets is
+                # equal to the number of connected sets,
+                # this set should also be trimmed
+                if (nConnectedTrim == (len(set[1]) - 1)) or (nConnectedTrim == len(set[1])):
+                    set[4] = True
+            
+            ### Perform extra iterations of fork trimming
+            ### will apply to Sets not connected to inlet
+            trimsAdded = 1
+            while trimsAdded:
+                trimsAdded = 0
+                for set in setData:
+                    if set[4]:
+                        continue
+                    
+                    nConnectedTrim = 0
+                    
+                    for connectedSet in set[1]:
+                        if cleanSetData[connectedSetID][4]:
+                            nConnectedTrim += 1
+
+                    isoCheck = (nConnectedTrim == len(set[1]))
+                    forkCheck = (nConnectedTrim == (len(set[1])-1))
+                    endCheck  = (len(set[1]) < 2)
+
+                    if isoCheck or forkCheck or endCheck:
+                        set[4] = True
+                        trimsAdded = 1
+
+
+
+
 
             for set in setData:
-                if set[5] != 0:
-                    pass
-                else:
-                    set[5] = 1
-            # print(setData)
-            ### TODO: DFS of setData, looking for neighbors 
-            ### to trim.
+                setID = set[0]
+                set = cleanSetData[setID]
             
-            ### TODO: DFS/BFS of setData, looking for paths
-            ### to create
-            
+            listSetData = []
+            for i in range(size):
+                listSetData.append([set for set in setData if set[-1] == i])
+        setData = comm.scatter(listSetData,root=0)
+
+        sDMA.updateSetInfo(setData)
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
         s.getDistMinMax(distance)
