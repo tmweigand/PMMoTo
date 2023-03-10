@@ -231,7 +231,7 @@ class medialAxis(object):
 
             ### Not committing active pathID 
             ### reassignment until working correctly
-            # set.globalPathID = setData[i][5]
+            set.globalPathID = setData[i][5]
             
 
 
@@ -279,7 +279,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
         connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
         sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
 
-    ### Trim Sets on Paths that are Dead Ends
+        ### Trim Sets on Paths that are Dead Ends
         
         ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
         ## TODO: Currently nonfunctional for single processor solves, not high priority
@@ -311,6 +311,10 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
                 if not set[0] in seenID:
                     seenID.append(set[0])
                     cleanSetData.append(set)
+                else:
+                    if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
+                        print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
+                    cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
             
             # Initialize queue with inlet sets
             # Each gets a positive integer pathID
@@ -321,7 +325,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
                     setQueue.append(set[0])
                     set[5] = i
                     i+=1
-            
+            setQueue.reverse()
             # Start going through MA, inlet locations first
             while setQueue:
 
@@ -329,6 +333,9 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
                 # mark as visited,
                 # and remove from queue
                 set = cleanSetData[setQueue[-1]]
+                if set[6] == 1:
+                    setQueue.pop(-1)
+                    continue
                 set[6] = 1
                 setQueue.pop(-1)
 
@@ -340,9 +347,9 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
                 nConnectedTrim = 0
                 for connectedSetID in set[1]:
                     connectedSet = cleanSetData[connectedSetID]
-                    connectedSet[5] = set[5]
                     if connectedSet[6] == 0:
                         setQueue.append(connectedSet[0])
+                        connectedSet[5] = set[5]
                     if connectedSet[4]:
                         nConnectedTrim += 1
 
@@ -384,9 +391,11 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
 
 
 
-            for set in setData:
+            for set in setData[:]:
                 setID = set[0]
-                set = cleanSetData[setID]
+                set[4] = cleanSetData[setID][4]
+                set[5] = cleanSetData[setID][5]
+                set[6] = cleanSetData[setID][6]
             
             listSetData = []
             for i in range(size):
