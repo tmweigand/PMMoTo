@@ -168,6 +168,114 @@ class medialAxis(object):
                 if self.Sets[nS].outlet:
                     self.paths[pathID]['outlet'] = True
 
+    def serialTrimAndPath(self,size,setData):
+        ## Remove one level of list
+        setData = [i for j in setData for i in j]
+
+        ## Sort by id
+        setData.sort()
+
+        ## Remove repeated entries, based on 
+        ## sets added to local lists to check
+        ## connectivity
+        cleanSetData = []
+        seenID = []
+        for set in setData:
+            if not set[0] in seenID:
+                seenID.append(set[0])
+                cleanSetData.append(set)
+            else:
+                # if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
+                #     print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
+                cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
+        
+        # Initialize queue with inlet sets
+        # Each gets a positive integer pathID
+        setQueue = []
+        i = 0
+        for set in cleanSetData:
+            if set[2]:
+                setQueue.append(set[0])
+                set[5] = i
+                i+=1
+        setQueue.reverse()
+        # Start going through MA, inlet locations first
+        while setQueue:
+
+            # Get assc set information from setData list,
+            # mark as visited,
+            # and remove from queue
+            set = cleanSetData[setQueue[-1]]
+            if set[6] == 1:
+                setQueue.pop(-1)
+                continue
+            set[6] = 1
+            setQueue.pop(-1)
+
+            # Check connected sets, 
+            # get assc set information from setData list,
+            # mark as being part of the same path,
+            # add set to queue if it hasn't been visited,
+            # count number of connected sets that are trim
+            nConnectedTrim = 0
+            for connectedSetID in set[1]:
+                connectedSet = cleanSetData[connectedSetID]
+                if connectedSet[6] == 0:
+                    setQueue.append(connectedSet[0])
+                    connectedSet[5] = set[5]
+                if connectedSet[4]:
+                    nConnectedTrim += 1
+
+            # if the number of connected sets that
+            # are trimmed is equal to one less than
+            # the total number of connected sets,
+            # this set should also be trimmed
+            ## OR
+            # if the number of connected trim sets is
+            # equal to the number of connected sets,
+            # this set should also be trimmed
+            if (nConnectedTrim == (len(set[1]) - 1)) or (nConnectedTrim == len(set[1])):
+                set[4] = True
+        
+        ### Perform extra iterations of fork trimming
+        ### will apply to Sets not connected to inlet
+        trimsAdded = 1
+        while trimsAdded:
+            trimsAdded = 0
+            for set in setData:
+                if set[4]:
+                    continue
+                
+                nConnectedTrim = 0
+                
+                for connectedSet in set[1]:
+                    if cleanSetData[connectedSetID][4]:
+                        nConnectedTrim += 1
+
+                isoCheck = (nConnectedTrim == len(set[1]))
+                forkCheck = (nConnectedTrim == (len(set[1])-1))
+                endCheck  = (len(set[1]) < 2)
+
+                if isoCheck or forkCheck or endCheck:
+                    set[4] = True
+                    trimsAdded = 1
+
+
+
+
+
+        for set in setData[:]:
+            setID = set[0]
+            set[4] = cleanSetData[setID][4]
+            set[5] = cleanSetData[setID][5]
+            set[6] = cleanSetData[setID][6]
+        
+        listSetData = []
+        for i in range(size):
+            listSetData.append([set for set in setData if set[-1] == i])
+        
+        return listSetData
+    
     def localTrimSets(self):
         """
         Iteratively flip trim flag at rank level until no new changes are made 
@@ -228,11 +336,8 @@ class medialAxis(object):
         setData.sort()
         for i, set in enumerate(self.Sets):
             set.trim = setData[i][4]
-
-            ### Not committing active pathID 
-            ### reassignment until working correctly
             set.globalPathID = setData[i][5]
-            
+        
 
 
 
@@ -274,135 +379,34 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
     if size > 1:
         sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-        sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
-        sDMA.updateConnectedSetsID(connectedSetData)
-        connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
-        sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
+    else:
+        print('WARNING: globalID of sets not correctly set for single subprocess solves, use multiple processes.')
+        communication.raiseError()
+    sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+    sDMA.updateConnectedSetsID(connectedSetData)
+    connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
+    sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
 
-        ### Trim Sets on Paths that are Dead Ends
-        
-        ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
-        ## TODO: Currently nonfunctional for single processor solves, not high priority
-        sDMA.localTrimSets()
+    ### Trim Sets on Paths that are Dead Ends
+    
+    ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
+    sDMA.localTrimSets()
 
-        ### Collect only necessary Set object data for transfer to root
-        setData = sDMA.gatherSetInfo(rank)
+    ### Collect only necessary Set object data for transfer to root
+    setData = sDMA.gatherSetInfo(rank)
 
-        ### Gather all lists into one on root
-        setData = comm.gather(setData,root=0)
-        
-        ### Initialize object for later scattering
-        if rank != 0:
-            listSetData = None
+    ### Gather all lists into one on root
+    setData = comm.gather(setData,root=0)
+    
+    ### Initialize object for later scattering
+    if rank != 0:
+        listSetData = None
 
-        if rank == 0:
-            ## Remove one level of list
-            setData = [i for j in setData for i in j]
+    if rank == 0:
+        listSetData = sDMA.serialTrimAndPath(size,setData)
+    setData = comm.scatter(listSetData,root=0)
 
-            ## Sort by id
-            setData.sort()
-
-            ## Remove repeated entries, based on 
-            ## sets added to local lists to check
-            ## connectivity
-            cleanSetData = []
-            seenID = []
-            for set in setData:
-                if not set[0] in seenID:
-                    seenID.append(set[0])
-                    cleanSetData.append(set)
-                else:
-                    if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
-                        print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
-                    cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
-            
-            # Initialize queue with inlet sets
-            # Each gets a positive integer pathID
-            setQueue = []
-            i = 0
-            for set in cleanSetData:
-                if set[2]:
-                    setQueue.append(set[0])
-                    set[5] = i
-                    i+=1
-            setQueue.reverse()
-            # Start going through MA, inlet locations first
-            while setQueue:
-
-                # Get assc set information from setData list,
-                # mark as visited,
-                # and remove from queue
-                set = cleanSetData[setQueue[-1]]
-                if set[6] == 1:
-                    setQueue.pop(-1)
-                    continue
-                set[6] = 1
-                setQueue.pop(-1)
-
-                # Check connected sets, 
-                # get assc set information from setData list,
-                # mark as being part of the same path,
-                # add set to queue if it hasn't been visited,
-                # count number of connected sets that are trim
-                nConnectedTrim = 0
-                for connectedSetID in set[1]:
-                    connectedSet = cleanSetData[connectedSetID]
-                    if connectedSet[6] == 0:
-                        setQueue.append(connectedSet[0])
-                        connectedSet[5] = set[5]
-                    if connectedSet[4]:
-                        nConnectedTrim += 1
-
-                # if the number of connected sets that
-                # are trimmed is equal to one less than
-                # the total number of connected sets,
-                # this set should also be trimmed
-                ## OR
-                # if the number of connected trim sets is
-                # equal to the number of connected sets,
-                # this set should also be trimmed
-                if (nConnectedTrim == (len(set[1]) - 1)) or (nConnectedTrim == len(set[1])):
-                    set[4] = True
-            
-            ### Perform extra iterations of fork trimming
-            ### will apply to Sets not connected to inlet
-            trimsAdded = 1
-            while trimsAdded:
-                trimsAdded = 0
-                for set in setData:
-                    if set[4]:
-                        continue
-                    
-                    nConnectedTrim = 0
-                    
-                    for connectedSet in set[1]:
-                        if cleanSetData[connectedSetID][4]:
-                            nConnectedTrim += 1
-
-                    isoCheck = (nConnectedTrim == len(set[1]))
-                    forkCheck = (nConnectedTrim == (len(set[1])-1))
-                    endCheck  = (len(set[1]) < 2)
-
-                    if isoCheck or forkCheck or endCheck:
-                        set[4] = True
-                        trimsAdded = 1
-
-
-
-
-
-            for set in setData[:]:
-                setID = set[0]
-                set[4] = cleanSetData[setID][4]
-                set[5] = cleanSetData[setID][5]
-                set[6] = cleanSetData[setID][6]
-            
-            listSetData = []
-            for i in range(size):
-                listSetData.append([set for set in setData if set[-1] == i])
-        setData = comm.scatter(listSetData,root=0)
-
-        sDMA.updateSetInfo(setData)
+    sDMA.updateSetInfo(setData)
     ### Get Min and MAx Distance for Every Set
     for s in sDMA.Sets:
         s.getDistMinMax(distance)
