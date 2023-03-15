@@ -683,7 +683,10 @@ def updateSetPathID(rank,Sets,globalIndexStart,globalBoundarySetID,globalPathInd
         s.pathID = globalPathBoundarySetID[indP,2]
       else:
         newID = globalPathIndexStart + c2
-        globalPathBoundarySetID = np.append(globalPathBoundarySetID,[[rank,s.pathID,newID,s.inlet,s.outlet]],axis=0)
+        if globalPathBoundarySetID.size == 0:
+          globalPathBoundarySetID = np.array([[rank,s.pathID,newID,s.inlet,s.outlet]])
+        else:
+          globalPathBoundarySetID = np.append(globalPathBoundarySetID,[[rank,s.pathID,newID,s.inlet,s.outlet]],axis=0)
         s.pathID = newID
         c2 = c2 + 1
 

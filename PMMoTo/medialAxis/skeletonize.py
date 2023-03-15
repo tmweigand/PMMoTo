@@ -320,13 +320,11 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     setData = comm.gather(setData, root=0)
 
     ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
+    # send all boundary set connectivity information to all processes, might only need to gather not allgather
     connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
+
     globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
-    if size > 1:
-        sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-    else:
-        print('WARNING: globalID of sets not correctly set for single subprocess solves, use multiple processes.')
-        communication.raiseError()
+    sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
     sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
     sDMA.updateConnectedSetsID(connectedSetData)
     connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
