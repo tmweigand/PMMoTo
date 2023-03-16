@@ -683,6 +683,7 @@ def updateSetPathID(rank,Sets,globalIndexStart,globalBoundarySetID,globalPathInd
         s.pathID = globalPathBoundarySetID[indP,2]
       else:
         newID = globalPathIndexStart + c2
+        ## Check if globalPathBoundarySetID exists to correctly initialize 2D append: see issue 20
         if globalPathBoundarySetID.size == 0:
           globalPathBoundarySetID = np.array([[rank,s.pathID,newID,s.inlet,s.outlet]])
         else:

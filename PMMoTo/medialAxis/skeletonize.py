@@ -189,6 +189,11 @@ class medialAxis(object):
                 #     print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
                 cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
         
+        ### There exist cases where a set has itself listed as a neighbor, remove these. SEE ISSUE 21
+        for i,set in enumerate(cleanSetData):
+            if i in set[1]:
+                set[1] = [j for j in set[1] if j != i]
+        
         ### Perform extra iterations of fork trimming
         ### will apply to Sets not connected to inlet
         trimsAdded = 1
@@ -215,11 +220,9 @@ class medialAxis(object):
             setID = set[0]
             set[4] = cleanSetData[setID][4]
 
-        
         listSetData = []
         for i in range(size):
             listSetData.append([set for set in setData if set[5] == i])
-        
         return listSetData
     
     def localTrimSets(self):
@@ -237,6 +240,7 @@ class medialAxis(object):
         idHashTable = []
         for set in self.Sets:
             idHashTable.append(set.globalID)
+        
         trimsAdded = 1
         while trimsAdded:
             trimsAdded = 0
