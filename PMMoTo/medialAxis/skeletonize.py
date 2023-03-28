@@ -14,15 +14,19 @@ class medialAxis(object):
     Nodes -> Sets -> Paths
     Sets are broken into Reaches -> Medial Nodes -> Medial Clusters
     """
+
     def __init__(self,Domain,subDomain):
         self.Domain = Domain
         self.subDomain = subDomain
         self.Orientation = subDomain.Orientation
         self.padding = np.zeros([3],dtype=np.int64)
         self.haloGrid = None
+        self.halo = np.zeros(6)
+        self.haloPadNeigh = np.zeros(6)
+        self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-    def skeletonize_3d(self):
+    def skeletonize_3d(self,connect = False):
         """Compute the skeleton of a binary image.
 
         Thinning is used to reduce each connected component in a binary image
@@ -72,14 +76,30 @@ class medialAxis(object):
         # do the computation
         image_o = np.asarray(_compute_thin_image(image_o))
         dim = image_o.shape
-        self.MA = image_o[self.halo[1]:dim[0]-self.halo[0],
-                          self.halo[3]:dim[1]-self.halo[2],
-                          self.halo[5]:dim[2]-self.halo[4]]
+
+        ### Grab Medial Axis with Single and Two Buffer to 
+        self.haloPadNeigh = np.zeros_like(self.halo)
+        self.haloPadNeighNot = np.ones_like(self.halo)
+        for n in range(0,6):
+            if self.halo[n] > 0:
+                self.haloPadNeigh[n] = 1
+                self.haloPadNeighNot[n] = 0
+
+        if connect:
+            self.MA = image_o[self.halo[1] - self.haloPadNeigh[1] : dim[0] - self.halo[0] + self.haloPadNeigh[0],
+                              self.halo[3] - self.haloPadNeigh[3] : dim[1] - self.halo[2] + self.haloPadNeigh[2],
+                              self.halo[5] - self.haloPadNeigh[5] : dim[2] - self.halo[4] + self.haloPadNeigh[4]]
+
+        else:
+            self.MA = image_o[self.halo[1]:dim[0] - self.halo[0],
+                            self.halo[3]:dim[1] - self.halo[2],
+                            self.halo[5]:dim[2] - self.halo[4]]
+                
         self.MA = np.ascontiguousarray(self.MA)
 
     def genPadding(self):
         """
-        Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changes
+        Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changed
         """
         gridShape = self.Domain.subNodes
         factor = 0.95
@@ -91,6 +111,20 @@ class medialAxis(object):
             if self.padding[n] == gridShape[n]:
                 self.padding[n] = self.padding[n] - 1
 
+    def genMAArrays(self):
+        """
+        Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes
+        """
+        dim = self.MA.shape
+        tempMA = self.MA[self.haloPadNeigh[1] : dim[0] - self.haloPadNeigh[0],
+                         self.haloPadNeigh[3] : dim[1] - self.haloPadNeigh[2],
+                         self.haloPadNeigh[5] : dim[2] - self.haloPadNeigh[4]]
+                
+        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[1], self.haloPadNeighNot[0]), 
+                                    (self.haloPadNeighNot[3], self.haloPadNeighNot[2]), 
+                                    (self.haloPadNeighNot[5], self.haloPadNeighNot[4]) ), 
+                                    'constant', constant_values=0)
+        return tempMA,neighMA
 
     def collectPaths(self):
         """
@@ -122,16 +156,38 @@ class medialAxis(object):
                 self.boundPathCount = self.boundPathCount + 1
 
 
-    def updateConnectedSetsID(self,connectedSetData):
-        self.connectedSetIDs = {}
+    def genLocalGlobalConnectedSetsID(self,connectedSetData):
+        """
+        Generate dictionaries for 
+            localGlobalConnectedSetID: ['localID'] = globalID
+        """
+        self.localGlobalConnectedSetID = {}
         for s in connectedSetData:
             for ss in s:
                 if ss[0] == self.subDomain.ID:
-                    for c,n in enumerate(ss[4]):
-                        self.connectedSetIDs[n]=self.Sets[n].globalID
+                    self.localGlobalConnectedSetID[ss[1]]=self.Sets[ss[1]].globalID
+                    for n in ss[4]:
+                        self.localGlobalConnectedSetID[n]=self.Sets[n].globalID
                 if ss[2] == self.subDomain.ID:
-                    for c,n in enumerate(ss[5]):
-                        self.connectedSetIDs[n]=self.Sets[n].globalID
+                    self.localGlobalConnectedSetID[ss[3]]=self.Sets[ss[3]].globalID
+                    for n in ss[5]:
+                        self.localGlobalConnectedSetID[n]=self.Sets[n].globalID
+
+    def genGlobalLocalConnectedSetsID(self,localGlobalSets):
+        """
+        Input [numProcs][localID] = globalID
+        Generate dictionaries for 
+            globalLocalConnectedSetID: ['globalID']= {procID:localID}
+        """
+        self.globalLocalConnectedSetID = {}
+        for nP,nSets in enumerate(localGlobalSets):
+            for lID in nSets:
+                if nSets[lID] not in self.globalLocalConnectedSetID.keys():
+                    self.globalLocalConnectedSetID[nSets[lID]] = {}
+                if nP not in self.globalLocalConnectedSetID[nSets[lID]]:
+                    self.globalLocalConnectedSetID[nSets[lID]][nP] = []
+                self.globalLocalConnectedSetID[nSets[lID]][nP].append(lID)
+
 
     def updatePaths(self,globalPathIndexStart,globalPathBoundarySetID):
         self.paths = {}
@@ -214,9 +270,9 @@ class medialAxis(object):
         """
 
         setData = []
-        for set in self.Sets:
+        for s in self.Sets:
             ### globalID,globalID of connected sets, on inlet, on outlet, is trimmed, globalPathID init to -1, visited flag, rank of contributing for reconstruction via scatter
-            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim,-1,0,rank])
+            setData.append([s.globalID, s.globalConnectedSets, s.inlet, s.outlet, s.trim,-1,0,rank])
         return setData
     
     def updateSetInfo(self,setData):
@@ -237,7 +293,7 @@ class medialAxis(object):
 
 
 
-def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
+def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect):
 
     ### Initialize Classes
     sDMA = medialAxis(Domain = Domain,subDomain = subDomain)
@@ -250,37 +306,48 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
 
     ### Determine MA
-    sDMA.skeletonize_3d()
+    sDMA.skeletonize_3d(connect)
 
-    ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
-    sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(sDMA.MA,Domain,subDomain,subDomain.Orientation)
-    sDMA.Sets,sDMA.setCount,sDMA.pathCount = nodes.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex)
-
-    sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
-
-    ### Connect the Sets into Paths
-    sDMA.collectPaths()
-
-    ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
-    sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
-    sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
-    if error:
-        communication.raiseError()
-    setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
-    setData = comm.gather(setData, root=0)
-
-    ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
-    connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
-    globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
-    if size > 1:
-        sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-        sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
-        sDMA.updateConnectedSetsID(connectedSetData)
-        connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
-        sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
-
-    ### Trim Sets on Paths that are Dead Ends
+    if connect:
+        ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
         
+        tempMA,neighMA = sDMA.genMAArrays()
+        sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,Domain,subDomain,subDomain.Orientation)
+        sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,subDomain,subDomain.Orientation,sDMA.nodeInfo)
+        sDMA.MA = np.ascontiguousarray(tempMA)
+
+        sDMA.Sets,sDMA.setCount,sDMA.pathCount = nodes.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
+        sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(rank,sDMA.Sets,sDMA.setCount,subDomain)
+
+        ### Connect the Sets into Paths
+        sDMA.collectPaths()
+
+        ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
+        ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
+        ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
+        sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
+        sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+        if error:
+            communication.raiseError()
+        setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
+        setData = comm.gather(setData, root=0)
+
+        ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
+        connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
+        globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
+        if size > 1:
+            sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
+            sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+
+            ### Generate Local <-> Global Connected Set IDs
+            sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
+            localGlobalConnectedSetIDs = comm.allgather(sDMA.localGlobalConnectedSetID) 
+            sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
+            sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
+
+
+        ### Trim Sets on Paths that are Dead Ends
+            
         ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
         ## TODO: Currently nonfunctional for single processor solves, not high priority
         sDMA.localTrimSets()
@@ -299,7 +366,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
             ## Remove one level of list
             setData = [i for j in setData for i in j]
 
-            ## Sort by id
+            ## Sort by globalID
             setData.sort()
 
             ## Remove repeated entries, based on 
@@ -311,6 +378,11 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
                 if not set[0] in seenID:
                     seenID.append(set[0])
                     cleanSetData.append(set)
+                else:
+                    if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
+                        print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
+                        print(cleanSetData[set[0]],set)
+                    cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
             
             # Initialize queue with inlet sets
             # Each gets a positive integer pathID
@@ -394,10 +466,11 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
         setData = comm.scatter(listSetData,root=0)
 
         sDMA.updateSetInfo(setData)
-    ### Get Min and MAx Distance for Every Set
-    for s in sDMA.Sets:
-        s.getDistMinMax(distance)
-        # if rank == 0:
-        #     print(s.localID,s.globalID,s.localConnectedSets,s.globalConnectedSets)
+
+
+        ### Get Min and MAx Distance for Every Set
+        for s in sDMA.Sets:
+            s.getDistMinMax(distance)
+
 
     return sDMA

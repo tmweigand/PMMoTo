@@ -412,12 +412,10 @@ class subDomain(object):
 
     def genDomainSphereData(self,sphereData):
         self.grid = domainGen(self.x,self.y,self.z,sphereData)
-
         self.gridCheck()
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.x,self.y,self.z)
-
         self.gridCheck()
 
     def setBoundaryConditions(self,rank):
@@ -437,8 +435,10 @@ class subDomain(object):
         if self.boundaryID[2][1] == 1  and self.Domain.boundaries[2] == 1:
             self.grid[:,:,-1] = 0
 
-    def getBoundaryInfo(self):
-
+    def getLoopInfo(self):
+        """
+        Grap the Loop Information to Cycle through the Boundary Faces
+        """
         rangeInfo = 2*np.ones([3,2],dtype=np.uint8)
         if self.boundaryID[0][0] == -1 and self.Domain.boundaries[0] == 0:
             rangeInfo[0,0] = rangeInfo[0,0] - 1
@@ -455,15 +455,6 @@ class subDomain(object):
 
         for fIndex in self.Orientation.faces:
             face = self.Orientation.faces[fIndex]['argOrder'][0]
-            fID = self.Orientation.faces[fIndex]['ID'][face]
-            fI = self.Orientation.faces[fIndex]['Index']
-
-            if self.boundaryID[face][fI] != 0:
-                self.globalBoundary[fIndex] = 1
-                if self.Domain.inlet[face] == fID and self.Domain.inlet[face] == self.boundaryID[face][fI]:
-                    self.inlet[fIndex] = True
-                elif self.Domain.outlet[face] == fID and self.Domain.outlet[face] == self.boundaryID[face][fI]:
-                    self.outlet[fIndex] = True
 
             if self.Orientation.faces[fIndex]['dir'] == -1:
                 if face == 0:
@@ -496,6 +487,20 @@ class subDomain(object):
         self.loopInfo[self.Orientation.numFaces][0] = [rangeInfo[0,0],self.grid.shape[0]-rangeInfo[0,1]]
         self.loopInfo[self.Orientation.numFaces][1] = [rangeInfo[1,0],self.grid.shape[1]-rangeInfo[1,1]]
         self.loopInfo[self.Orientation.numFaces][2] = [rangeInfo[2,0],self.grid.shape[2]-rangeInfo[2,1]]
+
+    def getBoundaryInfo(self):
+
+        for fIndex in self.Orientation.faces:
+            face = self.Orientation.faces[fIndex]['argOrder'][0]
+            fID = self.Orientation.faces[fIndex]['ID'][face]
+            fI = self.Orientation.faces[fIndex]['Index']
+
+            if self.boundaryID[face][fI] != 0:
+                self.globalBoundary[fIndex] = 1
+                if self.Domain.inlet[face] == fID and self.Domain.inlet[face] == self.boundaryID[face][fI]:
+                    self.inlet[fIndex] = True
+                elif self.Domain.outlet[face] == fID and self.Domain.outlet[face] == self.boundaryID[face][fI]:
+                    self.outlet[fIndex] = True
 
     def getNeighbors(self):
         """
@@ -620,6 +625,7 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd
         sD.genDomainInkBottle()
     sD.setBoundaryConditions(rank)
     sD.getBoundaryInfo()
+    sD.getLoopInfo()
     if resInd > 0:
         sD.getReservoir(resInd)
     sD.getPorosity()

@@ -16,81 +16,91 @@ import sys
 
 cdef int numDirections = 26
 cdef int[26][5] directions
-directions =  [[-1,-1,-1,  0, 13],
-              [-1,-1, 1,  1, 12],
-              [-1,-1, 0,  2, 14],
-              [-1, 1,-1,  3, 10],
-              [-1, 1, 1,  4,  9],
-              [-1, 1, 0,  5, 11],
-              [-1, 0,-1,  6, 16],
-              [-1, 0, 1,  7, 15],
-              [-1, 0, 0,  8, 17],
-              [ 1,-1,-1,  9,  4],
-              [ 1,-1, 1, 10,  3],
-              [ 1,-1, 0, 11,  5],
-              [ 1, 1,-1, 12,  1],
-              [ 1, 1, 1, 13,  0],
-              [ 1, 1, 0, 14,  2],
-              [ 1, 0,-1, 15,  7],
-              [ 1, 0, 1, 16,  6],
-              [ 1, 0, 0, 17,  8],
-              [ 0,-1,-1, 18, 22],
-              [ 0,-1, 1, 19, 21],
-              [ 0,-1, 0, 20, 23],
-              [ 0, 1,-1, 21, 19],
-              [ 0, 1, 1, 22, 18],
-              [ 0, 1, 0, 23, 20],
-              [ 0, 0,-1, 24, 25],
-              [ 0, 0, 1, 25, 24]]
+directions = [[-1,-1,-1,  0, 13],  #0
+              [-1,-1, 1,  1, 12],  #1
+              [-1,-1, 0,  2, 14],  #2
+              [-1, 1,-1,  3, 10],  #3
+              [-1, 1, 1,  4,  9],  #4
+              [-1, 1, 0,  5, 11],  #5
+              [-1, 0,-1,  6, 16],  #6
+              [-1, 0, 1,  7, 15],  #7
+              [-1, 0, 0,  8, 17],  #8
+              [ 1,-1,-1,  9,  4],  #9
+              [ 1,-1, 1, 10,  3],  #10
+              [ 1,-1, 0, 11,  5],  #11
+              [ 1, 1,-1, 12,  1],  #12
+              [ 1, 1, 1, 13,  0],  #13
+              [ 1, 1, 0, 14,  2],  #14
+              [ 1, 0,-1, 15,  7],  #15
+              [ 1, 0, 1, 16,  6],  #16
+              [ 1, 0, 0, 17,  8],  #17
+              [ 0,-1,-1, 18, 22],  #18
+              [ 0,-1, 1, 19, 21],  #19
+              [ 0,-1, 0, 20, 23],  #20
+              [ 0, 1,-1, 21, 19],  #21
+              [ 0, 1, 1, 22, 18],  #22
+              [ 0, 1, 0, 23, 20],  #23
+              [ 0, 0,-1, 24, 25],  #24
+              [ 0, 0, 1, 25, 24]]  #25
 
 
-### Faces for Faces,Edges,Corners ###
-allFaces  = [[ 0,24,20,8],
-             [ 1,25,20,8],
-             [ 2,20,8],
-             [ 3,24,23,8],
-             [ 4,25,23,8],
-             [ 5,23,8],
-             [ 6,24,8],
-             [ 7,25,8],
-             [ 8],
-             [ 9,24,20,17],
-             [ 10,25,20,17],
-             [ 11,20,17],
-             [ 12,24,23,17],
-             [ 13,25,23,17],
-             [ 14,23,17],
-             [ 15,24,17],
-             [ 16,25,17],
-             [ 17],
-             [ 18,24,20],
-             [ 19,25,20],
-             [ 20],
-             [ 21,24,23],
-             [ 22,25,23],
-             [ 23],
-             [ 24],
-             [ 25]]
+### Faces/Edges for Faces,Edges,Corners ###
+allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
+            [1, 2, 7, 8, 19, 20, 25],         # 1
+            [2, 8, 20],                       # 2
+            [3, 5, 6, 8, 21, 23, 24],         # 3
+            [4, 5, 7, 8, 22, 23, 25],         # 4
+            [5, 8, 23],                       # 5
+            [6, 8, 24],                       # 6
+            [7, 8, 25],                       # 7
+            [8],                              # 8
+            [9, 11, 15, 17, 18, 20, 24],      # 9
+            [10, 11, 16, 17, 19, 20, 25],     # 10
+            [11, 17, 20],                     # 11
+            [12, 14, 15, 17, 21, 23, 24],     # 12
+            [13, 14, 16, 17, 22, 23, 25],     # 13
+            [14, 17, 23],                     # 14
+            [15, 17, 24],                     # 15
+            [16, 17, 25],                     # 16
+            [17],                             # 17
+            [18, 20, 24],                     # 18
+            [19, 20, 25],                     # 19
+            [20],                             # 20
+            [21, 23, 24],                     # 21
+            [22, 23, 25],                     # 22
+            [23],                             # 23
+            [24],                             # 24
+            [25]]                             # 25
 
 
 class Set(object):
-    def __init__(self, localID = 0, pathID = 0, inlet = False, outlet = False, boundary = False, numNodes = 0, numBoundaryNodes = 0, type = 0, connectedNodes = None):
+    def __init__(self, 
+                localID = 0, 
+                pathID = 0, 
+                inlet = False, 
+                outlet = False, 
+                boundary = False, 
+                numNodes = 0, 
+                numBoundaryNodes = 0, 
+                type = 0, 
+                connectedNodes = None):
       self.inlet = inlet
       self.outlet = outlet
       self.boundary = boundary
       self.numBoundaries  = 0
       self.numNodes = numNodes
+      self.numBoundaryNodes = numBoundaryNodes
       self.localID = localID
       self.globalID = 0
       self.pathID = pathID
       self.globalPathID = 0
-      self.nodes = np.zeros([numNodes,3],dtype=np.int64)
+      self.nodes = np.zeros([numNodes,3],dtype=np.int64) #i,j,k
       self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
       self.boundaryFaces = np.zeros(26,dtype=np.uint8)
       self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)
       self.type = type
       self.connectedNodes = connectedNodes
-      self.localConnectedSets = []
+      self.connectedSets = []
       self.globalConnectedSets = []
       self.trim = False
       self.minDistance = math.inf
@@ -133,7 +143,7 @@ class Set(object):
 
 
 
-def getBoundarySets(Sets,setCount,subDomain):
+def getBoundarySets(rank,Sets,setCount,subDomain):
   """
   Get the Sets the are on a valid subDomain Boundary.
   Organize data so sending procID, boundary nodes.
@@ -176,7 +186,7 @@ def getBoundarySets(Sets,setCount,subDomain):
                                          'inlet':bSet.inlet,
                                          'outlet':bSet.outlet,
                                          'pathID':bSet.pathID,
-                                         'connectedSets':bSet.localConnectedSets}
+                                         'connectedSets':bSet.connectedSets}
           else:
             bD['setID'][bSet.localID] = {'boundaryNodes':bSet.boundaryNodes,
                                          'ProcID':subDomain.ID,
@@ -625,7 +635,6 @@ def organizeSets(subDomain,size,setData,paths):
     localSetStart[0] = cID
     for n in range(1,size):
         localSetStart[n] = localSetStart[n-1] + numSets[n-1] - numBoundSets[n-1]
-        #globalSetScatter.append(globalSetID[np.where(globalSetID[:,0]==n)])
     ###########################################
 
   else:
@@ -730,25 +739,49 @@ def setCOMM(Orientation,subDomain,data):
 
 
 
-def getGlobalConnectedSets(Sets,matchedSets,mathedIDS):
+def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,globalLocalIDs):
   """
-  Update global IDS and use mathedSets to get Gloabl Connections
+  Update global IDS and use mathedSets to get Global Connections
+  matchedIDs[procID]['localID']=globalID
   """
   #######################################
   ### Update Global Connected Sets ID ###
   #######################################
   for s in Sets:
-    if s.localConnectedSets:
-      for ss in s.localConnectedSets:
+    if s.connectedSets:
+      for ss in s.connectedSets:
         ID = int(Sets[ss].globalID)
         if ID not in s.globalConnectedSets:
           s.globalConnectedSets.append(ID)
   #######################################
 
+  ##############################################################
+  ### Loop through Matched Sets to Get Global Connected Sets ###
+  ##############################################################
+  for n in range(0,size):
+    if n in subDomain.lookUpID:
+      if n == rank:
+        for s in matchedSets[n]:
+          for l in s[5]:
+            mID = localGlobalIDs[s[2]][l]
+            if mID not in Sets[s[1]].globalConnectedSets:
+              Sets[s[1]].globalConnectedSets.append(mID)
 
-  for s in matchedSets:
-    for l in s[5]:
-      mID = mathedIDS[s[2]][l]
-      if mID not in Sets[s[1]].globalConnectedSets:
-        Sets[s[1]].globalConnectedSets.append(mID)
-      
+      else: #Check if Connected Set from Other Proc has More Connections
+        for s in matchedSets[n]:
+          lID = s[1]
+          gID = localGlobalIDs[s[0]][lID]
+          if rank in globalLocalIDs[gID].keys():
+            
+            for l in s[4]:
+              mID = localGlobalIDs[s[0]][l]
+              for ll in globalLocalIDs[gID][rank]:
+                if mID not in Sets[ll].globalConnectedSets:
+                  Sets[ll].globalConnectedSets.append(mID)
+
+            for l in s[5]:
+              mID = localGlobalIDs[s[2]][l]
+              for ll in globalLocalIDs[gID][rank]:
+                if mID not in Sets[ll].globalConnectedSets:
+                  Sets[ll].globalConnectedSets.append(mID)
+
