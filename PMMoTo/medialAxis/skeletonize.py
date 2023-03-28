@@ -168,13 +168,12 @@ class medialAxis(object):
                 if self.Sets[nS].outlet:
                     self.paths[pathID]['outlet'] = True
 
-    def globalTrimSets(self,size,setData):
-        ## Remove one level of list
+    def globalCleanSets(self,setData):
+        
         setData = [i for j in setData for i in j]
 
         ## Sort by id
         setData.sort()
-
         ## Remove repeated entries, based on 
         ## sets added to local lists to check
         ## connectivity
@@ -188,19 +187,25 @@ class medialAxis(object):
                 # if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
                 #     print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
                 cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
+                if cleanSetData[set[0]][5] != set[5]:
+                    # print('WARNING: Min distance values are not equal.')
+                    cleanSetData[set[0]][5] = min(cleanSetData[set[0]][5],set[5])
         
         ### There exist cases where a set has itself listed as a neighbor, remove these. SEE ISSUE 21
         for i,set in enumerate(cleanSetData):
             if i in set[1]:
                 set[1] = [j for j in set[1] if j != i]
         
+        return setData,cleanSetData
+
+    def globalTrimSets(self,cleanSetData):
         ### Perform extra iterations of fork trimming
         ### will apply to Sets not connected to inlet
         trimsAdded = 1
         while trimsAdded:
             trimsAdded = 0
             for set in cleanSetData:
-                if set[4]:
+                if (set[2] == 1) or (set[3] == 1) or (set[4] == 1):
                     continue
                 nConnectedTrim = 0
                 
@@ -215,14 +220,56 @@ class medialAxis(object):
                 if isoCheck or forkCheck or endCheck:
                     set[4] = True
                     trimsAdded = 1
+        
+        return cleanSetData
+    
+    def globalInaccessibleTrimSets(self,cleanSetData):
+        trimsAdded = 1
+        while trimsAdded:
+            trimsAdded = 0
+            for set in cleanSetData:
+                if set[5] == 1:
+                    set[6] = 1
+                if (set[2] == 1)  or (set[3] == 1) or (set[6] == 1):
+                    continue
 
+                nConnectedTrim = 0
+                for connectedSetID in set[1]:
+                    if cleanSetData[connectedSetID][6]:
+                        nConnectedTrim += 1
+
+                isoCheck = (nConnectedTrim == len(set[1]))
+                forkCheck = (nConnectedTrim == (len(set[1])-1))
+                endCheck  = (len(set[1]) < 2)
+
+                if isoCheck or forkCheck or endCheck:
+                    set[6] = 1
+                    trimsAdded = 1
+        
+        return cleanSetData
+    
+    def globalInaccessibleSets(self,cleanSetData,cutoff):
+
+        ### Perform extra iterations of fork trimming
+        ### will apply to Sets not connected to inlet
+        for set in cleanSetData:
+            if set[7] < cutoff:
+                set[5] = 1
+                    
+        return cleanSetData
+
+    def globalCreateListSetData(self,size,setData,cleanSetData):
+        
         for set in setData:
             setID = set[0]
             set[4] = cleanSetData[setID][4]
+            set[5] = cleanSetData[setID][5]
+            set[6] = cleanSetData[setID][6]
+            set[7] = cleanSetData[setID][7]
 
         listSetData = []
         for i in range(size):
-            listSetData.append([set for set in setData if set[5] == i])
+            listSetData.append([set for set in setData if set[-1] == i])
         return listSetData
     
     def localTrimSets(self):
@@ -274,7 +321,7 @@ class medialAxis(object):
         setData = []
         for set in self.Sets:
             ### globalID,globalID of connected sets, on inlet, on outlet, is trimmed, globalPathID init to -1, visited flag, rank of contributing for reconstruction via scatter
-            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim, rank])
+            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim, set.inaccessible, set.inaccessibleTrim, set.minDistance, rank])
         return setData
     
     def updateSetInfo(self,setData,rank):
@@ -286,12 +333,15 @@ class medialAxis(object):
         setData.sort()
         for i, set in enumerate(self.Sets):
             set.trim = setData[i][4]
+            set.inaccessible = setData[i][5]
+            set.inaccessibleTrim = setData[i][6]
+            set.minDistance = setData[i][7]
         
 
 
 
 
-def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
+def medialAxisEval(rank,size,Domain,subDomain,grid,distance,cutoff):
 
     ### Initialize Classes
     sDMA = medialAxis(Domain = Domain,subDomain = subDomain)
@@ -333,6 +383,9 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     sDMA.updateConnectedSetsID(connectedSetData)
     connectedSetIDs =  comm.allgather(sDMA.connectedSetIDs)
     sets.getGlobalConnectedSets(sDMA.Sets,connectedSetData[rank],connectedSetIDs)
+    
+    for s in sDMA.Sets:
+        s.getDistMinMax(distance)
 
     ### Trim Sets on Paths that are Dead Ends
     
@@ -347,16 +400,15 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance):
     ### Initialize object for later scattering
     if rank != 0:
         listSetData = None
-
     if rank == 0:
-        listSetData = sDMA.globalTrimSets(size,setData)
+        setData,cleanSetData = sDMA.globalCleanSets(setData)
+        cleanSetData = sDMA.globalTrimSets(cleanSetData)
+        cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
+        cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
+        listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
     setData = comm.scatter(listSetData,root=0)
 
     sDMA.updateSetInfo(setData,rank)
-    ### Get Min and MAx Distance for Every Set
-    for s in sDMA.Sets:
-        s.getDistMinMax(distance)
-        # if rank == 0:
-        #     print(s.localID,s.globalID,s.localConnectedSets,s.globalConnectedSets)
+
 
     return sDMA

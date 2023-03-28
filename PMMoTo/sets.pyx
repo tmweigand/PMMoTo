@@ -93,6 +93,8 @@ class Set(object):
       self.localConnectedSets = []
       self.globalConnectedSets = []
       self.trim = False
+      self.inaccessible = 0
+      self.inaccessibleTrim = 0
       self.minDistance = math.inf
       self.maxDistance = -math.inf
       self.minDistanceNode = -1

@@ -52,7 +52,7 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
+    testSerial = False
     testAlgo = True
 
     pC = [143]
@@ -64,12 +64,13 @@ def my_function():
 
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
 
+    cutoff = 0.006
     if drain:
         drainL,_ = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
 
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,cutoff)
 
     endTime = time.time()
     print("Parallel Time:",endTime-startTime)
@@ -80,7 +81,7 @@ def my_function():
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",boundary="boundary",localID="localID",type="type",numBoundaries="numBoundaries",globalPathID="globalPathID",pathID="pathID")
+    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",inaccessible="inaccessible",inaccessibleTrim="inaccessibleTrim",boundary="boundary",globalID="globalID",type="type",pathID="pathID",minDistance="minDistance")
 
     if testSerial:
 
