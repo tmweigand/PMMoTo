@@ -40,7 +40,7 @@ def saveGridData(fileName,rank,Domain,subDomain,**kwargs):
          
     gridToVTK(fileProc+str(rank), subDomain.x, subDomain.y, subDomain.z,
         start = [subDomain.indexStart[0],subDomain.indexStart[1],subDomain.indexStart[2]],
-        pointData =pointData)
+        pointData = pointData)
 
     if rank == 0:
         name = [fileProcLocal]*Domain.numSubDomains
@@ -80,10 +80,10 @@ def saveSetData(fileName,rank,Domain,subDomain,subDomainMedialAxis,**kwargs):
     x = np.zeros(dim)
     y = np.zeros(dim)
     z = np.zeros(dim)
-    set = np.ones(dim,dtype=np.uint8)
+    setRank = rank*np.ones(dim,dtype=np.uint8)
     globalID = np.zeros(dim,dtype=np.uint64)
-    pointData = {"set" : set, "globalID" : globalID}
-    pointDataInfo = {"set" : (set.dtype, 1),
+    pointData = {"set" : setRank, "globalID" : globalID}
+    pointDataInfo = {"set" : (setRank.dtype, 1),
                     "globalID" : (globalID.dtype, 1)
                     }
 

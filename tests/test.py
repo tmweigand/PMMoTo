@@ -33,11 +33,8 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    if rank==0:
-        start_time = time.time()
-
     subDomains = [2,2,2]
-    nodes = [251,251,251]
+    nodes = [351,351,351]
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
@@ -70,18 +67,31 @@ def my_function():
 
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,cutoff)
+
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect=True,cutoff)
+
 
     endTime = time.time()
     print("Parallel Time:",endTime-startTime)
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA)
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA,table=sDMAL.nodeTable)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,inlet="inlet",outlet="outlet",trim="trim",inaccessible="inaccessible",inaccessibleTrim="inaccessibleTrim",boundary="boundary",globalID="globalID",type="type",pathID="pathID",minDistance="minDistance")
+
+    setSaveDict = {'inlet': 'inlet',
+                'outlet':'outlet',
+                'trim' :'trim',
+                'boundary': 'boundary',
+                'localID': 'localID',
+                'type': 'type',
+                'numBoundaries': 'numBoundaries',
+                'globalPathID':'globalPathID'}
+    
+    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
+
 
     if testSerial:
 
@@ -167,7 +177,7 @@ def my_function():
 
 
                 realDT = edt.edt3d(gridOut, anisotropy=(domain.dX, domain.dY, domain.dZ))
-                edtV,indTrue = distance_transform_edt(gridOut,sampling=[domain.dX, domain.dY, domain.dZ],return_indices=True)
+                edtV,_ = distance_transform_edt(gridOut,sampling=[domain.dX, domain.dY, domain.dZ],return_indices=True)
                 gridCopy = np.copy(gridOut)
                 realMA = PMMoTo.medialAxis.skeletonize._compute_thin_image(gridCopy)
                 endTime = time.time()
