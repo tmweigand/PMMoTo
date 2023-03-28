@@ -4,9 +4,9 @@ cimport numpy as cnp
 from libc.stdio cimport printf
 cnp.import_array()
 from mpi4py import MPI
-# from pykdtree.kdtree import KDTree
+from pykdtree.kdtree import KDTree
 ### if using WSL, uncomment line below. 
-from scipy.spatial import KDTree
+#from scipy.spatial import KDTree
 import edt
 from . import communication
 cimport cython
