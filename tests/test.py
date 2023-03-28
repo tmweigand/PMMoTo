@@ -34,7 +34,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2]
-    nodes = [351,351,351]
+    nodes = [51,51,51]
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
@@ -49,7 +49,7 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = False
+    testSerial = True
     testAlgo = True
 
     pC = [143]
@@ -68,7 +68,7 @@ def my_function():
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect=True,cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()

@@ -377,7 +377,7 @@ class medialAxis(object):
         setData = []
         for s in self.Sets:
             ### globalID,globalID of connected sets, on inlet, on outlet, is trimmed, globalPathID init to -1, visited flag, rank of contributing for reconstruction via scatter
-            setData.append([set.globalID, set.globalConnectedSets, set.inlet, set.outlet, set.trim, set.inaccessible, set.inaccessibleTrim, set.minDistance, rank])
+            setData.append([s.globalID, s.globalConnectedSets, s.inlet, s.outlet, s.trim, s.inaccessible, s.inaccessibleTrim, s.minDistance, rank])
 
         return setData
     

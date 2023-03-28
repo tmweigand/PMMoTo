@@ -145,7 +145,7 @@ class Set(object):
 
 
 
-def getBoundarySets(rank,Sets,setCount,subDomain):
+def getBoundarySets(Sets,setCount,subDomain):
   """
   Get the Sets the are on a valid subDomain Boundary.
   Organize data so sending procID, boundary nodes.
