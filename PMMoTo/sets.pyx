@@ -747,7 +747,7 @@ def setCOMM(Orientation,subDomain,data):
 
 def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,globalLocalIDs):
   """
-  Update global IDS and use mathedSets to get Global Connections
+  Update global IDS and use matchedSets to get Global Connections
   matchedIDs[procID]['localID']=globalID
   """
   #######################################

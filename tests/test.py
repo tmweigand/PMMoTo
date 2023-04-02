@@ -34,7 +34,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2]
-    nodes = [51,51,51]
+    nodes = [251,251,251]
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
@@ -49,7 +49,7 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
+    testSerial = False
     testAlgo = True
 
     pC = [143]
@@ -61,7 +61,7 @@ def my_function():
 
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
 
-    cutoff = 0.006
+    cutoff = 0.00725
     if drain:
         drainL,_ = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
 
@@ -84,11 +84,14 @@ def my_function():
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
                 'trim' :'trim',
+                'inaccessible':'inaccessible',
+                'inaccessibleTrim':'inaccessibleTrim',
+                'globalID':'globalID',
                 'boundary': 'boundary',
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'globalPathID':'globalPathID'}
+                'pathID':'pathID'}
     
     PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
 
