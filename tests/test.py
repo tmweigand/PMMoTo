@@ -61,14 +61,14 @@ def my_function():
 
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
 
-    cutoff = 0.00725
+    cutoffs = [0,0.006]
     if drain:
         drainL,_ = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
 
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoffs = cutoffs)
 
 
     endTime = time.time()
@@ -85,13 +85,13 @@ def my_function():
                 'outlet':'outlet',
                 'trim' :'trim',
                 'inaccessible':'inaccessible',
-                'inaccessibleTrim':'inaccessibleTrim',
                 'globalID':'globalID',
                 'boundary': 'boundary',
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'pathID':'pathID'}
+                'pathID':'pathID',
+                'globalPathIDs':'globalPathIDs'}
     
     PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
 

@@ -93,7 +93,8 @@ class Set(object):
       self.localID = localID
       self.globalID = 0
       self.pathID = pathID
-      self.globalPathID = 0
+      self.globalPathID = -1
+      self.globalPathIDs = []
       self.nodes = np.zeros([numNodes,3],dtype=np.int64) #i,j,k
       self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
       self.boundaryFaces = np.zeros(26,dtype=np.uint8)
@@ -102,9 +103,8 @@ class Set(object):
       self.connectedNodes = connectedNodes
       self.connectedSets = []
       self.globalConnectedSets = []
-      self.trim = False
-      self.inaccessible = 0
-      self.inaccessibleTrim = 0
+      self.trim = []
+      self.inaccessible = []
       self.minDistance = math.inf
       self.maxDistance = -math.inf
       self.minDistanceNode = -1
