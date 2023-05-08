@@ -396,8 +396,6 @@ class medialAxis(object):
         
 
 
-
-
 def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
 
     ### Initialize Classes

@@ -40,7 +40,7 @@ def my_function():
     outlet = [-1,0,0]
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
+    file = './testDomains/10pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -68,7 +68,7 @@ def my_function():
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = 0)
 
 
     endTime = time.time()
