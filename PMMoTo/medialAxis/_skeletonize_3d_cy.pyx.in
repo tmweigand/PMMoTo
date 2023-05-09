@@ -101,36 +101,36 @@ def _compute_thin_image(pixel_type[:, :, ::1] img not None):
     while unchanged_borders < num_borders:
         unchanged_borders = 0
         for j in range(num_borders):
-            if j < 2: 
-                pass
-            else:
-                curr_border = borders[j]
-                simple_border_points.clear();
-                find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-                find_simple_point_candidates(img, curr_border, simple_border_points)
+            # if j < 2: 
+            #     pass
+            # else:
+            curr_border = borders[j]
+            simple_border_points.clear();
+            find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
+            find_simple_point_candidates(img, curr_border, simple_border_points)
 
-                #find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-                # sequential re-checking to preserve connectivity when deleting
-                # in a parallel way
-                no_change = True
-                num_border_points = simple_border_points.size()
-                simple_border_points = sorted(simple_border_points, key=lambda d: d['faceCount'],reverse=True)
-                for i in range(num_border_points):
-                    point = simple_border_points[i]
-                    p = point.p
-                    r = point.r
-                    c = point.c
-                    ID = point.ID
-                    if ID == 0:
-                        get_neighborhood(img, p, r, c, neighb)
-                    elif ID > 0:
-                        get_neighborhood_limited(img, p, r, c, ID, neighb)
-                    if is_simple_point(neighb):
-                        img[p, r, c] = j+10
-                        no_change = False
+            #find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
+            # sequential re-checking to preserve connectivity when deleting
+            # in a parallel way
+            no_change = True
+            num_border_points = simple_border_points.size()
+            simple_border_points = sorted(simple_border_points, key=lambda d: d['faceCount'],reverse=True)
+            for i in range(num_border_points):
+                point = simple_border_points[i]
+                p = point.p
+                r = point.r
+                c = point.c
+                ID = point.ID
+                if ID == 0:
+                    get_neighborhood(img, p, r, c, neighb)
+                elif ID > 0:
+                    get_neighborhood_limited(img, p, r, c, ID, neighb)
+                if is_simple_point(neighb):
+                    img[p, r, c] = 0
+                    no_change = False
 
-                if no_change:
-                    unchanged_borders += 1
+            if no_change:
+                unchanged_borders += 1
 
 
     return np.asarray(img)
@@ -186,36 +186,34 @@ def _compute_thin_image_surface(pixel_type[:, :, ::1] img not None):
     while unchanged_borders < num_borders:
         unchanged_borders = 0
         for j in range(num_borders):
-            if j < 2: 
-                pass
-            else:
-                curr_border = borders[j]
-                simple_border_points.clear();
-                find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-                find_simple_point_candidates(img, curr_border, simple_border_points)
+            curr_border = borders[j]
+            simple_border_points.clear();
+            find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
+            find_simple_point_candidates(img, curr_border, simple_border_points)
 
-                #find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-                # sequential re-checking to preserve connectivity when deleting
-                # in a parallel way
-                no_change = True
-                num_border_points = simple_border_points.size()
-                simple_border_points = sorted(simple_border_points, key=lambda d: d['faceCount'],reverse=True)
-                for i in range(num_border_points):
-                    point = simple_border_points[i]
-                    p = point.p
-                    r = point.r
-                    c = point.c
-                    ID = point.ID
-                    if ID == 0:
-                        get_neighborhood(img, p, r, c, neighb)
-                    elif ID > 0:
-                        get_neighborhood_limited(img, p, r, c, ID, neighb)
-                    if is_simple_point(neighb) and not is_surface_point(neighb):
-                        img[p, r, c] = j+10
-                        no_change = False
+            #find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
+            # sequential re-checking to preserve connectivity when deleting
+            # in a parallel way
+            no_change = True
+            num_border_points = simple_border_points.size()
+            #simple_border_points = sorted(simple_border_points, key=lambda d: d['faceCount'],reverse=True)
+            for i in range(num_border_points):
+                point = simple_border_points[i]
+                p = point.p
+                r = point.r
+                c = point.c
+                ID = point.ID
+                if ID == 0:
+                    get_neighborhood(img, p, r, c, neighb)
+                elif ID > 0:
+                    get_neighborhood_limited(img, p, r, c, ID, neighb)
 
-                if no_change:
-                    unchanged_borders += 1
+                if is_simple_point(neighb) and (not is_surface_point(neighb) and is_endpoint_check(neighb) >= 3):
+                    img[p, r, c] = 0
+                    no_change = False
+
+            if no_change:
+                unchanged_borders += 1
 
 
     return np.asarray(img)
@@ -452,7 +450,7 @@ cdef bint is_surface_point(pixel_type neighbors[]) nogil:
 
     # Loop through all octants
     cdef int n,neighSum
-    cdef bint surfacePoint = True
+    cdef bint surfacePoint = True, cond1 = False
     {{for _octant in range(8)}}
 
     n = 1
@@ -465,7 +463,10 @@ cdef bint is_surface_point(pixel_type neighbors[]) nogil:
         neighSum = neighSum + 1
     {{endfor}}
 
-    if (n != 240 or n != 165 or n != 170 or n != 204 or neighSum > 3):
+    if (n == 240 or n == 165 or n == 170 or n == 204):
+        cond1 = True 
+    
+    if (not cond1 and neighSum > 3):
         surfacePoint = False
 
     {{endfor}}

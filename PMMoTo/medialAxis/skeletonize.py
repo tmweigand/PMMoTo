@@ -2,6 +2,7 @@ import numpy as np
 from mpi4py import MPI
 from .. import communication
 from ._skeletonize_3d_cy import _compute_thin_image
+from ._skeletonize_3d_cy import _compute_thin_image_surface
 from .. import nodes
 from .. import sets
 import math
@@ -26,7 +27,7 @@ class medialAxis(object):
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-    def skeletonize_3d(self,connect = False):
+    def skeletonize_3d(self,connect = False, surface = False):
         """Compute the skeleton of a binary image.
 
         Thinning is used to reduce each connected component in a binary image
@@ -74,7 +75,12 @@ class medialAxis(object):
         image_o[image_o != 0] = 1
 
         # do the computation
-        image_o = np.asarray(_compute_thin_image(image_o))
+        if surface:
+            print("SURFACE!!!!")
+            image_o = np.asarray(_compute_thin_image_surface(image_o))
+        else:
+            image_o = np.asarray(_compute_thin_image(image_o))
+
         dim = image_o.shape
 
         ### Grab Medial Axis with Single and Two Buffer to 
@@ -409,7 +415,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
     sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
 
     ### Determine MA
-    sDMA.skeletonize_3d(connect)
+    sDMA.skeletonize_3d(connect,surface = True)
     
     if connect:
 

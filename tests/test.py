@@ -34,8 +34,8 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2]
-    nodes = [51,51,51]
-    boundaries = [0,0,0]
+    nodes = [351,351,351]
+    boundaries = [2,2,2]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
     # rLookupFile = './rLookups/PA.rLookup'
@@ -49,8 +49,8 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
-    testAlgo = True
+    testSerial = False
+    testAlgo = False
 
     pC = [143]
 
@@ -68,7 +68,7 @@ def my_function():
     rad = 0.1
     sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = 0)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = False,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -76,7 +76,7 @@ def my_function():
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA,table=sDMAL.nodeTable)
+    PMMoTo.saveGridData("dataOut/gridSurface",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
@@ -90,7 +90,7 @@ def my_function():
                 'numBoundaries': 'numBoundaries',
                 'globalPathID':'globalPathID'}
     
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
+    PMMoTo.saveSetData("dataOut/setSurface",rank,domain,sDL,sDMAL,**setSaveDict)
 
 
     if testSerial:
@@ -179,7 +179,7 @@ def my_function():
                 realDT = edt.edt3d(gridOut, anisotropy=(domain.dX, domain.dY, domain.dZ))
                 edtV,_ = distance_transform_edt(gridOut,sampling=[domain.dX, domain.dY, domain.dZ],return_indices=True)
                 gridCopy = np.copy(gridOut)
-                realMA = PMMoTo.medialAxis.skeletonize._compute_thin_image(gridCopy)
+                realMA = PMMoTo.medialAxis.skeletonize._compute_thin_image_surface(gridCopy)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
