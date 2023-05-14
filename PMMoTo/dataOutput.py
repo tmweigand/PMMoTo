@@ -69,14 +69,16 @@ def saveGridData(fileName,rank,Domain,subDomain,**kwargs):
             )
 
 
-def saveSetData(fileName,rank,Domain,subDomain,subDomainMedialAxis,**kwargs):
+def saveSetData(fileName,rank,Domain,subDomain,setList,**kwargs):
 
     if rank == 0:
         checkFilePath(fileName)
     comm.barrier()
 
     ### Place Set Values in Arrays
-    dim = np.sum(subDomainMedialAxis.MA)
+    dim = 0
+    for ss in range(0,setList.setCount):
+        dim = dim + setList.Sets[ss].numNodes
     x = np.zeros(dim)
     y = np.zeros(dim)
     z = np.zeros(dim)
@@ -90,12 +92,12 @@ def saveSetData(fileName,rank,Domain,subDomain,subDomainMedialAxis,**kwargs):
     ### Handle kwargs
     for key, value in kwargs.items():
 
-        if not hasattr(subDomainMedialAxis.Sets[0], value):
+        if not hasattr(setList.Sets[0], value):
             if rank == 0:
                 print("Error: Cannot save set data as kwarg %s is not an attribute in Set" %value)
             communication.raiseError()
 
-        dataType = type(getattr(subDomainMedialAxis.Sets[0],value))
+        dataType = type(getattr(setList.Sets[0],value))
         if dataType == bool: ### pyectk does not support bool?
             dataType = np.uint8
         pointData[key] = np.zeros(dim,dtype=dataType)
@@ -103,14 +105,15 @@ def saveSetData(fileName,rank,Domain,subDomain,subDomainMedialAxis,**kwargs):
 
     
     c = 0
-    for ss in range(0,subDomainMedialAxis.setCount):
-        for no in subDomainMedialAxis.Sets[ss].nodes:
+    for ss in range(0,setList.setCount):
+        for no in setList.Sets[ss].nodes:
             x[c] = subDomain.x[no[0]]
             y[c] = subDomain.y[no[1]]
             z[c] = subDomain.z[no[2]]
-            globalID[c] = subDomainMedialAxis.Sets[ss].globalID
+
+            globalID[c] = setList.Sets[ss].globalID
             for key, value in kwargs.items():
-                pointData[key][c] = getattr(subDomainMedialAxis.Sets[ss],value)
+                pointData[key][c] = getattr(setList.Sets[ss],value)
             c = c + 1
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."

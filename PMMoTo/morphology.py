@@ -25,7 +25,7 @@ class Morphology(object):
         x = np.linspace(-self.structRatio[0]*self.Domain.dX,self.structRatio[0]*self.Domain.dX,self.structRatio[0]*2+1)
         y = np.linspace(-self.structRatio[1]*self.Domain.dY,self.structRatio[1]*self.Domain.dY,self.structRatio[1]*2+1)
         z = np.linspace(-self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*2+1)
-
+        
         xg,yg,zg = np.meshgrid(x,y,z,indexing='ij')
         s = xg**2 + yg**2 + zg**2
 
@@ -39,6 +39,11 @@ class Morphology(object):
         self.gridOut = gridOut[self.halo[1]:dim[0]-self.halo[0],
                                self.halo[3]:dim[1]-self.halo[2],
                                self.halo[5]:dim[2]-self.halo[4]]
+        self.gridOutEDT = self.gridOutEDT[self.halo[1]:dim[0]-self.halo[0],
+                               self.halo[3]:dim[1]-self.halo[2],
+                               self.halo[5]:dim[2]-self.halo[4]]
+        self.gridOut = np.ascontiguousarray(self.gridOut)
+        self.gridOutEDT  = np.ascontiguousarray(self.gridOutEDT )
 
 
 
