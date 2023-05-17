@@ -34,13 +34,13 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2]
-    nodes = [351,351,351]
-    boundaries = [2,2,2]
+    nodes = [151,151,151]
+    boundaries = [0,2,2]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/10pack.out'
+    file = './testDomains/50pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -48,11 +48,11 @@ def my_function():
 
     numSubDomains = np.prod(subDomains)
 
-    drain = False
+    drain = True
     testSerial = False
     testAlgo = False
 
-    pC = [143]
+    pC = [140,160]
 
     startTime = time.time()
 
@@ -63,12 +63,15 @@ def my_function():
 
     cutoff = 0.006
     if drain:
-        drainL,_ = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
+        drainL,morphL = PMMoTo.multiPhase.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL,save=True)
 
-    rad = 0.1
-    sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
+    #rad = 0.1
+    #sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = False,cutoff = cutoff)
+    #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
+
+
+    #sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -76,22 +79,28 @@ def my_function():
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/gridSurface",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA)
+    #PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sDEDTL.EDT,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
 
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
-                'trim' :'trim',
                 'boundary': 'boundary',
-                'localID': 'localID',
-                'type': 'type',
-                'numBoundaries': 'numBoundaries',
-                'globalPathID':'globalPathID'}
-    
-    PMMoTo.saveSetData("dataOut/setSurface",rank,domain,sDL,sDMAL,**setSaveDict)
+                'localID': 'localID'}
 
+    # setSaveDict = {'inlet': 'inlet',
+    #             'outlet':'outlet',
+    #             'trim' :'trim',
+    #             'boundary': 'boundary',
+    #             'localID': 'localID',
+    #             'type': 'type',
+    #             'numBoundaries': 'numBoundaries',
+    #             'globalPathID':'globalPathID'}
+    
+    #PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,drainL,**setSaveDict)
+    
+    #PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
 
     if testSerial:
 

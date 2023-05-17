@@ -85,9 +85,9 @@ ext_modules = []
 ext_modules += [
     Extension("PMMoTo.domainGeneration", ["PMMoTo/domainGeneration.pyx"],include_dirs=['PMMoTo']),
     Extension("PMMoTo.distance", ["PMMoTo/distance.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.drainage", ["PMMoTo/drainage.pyx"],include_dirs=['PMMoTo']),
     Extension("PMMoTo.nodes", ["PMMoTo/nodes.pyx"],include_dirs=['PMMoTo']),
     Extension("PMMoTo.sets", ["PMMoTo/sets.pyx"],include_dirs=['PMMoTo']),
+    Extension("PMMoTo.multiPhase.drainage", ["PMMoTo/multiPhase/drainage.pyx"],include_dirs=['PMMoTo','PMMoTo/multiPhase']),
     Extension("PMMoTo.medialAxis._skeletonize_3d_cy", ["PMMoTo/medialAxis/_skeletonize_3d_cy.pyx"],include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
 ]
 cmdclass.update({'build_ext': build_ext})
@@ -96,7 +96,7 @@ cmdclass.update({'build_ext': build_ext})
 setup(
     name="PMMoTo",
     version="0.0.1",
-    packages=['PMMoTo','PMMoTo.medialAxis'],
+    packages=['PMMoTo','PMMoTo.medialAxis','PMMoTo.multiPhase'],
     author="Timothy M Weigand",
     description="Porous Media Morphological and Topological Analysis Toolkit",
     long_description=long_description,

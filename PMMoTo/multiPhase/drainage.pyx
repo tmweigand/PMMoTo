@@ -1,6 +1,3 @@
-# cython: profile=True
-# cython: linetrace=True
-
 import math
 import numpy as np
 cimport numpy as cnp
@@ -9,13 +6,13 @@ from libc.stdlib cimport malloc, free
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from . import communication
-from . import distance
-from . import morphology
-from . import nodes
-from . import sets
-from . import dataOutput
-from . import dataRead
+from .. import communication
+from .. import distance
+from .. import morphology
+from .. import nodes
+from .. import sets
+from .. import dataOutput
+from .. import dataRead
 import sys
 
 
