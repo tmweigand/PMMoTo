@@ -33,17 +33,27 @@ class Morphology(object):
 
 
     def morphAdd(self):
+
+        ### Add Reservoir of Phase 1
+        resPad = np.zeros([6],dtype=np.int64)
+        if np.sum(self.subDomain.inlet) != 0 and self.subDomain.boundary:
+            c = 0
+            for n,ID in zip(self.subDomain.inlet,self.subDomain.boundaryID):
+                if n != 0 and n == ID[0]:
+                    resPad[c] = 1
+                c += 1
+                if n != 0 and n == ID[1]:
+                    resPad[c] = 1
+                c += 1
+            self.haloGrid = np.pad(self.haloGrid, ( (resPad[0], resPad[1]), (resPad[2], resPad[3]), (resPad[4], resPad[5]) ), 'constant', constant_values=1)
+
         self.gridOutEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
         gridOut = np.where( (self.gridOutEDT <= self.radius),1,0).astype(np.uint8)
         dim = gridOut.shape
-        self.gridOut = gridOut[self.halo[1]:dim[0]-self.halo[0],
-                               self.halo[3]:dim[1]-self.halo[2],
-                               self.halo[5]:dim[2]-self.halo[4]]
-        self.gridOutEDT = self.gridOutEDT[self.halo[1]:dim[0]-self.halo[0],
-                               self.halo[3]:dim[1]-self.halo[2],
-                               self.halo[5]:dim[2]-self.halo[4]]
+        self.gridOut = gridOut[resPad[0]+self.halo[1]:dim[0]-self.halo[0]-resPad[1],
+                               resPad[2]+self.halo[3]:dim[1]-self.halo[2]-resPad[3],
+                               resPad[4]+self.halo[5]:dim[2]-self.halo[4]-resPad[5]]
         self.gridOut = np.ascontiguousarray(self.gridOut)
-        self.gridOutEDT  = np.ascontiguousarray(self.gridOutEDT )
 
 
 

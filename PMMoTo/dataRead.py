@@ -1,5 +1,10 @@
+import os
 import numpy as np
 import gzip 
+import pyvista as pv
+from mpi4py import MPI
+from . import communication
+comm = MPI.COMM_WORLD
 
 def readPorousMediaXYZR(file):
     
@@ -130,3 +135,27 @@ def readPorousMediaLammpsDump(file, rLookupFile=None):
     domainFile.close()
 
     return domainDim, sphereData
+
+
+def readVTKGrid(rank,size,file):
+    """
+    Read in Parallel VTK File.
+    Size Must Equal Size When File Written
+    """
+    procFiles = os.listdir(file)
+    procFiles.sort()
+    if len(procFiles) != size:
+        if rank == 0:
+            print("Error: Number of Procs Must Be Same As Wehn Written"%len(procfiles))
+        communication.raiseError()
+
+    pFile = file + '/' + procFiles[rank]
+    data = pv.read(pFile)
+    arrayName = data.array_names
+    gridData = np.reshape(data[arrayName[0]],data.dimensions,'F')
+
+    return np.ascontiguousarray(gridData)
+
+
+
+

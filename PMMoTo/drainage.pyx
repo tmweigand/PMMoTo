@@ -14,6 +14,8 @@ from . import distance
 from . import morphology
 from . import nodes
 from . import sets
+from . import dataOutput
+from . import dataRead
 import sys
 
 
@@ -52,7 +54,6 @@ class Drainage(object):
         self.pC = 2.*self.gamma/radius
 
     def probeDistance(self):
-        print(self.probeR)
         self.ind = np.where( (self.edt.EDT >= self.probeR) & (self.subDomain.grid == 1),1,0).astype(np.uint8)
         self.numNWP = np.sum(self.ind)
 
@@ -87,7 +88,7 @@ class Drainage(object):
 
 
 
-def calcDrainage(rank,size,pc,Domain,subDomain,inlet,EDT,info = False):
+def calcDrainage(rank,size,pc,Domain,subDomain,inlet,EDT,info = False, save=False):
 
     ### Loop through all capilarry pressures. ###
     for p in pc:
@@ -110,26 +111,20 @@ def calcDrainage(rank,size,pc,Domain,subDomain,inlet,EDT,info = False):
                 drain.nwpFinal = drain.nwp
             else:
                 drain.Sets,drain.setCount = sets.collectSets(rank,size,drain.ind,1,Domain,subDomain)
-                # nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex,nodeTable = nodes.getNodeInfo(rank,drain.ind,Domain,subDomain,subDomain.Orientation)
-                # drain.Sets,drain.setCount = nodes.getConnectedSets(rank,drain.ind,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex)
-                # if size > 1:
-                #     drain.boundaryData,drain.boundarySets,drain.boundSetCount = sets.getBoundarySets(drain.Sets,drain.setCount,subDomain)
-                #     drain.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,drain.boundaryData)
-                #     drain.matchedSets,_,error = sets.matchProcessorBoundarySets(subDomain,drain.boundaryData,False)
-                #     if error:
-                #         communication.raiseError()
-                #     drainData = [drain.matchedSets,drain.setCount,drain.boundSetCount]
-                #     drainData = comm.gather(drainData, root=0)
-                #     drain.globalIndexStart,drain.globalBoundarySetID = sets.organizeSets(subDomain,size,drainData)
-                #     sets.updateSetID(rank,drain.Sets,drain.globalIndexStart,drain.globalBoundarySetID)
                 drain.getNWP()
                 morphL = morphology.morph(rank,size,Domain,subDomain,drain.nwp,drain.probeR)
                 drain.finalizeNWP(morphL.gridOut)
 
                 numNWPSum = np.zeros(1,dtype=np.uint64)
                 comm.Allreduce( [drain.nwpNodes, MPI.INT], [drain.totalnwpNodes, MPI.INT], op = MPI.SUM )
+
+                if save:
+                    name = "dataOut/twoPhase/phaseDist_pc_" + str(p)
+                    dataOutput.saveMultiPhaseData(name,rank,Domain,subDomain,drain)
+        
         if rank == 0:
             sW = 1.-drain.totalnwpNodes[0]/subDomain.totalPoreNodes[0]
             print("Wetting phase saturation is: %e at pC of %e" %(sW,p))
+        
 
     return drain,morphL
