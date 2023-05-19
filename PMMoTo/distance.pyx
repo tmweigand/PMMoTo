@@ -388,10 +388,13 @@ class EDT(object):
                             own[2][0]:own[2][1]]
         self.distVals,self.distCounts  = np.unique(ownEDT,return_counts=True)
 
-def calcEDT(rank,size,domain,subDomain,grid,stats=False):
+def calcEDT(subDomain,grid,stats=False):
 
-    sDEDT = EDT(Domain = domain, ID = rank, subDomain = subDomain, Orientation = subDomain.Orientation, grid = grid)
-    sDComm = communication.Comm(Domain = domain,subDomain = subDomain,grid = grid)
+    size = subDomain.Domain.numSubDomains
+    rank = subDomain.ID
+
+    sDEDT = EDT(Domain = subDomain.Domain, ID = rank, subDomain = subDomain, Orientation = subDomain.Orientation, grid = grid)
+    sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
 
     sDEDT.genLocalEDT()
     if size > 1:
@@ -435,5 +438,5 @@ def calcEDT(rank,size,domain,subDomain,grid,stats=False):
         sDEDT.maxD = distData[1]
 
 
-    return sDEDT
+    return sDEDT.EDT
 

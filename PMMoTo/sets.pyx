@@ -1068,7 +1068,7 @@ def getConnectedMedialAxis(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeD
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getConnectedSets(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex):
+def getConnectedSets(rank,grid,phase,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex):
   """
   Connects the NxNxN (or NXN) nodes into connected sets.
   1. Inlet
@@ -1077,7 +1077,7 @@ def getConnectedSets(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirecti
   cdef int node,ID,nodeValue,d,oppDir,avail,n,index,bN
   cdef int numNodes,numSetNodes,numNodesCount,numBoundNodes,setCount
 
-  numNodes = np.sum(grid)
+  numNodes = np.count_nonzero(grid==phase)
 
   nodeIndex = np.zeros([numNodes,9],dtype=np.int64)
   cdef cnp.int64_t [:,::1] _nodeIndex
@@ -1203,9 +1203,13 @@ def getConnectedSets(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirecti
 
 
 
-def collectSets(rank,size,grid,phase,Domain,subDomain):
-  nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phase,Domain,subDomain,subDomain.Orientation)
-  Sets,setCount = getConnectedSets(rank,grid,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex)
+def collectSets(grid,phase,subDomain):
+
+  rank = subDomain.rank
+  size = subDomain.size
+
+  nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phase,subDomain.Domain,subDomain,subDomain.Orientation)
+  Sets,setCount = getConnectedSets(rank,grid,phase,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,)
   if size > 1:
     boundaryData,boundarySets,boundSetCount = getBoundarySets(Sets,setCount,subDomain)
     boundaryData = setCOMM(subDomain.Orientation,subDomain,boundaryData)

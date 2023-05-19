@@ -78,8 +78,8 @@ def saveMultiPhaseData(fileName,rank,Domain,subDomain,multiPhase):
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
     fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointData = {"Phases" : multiPhase.nwpFinal}
-    pointDataInfo = {"Phases" : (multiPhase.nwpFinal.dtype, 1)}
+    pointData = {"Phases" : multiPhase.mpGrid}
+    pointDataInfo = {"Phases" : (multiPhase.mpGrid.dtype, 1)}
          
     gridToVTK(fileProc+str(rank), subDomain.x, subDomain.y, subDomain.z,
         start = [subDomain.indexStart[0],subDomain.indexStart[1],subDomain.indexStart[2]],
@@ -111,7 +111,10 @@ def saveMultiPhaseData(fileName,rank,Domain,subDomain,multiPhase):
             pointData=pointDataInfo
             )
 
-def saveSetData(fileName,rank,Domain,subDomain,setList,**kwargs):
+def saveSetData(fileName,subDomain,setList,**kwargs):
+
+    rank = subDomain.ID
+    Domain = subDomain.Domain
 
     if rank == 0:
         checkFilePath(fileName)
@@ -182,4 +185,48 @@ def saveSetData(fileName,rank,Domain,subDomain,setList,**kwargs):
         w.closeGrid()
         w.save()
 
+def saveGrid(fileName,subDomain,grid):
 
+    rank = subDomain.ID
+    Domain = subDomain.Domain
+
+    if rank == 0:
+        checkFilePath(fileName)
+    comm.barrier()
+
+    allInfo = comm.gather([subDomain.indexStart,subDomain.grid.shape],root=0)
+
+    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
+    fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
+    pointData = {"Grid" : grid}
+    pointDataInfo = {"Grid" : (grid.dtype, 1)}
+         
+    gridToVTK(fileProc+str(rank), subDomain.x, subDomain.y, subDomain.z,
+        start = [subDomain.indexStart[0],subDomain.indexStart[1],subDomain.indexStart[2]],
+        pointData = pointData)
+
+    if rank == 0:
+        name = [fileProcLocal]*Domain.numSubDomains
+        starts = [[0,0,0] for _ in range(Domain.numSubDomains)]
+        ends = [[0,0,0] for _ in range(Domain.numSubDomains)]
+        nn = 0
+        for i in range(0,Domain.subDomains[0]):
+            for j in range(0,Domain.subDomains[1]):
+                for k in range(0,Domain.subDomains[2]):
+                    name[nn] = name[nn]+str(nn)+".vtr"
+                    starts[nn][0] = allInfo[nn][0][0]
+                    starts[nn][1] = allInfo[nn][0][1]
+                    starts[nn][2] = allInfo[nn][0][2]
+                    ends[nn][0] = starts[nn][0]+allInfo[nn][1][0]-1
+                    ends[nn][1] = starts[nn][1]+allInfo[nn][1][1]-1
+                    ends[nn][2] = starts[nn][2]+allInfo[nn][1][2]-1
+                    nn = nn + 1
+
+        writeParallelVTKGrid(
+            fileName,
+            coordsData=((Domain.nodes[0], Domain.nodes[1], Domain.nodes[2]), subDomain.x.dtype),
+            starts = starts,
+            ends = ends,
+            sources = name,
+            pointData=pointDataInfo
+            )

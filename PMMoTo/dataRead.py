@@ -146,7 +146,7 @@ def readVTKGrid(rank,size,file):
     procFiles.sort()
     if len(procFiles) != size:
         if rank == 0:
-            print("Error: Number of Procs Must Be Same As Wehn Written"%len(procfiles))
+            print("Error: Number of Procs Must Be Same As When Written"%len(procfiles))
         communication.raiseError()
 
     pFile = file + '/' + procFiles[rank]

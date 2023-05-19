@@ -307,6 +307,8 @@ class subDomain(object):
         self.extendFactor = 0.7
         self.useIndex     = False
         self.ID          = ID
+        self.rank        = ID
+        self.size        = np.prod(subDomains)
         self.subDomains  = subDomains
         self.Domain      = Domain
         self.Orientation = Orientation

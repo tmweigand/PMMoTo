@@ -57,11 +57,12 @@ class Morphology(object):
 
 
 
-def morph(rank,size,Domain,subDomain,grid,radius):
-    sDMorph = Morphology(Domain = Domain,subDomain = subDomain, grid = grid, radius = radius)
-    sDComm = communication.Comm(Domain = Domain,subDomain = subDomain,grid = grid)
+def morph(grid,subDomain,radius):
+
+    sDMorph = Morphology(Domain = subDomain.Domain,subDomain = subDomain, grid = grid, radius = radius)
+    sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
     sDMorph.genStructElem()
     sDMorph.haloGrid,sDMorph.halo = sDComm.haloCommunication(sDMorph.structRatio)
     sDMorph.morphAdd()
 
-    return sDMorph
+    return sDMorph.gridOut
