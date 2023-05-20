@@ -12,7 +12,6 @@ comm = MPI.COMM_WORLD
 """ Solid = 0, Pore = 1 """
 
 """ TO DO:
-           Create Orientationa and Domains files. 
            Switch to pass periodic info and not generate from samples??
            Redo Domain decomposition - Maybe
 """
@@ -31,7 +30,7 @@ class subDomain(object):
         self.indexStart  = np.zeros([3],dtype=np.int64)
         self.subID       = np.zeros([3],dtype=np.int64)
         self.lookUpID    = np.zeros(subDomains,dtype=np.int64)
-        self.buffer      = bufferSize*np.ones([3,2],dtype = np.int64)
+        self.buffer      = bufferSize*np.ones([3,2],dtype = np.int8)
         self.numSubDomains = np.prod(subDomains)
         self.neighborF    = -np.ones(self.Orientation.numFaces,dtype = np.int64)
         self.neighborE    = -np.ones(self.Orientation.numEdges,dtype = np.int64)
@@ -44,14 +43,14 @@ class subDomain(object):
         self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
         self.subDomainSize = np.zeros([3,1])
         self.grid = None
-        self.globalBoundary = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.inlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.outlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.loopInfo = np.zeros([self.Orientation.numFaces+1,3,2],dtype = np.int64)
 
     def getInfo(self):
         """
-        Gather information for each subDomain including ID, boundary information,number of nodes, global index start
+        Gather information for each subDomain including:
+        ID, boundary information,number of nodes, global index start
         """
         n = 0
         for i in range(0,self.subDomains[0]):
@@ -84,9 +83,9 @@ class subDomain(object):
                         self.nodes[0] = self.Domain.subNodes[0]
                         self.nodes[1] = self.Domain.subNodes[1]
                         self.nodes[2] = self.Domain.subNodes[2]
-                        self.indexStart[0] = self.Domain.subNodes[0]*i
-                        self.indexStart[1] = self.Domain.subNodes[1]*j
-                        self.indexStart[2] = self.Domain.subNodes[2]*k
+                        self.indexStart[0] = i * self.Domain.subNodes[0]
+                        self.indexStart[1] = j * self.Domain.subNodes[1]
+                        self.indexStart[2] = k * self.Domain.subNodes[2]
                         if (i == self.subDomains[0]-1):
                             self.nodes[0] += self.Domain.subNodesRem[0]
                         if (j == self.subDomains[1]-1):
@@ -98,27 +97,27 @@ class subDomain(object):
     def getXYZ(self):
         """
         Determine actual coordinate information (x,y,z) and buffer information.
-        If globalBoundary and Domain.boundary == 0, buffer is not added
+        If boundaryID and Domain.boundary == 0, buffer is not added
         Everywhere else a buffer is added
         """
 
-        #####################################################
-        ### Determine if subDomain should not have buffer ###
-        #####################################################
-        if (self.subID[0] == 0 and self.Domain.boundaries[0][0] == 0):
+        #########################################################
+        ###   Determine if subDomain should not have buffer   ###
+        ### Walls (1) and Periodic (2) Boundaries Have Buffer ### 
+        #########################################################
+        if (self.boundaryID[0][0] and self.Domain.boundaries[0][0] == 0):
             self.buffer[0][0] = 0
-        if (self.subID[0] == (self.subDomains[0] - 1) and self.Domain.boundaries[0][1] == 0):
+        if (self.boundaryID[0][1] and self.Domain.boundaries[0][1] == 0):
             self.buffer[0][1] = 0
-        if (self.subID[1] == 0 and self.Domain.boundaries[1] == 0):
+        if (self.boundaryID[1][0] and self.Domain.boundaries[1] == 0):
             self.buffer[1][0] = 0
-        if (self.subID[1] == (self.subDomains[1] - 1) and self.Domain.boundaries[1][0] == 0):
+        if (self.boundaryID[1][1] and self.Domain.boundaries[1][0] == 0):
             self.buffer[1][1] = 0
-        if (self.subID[2] == 0 and self.Domain.boundaries[2][0] == 0):
+        if (self.boundaryID[2][0] and self.Domain.boundaries[2][0] == 0):
             self.buffer[2][0] = 0
-        if (self.subID[2] == (self.subDomains[2] - 1) and self.Domain.boundaries[2][1] == 0):
+        if (self.boundaryID[2][1] and self.Domain.boundaries[2][1] == 0):
             self.buffer[2][1] = 0
         #####################################################
-
 
         ###############################
         ### Get (x,y,z) coordinates ###
@@ -159,7 +158,6 @@ class subDomain(object):
 
         if self.buffer[2][0] != 0:
             self.indexStart[2] = self.indexStart[2] - self.buffer[2][0]
-
 
         self.subDomainSize = [self.x[-1] - self.x[0],
                               self.y[-1] - self.y[0],
@@ -250,25 +248,44 @@ class subDomain(object):
         self.loopInfo[self.Orientation.numFaces][1] = [rangeInfo[1,0],self.grid.shape[1]-rangeInfo[1,1]]
         self.loopInfo[self.Orientation.numFaces][2] = [rangeInfo[2,0],self.grid.shape[2]-rangeInfo[2,1]]
 
+        print(self.ID,self.loopInfo)
+
     def getBoundaryInfo(self):
 
-        for fIndex in self.Orientation.faces:
-            face = self.Orientation.faces[fIndex]['argOrder'][0]
-            fID = self.Orientation.faces[fIndex]['ID'][face]
-            fI = self.Orientation.faces[fIndex]['Index']
+        ###################################
+        ### Determine inlet/outlet Info ###
+        ###################################
+        if (self.boundaryID[0][0] and  self.Domain.inlet[0][0]):
+            self.inlet[0] = True
+        if (self.boundaryID[0][1] and  self.Domain.inlet[0][1]):
+            self.inlet[1] = True
+        if (self.boundaryID[1][0] and  self.Domain.inlet[1][0]):
+            self.inlet[2] = True
+        if (self.boundaryID[1][1] and  self.Domain.inlet[1][1]):
+            self.inlet[3] = True
+        if (self.boundaryID[2][0] and  self.Domain.inlet[2][0]):
+            self.inlet[4] = True
+        if (self.boundaryID[2][1] and  self.Domain.inlet[2][1]):
+            self.inlet[5] = True
 
-            if self.boundaryID[face][fI] != 0:
-                self.globalBoundary[fIndex] = 1
-                if self.Domain.inlet[face][fI] == True and self.boundaryID[face][fI] == True:
-                    self.inlet[fIndex] = True
-                elif self.Domain.outlet[face][fI] == True and self.boundaryID[face][fI] == True:
-                    self.outlet[fIndex] = True
+        if (self.boundaryID[0][0] and  self.Domain.outlet[0][0]):
+            self.outlet[0] = True
+        if (self.boundaryID[0][1] and  self.Domain.outlet[0][1]):
+            self.outlet[1] = True
+        if (self.boundaryID[1][0] and  self.Domain.outlet[1][0]):
+            self.outlet[2] = True
+        if (self.boundaryID[1][1] and  self.Domain.outlet[1][1]):
+            self.outlet[3] = True
+        if (self.boundaryID[2][0] and  self.Domain.outlet[2][0]):
+            self.outlet[4] = True
+        if (self.boundaryID[2][1] and  self.Domain.outlet[2][1]):
+            self.outlet[5] = True            
+        #####################################################
 
     def getNeighbors(self):
         """
         Get the Face, Edge, and Corner Neighbors for Each Domain
         """
-
         lookIDPad = np.pad(self.lookUpID, ( (1, 1), (1, 1), (1, 1)), 'constant', constant_values=-1)
         lookPerI = np.zeros_like(lookIDPad)
         lookPerJ = np.zeros_like(lookIDPad)
@@ -292,39 +309,32 @@ class subDomain(object):
             lookPerK[:,:,0] = 1
             lookPerK[:,:,-1] = -1
 
-        cc = 0
-        for f in self.Orientation.faces.values():
-            cx = f['ID'][0]
-            cy = f['ID'][1]
-            cz = f['ID'][2]
-            self.neighborF[cc]      = lookIDPad[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerF[cc,0] = lookPerI[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerF[cc,1] = lookPerJ[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerF[cc,2] = lookPerK[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            cc = cc + 1
+        for cc,f in enumerate(self.Orientation.faces.values()):
+            cx = f['ID'][0] + self.subID[0] + 1
+            cy = f['ID'][1] + self.subID[1] + 1
+            cz = f['ID'][2] + self.subID[2] + 1
+            self.neighborF[cc]      = lookIDPad[cx,cy,cz]
+            self.neighborPerF[cc,0] = lookPerI[cx,cy,cz]
+            self.neighborPerF[cc,1] = lookPerJ[cx,cy,cz]
+            self.neighborPerF[cc,2] = lookPerK[cx,cy,cz]
 
-        cc = 0
-        for e in self.Orientation.edges.values():
-            cx = e['ID'][0]
-            cy = e['ID'][1]
-            cz = e['ID'][2]
-            self.neighborE[cc]      = lookIDPad[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerE[cc,0] = lookPerI[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerE[cc,1] = lookPerJ[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerE[cc,2] = lookPerK[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            cc = cc + 1
+        for cc,e in enumerate(self.Orientation.edges.values()):
+            cx = e['ID'][0] + self.subID[0] + 1
+            cy = e['ID'][1] + self.subID[1] + 1
+            cz = e['ID'][2] + self.subID[2] + 1
+            self.neighborE[cc]      = lookIDPad[cx,cy,cz]
+            self.neighborPerE[cc,0] = lookPerI[cx,cy,cz]
+            self.neighborPerE[cc,1] = lookPerJ[cx,cy,cz]
+            self.neighborPerE[cc,2] = lookPerK[cx,cy,cz]
 
-
-        cc = 0
-        for c in self.Orientation.corners.values():
-            cx = c['ID'][0]
-            cy = c['ID'][1]
-            cz = c['ID'][2]
-            self.neighborC[cc]      = lookIDPad[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerC[cc,0] = lookPerI[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerC[cc,1] = lookPerJ[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            self.neighborPerC[cc,2] = lookPerK[self.subID[0]+cx+1,self.subID[1]+cy+1,self.subID[2]+cz+1]
-            cc = cc + 1
+        for cc,c in enumerate(self.Orientation.corners.values()):
+            cx = c['ID'][0] + self.subID[0] + 1
+            cy = c['ID'][1] + self.subID[1] + 1
+            cz = c['ID'][2] + self.subID[2] + 1
+            self.neighborC[cc]      = lookIDPad[cx,cy,cz]
+            self.neighborPerC[cc,0] = lookPerI[cx,cy,cz]
+            self.neighborPerC[cc,1] = lookPerJ[cx,cy,cz]
+            self.neighborPerC[cc,2] = lookPerK[cx,cy,cz]
 
         self.lookUpID = lookIDPad
 

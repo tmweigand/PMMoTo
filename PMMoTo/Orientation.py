@@ -17,12 +17,12 @@ class Orientation(object):
         self.sendCSlices = np.empty([self.numCorners,3],dtype=object)
         self.recvCSlices = np.empty([self.numCorners,3],dtype=object)
 
-        self.faces=  {0:{'ID':(1,0,0), 'Index':1, 'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
-                      1:{'ID':(-1,0,0),'Index':0, 'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':1},
-                      2:{'ID':(0,1,0), 'Index':1, 'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
-                      3:{'ID':(0,-1,0),'Index':0, 'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':1},
-                      4:{'ID':(0,0,1), 'Index':1, 'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1},
-                      5:{'ID':(0,0,-1),'Index':0, 'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':1},
+        self.faces=  {0:{'ID':(-1,0,0),'Index':0, 'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':1},
+                      1:{'ID':(1,0,0), 'Index':1, 'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
+                      2:{'ID':(0,-1,0),'Index':0, 'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':1},
+                      3:{'ID':(0,1,0), 'Index':1, 'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
+                      4:{'ID':(0,0,-1),'Index':0, 'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':1},
+                      5:{'ID':(0,0,1), 'Index':1, 'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1}
                       }
         self.edges = {0 :{'ID':(1,1,0),  'oppIndex':5, 'faceIndex':(0,2), 'dir':(0,1)},
                       1 :{'ID':(1,-1,0), 'oppIndex':4, 'faceIndex':(0,3), 'dir':(0,1)},

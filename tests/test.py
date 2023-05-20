@@ -37,7 +37,7 @@ def my_function():
     nodes = [151,151,151]
 
     ## Ordering for Inlet/Outlet ( (+x,-x) , (+y,-y) , (+z,-z) )
-    boundaries = [[0,0],[0,0],[0,0]]
+    boundaries = [[1,1],[1,1],[1,1]]
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -90,7 +90,7 @@ def my_function():
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
+    #sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -128,18 +128,18 @@ def my_function():
             sDEDT = np.empty((numSubDomains), dtype = object)
             if drain:
                 sDDrain = np.empty((numSubDomains), dtype = object)
-            sDMA = np.empty((numSubDomains), dtype = object)
+                sDMA = np.empty((numSubDomains), dtype = object)
             sD[0] = sDL
             sDEDT[0] = sD_EDT
             if drain:
                 sDDrain[0] = drainL
-            sDMA[0] = sDMAL
+                sDMA[0] = sDMAL
             for neigh in range(1,numSubDomains):
                 sD[neigh] = comm.recv(source=neigh)
                 sDEDT[neigh] = comm.recv(source=neigh)
                 if drain:
                     sDDrain[neigh] = comm.recv(source=neigh)
-                sDMA[neigh] = comm.recv(source=neigh)
+                    sDMA[neigh] = comm.recv(source=neigh)
 
         if rank > 0:
             for neigh in range(1,numSubDomains):
@@ -148,7 +148,7 @@ def my_function():
                     comm.send(sD_EDT,dest=0)
                     if drain:
                         comm.send(drainL,dest=0)
-                    comm.send(sDMAL,dest=0)
+                        comm.send(sDMAL,dest=0)
 
 
         if rank==0:
@@ -304,21 +304,21 @@ def my_function():
                 print("LI EDT Error Norm 2",np.max(diffEDT2) )
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
 
-                checkMA = np.zeros_like(realDT)
-                n = 0
-                for i in range(0,subDomains[0]):
-                    for j in range(0,subDomains[1]):
-                        for k in range(0,subDomains[2]):
-                            checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
-                                     sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
-                                     sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
-                                     = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
-                                                    sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
-                                                    sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
-                            n = n + 1
+                # checkMA = np.zeros_like(realDT)
+                # n = 0
+                # for i in range(0,subDomains[0]):
+                #     for j in range(0,subDomains[1]):
+                #         for k in range(0,subDomains[2]):
+                #             checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
+                #                      sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
+                #                      sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
+                #                      = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
+                #                                     sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
+                #                                     sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
+                #             n = n + 1
 
-                diffMA = np.abs(realMA-checkMA)
-                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+                # diffMA = np.abs(realMA-checkMA)
+                # print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
 
 
