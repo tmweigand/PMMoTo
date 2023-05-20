@@ -1203,12 +1203,14 @@ def getConnectedSets(rank,grid,phase,nodeInfo,nodeInfoIndex,nodeDirections,nodeD
 
 
 
-def collectSets(grid,phase,subDomain):
+def collectSets(grid,phase,inlet,outlet,subDomain):
 
-  rank = subDomain.rank
+  rank = subDomain.ID
   size = subDomain.size
 
-  nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phase,subDomain.Domain,subDomain,subDomain.Orientation)
+  print("collect",rank,phase,inlet)
+
+  nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phase,inlet,outlet,subDomain.Domain,subDomain,subDomain.Orientation)
   Sets,setCount = getConnectedSets(rank,grid,phase,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,)
   if size > 1:
     boundaryData,boundarySets,boundSetCount = getBoundarySets(Sets,setCount,subDomain)

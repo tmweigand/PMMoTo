@@ -5,6 +5,8 @@ import edt
 import math
 comm = MPI.COMM_WORLD
 
+from . import dataOutput
+
 class Morphology(object):
     def __init__(self,Domain,subDomain,grid,radius):
         self.Domain = Domain
@@ -32,20 +34,20 @@ class Morphology(object):
         self.structElem = np.array(s <= self.radius * self.radius)
 
 
-    def morphAdd(self):
+    def morphAdd(self,inlet):
 
         ### Add Reservoir of Phase 1
         resPad = np.zeros([6],dtype=np.int64)
-        if np.sum(self.subDomain.inlet) != 0 and self.subDomain.boundary:
+        if np.sum(inlet) > 0:
             c = 0
-            for n,ID in zip(self.subDomain.inlet,self.subDomain.boundaryID):
-                if n != 0 and n == ID[0]:
+            for c,n in enumerate(inlet):
+                if n == 1:
                     resPad[c] = 1
-                c += 1
-                if n != 0 and n == ID[1]:
-                    resPad[c] = 1
-                c += 1
-            self.haloGrid = np.pad(self.haloGrid, ( (resPad[0], resPad[1]), (resPad[2], resPad[3]), (resPad[4], resPad[5]) ), 'constant', constant_values=1)
+
+
+            print(self.subDomain.ID,inlet,resPad)
+
+            self.haloGrid = np.pad(self.haloGrid, ( (resPad[1], resPad[0]), (resPad[3], resPad[2]), (resPad[5], resPad[4]) ), 'constant', constant_values=1)
 
         self.gridOutEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
         gridOut = np.where( (self.gridOutEDT <= self.radius),1,0).astype(np.uint8)
@@ -57,12 +59,12 @@ class Morphology(object):
 
 
 
-def morph(grid,subDomain,radius):
+def morph(grid,inlet,subDomain,radius):
 
     sDMorph = Morphology(Domain = subDomain.Domain,subDomain = subDomain, grid = grid, radius = radius)
     sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
     sDMorph.genStructElem()
     sDMorph.haloGrid,sDMorph.halo = sDComm.haloCommunication(sDMorph.structRatio)
-    sDMorph.morphAdd()
+    sDMorph.morphAdd(inlet)
 
     return sDMorph.gridOut

@@ -527,7 +527,7 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
 
       ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
       tempMA,neighMA = sDMA.genMAArrays()
-      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,Domain,subDomain,subDomain.Orientation)
+      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,subDomain.inlet,subDomain.outlet,Domain,subDomain,subDomain.Orientation)
       sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,subDomain,subDomain.Orientation,sDMA.nodeInfo)
       sDMA.MA = np.ascontiguousarray(tempMA)
       

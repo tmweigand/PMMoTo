@@ -120,52 +120,56 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
         checkFilePath(fileName)
     comm.barrier()
 
+    procSetCounts = comm.gather(setList.setCount,root=0)
+
     ### Place Set Values in Arrays
-    dim = 0
-    for ss in range(0,setList.setCount):
-        dim = dim + setList.Sets[ss].numNodes
-    x = np.zeros(dim)
-    y = np.zeros(dim)
-    z = np.zeros(dim)
-    setRank = rank*np.ones(dim,dtype=np.uint8)
-    globalID = np.zeros(dim,dtype=np.uint64)
-    pointData = {"set" : setRank, "globalID" : globalID}
-    pointDataInfo = {"set" : (setRank.dtype, 1),
-                    "globalID" : (globalID.dtype, 1)
-                    }
+    if setList.setCount > 0:
+        dim = 0
+        for ss in range(0,setList.setCount):
+            dim = dim + setList.Sets[ss].numNodes
+        x = np.zeros(dim)
+        y = np.zeros(dim)
+        z = np.zeros(dim)
+        setRank = rank*np.ones(dim,dtype=np.uint8)
+        globalID = np.zeros(dim,dtype=np.uint64)
+        pointData = {"set" : setRank, "globalID" : globalID}
+        pointDataInfo = {"set" : (setRank.dtype, 1),
+                        "globalID" : (globalID.dtype, 1)
+                        }
 
-    ### Handle kwargs
-    for key, value in kwargs.items():
+        ### Handle kwargs
+        for key, value in kwargs.items():
 
-        if not hasattr(setList.Sets[0], value):
-            if rank == 0:
-                print("Error: Cannot save set data as kwarg %s is not an attribute in Set" %value)
-            communication.raiseError()
+            if not hasattr(setList.Sets[0], value):
+                if rank == 0:
+                    print("Error: Cannot save set data as kwarg %s is not an attribute in Set" %value)
+                communication.raiseError()
 
-        dataType = type(getattr(setList.Sets[0],value))
-        if dataType == bool: ### pyectk does not support bool?
-            dataType = np.uint8
-        pointData[key] = np.zeros(dim,dtype=dataType)
-        pointDataInfo[key] = (pointData[key].dtype,1)
+            dataType = type(getattr(setList.Sets[0],value))
+            if dataType == bool: ### pyectk does not support bool?
+                dataType = np.uint8
+            pointData[key] = np.zeros(dim,dtype=dataType)
+            pointDataInfo[key] = (pointData[key].dtype,1)
 
     
-    c = 0
-    for ss in range(0,setList.setCount):
-        for no in setList.Sets[ss].nodes:
-            x[c] = subDomain.x[no[0]]
-            y[c] = subDomain.y[no[1]]
-            z[c] = subDomain.z[no[2]]
+        c = 0
+        for ss in range(0,setList.setCount):
+            for no in setList.Sets[ss].nodes:
+                x[c] = subDomain.x[no[0]]
+                y[c] = subDomain.y[no[1]]
+                z[c] = subDomain.z[no[2]]
 
-            globalID[c] = setList.Sets[ss].globalID
-            for key, value in kwargs.items():
-                pointData[key][c] = getattr(setList.Sets[ss],value)
-            c = c + 1
+                globalID[c] = setList.Sets[ss].globalID
+                for key, value in kwargs.items():
+                    pointData[key][c] = getattr(setList.Sets[ss],value)
+                c = c + 1
 
-    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
-    fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointsToVTK(fileProc+str(rank), x,y,z,
-        data = pointData 
-        )
+        fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
+        fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
+        pointsToVTK(fileProc+str(rank), x,y,z,
+            data = pointData 
+            )
+
 
     if rank==0:
         w = vtk.VtkParallelFile(fileName, vtk.VtkPUnstructuredGrid)
@@ -176,9 +180,11 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
         w.addHeader("points", dtype = x.dtype, ncomp=3)
         w.closeElement("PPoints")
 
-        name = [fileProcLocal]*Domain.numSubDomains
+        procsWithSets = np.count_nonzero(np.array(procSetCounts)>0)
+        name = [fileProcLocal]*procsWithSets
         for nn in range(Domain.numSubDomains):
-            name[nn] = name[nn]+str(nn)+".vtu"
+            if procSetCounts[nn] > 0:
+                name[nn] = name[nn]+str(nn)+".vtu"
 
         for s in name:
             w.addPiece(start=None,end=None,source=s)
@@ -230,3 +236,14 @@ def saveGrid(fileName,subDomain,grid):
             sources = name,
             pointData=pointDataInfo
             )
+
+
+
+def saveGridOneProc(fileName,x,y,z,grid):
+
+    checkFilePath(fileName)
+    pointData = {"Grid" : grid}
+         
+    gridToVTK(fileName, x, y, z,
+        start = [0,0,0],
+        pointData = pointData)

@@ -90,7 +90,7 @@ cdef int getBoundaryIDReference(cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getNodeInfo(rank,grid,phase,Domain,subDomain,Orientation):
+def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
@@ -172,8 +172,8 @@ def getNodeInfo(rank,grid,phase,Domain,subDomain,Orientation):
     bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
     perFace  = subDomain.neighborPerF[fIndex]
     perAny = perFace.any()
-    sInlet = subDomain.inlet[fIndex]
-    sOutlet = subDomain.outlet[fIndex]
+    sInlet = inlet[fIndex]
+    sOutlet = outlet[fIndex]
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
