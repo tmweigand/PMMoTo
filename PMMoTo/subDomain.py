@@ -1,13 +1,12 @@
 import numpy as np
 from mpi4py import MPI
+comm = MPI.COMM_WORLD
+
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
 from . import communication
 from . import Orientation
 from . import Domain
-import sys
-import pdb
-comm = MPI.COMM_WORLD
 
 """ Solid = 0, Pore = 1 """
 
@@ -167,7 +166,7 @@ class subDomain(object):
     def gridCheck(self):
         if (np.sum(self.grid) == np.prod(self.nodes)):
             print("This code requires at least 1 solid voxel in each subdomain. Please reorder processors!")
-            sys.exit()
+            communication.raiseError
 
 
     def genDomainSphereData(self,sphereData):
@@ -197,7 +196,7 @@ class subDomain(object):
 
     def getLoopInfo(self):
         """
-        Grap the Loop Information to Cycle through the Boundary Faces
+        Grap the Loop Information to Cycle through the Boundary Faces and Avoid IFs
         """
         rangeInfo = 2*np.ones([3,2],dtype=np.uint8)
         if self.boundaryID[0][0] == 1 and self.Domain.boundaries[0][0] == 0:
@@ -247,8 +246,6 @@ class subDomain(object):
         self.loopInfo[self.Orientation.numFaces][0] = [rangeInfo[0,0],self.grid.shape[0]-rangeInfo[0,1]]
         self.loopInfo[self.Orientation.numFaces][1] = [rangeInfo[1,0],self.grid.shape[1]-rangeInfo[1,1]]
         self.loopInfo[self.Orientation.numFaces][2] = [rangeInfo[2,0],self.grid.shape[2]-rangeInfo[2,1]]
-
-        print(self.ID,self.loopInfo)
 
     def getBoundaryInfo(self):
 

@@ -57,19 +57,33 @@ class multiPhase(object):
         """
 
         for c,fluid in enumerate(self.fluidIDs):
-            self.inlet[fluid] = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
-            self.outlet[fluid] = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
+            ### INLET ###
+            self.inlet[fluid] = np.zeros([self.Orientation.numFaces],dtype = bool)
+            if (self.subDomain.boundaryID[0][0] and  inlets[c][0][0]):
+                self.inlet[fluid][0] = True
+            if (self.subDomain.boundaryID[0][1] and  inlets[c][0][1]):
+                self.inlet[fluid][1] = True
+            if (self.subDomain.boundaryID[1][0] and  inlets[c][1][0]):
+                self.inlet[fluid][2] = True
+            if (self.subDomain.boundaryID[1][1] and  inlets[c][1][1]):
+                self.inlet[fluid][3] = True
+            if (self.subDomain.boundaryID[2][0] and  inlets[c][2][0]):
+                self.inlet[fluid][4] = True
+            if (self.subDomain.boundaryID[2][1] and  inlets[c][2][1]):
+                self.inlet[fluid][5] = True
 
-            for fIndex in self.Orientation.faces:
-                face = self.Orientation.faces[fIndex]['argOrder'][0]
-                fI = self.Orientation.faces[fIndex]['Index']
-
-                if self.subDomain.boundaryID[face][fI] != 0:
-                    self.subDomain.globalBoundary[fIndex] = 1
-                    if inlets[c][face][fI] == True and self.subDomain.boundaryID[face][fI] == True:
-                        self.inlet[fluid][fIndex] = True
-                    if outlets[c][face][fI] == True and self.subDomain.boundaryID[face][fI] == True:
-                        self.outlet[fluid][fIndex] = True        
-
-        
-
+            ### OUTLET ###
+            self.outlet[fluid] = np.zeros([self.Orientation.numFaces],dtype = bool)
+            if (self.subDomain.boundaryID[0][0] and  outlets[c][0][0]):
+                self.outlet[fluid][0] = True
+            if (self.subDomain.boundaryID[0][1] and  outlets[c][0][1]):
+                self.outlet[fluid][1] = True
+            if (self.subDomain.boundaryID[1][0] and  outlets[c][1][0]):
+                self.outlet[fluid][2] = True
+            if (self.subDomain.boundaryID[1][1] and  outlets[c][1][1]):
+                self.outlet[fluid][3] = True
+            if (self.subDomain.boundaryID[2][0] and  outlets[c][2][0]):
+                self.outlet[fluid][4] = True
+            if (self.subDomain.boundaryID[2][1] and  outlets[c][2][1]):
+                self.outlet[fluid][5] = True    
+    

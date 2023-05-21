@@ -438,5 +438,5 @@ def calcEDT(subDomain,grid,stats=False):
         sDEDT.maxD = distData[1]
 
 
-    return sDEDT
+    return sDEDT.EDT
 

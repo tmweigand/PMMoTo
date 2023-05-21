@@ -1,7 +1,6 @@
 import numpy as np
 from mpi4py import MPI
 from scipy.ndimage import distance_transform_edt
-import os
 import edt
 import time
 import PMMoTo
@@ -37,7 +36,7 @@ def my_function():
     nodes = [151,151,151]
 
     ## Ordering for Inlet/Outlet ( (+x,-x) , (+y,-y) , (+z,-z) )
-    boundaries = [[1,1],[1,1],[1,1]]
+    boundaries = [[0,0],[0,0],[0,0]]
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -51,11 +50,11 @@ def my_function():
 
     numSubDomains = np.prod(subDomains)
 
-    drain = False
-    testSerial = True
-    testAlgo = True
+    drain = True
+    testSerial = False
+    testAlgo = False
 
-    pC = [140,160]
+    pC = [140]
 
     startTime = time.time()
 
@@ -72,9 +71,9 @@ def my_function():
     nwOut = [[0,0],[0,0],[0,0]]
     mpOutlets = [wOut,nwOut]
 
-    #twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
-    #twoPhase.initializeMPGrid(constantPhase = 1)
-    #twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
+    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
+    twoPhase.initializeMPGrid(constantPhase = 1)
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
 
     #twoPhase.saveMPGrid(fileName="dataOut/twoPhase/test")
 
@@ -98,7 +97,7 @@ def my_function():
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sD_EDT.EDT)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
+    #PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sD_EDT.EDT)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
@@ -293,9 +292,7 @@ def my_function():
 
                 diffEDT = np.abs(realDT-checkEDT)
                 diffEDT2 = np.abs(edtV-checkEDT)
-                print("checkDT",np.min(checkEDT),np.max(checkEDT))
-                print("realDT",np.min(realDT),np.max(realDT))
-                print("edtV",np.min(edtV),np.max(edtV))
+
                 print("L2 EDT Error Norm",np.linalg.norm(diffEDT) )
                 print("L2 EDT Error Norm 2",np.linalg.norm(diffEDT2) )
                 print("L2 EDT Error Norm 2",np.linalg.norm(realDT-edtV) )

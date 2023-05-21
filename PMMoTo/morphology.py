@@ -42,19 +42,20 @@ class Morphology(object):
             c = 0
             for c,n in enumerate(inlet):
                 if n == 1:
-                    resPad[c] = 1
+                    resPad[c] = 0
 
 
-            print(self.subDomain.ID,inlet,resPad)
+            #print(self.subDomain.ID,inlet,resPad)
 
-            self.haloGrid = np.pad(self.haloGrid, ( (resPad[1], resPad[0]), (resPad[3], resPad[2]), (resPad[5], resPad[4]) ), 'constant', constant_values=1)
+            #self.haloGrid = np.pad(self.haloGrid, ( (resPad[0], resPad[1]), (resPad[2], resPad[3]), (resPad[4], resPad[5]) ), 'constant', constant_values=1)
 
+        print(self.subDomain.ID,np.max(self.haloGrid))
         self.gridOutEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
         gridOut = np.where( (self.gridOutEDT <= self.radius),1,0).astype(np.uint8)
         dim = gridOut.shape
-        self.gridOut = gridOut[resPad[0]+self.halo[1]:dim[0]-self.halo[0]-resPad[1],
-                               resPad[2]+self.halo[3]:dim[1]-self.halo[2]-resPad[3],
-                               resPad[4]+self.halo[5]:dim[2]-self.halo[4]-resPad[5]]
+        self.gridOut = gridOut[resPad[0]+self.halo[0]:dim[0]-self.halo[1]-resPad[1],
+                               resPad[2]+self.halo[2]:dim[1]-self.halo[3]-resPad[3],
+                               resPad[4]+self.halo[4]:dim[2]-self.halo[5]-resPad[5]]
         self.gridOut = np.ascontiguousarray(self.gridOut)
 
 

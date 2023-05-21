@@ -89,8 +89,14 @@ class Comm(object):
    
 
     def haloCommPack(self,size):
+        """
+        Grab The Slices (based on Size) to pack and send to Neighbors
+        for faces, edges and corners
+        """
 
         self.Orientation.getSendSlices(size,self.subDomain.buffer)
+
+        print("SEND",self.subDomain.ID,self.Orientation.sendFSlices)
 
         self.slices = self.Orientation.sendFSlices
         for fIndex in self.Orientation.faces:
@@ -118,13 +124,18 @@ class Comm(object):
                 if neigh not in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
                     self.haloData[self.subDomain.ID]['NeighborProcID'][neigh] = {'Index':{}}
                 self.haloData[self.subDomain.ID]['NeighborProcID'][neigh]['Index'][cIndex] = self.grid[self.slices[cIndex,0],self.slices[cIndex,1],self.slices[cIndex,2]]
-        self.haloGrid = np.pad(self.grid, ( (self.halo[1], self.halo[0]), (self.halo[3], self.halo[2]), (self.halo[5], self.halo[4]) ), 'constant', constant_values=255)
+
+        self.haloGrid = np.pad(self.grid, ( (self.halo[0], self.halo[1]), (self.halo[2], self.halo[3]), (self.halo[4], self.halo[5]) ), 'constant', constant_values=255)
+        print(self.subDomain.ID,self.halo)
 
     def haloComm(self):
         self.dataRecvFace,self.dataRecvEdge,self.dataRecvCorner = subDomainComm(self.Orientation,self.subDomain,self.haloData[self.subDomain.ID]['NeighborProcID'])
 
     def haloCommUnpack(self,size):
         self.Orientation.getRecieveSlices(size,self.halo,self.haloGrid)
+
+
+        print("RECV",self.subDomain.ID,self.Orientation.recvFSlices)
 
         #### Faces ####
         self.slices = self.Orientation.recvFSlices
@@ -211,7 +222,7 @@ class Comm(object):
                     solidsAll[neigh]['orientID'][orientID] = solidsAll[neigh]['orientID'][orientID]-perCorrection
             elif (neigh == self.subDomain.ID):
                 oppIndex = self.Orientation.faces[fIndex]['oppIndex']
-                ssolidsAll[neigh]['orientID'][orientID] = np.append(solidsAll[neigh]['orientID'][orientID],faceSolids[oppIndex]-perCorrection,axis=0)
+                solidsAll[neigh]['orientID'][orientID] = np.append(solidsAll[neigh]['orientID'][orientID],faceSolids[oppIndex]-perCorrection,axis=0)
 
         # #### EDGES ####
         for eIndex in self.Orientation.edges:

@@ -110,7 +110,7 @@ setup(
         'mpi4py>=3.1.3',
         'packaging>=21.3',
         'pykdtree>=0.1',
-        'edt>=2.3.0',
+        'edt>=2.3.1',
         'scipy>=1.9.3',
         'pyevtk>=1.5.0',
         'pyvista>=0.39.1'

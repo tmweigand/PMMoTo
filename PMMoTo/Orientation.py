@@ -17,35 +17,39 @@ class Orientation(object):
         self.sendCSlices = np.empty([self.numCorners,3],dtype=object)
         self.recvCSlices = np.empty([self.numCorners,3],dtype=object)
 
-        self.faces=  {0:{'ID':(-1,0,0),'Index':0, 'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':1},
-                      1:{'ID':(1,0,0), 'Index':1, 'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
-                      2:{'ID':(0,-1,0),'Index':0, 'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':1},
-                      3:{'ID':(0,1,0), 'Index':1, 'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
-                      4:{'ID':(0,0,-1),'Index':0, 'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':1},
-                      5:{'ID':(0,0,1), 'Index':1, 'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1}
+
+        self.faces=  {0:{'ID':(-1, 0, 0),'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir': 1},
+                      1:{'ID':( 1, 0, 0),'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
+                      2:{'ID':( 0,-1, 0),'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir': 1},
+                      3:{'ID':( 0, 1, 0),'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
+                      4:{'ID':( 0, 0,-1),'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir': 1},
+                      5:{'ID':( 0, 0, 1),'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1}
                       }
-        self.edges = {0 :{'ID':(1,1,0),  'oppIndex':5, 'faceIndex':(0,2), 'dir':(0,1)},
-                      1 :{'ID':(1,-1,0), 'oppIndex':4, 'faceIndex':(0,3), 'dir':(0,1)},
-                      2 :{'ID':(1,0,1),  'oppIndex':7, 'faceIndex':(0,4), 'dir':(0,2)},
-                      3 :{'ID':(1,0,-1), 'oppIndex':6, 'faceIndex':(0,5), 'dir':(0,2)},
-                      4 :{'ID':(-1,1,0), 'oppIndex':1, 'faceIndex':(1,2), 'dir':(0,1)},
-                      5 :{'ID':(-1,-1,0),'oppIndex':0, 'faceIndex':(1,3), 'dir':(0,1)},
-                      6 :{'ID':(-1,0,1), 'oppIndex':3, 'faceIndex':(1,4), 'dir':(0,2)},
-                      7 :{'ID':(-1,0,-1),'oppIndex':2, 'faceIndex':(1,5), 'dir':(0,2)},
-                      8 :{'ID':(0,1, 1), 'oppIndex':11,'faceIndex':(2,4), 'dir':(1,2)},
-                      9 :{'ID':(0,1,-1), 'oppIndex':10,'faceIndex':(2,5), 'dir':(1,2)},
-                      10:{'ID':(0,-1,1), 'oppIndex':9, 'faceIndex':(3,4), 'dir':(1,2)},
-                      11:{'ID':(0,-1,-1),'oppIndex':8, 'faceIndex':(3,5), 'dir':(1,2)},
-                       }
-        self.corners = {0:{'ID':(1,1,1),   'oppIndex':7, 'faceIndex':(0,2,4)},
-                        1:{'ID':(1,1,-1),  'oppIndex':6, 'faceIndex':(0,2,5)},
-                        2:{'ID':(1,-1,1),  'oppIndex':5, 'faceIndex':(0,3,4)},
-                        3:{'ID':(1,-1,-1), 'oppIndex':4, 'faceIndex':(0,3,5)},
-                        4:{'ID':(-1,1,1),  'oppIndex':3, 'faceIndex':(1,2,4)},
-                        5:{'ID':(-1,1,-1), 'oppIndex':2, 'faceIndex':(1,2,5)},
-                        6:{'ID':(-1,-1,1), 'oppIndex':1, 'faceIndex':(1,3,4)},
-                        7:{'ID':(-1,-1,-1),'oppIndex':0, 'faceIndex':(1,3,5)},
+        self.edges = {0 :{'ID':(-1, 0,-1), 'oppIndex':5, 'faceIndex':(0,4), 'dir':(0,2)},
+                      1 :{'ID':(-1, 0, 1), 'oppIndex':4, 'faceIndex':(0,5), 'dir':(0,2)},
+                      2 :{'ID':(-1,-1, 0), 'oppIndex':7, 'faceIndex':(0,2), 'dir':(0,1)},
+                      3 :{'ID':(-1, 1, 0), 'oppIndex':6, 'faceIndex':(0,3), 'dir':(0,1)},
+                      4 :{'ID':( 1, 0,-1), 'oppIndex':1, 'faceIndex':(1,4), 'dir':(0,2)},
+                      5 :{'ID':( 1, 0, 1), 'oppIndex':0, 'faceIndex':(1,5), 'dir':(0,2)},
+                      6 :{'ID':( 1,-1, 0), 'oppIndex':3, 'faceIndex':(1,2), 'dir':(0,1)},
+                      7 :{'ID':( 1, 1, 0), 'oppIndex':2, 'faceIndex':(1,3), 'dir':(0,1)},
+                      8 :{'ID':( 0,-1,-1), 'oppIndex':11,'faceIndex':(2,4), 'dir':(1,2)},
+                      9 :{'ID':( 0,-1, 1), 'oppIndex':10,'faceIndex':(2,5), 'dir':(1,2)},
+                      10:{'ID':( 0, 1,-1), 'oppIndex':9, 'faceIndex':(3,4), 'dir':(1,2)},
+                      11:{'ID':( 0, 1, 1), 'oppIndex':8, 'faceIndex':(3,5), 'dir':(1,2)},
+                    }
+
+        self.corners = {0:{'ID':(-1,-1,-1),'oppIndex':7, 'faceIndex':(0,2,4)},
+                        1:{'ID':(-1,-1, 1),'oppIndex':6, 'faceIndex':(0,2,5)},
+                        2:{'ID':(-1, 1,-1),'oppIndex':5, 'faceIndex':(0,3,4)},
+                        3:{'ID':(-1, 1, 1),'oppIndex':4, 'faceIndex':(0,3,5)},
+                        4:{'ID':( 1,-1,-1),'oppIndex':3, 'faceIndex':(1,2,4)}, 
+                        5:{'ID':( 1,-1, 1),'oppIndex':2, 'faceIndex':(1,2,5)},
+                        6:{'ID':( 1, 1,-1),'oppIndex':1, 'faceIndex':(1,3,4)}, 
+                        7:{'ID':( 1, 1,1 ),'oppIndex':0, 'faceIndex':(1,3,5)}
                         }
+        
+
         self.directions ={0 :{'ID':[-1,-1,-1],'index': 0 ,'oppIndex': 25},
                           1 :{'ID':[-1,-1,0], 'index': 1 ,'oppIndex': 24},
                           2 :{'ID':[-1,-1,1], 'index': 2 ,'oppIndex': 23},
