@@ -36,7 +36,7 @@ def my_function():
     nodes = [151,151,151] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -176,29 +176,29 @@ def my_function():
                     pG[2] = 1
 
                 periodic = [False,False,False]
-                if boundaries[0] == 2:
+                if boundaries[0][0] == 2:
                     periodic[0] = True
                     pG[0] = pgSize
-                if boundaries[1] == 2:
+                if boundaries[1][0] == 2:
                     periodic[1] = True
                     pG[1] = pgSize
-                if boundaries[2] == 2:
+                if boundaries[2][0] == 2:
                     periodic[2] = True
                     pG[2] = pgSize
 
                 gridOut = np.pad (gridOut, ((pG[0], pG[0]), (pG[1], pG[1]), (pG[2], pG[2])), 'wrap')
 
-                if boundaries[0][1] == 1:
-                    gridOut[0,:,:] = 0
                 if boundaries[0][0] == 1:
+                    gridOut[0,:,:] = 0
+                if boundaries[0][1] == 1:
                     gridOut[-1,:,:] = 0
-                if boundaries[1][1] == 1:
-                    gridOut[:,0,:] = 0
                 if boundaries[1][0] == 1:
+                    gridOut[:,0,:] = 0
+                if boundaries[1][1] == 1:
                     gridOut[:,-1,:] = 0
-                if boundaries[2][1] == 1:
-                    gridOut[:,:,0] = 0
                 if boundaries[2][0] == 1:
+                    gridOut[:,:,0] = 0
+                if boundaries[2][1] == 1:
                     gridOut[:,:,-1] = 0
 
 
