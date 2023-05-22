@@ -1,13 +1,8 @@
 import numpy as np
 from mpi4py import MPI
-import pdb
-import sys
 import time
 import PMMoTo
-import math
-import edt
-from scipy.ndimage import distance_transform_edt
-from line_profiler import LineProfiler
+
 
 
 def my_function():
@@ -24,25 +19,34 @@ def my_function():
     #nodes = [840,180,180]
     #nodes = [1120,240,240]
     #nodes = [2240,481,481]
-    periodic = [False,False,False]
-    inlet  = [ 1,0,0]
-    outlet = [-1,0,0]
 
-    #pC = [7.69409]
-    pC = [7.69409,7.69409,7.69393,7.60403,7.36005,6.9909,6.53538,6.03352,5.52008,5.02123,
-          4.55421,4.12854,3.74806,3.41274,3.12024,2.86704,2.64914,2.4625,2.30332,2.16814,2.05388,
-          1.95783,1.87764,1.81122,1.75678,1.7127,1.67755,1.65002,1.62893,1.61322,1.60194,
-          1.5943,1.58965,1.58964,1.5872,0.]
+    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[0,0],[0,0],[0,0]]
+    outlet = [[0,0],[0,0],[0,0]]
 
-    numSubDomains = np.prod(subDomains)
+    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
 
-    drain = True
-    test = False
+    numFluidPhases = 2
+    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
 
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,periodic,inlet,outlet,"InkBotle",None,None)
-    sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid)
-    if drain:
-        drainL = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
+    wRes  = [[0,1],[0,0],[0,0]]
+    nwRes = [[1,0],[0,0],[0,0]]
+    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
+
+    wOut  = [[0,0],[0,0],[0,0]]
+    nwOut = [[0,0],[0,0],[0,0]]
+    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+    
+    #Initialize wetting saturated somain
+    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
+    
+    pC = [7.69409]
+    drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+
+
+
+
 
 
 # pC = [7.69409,7.69409,7.69393,7.60403,7.36005,6.9909,6.53538,6.03352,5.52008,5.02123,

@@ -10,11 +10,11 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [2,2,2]
-    nodes = [151,151,151]
+    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
+    nodes = [151,151,151] # Total Number of Nodes in Domain
 
-    ## Ordering for Inlet/Outlet ( (+x,-x) , (+y,-y) , (+z,-z) )
-    boundaries = [[0,0],[0,0],[0,0]]
+    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
+    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -27,17 +27,23 @@ def my_function():
     domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
     numFluidPhases = 2
+    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
 
     wRes  = [[0,1],[0,0],[0,0]]
     nwRes = [[1,0],[0,0],[0,0]]
-    mpInlets = [wRes,nwRes]
+    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
 
     wOut  = [[0,0],[0,0],[0,0]]
     nwOut = [[0,0],[0,0],[0,0]]
-    mpOutlets = [wOut,nwOut]
+    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+    
+    #Initialize wetting saturated somain
+    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
 
-    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
-    twoPhase.initializeMPGrid(constantPhase = 1)
+    #Initialize from previous fluid distribution
+    #inputFile = 'dataOut/twoPhase/twoPhase_pc_140'
+    #twoPhase.initializeMPGrid(inputFile = inputFile) 
+
     twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
 
     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)

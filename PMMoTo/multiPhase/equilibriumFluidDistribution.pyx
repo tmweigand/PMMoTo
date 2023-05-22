@@ -53,6 +53,23 @@ class equilibriumDistribution(object):
             gridOut[n[0],n[1],n[2]] = flag
 
         return gridOut
+
+    def getDisconnectedNodes(self,sets,flag):
+        """
+        Grab from Sets that are on the Inlet Reservoir and create binary grid
+        """
+        nodes = []
+        gridOut = np.zeros_like(self.subDomain.grid)
+
+        for s in sets:
+            if not s.inlet:
+                for node in s.nodes:
+                    nodes.append(node)
+
+        for n in nodes:
+            gridOut[n[0],n[1],n[2]] = flag
+
+        return gridOut
     
     def drainInfo(self,maxEDT,minEDT):
         self.getpC(maxEDT)
@@ -86,16 +103,16 @@ class equilibriumDistribution(object):
         return noPoints
 
 
-def calcDrainage(pc,multiPhase):
+def calcDrainage(pc,mP):
 
     ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
-    poreSpaceDist = distance.calcEDT(multiPhase.subDomain,multiPhase.subDomain.grid)
-    eqDist = equilibriumDistribution(multiPhase)
-    sw = eqDist.calcSaturation(multiPhase.mpGrid,2)
+    poreSpaceDist = distance.calcEDT(mP.subDomain,mP.subDomain.grid)
+    eqDist = equilibriumDistribution(mP)
+    sw = eqDist.calcSaturation(mP.mpGrid,2)
     save = True
 
     setSaveDict = {'inlet': 'inlet',
-                    'outlet':'outlet',
+                   'outlet':'outlet',
                     'boundary': 'boundary',
                     'localID': 'localID'}
 
@@ -110,19 +127,19 @@ def calcDrainage(pc,multiPhase):
             # Step 1 - Reservoirs are not contained in mdGrid or grid but rather added when needed so this step is unnecessary
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
-            ind = np.where( (poreSpaceDist >= eqDist.probeR) & (multiPhase.subDomain.grid == 1),1,0).astype(np.uint8)
+            ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.subDomain.grid == 1),1,0).astype(np.uint8)
 
             fileName = "dataOut/test/indGrid"
-            dataOutput.saveGrid(fileName,multiPhase.subDomain,ind)
+            dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
             # Step 3 - Check if Points were Marked
             continueFlag = eqDist.checkPoints(ind,1)
             if continueFlag:
 
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
-                nwCheck = eqDist.checkPoints(multiPhase.mpGrid,multiPhase.nwID)
+                nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
                 if nwCheck:
-                    nwSets,nwSetCount = sets.collectSets(multiPhase.mpGrid,multiPhase.nwID,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID],multiPhase.subDomain)
+                    nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
                     # setSaveDict = {'inlet': 'inlet',
@@ -130,19 +147,19 @@ def calcDrainage(pc,multiPhase):
                     #                'boundary': 'boundary',
                     #                'localID': 'localID'}
 
-                    # eqDist.Sets = wSets
-                    # eqDist.setCount = wSetCount
+                    # eqDist.Sets = nwSets
+                    # eqDist.setCount = nwSetCount
 
-                    # dataOutput.saveSetData("dataOut/Wset",multiPhase.subDomain,eqDist,**setSaveDict)
+                    # dataOutput.saveSetData("dataOut/Wset",mP.subDomain,eqDist,**setSaveDict)
 
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
-                wCheck = eqDist.checkPoints(multiPhase.mpGrid,multiPhase.wID)
+                wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
                 if wCheck:
-                    wSets,wSetCount = sets.collectSets(multiPhase.mpGrid,multiPhase.wID,multiPhase.inlet[multiPhase.wID],multiPhase.outlet[multiPhase.wID],multiPhase.subDomain)
+                    wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.subDomain)
                     wGrid = eqDist.getInletConnectedNodes(wSets,1)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
-                indSets,indSetCount = sets.collectSets(ind,1,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID],multiPhase.subDomain)
+                indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.subDomain)
                 ind = eqDist.getInletConnectedNodes(indSets,1)
 
                 # Step 3e - no Step 3e ha. 
@@ -156,19 +173,19 @@ def calcDrainage(pc,multiPhase):
                     ind = np.where( (ind == 1) & (wGrid == 1),1,0).astype(np.uint8)
                 
                 # Step 3g
-                morph = morphology.morph(ind,multiPhase.inlet[multiPhase.nwID],multiPhase.subDomain,eqDist.probeR)
+                morph = morphology.morph(ind,mP.inlet[mP.nwID],mP.subDomain,eqDist.probeR)
 
                 # fileName = "dataOut/test/morph"
-                # dataOutput.saveGrid(fileName,multiPhase.subDomain,morph)
+                # dataOutput.saveGrid(fileName,mP.subDomain,morph)
 
-                multiPhase.mpGrid = np.where( (morph == 1) & (wGrid == 1),2,multiPhase.mpGrid)
+                mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)
 
                 # Step 4
-                sw = eqDist.calcSaturation(multiPhase.mpGrid,2)
+                sw = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
                 print(p,sw)
 
             if save:
                 fileName = "dataOut/twoPhase/twoPhase_pc_"+str(p)
-                dataOutput.saveGrid(fileName,multiPhase.subDomain,multiPhase.mpGrid)        
+                dataOutput.saveGrid(fileName,mP.subDomain,mP.mpGrid)        
 
     return eqDist
