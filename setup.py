@@ -87,7 +87,7 @@ ext_modules += [
     Extension("PMMoTo.distance", ["PMMoTo/distance.pyx"],include_dirs=['PMMoTo']),
     Extension("PMMoTo.nodes", ["PMMoTo/nodes.pyx"],include_dirs=['PMMoTo']),
     Extension("PMMoTo.sets", ["PMMoTo/sets.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.multiPhase.drainage", ["PMMoTo/multiPhase/drainage.pyx"],include_dirs=['PMMoTo','PMMoTo/multiPhase']),
+    Extension("PMMoTo.multiPhase.equilibriumFluidDistribution", ["PMMoTo/multiPhase/equilibriumFluidDistribution.pyx"],include_dirs=['PMMoTo','PMMoTo/multiPhase']),
     Extension("PMMoTo.medialAxis._skeletonize_3d_cy", ["PMMoTo/medialAxis/_skeletonize_3d_cy.pyx"],include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
 ]
 cmdclass.update({'build_ext': build_ext})

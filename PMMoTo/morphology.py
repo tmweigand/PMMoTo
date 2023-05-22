@@ -42,14 +42,10 @@ class Morphology(object):
             c = 0
             for c,n in enumerate(inlet):
                 if n == 1:
-                    resPad[c] = 0
+                    resPad[c] = 1
 
+            self.haloGrid = np.pad(self.haloGrid, ( (resPad[0], resPad[1]), (resPad[2], resPad[3]), (resPad[4], resPad[5]) ), 'constant', constant_values=1)
 
-            #print(self.subDomain.ID,inlet,resPad)
-
-            #self.haloGrid = np.pad(self.haloGrid, ( (resPad[0], resPad[1]), (resPad[2], resPad[3]), (resPad[4], resPad[5]) ), 'constant', constant_values=1)
-
-        print(self.subDomain.ID,np.max(self.haloGrid))
         self.gridOutEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
         gridOut = np.where( (self.gridOutEDT <= self.radius),1,0).astype(np.uint8)
         dim = gridOut.shape

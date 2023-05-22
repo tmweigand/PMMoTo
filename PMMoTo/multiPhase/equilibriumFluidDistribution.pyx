@@ -16,7 +16,7 @@ from .. import dataRead
 import sys
 
 
-class Drainage(object):
+class equilibriumDistribution(object):
     def __init__(self,multiPhase):
         self.Domain      = multiPhase.Domain
         self.Orientation = multiPhase.Orientation
@@ -37,7 +37,7 @@ class Drainage(object):
     def getpC(self,radius):
         self.pC = 2.*self.gamma/radius
 
-    def getInletConnectedNodes(self,sets):
+    def getInletConnectedNodes(self,sets,flag):
         """
         Grab from Sets that are on the Inlet Reservoir and create binary grid
         """
@@ -50,7 +50,7 @@ class Drainage(object):
                     nodes.append(node)
 
         for n in nodes:
-            gridOut[n[0],n[1],n[2]] = 1
+            gridOut[n[0],n[1],n[2]] = flag
 
         return gridOut
     
@@ -90,7 +90,8 @@ def calcDrainage(pc,multiPhase):
 
     ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
     poreSpaceDist = distance.calcEDT(multiPhase.subDomain,multiPhase.subDomain.grid)
-    drain = Drainage(multiPhase)
+    eqDist = equilibriumDistribution(multiPhase)
+    sw = eqDist.calcSaturation(multiPhase.mpGrid,2)
     save = True
 
     setSaveDict = {'inlet': 'inlet',
@@ -104,113 +105,60 @@ def calcDrainage(pc,multiPhase):
             sW = 1
         else:
             ### Get Sphere Radius from Pressure
-            drain.getDiameter(p)
+            eqDist.getDiameter(p)
 
             # Step 1 - Reservoirs are not contained in mdGrid or grid but rather added when needed so this step is unnecessary
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
-            ind = np.where( (poreSpaceDist >= drain.probeR) & (multiPhase.subDomain.grid == 1),1,0).astype(np.uint8)
+            ind = np.where( (poreSpaceDist >= eqDist.probeR) & (multiPhase.subDomain.grid == 1),1,0).astype(np.uint8)
 
             fileName = "dataOut/test/indGrid"
             dataOutput.saveGrid(fileName,multiPhase.subDomain,ind)
 
             # Step 3 - Check if Points were Marked
-            continueFlag = drain.checkPoints(ind,1)
+            continueFlag = eqDist.checkPoints(ind,1)
             if continueFlag:
 
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
-                nwCheck = drain.checkPoints(multiPhase.mpGrid,multiPhase.nwID)
+                nwCheck = eqDist.checkPoints(multiPhase.mpGrid,multiPhase.nwID)
                 if nwCheck:
                     nwSets,nwSetCount = sets.collectSets(multiPhase.mpGrid,multiPhase.nwID,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID],multiPhase.subDomain)
-                    nwGrid = drain.getInletConnectedNodes(nwSets)
-
-                    #print(drain.subDomain.ID,nwSetCount,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID])
-
-                    drain.Sets = nwSets
-                    drain.setCount = nwSetCount                    
-                    dataOutput.saveSetData("dataOut/NWset",multiPhase.subDomain,drain,**setSaveDict)
-
-                    fileName = "dataOut/test/nGrid"
-                    dataOutput.saveGrid(fileName,multiPhase.subDomain,nwGrid)
-
+                    nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
-                wCheck = drain.checkPoints(multiPhase.mpGrid,multiPhase.wID)
+                wCheck = eqDist.checkPoints(multiPhase.mpGrid,multiPhase.wID)
                 if wCheck:
                     wSets,wSetCount = sets.collectSets(multiPhase.mpGrid,multiPhase.wID,multiPhase.inlet[multiPhase.wID],multiPhase.outlet[multiPhase.wID],multiPhase.subDomain)
-                    wGrid = drain.getInletConnectedNodes(wSets)
-                    
-                    drain.Sets = wSets
-                    drain.setCount = wSetCount                    
-                    dataOutput.saveSetData("dataOut/test/Wset",multiPhase.subDomain,drain,**setSaveDict)
-
-                    fileName = "dataOut/test/wGrid"
-                    dataOutput.saveGrid(fileName,multiPhase.subDomain,wGrid)
+                    wGrid = eqDist.getInletConnectedNodes(wSets,1)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
-                indSets,indSetCount = sets.collectSets(ind,1,multiPhase.inlet[multiPhase.wID],multiPhase.outlet[multiPhase.wID],multiPhase.subDomain)
-                ind = drain.getInletConnectedNodes(indSets)
-
-                drain.Sets = indSets
-                drain.setCount = indSetCount                    
-                dataOutput.saveSetData("dataOut/test/indSet",multiPhase.subDomain,drain,**setSaveDict)
-
-                fileName = "dataOut/test/indFinal"
-                dataOutput.saveGrid(fileName,multiPhase.subDomain,ind)
+                indSets,indSetCount = sets.collectSets(ind,1,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID],multiPhase.subDomain)
+                ind = eqDist.getInletConnectedNodes(indSets,1)
 
                 # Step 3e - no Step 3e ha. 
 
                 # Step 3f 
                 if wCheck and nwCheck:
-                    ind = np.where( (ind == 1) & (nwGrid == 1) & (wGrid == 1),1,0).astype(np.uint8)
+                    ind = np.where( (ind == 1) & (nwGrid == 0) & (wGrid == 1),1,0).astype(np.uint8)
                 elif nwCheck:
-                    ind = np.where( (ind == 1) & (nwGrid == 1),1,0).astype(np.uint8)
+                    ind = np.where( (ind == 1) & (nwGrid == 0),1,0).astype(np.uint8)
                 elif wCheck:
                     ind = np.where( (ind == 1) & (wGrid == 1),1,0).astype(np.uint8)
-
-                fileName = "dataOut/test/indEnd"
-                dataOutput.saveGrid(fileName,multiPhase.subDomain,ind)
-
                 
                 # Step 3g
-                morph = morphology.morph(ind,multiPhase.inlet[multiPhase.wID],multiPhase.subDomain,drain.probeR)
+                morph = morphology.morph(ind,multiPhase.inlet[multiPhase.nwID],multiPhase.subDomain,eqDist.probeR)
 
-                fileName = "dataOut/test/morph"
-                dataOutput.saveGrid(fileName,multiPhase.subDomain,morph)
+                # fileName = "dataOut/test/morph"
+                # dataOutput.saveGrid(fileName,multiPhase.subDomain,morph)
 
                 multiPhase.mpGrid = np.where( (morph == 1) & (wGrid == 1),2,multiPhase.mpGrid)
 
                 # Step 4
-                sw = drain.calcSaturation(multiPhase.mpGrid,2)
+                sw = eqDist.calcSaturation(multiPhase.mpGrid,2)
                 print(p,sw)
 
             if save:
                 fileName = "dataOut/twoPhase/twoPhase_pc_"+str(p)
-                dataOutput.saveGrid(fileName,multiPhase.subDomain,multiPhase.mpGrid)
+                dataOutput.saveGrid(fileName,multiPhase.subDomain,multiPhase.mpGrid)        
 
-
-
-
-
-        #     drain.probeDistance()
-        #     numNWPSum = np.zeros(1,dtype=np.uint64)
-        #     comm.Allreduce( [drain.numNWP, MPI.INT], [numNWPSum, MPI.INT], op = MPI.SUM )
-        #     if numNWPSum < 1:
-        #         drain.nwp = np.copy(subDomain.grid)
-        #         drain.nwpFinal = drain.nwp
-        #     else:
-        #         drain.Sets,drain.setCount = sets.collectSets(rank,size,drain.ind,1,Domain,subDomain)
-        #         drain.getNWP()
-        #         morphL = morphology.morph(rank,size,Domain,subDomain,drain.nwp,drain.probeR)
-        #         drain.finalizeNWP(morphL.gridOut)
-
-        #         numNWPSum = np.zeros(1,dtype=np.uint64)
-        #         comm.Allreduce( [drain.nwpNodes, MPI.INT], [drain.totalnwpNodes, MPI.INT], op = MPI.SUM )
-
-        
-        # if rank == 0:
-        #     sW = 1.-drain.totalnwpNodes[0]/subDomain.totalPoreNodes[0]
-        #     print("Wetting phase saturation is: %e at pC of %e" %(sW,p))
-        
-
-    return drain
+    return eqDist

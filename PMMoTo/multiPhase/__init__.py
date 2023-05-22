@@ -1,2 +1,2 @@
-from .drainage import calcDrainage
+from .equilibriumFluidDistribution import calcDrainage
 from .multiPhase import *

@@ -169,7 +169,7 @@ class Orientation(object):
                     else:
                         self.recvFSlices[fIndex,n] = slice(None,structRatio[n])
                 else:
-                    self.recvFSlices[fIndex,n] = slice(0+pad[n,1],dim[n]-pad[n,0])
+                    self.recvFSlices[fIndex,n] = slice(0+pad[n,0],dim[n]-pad[n,1])
         #############
 
         #############
@@ -184,7 +184,7 @@ class Orientation(object):
                     else:
                         self.recvESlices[eIndex,n] = slice(None,structRatio[n])
                 else:
-                    self.recvESlices[eIndex,n] = slice(0+pad[n,1],dim[n]-pad[n,0])
+                    self.recvESlices[eIndex,n] = slice(0+pad[n,0],dim[n]-pad[n,1])
         #############
 
         ###############

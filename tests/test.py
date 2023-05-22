@@ -54,7 +54,7 @@ def my_function():
     testSerial = False
     testAlgo = False
 
-    pC = [140]
+    pC = [140,160]
 
     startTime = time.time()
 
@@ -63,8 +63,8 @@ def my_function():
 
     numFluidPhases = 2
 
-    wRes  = [[1,0],[0,0],[0,0]]
-    nwRes = [[0,1],[0,0],[0,0]]
+    wRes  = [[0,1],[0,0],[0,0]]
+    nwRes = [[1,0],[0,0],[0,0]]
     mpInlets = [wRes,nwRes]
 
     wOut  = [[0,0],[0,0],[0,0]]
@@ -75,7 +75,6 @@ def my_function():
     twoPhase.initializeMPGrid(constantPhase = 1)
     twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
 
-    #twoPhase.saveMPGrid(fileName="dataOut/twoPhase/test")
 
     sD_EDT = PMMoTo.calcEDT(sDL,sDL.grid,stats = True)
 
