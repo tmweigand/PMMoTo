@@ -125,6 +125,16 @@ def calcDrainage(pc,multiPhase):
                     nwSets,nwSetCount = sets.collectSets(multiPhase.mpGrid,multiPhase.nwID,multiPhase.inlet[multiPhase.nwID],multiPhase.outlet[multiPhase.nwID],multiPhase.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
+                    # setSaveDict = {'inlet': 'inlet',
+                    #                'outlet':'outlet',
+                    #                'boundary': 'boundary',
+                    #                'localID': 'localID'}
+
+                    # eqDist.Sets = wSets
+                    # eqDist.setCount = wSetCount
+
+                    # dataOutput.saveSetData("dataOut/Wset",multiPhase.subDomain,eqDist,**setSaveDict)
+
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
                 wCheck = eqDist.checkPoints(multiPhase.mpGrid,multiPhase.wID)
                 if wCheck:
