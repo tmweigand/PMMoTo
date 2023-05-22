@@ -36,7 +36,7 @@ def my_function():
     nodes = [151,151,151] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -50,9 +50,9 @@ def my_function():
 
     numSubDomains = np.prod(subDomains)
 
-    drain = True
-    testSerial = False
-    testAlgo = False
+    drain = False
+    testSerial = True
+    testAlgo = True
 
     pC = [140,160]
 
@@ -77,7 +77,7 @@ def my_function():
     twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
 
 
-    sD_EDT = PMMoTo.calcEDT(sDL,sDL.grid,stats = True)
+    sD_EDT = PMMoTo.calcEDT(sDL,sDL.grid,stats = True,sendClass=True)
 
     cutoff = 0.006
     if drain:
@@ -89,7 +89,7 @@ def my_function():
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
 
-    #sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
+    #sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = False,cutoff = cutoff)
 
 
     endTime = time.time()
