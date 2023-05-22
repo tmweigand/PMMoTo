@@ -382,13 +382,43 @@ class EDT(object):
 
   
     def genStats(self):
+        """
+        NEED TO FIX!
+        """
         own = self.subDomain.ownNodes
         ownEDT =  self.EDT[own[0][0]:own[0][1],
                             own[1][0]:own[1][1],
                             own[2][0]:own[2][1]]
         self.distVals,self.distCounts  = np.unique(ownEDT,return_counts=True)
+        # EDTData = [self.ID,sDEDT.distVals,sDEDT.distCounts]
+        # EDTData = comm.gather(EDTData, root=0)
+        # if rank == 0:
+        #     bins = np.empty([])
+        #     for d in EDTData:
+        #         if d[0] == 0:
+        #             bins = d[1]
+        #         else:
+        #             bins = np.append(bins,d[1],axis=0)
+        #         bins = np.unique(bins)
 
-def calcEDT(subDomain,grid,stats=False):
+        #     counts = np.zeros_like(bins,dtype=np.int64)
+        #     for d in EDTData:
+        #         for n in range(0,d[1].size):
+        #             ind = np.where(bins==d[1][n])[0][0]
+        #             counts[ind] = counts[ind] + d[2][n]
+
+        #     stats = np.stack((bins,counts), axis = 1)
+        #     sDEDT.minD = bins[1]
+        #     sDEDT.maxD = bins[-1]
+        #     distData = [sDEDT.minD,sDEDT.maxD]
+        #     print("Minimum distance:",sDEDT.minD,"Maximum distance:",sDEDT.maxD)
+        # else:
+        #     distData = None
+        # distData = comm.bcast(distData, root=0)
+        # sDEDT.minD = distData[0]
+        # sDEDT.maxD = distData[1]
+
+def calcEDT(subDomain,grid,stats=False,sendClass=False):
 
     size = subDomain.Domain.numSubDomains
     rank = subDomain.ID
@@ -407,36 +437,11 @@ def calcEDT(subDomain,grid,stats=False):
         sDEDT.fixInterface()
 
     if stats:
-
         sDEDT.genStats()
-        EDTData = [sDEDT.ID,sDEDT.distVals,sDEDT.distCounts]
-        EDTData = comm.gather(EDTData, root=0)
-        if rank == 0:
-            bins = np.empty([])
-            for d in EDTData:
-                if d[0] == 0:
-                    bins = d[1]
-                else:
-                    bins = np.append(bins,d[1],axis=0)
-                bins = np.unique(bins)
-
-            counts = np.zeros_like(bins,dtype=np.int64)
-            for d in EDTData:
-                for n in range(0,d[1].size):
-                    ind = np.where(bins==d[1][n])[0][0]
-                    counts[ind] = counts[ind] + d[2][n]
-
-            stats = np.stack((bins,counts), axis = 1)
-            sDEDT.minD = bins[1]
-            sDEDT.maxD = bins[-1]
-            distData = [sDEDT.minD,sDEDT.maxD]
-            print("Minimum distance:",sDEDT.minD,"Maximum distance:",sDEDT.maxD)
-        else:
-            distData = None
-        distData = comm.bcast(distData, root=0)
-        sDEDT.minD = distData[0]
-        sDEDT.maxD = distData[1]
 
 
-    return sDEDT.EDT
+    if sendClass:
+        return sDEDT
+    else:
+        return sDEDT.EDT
 
