@@ -108,9 +108,9 @@ class subDomain(object):
             self.buffer[0][0] = 0
         if (self.boundaryID[0][1] and self.Domain.boundaries[0][1] == 0):
             self.buffer[0][1] = 0
-        if (self.boundaryID[1][0] and self.Domain.boundaries[1] == 0):
+        if (self.boundaryID[1][0] and self.Domain.boundaries[1][0] == 0):
             self.buffer[1][0] = 0
-        if (self.boundaryID[1][1] and self.Domain.boundaries[1][0] == 0):
+        if (self.boundaryID[1][1] and self.Domain.boundaries[1][1] == 0):
             self.buffer[1][1] = 0
         if (self.boundaryID[2][0] and self.Domain.boundaries[2][0] == 0):
             self.buffer[2][0] = 0
