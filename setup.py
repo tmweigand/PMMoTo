@@ -73,8 +73,13 @@ def process_tempita_pyx(fromfile):
         f.write(pyxcontent)
 
 
-
-cython(['PMMoTo/medialAxis/medialExtractionFunctions.pyx.in'])
+medialFunctions = 'PMMoTo/medialAxis/medialExtractionFunctions.pyx.in'
+medialPYX = os.path.splitext(medialFunctions)[0]
+if os.path.isfile(medialPYX):
+    if os.path.getmtime(medialPYX) < os.path.getmtime(medialFunctions):
+        cython([medialFunctions])
+else:
+    cython([medialFunctions])
 
 with open("README.md", 'r') as f:
     long_description = f.read()
