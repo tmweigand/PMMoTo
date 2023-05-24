@@ -33,17 +33,17 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [151,151,151] # Total Number of Nodes in Domain
+    nodes = [150,150,150] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
+    file = './testDomains/10pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -89,7 +89,7 @@ def my_function():
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
 
-    #sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = False,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sD_EDT.EDT,connect = False,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -97,7 +97,7 @@ def my_function():
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    #PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sD_EDT.EDT)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sD_EDT.EDT,MA=sDMAL.MA)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
@@ -127,18 +127,18 @@ def my_function():
             sDEDT = np.empty((numSubDomains), dtype = object)
             if drain:
                 sDDrain = np.empty((numSubDomains), dtype = object)
-                sDMA = np.empty((numSubDomains), dtype = object)
+            sDMA = np.empty((numSubDomains), dtype = object)
             sD[0] = sDL
             sDEDT[0] = sD_EDT
             if drain:
                 sDDrain[0] = drainL
-                sDMA[0] = sDMAL
+            sDMA[0] = sDMAL
             for neigh in range(1,numSubDomains):
                 sD[neigh] = comm.recv(source=neigh)
                 sDEDT[neigh] = comm.recv(source=neigh)
                 if drain:
                     sDDrain[neigh] = comm.recv(source=neigh)
-                    sDMA[neigh] = comm.recv(source=neigh)
+                sDMA[neigh] = comm.recv(source=neigh)
 
         if rank > 0:
             for neigh in range(1,numSubDomains):
@@ -147,7 +147,7 @@ def my_function():
                     comm.send(sD_EDT,dest=0)
                     if drain:
                         comm.send(drainL,dest=0)
-                        comm.send(sDMAL,dest=0)
+                    comm.send(sDMAL,dest=0)
 
 
         if rank==0:
@@ -205,7 +205,7 @@ def my_function():
                 realDT = edt.edt3d(gridOut, anisotropy=(domain.dX, domain.dY, domain.dZ))
                 edtV,_ = distance_transform_edt(gridOut,sampling=[domain.dX, domain.dY, domain.dZ],return_indices=True)
                 gridCopy = np.copy(gridOut)
-                realMA = PMMoTo.medialAxis.skeletonize._compute_thin_image_surface(gridCopy)
+                realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
@@ -301,21 +301,24 @@ def my_function():
                 print("LI EDT Error Norm 2",np.max(diffEDT2) )
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
 
-                # checkMA = np.zeros_like(realDT)
-                # n = 0
-                # for i in range(0,subDomains[0]):
-                #     for j in range(0,subDomains[1]):
-                #         for k in range(0,subDomains[2]):
-                #             checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
-                #                      sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
-                #                      sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
-                #                      = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
-                #                                     sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
-                #                                     sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
-                #             n = n + 1
+                checkMA = np.zeros_like(realDT)
+                n = 0
+                for i in range(0,subDomains[0]):
+                    for j in range(0,subDomains[1]):
+                        for k in range(0,subDomains[2]):
+                            checkMA[sD[n].indexStart[0]+sD[n].buffer[0][0]: sD[n].indexStart[0]+sD[n].nodes[0]-sD[n].buffer[0][1],
+                                     sD[n].indexStart[1]+sD[n].buffer[1][0]: sD[n].indexStart[1]+sD[n].nodes[1]-sD[n].buffer[1][1],
+                                     sD[n].indexStart[2]+sD[n].buffer[2][0]: sD[n].indexStart[2]+sD[n].nodes[2]-sD[n].buffer[2][1]] \
+                                     = sDMA[n].MA[sD[n].buffer[0][0] : sD[n].grid.shape[0] - sD[n].buffer[0][1],
+                                                    sD[n].buffer[1][0] : sD[n].grid.shape[1] - sD[n].buffer[1][1],
+                                                    sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
+                            n = n + 1
 
-                # diffMA = np.abs(realMA-checkMA)
-                # print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+                diffMA = np.abs(realMA-checkMA)
+                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+
+
+                PMMoTo.saveGridOneProc("dataOut/oneProcGrid",x,y,z,realMA)
 
 
 

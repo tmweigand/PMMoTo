@@ -74,7 +74,7 @@ def process_tempita_pyx(fromfile):
 
 
 
-cython(['PMMoTo/medialAxis/_skeletonize_3d_cy.pyx.in'])
+cython(['PMMoTo/medialAxis/medialExtractionFunctions.pyx.in'])
 
 with open("README.md", 'r') as f:
     long_description = f.read()
@@ -83,12 +83,27 @@ cmdclass = {}
 ext_modules = []
 
 ext_modules += [
-    Extension("PMMoTo.domainGeneration", ["PMMoTo/domainGeneration.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.distance", ["PMMoTo/distance.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.nodes", ["PMMoTo/nodes.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.sets", ["PMMoTo/sets.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.multiPhase.equilibriumFluidDistribution", ["PMMoTo/multiPhase/equilibriumFluidDistribution.pyx"],include_dirs=['PMMoTo','PMMoTo/multiPhase']),
-    Extension("PMMoTo.medialAxis._skeletonize_3d_cy", ["PMMoTo/medialAxis/_skeletonize_3d_cy.pyx"],include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("PMMoTo.domainGeneration", 
+              ["PMMoTo/domainGeneration.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.distance", 
+              ["PMMoTo/distance.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.nodes", 
+              ["PMMoTo/nodes.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.sets", 
+              ["PMMoTo/sets.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.multiPhase.equilibriumFluidDistribution", 
+              ["PMMoTo/multiPhase/equilibriumFluidDistribution.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/multiPhase']),
+    Extension("PMMoTo.medialAxis.medialExtraction", 
+              ["PMMoTo/medialAxis/medialExtraction.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("PMMoTo.medialAxis.medialExtractionFunctions", 
+              ["PMMoTo/medialAxis/medialExtractionFunctions.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
 ]
 cmdclass.update({'build_ext': build_ext})
 

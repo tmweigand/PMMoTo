@@ -1,2 +1,2 @@
-from .skeletonize import medialAxisEval
-from .skeletonize import medialSurfaceEval
+from .medialAxis import medialAxisEval
+from .medialSurface import medialSurfaceEval

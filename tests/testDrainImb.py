@@ -11,7 +11,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [151,151,151] # Total Number of Nodes in Domain
+    nodes = [101,101,101] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic

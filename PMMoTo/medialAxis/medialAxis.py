@@ -1,104 +1,10 @@
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from ._skeletonize_3d_cy import _compute_thin_image
-from ._skeletonize_3d_cy import _compute_thin_image_surface
+from .medialExtraction import _compute_thin_image
 from .. import nodes
 from .. import sets
-import math
 comm = MPI.COMM_WORLD
-
-class medialSurface(object):
-    """
-    Calculate Medial Axis and PostProcess
-    Nodes -> Sets -> Paths
-    Sets are broken into Reaches -> Medial Nodes -> Medial Clusters
-    """
-
-    def __init__(self,Domain,subDomain):
-        self.Domain = Domain
-        self.subDomain = subDomain
-        self.Orientation = subDomain.Orientation
-        self.padding = np.zeros([3],dtype=np.int64)
-        self.haloGrid = None
-        self.halo = np.zeros(6)
-        self.MA = None
-
-    def skeletonizeSurface(self):
-        """Compute the skeleton of a binary image.
-
-        Thinning is used to reduce each connected component in a binary image
-        to a single-pixel wide skeleton.
-
-        Parameters
-        ----------
-        image : ndarray, 2D or 3D
-            A binary image containing the objects to be skeletonized. Zeros
-            represent background, nonzero values are foreground.
-
-        Returns
-        -------
-        skeleton : ndarray
-            The thinned image.
-
-        See Also
-        --------
-        skeletonize, medial_axis
-
-        Notes
-        -----
-        The method of [Lee94]_ uses an octree data structure to examine a 3x3x3
-        neighborhood of a pixel. The algorithm proceeds by iteratively sweeping
-        over the image, and removing pixels at each iteration until the image
-        stops changing. Each iteration consists of two steps: first, a list of
-        candidates for removal is assembled; then pixels from this list are
-        rechecked sequentially, to better preserve connectivity of the image.
-
-        The algorithm this function implements is different from the algorithms
-        used by either `skeletonize` or `medial_axis`, thus for 2D images the
-        results produced by this function are generally different.
-
-        References
-        ----------
-        .. [Lee94] T.-C. Lee, R.L. Kashyap and C.-N. Chu, Building skeleton models
-               via 3-D medial surface/axis thinning algorithms.
-               Computer Vision, Graphics, and Image Processing, 56(6):462-478, 1994.
-
-        """
-        self.haloGrid = np.ascontiguousarray(self.haloGrid)
-        image_o = np.copy(self.haloGrid)
-
-        # normalize to binary
-        image_o[image_o != 0] = 1
-
-        # do the computation
-        image_o = np.asarray(_compute_thin_image_surface(image_o))
-
-        dim = image_o.shape
-
-
-        self.MA = image_o[self.halo[1]:dim[0] - self.halo[0],
-                          self.halo[3]:dim[1] - self.halo[2],
-                          self.halo[5]:dim[2] - self.halo[4]]
-                
-        self.MA = np.ascontiguousarray(self.MA)
-
-
-    def genPadding(self):
-        """
-        Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changed
-        """
-        gridShape = self.Domain.subNodes
-        factor = 0.95
-        self.padding[0] = math.ceil(gridShape[0]*factor)
-        self.padding[1] = math.ceil(gridShape[1]*factor)
-        self.padding[2] = math.ceil(gridShape[2]*factor)
-
-        for n in [0,1,2]:
-            if self.padding[n] == gridShape[n]:
-                self.padding[n] = self.padding[n] - 1
-
-
 
 
 class medialAxis(object):
@@ -119,7 +25,7 @@ class medialAxis(object):
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-    def skeletonizeAxis(self,connect = False, surface = False):
+    def skeletonizeAxis(self,connect = False):
         """Compute the skeleton of a binary image.
 
         Thinning is used to reduce each connected component in a binary image
@@ -180,14 +86,14 @@ class medialAxis(object):
                 self.haloPadNeighNot[n] = 0
 
         if connect:
-            self.MA = image_o[self.halo[1] - self.haloPadNeigh[1] : dim[0] - self.halo[0] + self.haloPadNeigh[0],
-                              self.halo[3] - self.haloPadNeigh[3] : dim[1] - self.halo[2] + self.haloPadNeigh[2],
-                              self.halo[5] - self.haloPadNeigh[5] : dim[2] - self.halo[4] + self.haloPadNeigh[4]]
+            self.MA = image_o[self.halo[0] - self.haloPadNeigh[0] : dim[0] - self.halo[1] + self.haloPadNeigh[1],
+                              self.halo[2] - self.haloPadNeigh[2] : dim[1] - self.halo[3] + self.haloPadNeigh[3],
+                              self.halo[4] - self.haloPadNeigh[4] : dim[2] - self.halo[5] + self.haloPadNeigh[5]]
 
         else:
-            self.MA = image_o[self.halo[1]:dim[0] - self.halo[0],
-                            self.halo[3]:dim[1] - self.halo[2],
-                            self.halo[5]:dim[2] - self.halo[4]]
+            self.MA = image_o[self.halo[0]:dim[0] - self.halo[1],
+                              self.halo[2]:dim[1] - self.halo[3],
+                              self.halo[4]:dim[2] - self.halo[5]]
                 
         self.MA = np.ascontiguousarray(self.MA)
 
@@ -198,26 +104,28 @@ class medialAxis(object):
         """
         gridShape = self.Domain.subNodes
         factor = 0.95
-        self.padding[0] = math.ceil(gridShape[0]*factor)
-        self.padding[1] = math.ceil(gridShape[1]*factor)
-        self.padding[2] = math.ceil(gridShape[2]*factor)
+        self.padding[0] = 1#math.ceil(gridShape[0]*factor)
+        self.padding[1] = 1#math.ceil(gridShape[1]*factor)
+        self.padding[2] = 1#math.ceil(gridShape[2]*factor)
 
-        for n in [0,1,2]:
-            if self.padding[n] == gridShape[n]:
-                self.padding[n] = self.padding[n] - 1
+        # for n in [0,1,2]:
+        #     if self.padding[n] == gridShape[n]:
+        #         self.padding[n] = self.padding[n] - 1
+
+        
 
     def genMAArrays(self):
         """
         Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes
         """
         dim = self.MA.shape
-        tempMA = self.MA[self.haloPadNeigh[1] : dim[0] - self.haloPadNeigh[0],
-                         self.haloPadNeigh[3] : dim[1] - self.haloPadNeigh[2],
-                         self.haloPadNeigh[5] : dim[2] - self.haloPadNeigh[4]]
+        tempMA = self.MA[self.haloPadNeigh[0] : dim[0] - self.haloPadNeigh[1],
+                         self.haloPadNeigh[2] : dim[1] - self.haloPadNeigh[3],
+                         self.haloPadNeigh[4] : dim[2] - self.haloPadNeigh[5]]
                 
-        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[1], self.haloPadNeighNot[0]), 
-                                    (self.haloPadNeighNot[3], self.haloPadNeighNot[2]), 
-                                    (self.haloPadNeighNot[5], self.haloPadNeighNot[4]) ), 
+        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[0], self.haloPadNeighNot[1]), 
+                                    (self.haloPadNeighNot[2], self.haloPadNeighNot[3]), 
+                                    (self.haloPadNeighNot[4], self.haloPadNeighNot[5]) ), 
                                     'constant', constant_values=0)
         return tempMA,neighMA
 
@@ -489,23 +397,6 @@ class medialAxis(object):
             set.inaccessibleTrim = setData[i][6]
             set.minDistance = setData[i][7]
         
-def medialSurfaceEval(rank,size,Domain,subDomain,grid):
-
-    ### Initialize Classes
-    sDMS = medialSurface(Domain = Domain,subDomain = subDomain)
-    sDComm = communication.Comm(Domain = Domain,subDomain = subDomain,grid = grid)
-
-    ### Adding Padding so Identical MA at Processer Interfaces
-    sDMS.genPadding()
-
-    ### Send Padding Data to Neighbors
-    sDMS.haloGrid,sDMS.halo = sDComm.haloCommunication(sDMS.padding)
-
-    ### Determine MA
-    sDMS.skeletonizeSurface()
-
-    return sDMS
-
 
 
 def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
@@ -534,58 +425,58 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
       sDMA.Sets,sDMA.setCount,sDMA.pathCount = sets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
       sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
 
-      ### Connect the Sets into Paths
-      sDMA.collectPaths()
+    #   ### Connect the Sets into Paths
+    #   sDMA.collectPaths()
 
-      ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
-      ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
-      ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
-      sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
-      sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
-      if error:
-          communication.raiseError()
-      setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
-      setData = comm.gather(setData, root=0)
+    #   ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
+    #   ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
+    #   ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
+    #   sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
+    #   sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+    #   if error:
+    #       communication.raiseError()
+    #   setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
+    #   setData = comm.gather(setData, root=0)
 
-      ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
-      connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
-      globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
-      if size > 1:
-          sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-          sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+    #   ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
+    #   connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
+    #   globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
+    #   if size > 1:
+    #       sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
+    #       sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
 
-          ### Generate Local <-> Global Connected Set IDs
-          sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
-          localGlobalConnectedSetIDs = comm.allgather(sDMA.localGlobalConnectedSetID) 
-          sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
-          sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
-
-
-      for s in sDMA.Sets:
-          s.getDistMinMax(distance)
-
-      ### Trim Sets on Paths that are Dead Ends
-      ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
-      sDMA.localTrimSets()
+    #       ### Generate Local <-> Global Connected Set IDs
+    #       sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
+    #       localGlobalConnectedSetIDs = comm.allgather(sDMA.localGlobalConnectedSetID) 
+    #       sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
+    #       sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
 
 
-      ### Collect only necessary Set object data for transfer to root
-      setData = sDMA.gatherSetInfo(rank)
-      ### Gather all lists into one on root
-      setData = comm.gather(setData,root=0)
+    #   for s in sDMA.Sets:
+    #       s.getDistMinMax(distance)
 
-      ### Initialize object for later scattering
-      if rank != 0:
-          listSetData = None
-      if rank == 0:
-          setData,cleanSetData = sDMA.globalCleanSets(setData)
-          cleanSetData = sDMA.globalTrimSets(cleanSetData)
-          cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
-          cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
-          listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
-      setData = comm.scatter(listSetData,root=0)
+    #   ### Trim Sets on Paths that are Dead Ends
+    #   ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
+    #   sDMA.localTrimSets()
 
-      sDMA.updateSetInfo(setData,rank)
+
+    #   ### Collect only necessary Set object data for transfer to root
+    #   setData = sDMA.gatherSetInfo(rank)
+    #   ### Gather all lists into one on root
+    #   setData = comm.gather(setData,root=0)
+
+    #   ### Initialize object for later scattering
+    #   if rank != 0:
+    #       listSetData = None
+    #   if rank == 0:
+    #       setData,cleanSetData = sDMA.globalCleanSets(setData)
+    #       cleanSetData = sDMA.globalTrimSets(cleanSetData)
+    #       cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
+    #       cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
+    #       listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
+    #   setData = comm.scatter(listSetData,root=0)
+
+    #   sDMA.updateSetInfo(setData,rank)
 
 
     return sDMA

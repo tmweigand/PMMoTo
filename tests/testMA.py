@@ -11,15 +11,21 @@ from skimage.morphology import skeletonize
 
 def my_function():
 
-    nodes = [50,50,50]
-    inlet  = [1,0,0]
-    outlet = [-1,0,0]
-    boundaries = [0,0,0]
-    res = 1
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+    subDomains = [1,1,1] # Specifies how Domain is broken among rrocs
+    nodes = [151,151,151] # Total Number of Nodes in Domain
+
+    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
+    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[0,0],[0,0],[0,0]]
+
     domainFile = './testDomains/10pack.out'
 
     rank = 0; subDomains = [1,1,1]; size = 1
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",domainFile,PMMoTo.readPorousMediaXYZR)
+    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",domainFile,PMMoTo.readPorousMediaXYZR)
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = False)
 
     sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = 0)
