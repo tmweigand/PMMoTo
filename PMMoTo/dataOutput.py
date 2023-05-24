@@ -182,9 +182,11 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
 
         procsWithSets = np.count_nonzero(np.array(procSetCounts)>0)
         name = [fileProcLocal]*procsWithSets
+        nP = 0
         for nn in range(Domain.numSubDomains):
             if procSetCounts[nn] > 0:
-                name[nn] = name[nn]+str(nn)+".vtu"
+                name[nP] = name[nP]+str(nn)+".vtu"
+                nP += 1
 
         for s in name:
             w.addPiece(start=None,end=None,source=s)
