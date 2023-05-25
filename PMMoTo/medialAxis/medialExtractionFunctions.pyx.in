@@ -1,5 +1,5 @@
 # distutils: language = c++
-#cython: boundscheck=False,wraparound=False, initializedcheck=False, cdivision=True
+#cython: boundscheck=False,  wraparound=False, initializedcheck=False, cdivision=True
 
 from libc.string cimport memcpy
 from libcpp.vector cimport vector
