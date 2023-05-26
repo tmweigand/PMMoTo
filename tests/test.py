@@ -1,7 +1,6 @@
 import numpy as np
 from mpi4py import MPI
 from scipy.ndimage import distance_transform_edt
-import os
 import edt
 import time
 import PMMoTo
@@ -33,18 +32,21 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [2,2,2]
-    nodes = [51,51,51]
-    boundaries = [0,0,0]
-    inlet  = [1,0,0]
-    outlet = [-1,0,0]
+    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
+    nodes = [150,150,150] # Total Number of Nodes in Domain
+
+    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
+    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[1,0],[0,0],[0,0]]
+    outlet = [[0,1],[0,0],[0,0]]
+
+
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
     file = './testDomains/50pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
-    res = 1 ### Assume that the reservoir is always at the inlet!
 
     numSubDomains = np.prod(subDomains)
 
@@ -52,23 +54,42 @@ def my_function():
     testSerial = True
     testAlgo = True
 
-    pC = [143]
+    pC = [140,160]
 
     startTime = time.time()
 
-    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
+    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
-    sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
+    numFluidPhases = 2
+
+    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
+
+    wRes  = [[0,1],[0,0],[0,0]]
+    nwRes = [[1,0],[0,0],[0,0]]
+    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
+
+    wOut  = [[0,0],[0,0],[0,0]]
+    nwOut = [[0,0],[0,0],[0,0]]
+    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+
+    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID)
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
+
+
+    sD_EDT = PMMoTo.calcEDT(sDL,sDL.grid,stats = True,sendClass=True)
 
     cutoff = 0.006
     if drain:
-        drainL,_ = PMMoTo.calcDrainage(rank,size,pC,domain,sDL,inlet,sDEDTL)
+        drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
 
-    rad = 0.1
-    sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
+    #rad = 0.1
+    #sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(rank,size,domain,sDL,sDL.grid,sDEDTL.EDT,connect = True,cutoff = cutoff)
+    #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
+
+
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,sDL.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -76,10 +97,15 @@ def my_function():
 
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sDEDTL.EDT, MA=sDMAL.MA,table=sDMAL.nodeTable)
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL, dist=sD_EDT.EDT,MA=sDMAL.MA)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
+
+    setSaveDict = {'inlet': 'inlet',
+                'outlet':'outlet',
+                'boundary': 'boundary',
+                'localID': 'localID'}
 
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
@@ -90,8 +116,9 @@ def my_function():
                 'numBoundaries': 'numBoundaries',
                 'globalPathID':'globalPathID'}
     
-    PMMoTo.saveSetData("dataOut/set",rank,domain,sDL,sDMAL,**setSaveDict)
-
+    #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
+    
+    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
 
     if testSerial:
 
@@ -100,30 +127,26 @@ def my_function():
             sDEDT = np.empty((numSubDomains), dtype = object)
             if drain:
                 sDDrain = np.empty((numSubDomains), dtype = object)
-            sDMorph = np.empty((numSubDomains), dtype = object)
             sDMA = np.empty((numSubDomains), dtype = object)
             sD[0] = sDL
-            sDEDT[0] = sDEDTL
+            sDEDT[0] = sD_EDT
             if drain:
                 sDDrain[0] = drainL
-            sDMorph[0] = sDMorphL
             sDMA[0] = sDMAL
             for neigh in range(1,numSubDomains):
                 sD[neigh] = comm.recv(source=neigh)
                 sDEDT[neigh] = comm.recv(source=neigh)
                 if drain:
                     sDDrain[neigh] = comm.recv(source=neigh)
-                sDMorph[neigh] = comm.recv(source=neigh)
                 sDMA[neigh] = comm.recv(source=neigh)
 
         if rank > 0:
             for neigh in range(1,numSubDomains):
                 if rank == neigh:
                     comm.send(sDL,dest=0)
-                    comm.send(sDEDTL,dest=0)
+                    comm.send(sD_EDT,dest=0)
                     if drain:
                         comm.send(drainL,dest=0)
-                    comm.send(sDMorphL,dest=0)
                     comm.send(sDMAL,dest=0)
 
 
@@ -145,41 +168,44 @@ def my_function():
                 pG = [0,0,0]
                 pgSize = nodes[0]
 
-                if boundaries[0] == 1:
+                if boundaries[0][0] == 1:
                     pG[0] = 1
-                if boundaries[1] == 1:
+                if boundaries[1][0] == 1:
                     pG[1] = 1
-                if boundaries[2] == 1:
+                if boundaries[2][0] == 1:
                     pG[2] = 1
 
                 periodic = [False,False,False]
-                if boundaries[0] == 2:
+                if boundaries[0][0] == 2:
                     periodic[0] = True
                     pG[0] = pgSize
-                if boundaries[1] == 2:
+                if boundaries[1][0] == 2:
                     periodic[1] = True
                     pG[1] = pgSize
-                if boundaries[2] == 2:
+                if boundaries[2][0] == 2:
                     periodic[2] = True
                     pG[2] = pgSize
 
                 gridOut = np.pad (gridOut, ((pG[0], pG[0]), (pG[1], pG[1]), (pG[2], pG[2])), 'wrap')
 
-                if boundaries[0] == 1:
+                if boundaries[0][0] == 1:
                     gridOut[0,:,:] = 0
+                if boundaries[0][1] == 1:
                     gridOut[-1,:,:] = 0
-                if boundaries[1] == 1:
+                if boundaries[1][0] == 1:
                     gridOut[:,0,:] = 0
+                if boundaries[1][1] == 1:
                     gridOut[:,-1,:] = 0
-                if boundaries[2] == 1:
+                if boundaries[2][0] == 1:
                     gridOut[:,:,0] = 0
+                if boundaries[2][1] == 1:
                     gridOut[:,:,-1] = 0
 
 
                 realDT = edt.edt3d(gridOut, anisotropy=(domain.dX, domain.dY, domain.dZ))
                 edtV,_ = distance_transform_edt(gridOut,sampling=[domain.dX, domain.dY, domain.dZ],return_indices=True)
                 gridCopy = np.copy(gridOut)
-                realMA = PMMoTo.medialAxis.skeletonize._compute_thin_image(gridCopy)
+                realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
@@ -262,8 +288,11 @@ def my_function():
                                                     sD[n].buffer[2][0] : sD[n].grid.shape[2] - sD[n].buffer[2][1]]
                             n = n + 1
 
+                PMMoTo.saveGridOneProc("dataOut/SingleEDT",x,y,z,np.ascontiguousarray(realDT))
+
                 diffEDT = np.abs(realDT-checkEDT)
                 diffEDT2 = np.abs(edtV-checkEDT)
+
                 print("L2 EDT Error Norm",np.linalg.norm(diffEDT) )
                 print("L2 EDT Error Norm 2",np.linalg.norm(diffEDT2) )
                 print("L2 EDT Error Norm 2",np.linalg.norm(realDT-edtV) )
@@ -287,6 +316,9 @@ def my_function():
 
                 diffMA = np.abs(realMA-checkMA)
                 print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+
+
+                PMMoTo.saveGridOneProc("dataOut/oneProcGrid",x,y,z,realMA)
 
 
 

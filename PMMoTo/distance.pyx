@@ -188,11 +188,10 @@ def _getBoundarySolids(self,
 
 class EDT(object):
 
-    def __init__(self,ID,subDomain,Domain,Orientation,grid):
+    def __init__(self,subDomain,Domain,Orientation,grid):
         bufferSize         = 1
         self.extendFactor  = 0.7
         self.useIndex      = False
-        self.ID            = ID
         self.subDomain     = subDomain
         self.Domain        = Domain
         self.Orientation   = Orientation
@@ -203,7 +202,7 @@ class EDT(object):
         self.faceSolids = []
         self.edgeSolids = []
         self.cornerSolids = []
-        self.solidsAll = {self.ID: {'orientID':{}}}
+        self.solidsAll = {self.subDomain.ID: {'orientID':{}}}
         self.grid = grid
         self.x = self.subDomain.x
         self.y = self.subDomain.y
@@ -253,7 +252,7 @@ class EDT(object):
                 pointsXYZ.append([self.x[x],self.y[y],self.z[z]] )
             self.faceSolids[fIndex] = np.asarray(pointsXYZ)
             name = self.Orientation.faces[fIndex]['ID']
-            self.solidsAll[self.ID]['orientID'][name] = np.copy(self.faceSolids[fIndex])
+            self.solidsAll[self.subDomain.ID]['orientID'][name] = np.copy(self.faceSolids[fIndex])
 
     def getEdgeSolids(self):
         """
@@ -340,15 +339,15 @@ class EDT(object):
     def initRecieve(self):
 
         for neigh in self.subDomain.neighborF:
-            if neigh > -1 and neigh != self.ID:
+            if neigh > -1 and neigh != self.subDomain.ID:
                 self.solidsAll[neigh] = {'orientID':{}}
 
         for neigh in self.subDomain.neighborE:
-            if neigh > -1 and neigh != self.ID:
+            if neigh > -1 and neigh != self.subDomain.ID:
                 self.solidsAll[neigh] = {'orientID':{}}
 
         for neigh in self.subDomain.neighborC:
-            if neigh > -1 and neigh != self.ID:
+            if neigh > -1 and neigh != self.subDomain.ID:
                 self.solidsAll[neigh] = {'orientID':{}}
 
     def fixInterface(self):
@@ -382,33 +381,17 @@ class EDT(object):
 
   
     def genStats(self):
+        """
+        Get Inforation (non-zero min/max) of distance tranform
+        """
         own = self.subDomain.ownNodes
         ownEDT =  self.EDT[own[0][0]:own[0][1],
                             own[1][0]:own[1][1],
                             own[2][0]:own[2][1]]
-        self.distVals,self.distCounts  = np.unique(ownEDT,return_counts=True)
-
-def calcEDT(rank,size,domain,subDomain,grid,stats=False):
-
-    sDEDT = EDT(Domain = domain, ID = rank, subDomain = subDomain, Orientation = subDomain.Orientation, grid = grid)
-    sDComm = communication.Comm(Domain = domain,subDomain = subDomain,grid = grid)
-
-    sDEDT.genLocalEDT()
-    if size > 1:
-        sDEDT.getBoundarySolids()
-        sDEDT.getFaceSolids()
-        sDEDT.getEdgeSolids()
-        sDEDT.getCornerSolids()
-        sDEDT.initRecieve()
-        sDEDT.solidsAll = sDComm.EDTCommunication(sDEDT.solidsAll,sDEDT.faceSolids,sDEDT.edgeSolids,sDEDT.cornerSolids)
-        sDEDT.fixInterface()
-
-    if stats:
-
-        sDEDT.genStats()
-        EDTData = [sDEDT.ID,sDEDT.distVals,sDEDT.distCounts]
+        distVals,distCounts  = np.unique(ownEDT,return_counts=True)
+        EDTData = [self.subDomain.ID,distVals,distCounts]
         EDTData = comm.gather(EDTData, root=0)
-        if rank == 0:
+        if self.subDomain.ID == 0:
             bins = np.empty([])
             for d in EDTData:
                 if d[0] == 0:
@@ -424,16 +407,40 @@ def calcEDT(rank,size,domain,subDomain,grid,stats=False):
                     counts[ind] = counts[ind] + d[2][n]
 
             stats = np.stack((bins,counts), axis = 1)
-            sDEDT.minD = bins[1]
-            sDEDT.maxD = bins[-1]
-            distData = [sDEDT.minD,sDEDT.maxD]
-            print("Minimum distance:",sDEDT.minD,"Maximum distance:",sDEDT.maxD)
+            self.minD = bins[1]
+            self.maxD = bins[-1]
+            distData = [self.minD,self.maxD]
+            print("Minimum distance:",self.minD,"Maximum distance:",self.maxD)
         else:
             distData = None
         distData = comm.bcast(distData, root=0)
-        sDEDT.minD = distData[0]
-        sDEDT.maxD = distData[1]
+        self.minD = distData[0]
+        self.maxD = distData[1]
+
+def calcEDT(subDomain,grid,stats=False,sendClass=False):
+
+    size = subDomain.Domain.numSubDomains
+    rank = subDomain.ID
+
+    sDEDT = EDT(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation, grid = grid)
+    sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
+
+    sDEDT.genLocalEDT()
+    if size > 1:
+        sDEDT.getBoundarySolids()
+        sDEDT.getFaceSolids()
+        sDEDT.getEdgeSolids()
+        sDEDT.getCornerSolids()
+        sDEDT.initRecieve()
+        sDEDT.solidsAll = sDComm.EDTCommunication(sDEDT.solidsAll,sDEDT.faceSolids,sDEDT.edgeSolids,sDEDT.cornerSolids)
+        sDEDT.fixInterface()
+
+    if stats:
+        sDEDT.genStats()
 
 
-    return sDEDT
+    if sendClass:
+        return sDEDT
+    else:
+        return sDEDT.EDT
 

@@ -73,8 +73,13 @@ def process_tempita_pyx(fromfile):
         f.write(pyxcontent)
 
 
-
-cython(['PMMoTo/medialAxis/_skeletonize_3d_cy.pyx.in'])
+medialFunctions = 'PMMoTo/medialAxis/medialExtractionFunctions.pyx.in'
+medialPYX = os.path.splitext(medialFunctions)[0]
+if os.path.isfile(medialPYX):
+    if os.path.getmtime(medialPYX) < os.path.getmtime(medialFunctions):
+        cython([medialFunctions])
+else:
+    cython([medialFunctions])
 
 with open("README.md", 'r') as f:
     long_description = f.read()
@@ -83,12 +88,27 @@ cmdclass = {}
 ext_modules = []
 
 ext_modules += [
-    Extension("PMMoTo.domainGeneration", ["PMMoTo/domainGeneration.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.distance", ["PMMoTo/distance.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.drainage", ["PMMoTo/drainage.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.nodes", ["PMMoTo/nodes.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.sets", ["PMMoTo/sets.pyx"],include_dirs=['PMMoTo']),
-    Extension("PMMoTo.medialAxis._skeletonize_3d_cy", ["PMMoTo/medialAxis/_skeletonize_3d_cy.pyx"],include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("PMMoTo.domainGeneration", 
+              ["PMMoTo/domainGeneration.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.distance", 
+              ["PMMoTo/distance.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.nodes", 
+              ["PMMoTo/nodes.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.sets", 
+              ["PMMoTo/sets.pyx"],
+              include_dirs=['PMMoTo']),
+    Extension("PMMoTo.multiPhase.equilibriumFluidDistribution", 
+              ["PMMoTo/multiPhase/equilibriumFluidDistribution.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/multiPhase']),
+    Extension("PMMoTo.medialAxis.medialExtraction", 
+              ["PMMoTo/medialAxis/medialExtraction.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("PMMoTo.medialAxis.medialExtractionFunctions", 
+              ["PMMoTo/medialAxis/medialExtractionFunctions.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
 ]
 cmdclass.update({'build_ext': build_ext})
 
@@ -96,7 +116,7 @@ cmdclass.update({'build_ext': build_ext})
 setup(
     name="PMMoTo",
     version="0.0.1",
-    packages=['PMMoTo','PMMoTo.medialAxis'],
+    packages=['PMMoTo','PMMoTo.medialAxis','PMMoTo.multiPhase'],
     author="Timothy M Weigand",
     description="Porous Media Morphological and Topological Analysis Toolkit",
     long_description=long_description,
@@ -110,8 +130,9 @@ setup(
         'mpi4py>=3.1.3',
         'packaging>=21.3',
         'pykdtree>=0.1',
-        'edt>=2.3.0',
+        'edt>=2.3.1',
         'scipy>=1.9.3',
-        'pyevtk>=1.5.0'
+        'pyevtk>=1.5.0',
+        'pyvista>=0.39.1'
     ]
 )

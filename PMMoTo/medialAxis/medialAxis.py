@@ -1,11 +1,11 @@
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from ._skeletonize_3d_cy import _compute_thin_image
+from .medialExtraction import _compute_thin_image
 from .. import nodes
 from .. import sets
-import math
 comm = MPI.COMM_WORLD
+import math
 
 
 class medialAxis(object):
@@ -26,7 +26,7 @@ class medialAxis(object):
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-    def skeletonize_3d(self,connect = False):
+    def skeletonizeAxis(self,connect = False):
         """Compute the skeleton of a binary image.
 
         Thinning is used to reduce each connected component in a binary image
@@ -75,6 +75,7 @@ class medialAxis(object):
 
         # do the computation
         image_o = np.asarray(_compute_thin_image(image_o))
+
         dim = image_o.shape
 
         ### Grab Medial Axis with Single and Two Buffer to 
@@ -86,16 +87,17 @@ class medialAxis(object):
                 self.haloPadNeighNot[n] = 0
 
         if connect:
-            self.MA = image_o[self.halo[1] - self.haloPadNeigh[1] : dim[0] - self.halo[0] + self.haloPadNeigh[0],
-                              self.halo[3] - self.haloPadNeigh[3] : dim[1] - self.halo[2] + self.haloPadNeigh[2],
-                              self.halo[5] - self.haloPadNeigh[5] : dim[2] - self.halo[4] + self.haloPadNeigh[4]]
+            self.MA = image_o[self.halo[0] - self.haloPadNeigh[0] : dim[0] - self.halo[1] + self.haloPadNeigh[1],
+                              self.halo[2] - self.haloPadNeigh[2] : dim[1] - self.halo[3] + self.haloPadNeigh[3],
+                              self.halo[4] - self.haloPadNeigh[4] : dim[2] - self.halo[5] + self.haloPadNeigh[5]]
 
         else:
-            self.MA = image_o[self.halo[1]:dim[0] - self.halo[0],
-                            self.halo[3]:dim[1] - self.halo[2],
-                            self.halo[5]:dim[2] - self.halo[4]]
+            self.MA = image_o[self.halo[0]:dim[0] - self.halo[1],
+                              self.halo[2]:dim[1] - self.halo[3],
+                              self.halo[4]:dim[2] - self.halo[5]]
                 
         self.MA = np.ascontiguousarray(self.MA)
+
 
     def genPadding(self):
         """
@@ -111,18 +113,20 @@ class medialAxis(object):
             if self.padding[n] == gridShape[n]:
                 self.padding[n] = self.padding[n] - 1
 
+        
+
     def genMAArrays(self):
         """
         Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes
         """
         dim = self.MA.shape
-        tempMA = self.MA[self.haloPadNeigh[1] : dim[0] - self.haloPadNeigh[0],
-                         self.haloPadNeigh[3] : dim[1] - self.haloPadNeigh[2],
-                         self.haloPadNeigh[5] : dim[2] - self.haloPadNeigh[4]]
+        tempMA = self.MA[self.haloPadNeigh[0] : dim[0] - self.haloPadNeigh[1],
+                         self.haloPadNeigh[2] : dim[1] - self.haloPadNeigh[3],
+                         self.haloPadNeigh[4] : dim[2] - self.haloPadNeigh[5]]
                 
-        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[1], self.haloPadNeighNot[0]), 
-                                    (self.haloPadNeighNot[3], self.haloPadNeighNot[2]), 
-                                    (self.haloPadNeighNot[5], self.haloPadNeighNot[4]) ), 
+        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[0], self.haloPadNeighNot[1]), 
+                                    (self.haloPadNeighNot[2], self.haloPadNeighNot[3]), 
+                                    (self.haloPadNeighNot[4], self.haloPadNeighNot[5]) ), 
                                     'constant', constant_values=0)
         return tempMA,neighMA
 
@@ -396,13 +400,14 @@ class medialAxis(object):
         
 
 
+def medialAxisEval(subDomain,grid,distance,connect,cutoff):
 
-
-def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
+    rank = subDomain.ID
+    size = subDomain.Domain.numSubDomains
 
     ### Initialize Classes
-    sDMA = medialAxis(Domain = Domain,subDomain = subDomain)
-    sDComm = communication.Comm(Domain = Domain,subDomain = subDomain,grid = grid)
+    sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain)
+    sDComm = communication.Comm(Domain = subDomain.Domain, subDomain = subDomain,grid = grid)
 
     ### Adding Padding so Identical MA at Processer Interfaces
     sDMA.genPadding()
@@ -411,17 +416,17 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
     sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
 
     ### Determine MA
-    sDMA.skeletonize_3d(connect)
+    sDMA.skeletonizeAxis(connect)
     
     if connect:
 
       ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
       tempMA,neighMA = sDMA.genMAArrays()
-      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,Domain,subDomain,subDomain.Orientation)
+      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,subDomain.inlet,subDomain.outlet,subDomain.Domain,subDomain,subDomain.Orientation)
       sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,subDomain,subDomain.Orientation,sDMA.nodeInfo)
       sDMA.MA = np.ascontiguousarray(tempMA)
       
-      sDMA.Sets,sDMA.setCount,sDMA.pathCount = nodes.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
+      sDMA.Sets,sDMA.setCount,sDMA.pathCount = sets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
       sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
 
       ### Connect the Sets into Paths

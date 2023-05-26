@@ -1,33 +1,5 @@
 # distutils: language = c++
-
-"""
-This is an implementation of the 2D/3D thinning algorithm
-of [Lee94]_ of binary images, based on [IAC15]_.
-
-The original Java code [IAC15]_ carries the following message:
-
- * This work is an implementation by Ignacio Arganda-Carreras of the
- * 3D thinning algorithm from Lee et al. "Building skeleton models via 3-D
- * medial surface/axis thinning algorithms. Computer Vision, Graphics, and
- * Image Processing, 56(6):462-478, 1994." Based on the ITK version from
- * Hanno Homann <a href="http://hdl.handle.net/1926/1292"> http://hdl.handle.net/1926/1292</a>
- * <p>
- *  More information at Skeletonize3D homepage:
- *  https://imagej.net/Skeletonize3D
- *
- * @version 1.0 11/13/2015 (unique BSD licensed version for scikit-image)
- * @author Ignacio Arganda-Carreras (iargandacarreras at gmail.com)
-
-References
-----------
-.. [Lee94] T.-C. Lee, R.L. Kashyap and C.-N. Chu, Building skeleton models
-       via 3-D medial surface/axis thinning algorithms.
-       Computer Vision, Graphics, and Image Processing, 56(6):462-478, 1994.
-
-.. [IAC15] Ignacio Arganda-Carreras, 2015. Skeletonize3D plugin for ImageJ(C).
-           https://imagej.net/Skeletonize3D
-
-"""
+#cython: boundscheck=False,  wraparound=False, initializedcheck=False, cdivision=True
 
 from libc.string cimport memcpy
 from libcpp.vector cimport vector
@@ -38,103 +10,118 @@ import numpy as np
 from numpy cimport npy_intp, npy_uint8, ndarray
 cimport cython
 
-ctypedef npy_uint8 pixel_type
-
-# struct to hold 3D coordinates
-cdef struct coordinate:
-    npy_intp p
-    npy_intp r
-    npy_intp c
-    npy_intp ID
-    npy_intp faceCount
-
 cdef bool compare(coordinate l, const coordinate r) nogil:
     return l.c > r.c;
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _compute_thin_image(pixel_type[:, :, ::1] img not None):
-    """Compute a thin image.
+###### look-up tables
+def fill_Euler_LUT():
+    """ Look-up table for preserving Euler characteristic.
 
-    Loop through the image multiple times, removing "simple" points, i.e.
-    those point which can be removed without changing local connectivity in the
-    3x3x3 neighborhood of a point.
-
-    This routine implements the two-pass algorithm of [Lee94]_. Namely,
-    for each of the six border types (positive and negative x-, y- and z-),
-    the algorithm first collects all possibly deletable points, and then
-    performs a sequential rechecking.
-
-    The input, `img`, is assumed to be a 3D binary image in the
-    (p, r, c) format [i.e., C ordered array], filled by zeros (background) and
-    ones. Furthermore, `img` is assumed to be padded by zeros from all
-    directions --- this way the zero boundary conditions are automatic
-    and there is need to guard against out-of-bounds access.
-
+    This is column $\delta G_{26}$ of Table 2 of [Lee94]_.
     """
-    cdef:
-        int unchanged_borders = 0, curr_border, num_borders
-        int borders[6]
-        npy_intp p, r, c, ID
-        bint no_change
-
-        # list simple_border_points
-        vector[coordinate] simple_border_points
-        coordinate point
-
-        Py_ssize_t num_border_points, i, j
-
-        pixel_type neighb[27]
-
-    # loop over the six directions in this order (for consistency with ImageJ)
-    borders[:] = [4,3,2,1,5,6]
-
-    #with nogil:
-    # no need to worry about the z direction if the original image is 2D.
-    if img.shape[0] == 3:
-        num_borders = 4
-    else:
-        num_borders = 6
-
-    # loop through the image several times until there is no change for all
-    # the six border types
-    while unchanged_borders < num_borders:
-        unchanged_borders = 0
-        for j in range(num_borders):
-            curr_border = borders[j]
-            simple_border_points.clear();
-            find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-            find_simple_point_candidates(img, curr_border, simple_border_points)
-
-            #find_simple_point_candidates_boundary(img, curr_border, simple_border_points)
-            # sequential re-checking to preserve connectivity when deleting
-            # in a parallel way
-            no_change = True
-            num_border_points = simple_border_points.size()
-            simple_border_points = sorted(simple_border_points, key=lambda d: d['faceCount'],reverse=True)
-            for i in range(num_border_points):
-                point = simple_border_points[i]
-                p = point.p
-                r = point.r
-                c = point.c
-                ID = point.ID
-                if ID == 0:
-                    get_neighborhood(img, p, r, c, neighb)
-                elif ID > 0:
-                    get_neighborhood_limited(img, p, r, c, ID, neighb)
-                if is_simple_point(neighb):
-                    img[p, r, c] = 0
-                    no_change = False
-
-            if no_change:
-                unchanged_borders += 1
+    cdef int arr[128]
+    arr[:] = [1, -1, -1, 1, -3, -1, -1, 1, -1, 1, 1, -1, 3, 1, 1, -1, -3, -1,
+                 3, 1, 1, -1, 3, 1, -1, 1, 1, -1, 3, 1, 1, -1, -3, 3, -1, 1, 1,
+                 3, -1, 1, -1, 1, 1, -1, 3, 1, 1, -1, 1, 3, 3, 1, 5, 3, 3, 1,
+                 -1, 1, 1, -1, 3, 1, 1, -1, -7, -1, -1, 1, -3, -1, -1, 1, -1,
+                 1, 1, -1, 3, 1, 1, -1, -3, -1, 3, 1, 1, -1, 3, 1, -1, 1, 1,
+                 -1, 3, 1, 1, -1, -3, 3, -1, 1, 1, 3, -1, 1, -1, 1, 1, -1, 3,
+                 1, 1, -1, 1, 3, 3, 1, 5, 3, 3, 1, -1, 1, 1, -1, 3, 1, 1, -1]
+    cdef ndarray LUT = np.zeros(256, dtype=np.intc)
+    LUT[1::2] = arr
+    return LUT
+cdef int[::1] LUT = fill_Euler_LUT()
 
 
-    return np.asarray(img)
+# Fill the look-up table for indexing octants for computing the Euler
+# characteristic. See is_Euler_invariant routine below.
+# ORDERING MATTERS center must be at position 8 from Lee Figure 2
+{{py:
+_neighb_idx = [[0, 9, 3, 12, 1, 10, 4],       #0
+               [2, 1, 11, 10, 5, 4, 14],      #1
+               [6, 15, 7, 16, 3, 12, 4],      #2
+               [8, 7, 17, 16, 5, 4, 14],      #3
+               [18, 21, 9, 12, 19, 22, 10],   #4
+               [20, 23, 19, 22, 11, 14, 10],  #5
+               [24, 25, 15, 16, 21, 22, 12],  #6
+               [26, 23, 17, 14, 25, 22, 16],  #7
+              ]
+}}
+
+# Octree structure for labeling in `octree_labeling` routine below.
+# NB: this is only available at build time, and is used by Tempita templating.
+### These OCTANTS do not include middle voxel so max = 25
+# From Lee Figure 6
+{{py:
+_octree = [
+    # octant 1   # NWB
+    ([0, 1, 3, 4, 9, 10, 12],
+     [[], [2], [3], [2, 3, 4], [5], [2, 5, 6], [3, 5, 7]]),
+    # octant 2   # NEB
+    ([1, 4, 10, 2, 5, 11, 13],
+     [[1], [1, 3, 4], [1, 5, 6], [], [4], [6], [4, 6, 8]]),
+    # octant 3   # SWB
+    ([3, 4, 12, 6, 7, 14, 15],
+     [[1], [1, 2, 4], [1, 5, 7], [], [4], [7], [4, 7, 8]]),
+    # octant 4   # SEB
+    ([4, 5, 13, 7, 15, 8, 16],
+     [[1, 2, 3], [2], [2, 6, 8], [3], [3, 7, 8], [], [8]]),
+    # octant 5   # NWU
+    ([9, 10, 12, 17, 18, 20, 21],
+     [[1], [1, 2, 6], [1, 3, 7], [], [6], [7], [6, 7, 8]]),
+    # octant 6   # NEU
+    ([10, 11, 13, 18, 21, 19, 22],
+     [[1, 2, 5], [2], [2, 4, 8], [5], [5, 7, 8], [], [8]]),
+    # octant 7   # SWU
+    ([12, 14, 15, 20, 21, 23, 24],
+     [[1, 3, 5], [3], [3, 4, 8], [5], [5, 6, 8], [], [8]]),
+    # octant 8   # SEU
+    ([13, 15, 16, 21, 22, 24, 25],
+     [[2, 4, 6], [3, 4, 7], [4], [5, 6, 7], [6], [7], []])
+]
+}}
+
+{{### ID IS Allowable Direction so face[0] is +1 allowable -1 is out of bounds}}
+{{py:
+faces=  {0:{'ID':( 1, 0, 0),'Octant':[0,1,2,3]},
+         1:{'ID':(-1, 0, 0),'Octant':[4,5,6,7]},
+         2:{'ID':( 0, 1, 0),'Octant':[0,2,4,6]},
+         3:{'ID':( 0,-1, 0),'Octant':[1,3,5,7]},
+         4:{'ID':( 0, 0, 1),'Octant':[0,1,4,5]},
+         5:{'ID':( 0, 0,-1),'Octant':[2,3,6,7]},
+        }
+edges = {0 :{'ID':( 1, 1, 0),'Octant':[0,2]},
+         1 :{'ID':( 1,-1, 0),'Octant':[1,3]},
+         2 :{'ID':( 1, 0, 1),'Octant':[0,1]},
+         3 :{'ID':( 1, 0,-1),'Octant':[2,3]},
+         4 :{'ID':( 0, 1, 1),'Octant':[0,4]},
+         5 :{'ID':( 0,-1,-1),'Octant':[3,7]},
+         6 :{'ID':( 0, 1,-1),'Octant':[2,6]},
+         7 :{'ID':( 0,-1, 1),'Octant':[1,5]},
+         8 :{'ID':(-1, 1, 0),'Octant':[4,6]},
+         9 :{'ID':(-1,-1, 0),'Octant':[5,7]},
+        10 :{'ID':(-1, 0, 1),'Octant':[4,5]},
+        11 :{'ID':(-1, 0,-1),'Octant':[6,7]},
+        }
+corners = {0:{'ID':( 1, 1, 1),'Octant':[0]},
+           1:{'ID':( 1,-1, 1),'Octant':[1]},
+           2:{'ID':( 1, 1,-1),'Octant':[2]},
+           3:{'ID':( 1,-1,-1),'Octant':[3]},
+           4:{'ID':(-1, 1, 1),'Octant':[4]},
+           5:{'ID':(-1,-1, 1),'Octant':[5]},
+           6:{'ID':(-1, 1,-1),'Octant':[6]},
+           7:{'ID':(-1,-1,-1),'Octant':[7]},
+           }
+
+objects = [faces,edges,corners]
+objectNames = ["faces","edges","corners"]
+mM = [[-1,1],[-1,1],[-1,1]]
+index = ["p","r","c"]
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+}}
+
+
 cdef void find_simple_point_candidates(pixel_type[:, :, ::1] img,
                                        int curr_border,
                                        vector[coordinate] & simple_border_points) nogil:
@@ -204,8 +191,6 @@ cdef void find_simple_point_candidates(pixel_type[:, :, ::1] img,
                 simple_border_points.push_back(point)
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef void get_neighborhood(pixel_type[:, :, ::1] img,
                            npy_intp p, npy_intp r, npy_intp c,
                            pixel_type neighborhood[]) nogil:
@@ -255,44 +240,6 @@ cdef void get_neighborhood(pixel_type[:, :, ::1] img,
     neighborhood[26] = img[p+1, r+1, c+1]
 
 
-###### look-up tables
-def fill_Euler_LUT():
-    """ Look-up table for preserving Euler characteristic.
-
-    This is column $\delta G_{26}$ of Table 2 of [Lee94]_.
-    """
-    cdef int arr[128]
-    arr[:] = [1, -1, -1, 1, -3, -1, -1, 1, -1, 1, 1, -1, 3, 1, 1, -1, -3, -1,
-                 3, 1, 1, -1, 3, 1, -1, 1, 1, -1, 3, 1, 1, -1, -3, 3, -1, 1, 1,
-                 3, -1, 1, -1, 1, 1, -1, 3, 1, 1, -1, 1, 3, 3, 1, 5, 3, 3, 1,
-                 -1, 1, 1, -1, 3, 1, 1, -1, -7, -1, -1, 1, -3, -1, -1, 1, -1,
-                 1, 1, -1, 3, 1, 1, -1, -3, -1, 3, 1, 1, -1, 3, 1, -1, 1, 1,
-                 -1, 3, 1, 1, -1, -3, 3, -1, 1, 1, 3, -1, 1, -1, 1, 1, -1, 3,
-                 1, 1, -1, 1, 3, 3, 1, 5, 3, 3, 1, -1, 1, 1, -1, 3, 1, 1, -1]
-    cdef ndarray LUT = np.zeros(256, dtype=np.intc)
-    LUT[1::2] = arr
-    return LUT
-cdef int[::1] LUT = fill_Euler_LUT()
-
-
-# Fill the look-up table for indexing octants for computing the Euler
-# characteristic. See is_Euler_invariant routine below.
-# ORDERING MATTERS center must be at position 8 from Lee Figure 2
-{{py:
-_neighb_idx = [[0, 9, 3, 12, 1, 10, 4],       #0
-               [2, 1, 11, 10, 5, 4, 14],      #1
-               [6, 15, 7, 16, 3, 12, 4],      #2
-               [8, 7, 17, 16, 5, 4, 14],      #3
-               [18, 21, 9, 12, 19, 22, 10],   #4
-               [20, 23, 19, 22, 11, 14, 10],  #5
-               [24, 25, 15, 16, 21, 22, 12],  #6
-               [26, 23, 17, 14, 25, 22, 16],  #7
-              ]
-}}
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef bint is_Euler_invariant(pixel_type neighbors[],
                              int[::1] lut) nogil:
     """Check if a point is Euler invariant.
@@ -344,6 +291,51 @@ cdef inline int is_endpoint_check(pixel_type neighbors[]) nogil:
     for j in range(27):
         s += neighbors[j]
     return s
+
+
+cdef bint is_surface_point(pixel_type neighbors[]) nogil:
+    """Check is a point is a Surface Point.
+
+    See Equations 8 and 9 in [Lee94]_).
+
+    Parameters
+    ----------
+    neighbors : uint8 C array, shape(27,)
+        neighbors of the point
+
+    Returns
+    -------
+    bool
+        Whether the point is surface point or not.
+
+    """
+
+    # Loop through all octants
+    cdef int n,neighSum
+    cdef bint surfacePoint = True, cond1 = False
+    {{for _octant in range(8)}}
+
+    n = 1
+    neighSum = 0
+    surfaceOctant = False
+    {{for _j in range(7):}}
+    {{py: _idx = _neighb_idx[_octant][_j]}}
+    if neighbors[{{_idx}}] == 1:
+        n |= {{1 << (7 - _j)}}
+        neighSum = neighSum + 1
+    {{endfor}}
+
+    if (n == 240 or n == 165 or n == 170 or n == 204):
+        cond1 = True 
+    
+    if (not cond1 and neighSum > 3):
+        surfacePoint = False
+
+    {{endfor}}
+
+    return surfacePoint
+
+
 
 
 cdef bint is_simple_point(pixel_type neighbors[]) nogil:
@@ -400,42 +392,6 @@ cdef bint is_simple_point(pixel_type neighbors[]) nogil:
                 return False
     return True
 
-
-# Octree structure for labeling in `octree_labeling` routine below.
-# NB: this is only available at build time, and is used by Tempita templating.
-### These OCTANTS do not include middle voxel so max = 25
-# From Lee Figure 6
-{{py:
-_octree = [
-    # octant 1   # NWB
-    ([0, 1, 3, 4, 9, 10, 12],
-     [[], [2], [3], [2, 3, 4], [5], [2, 5, 6], [3, 5, 7]]),
-    # octant 2   # NEB
-    ([1, 4, 10, 2, 5, 11, 13],
-     [[1], [1, 3, 4], [1, 5, 6], [], [4], [6], [4, 6, 8]]),
-    # octant 3   # SWB
-    ([3, 4, 12, 6, 7, 14, 15],
-     [[1], [1, 2, 4], [1, 5, 7], [], [4], [7], [4, 7, 8]]),
-    # octant 4   # SEB
-    ([4, 5, 13, 7, 15, 8, 16],
-     [[1, 2, 3], [2], [2, 6, 8], [3], [3, 7, 8], [], [8]]),
-    # octant 5   # NWU
-    ([9, 10, 12, 17, 18, 20, 21],
-     [[1], [1, 2, 6], [1, 3, 7], [], [6], [7], [6, 7, 8]]),
-    # octant 6   # NEU
-    ([10, 11, 13, 18, 21, 19, 22],
-     [[1, 2, 5], [2], [2, 4, 8], [5], [5, 7, 8], [], [8]]),
-    # octant 7   # SWU
-    ([12, 14, 15, 20, 21, 23, 24],
-     [[1, 3, 5], [3], [3, 4, 8], [5], [5, 6, 8], [], [8]]),
-    # octant 8   # SEU
-    ([13, 15, 16, 21, 22, 24, 25],
-     [[2, 4, 6], [3, 4, 7], [4], [5, 6, 7], [6], [7], []])
-]
-}}
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef void octree_labeling(int octant, int label, pixel_type cube[]) nogil:
     """This is a recursive method that calculates the number of connected
     components in the 3D neighborhood after the center pixel would
@@ -519,45 +475,7 @@ def getPossibleNeighbors(pM,rM,cM):
     return resP,resR,resC,resK
 }}
 
-{{### ID IS Allowable Direction so face[0] is +1 allowoable -1 is out of bounds}}
-{{py:
-faces=  {0:{'ID':( 1, 0, 0),'Octant':[0,1,2,3]},
-         1:{'ID':(-1, 0, 0),'Octant':[4,5,6,7]},
-         2:{'ID':( 0, 1, 0),'Octant':[0,2,4,6]},
-         3:{'ID':( 0,-1, 0),'Octant':[1,3,5,7]},
-         4:{'ID':( 0, 0, 1),'Octant':[0,1,4,5]},
-         5:{'ID':( 0, 0,-1),'Octant':[2,3,6,7]},
-        }
-edges = {0 :{'ID':( 1, 1, 0),'Octant':[0,2]},
-         1 :{'ID':( 1,-1, 0),'Octant':[1,3]},
-         2 :{'ID':( 1, 0, 1),'Octant':[0,1]},
-         3 :{'ID':( 1, 0,-1),'Octant':[2,3]},
-         4 :{'ID':( 0, 1, 1),'Octant':[0,4]},
-         5 :{'ID':( 0,-1,-1),'Octant':[3,7]},
-         6 :{'ID':( 0, 1,-1),'Octant':[2,6]},
-         7 :{'ID':( 0,-1, 1),'Octant':[1,5]},
-         8 :{'ID':(-1, 1, 0),'Octant':[4,6]},
-         9 :{'ID':(-1,-1, 0),'Octant':[5,7]},
-        10 :{'ID':(-1, 0, 1),'Octant':[4,5]},
-        11 :{'ID':(-1, 0,-1),'Octant':[6,7]},
-        }
-corners = {0:{'ID':( 1, 1, 1),'Octant':[0]},
-           1:{'ID':( 1,-1, 1),'Octant':[1]},
-           2:{'ID':( 1, 1,-1),'Octant':[2]},
-           3:{'ID':( 1,-1,-1),'Octant':[3]},
-           4:{'ID':(-1, 1, 1),'Octant':[4]},
-           5:{'ID':(-1,-1, 1),'Octant':[5]},
-           6:{'ID':(-1, 1,-1),'Octant':[6]},
-           7:{'ID':(-1,-1,-1),'Octant':[7]},
-           }
 
-objects = [faces,edges,corners]
-objectNames = ["faces","edges","corners"]
-mM = [[-1,1],[-1,1],[-1,1]]
-index = ["p","r","c"]
-
-
-}}
 
 
 {{for numObj,obj in enumerate(objects)}}
@@ -575,8 +493,7 @@ for ind in np.nonzero(ID)[0]:
         aM[ind][1] = 0
 }}
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+
 cdef void get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(pixel_type[:, :, ::1] img,
                                npy_intp p, npy_intp r, npy_intp c,
                                pixel_type neighborhood[]) nogil:
@@ -611,8 +528,7 @@ _neighb_idx = [[0, 9, 3, 12, 1, 10, 4],       #0
 }}
 {{for _octant in range(8)}}
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+
 cdef int is_Euler_invariant_Octant_{{_octant}}(pixel_type neighbors[],
                              int[::1] lut) nogil:
 
@@ -633,8 +549,7 @@ cdef int is_Euler_invariant_Octant_{{_octant}}(pixel_type neighbors[],
 {{for numObj,obj in enumerate(objects)}}
 {{for n in obj}}
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+
 cdef void find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(pixel_type[:, :, ::1] img,
                                         int curr_border,
                                         vector[coordinate] & simple_border_points) nogil:
@@ -778,6 +693,7 @@ for ind in range(0,3):
             point.r = r
             point.c = c
             point.ID = {{20+n}}
+            point.faceCount = is_endpoint_check(neighborhood)
             simple_border_points.push_back(point)
 
 {{elif numInd == 3}}
@@ -824,6 +740,7 @@ for ind in range(0,3):
                     point.r = r
                     point.c = c
                     point.ID = {{40+n}}
+                    point.faceCount = is_endpoint_check(neighborhood)
                     simple_border_points.push_back(point)
 
 
@@ -831,11 +748,6 @@ for ind in range(0,3):
 {{endfor}}
 {{endfor}}
 
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef void find_simple_point_candidates_boundary(pixel_type[:, :, ::1] img,
                                         int curr_border,
                                         vector[coordinate] & simple_border_points) nogil:
@@ -890,9 +802,6 @@ cdef void find_simple_point_candidates_boundary(pixel_type[:, :, ::1] img,
         {{endfor}}
 
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef void get_neighborhood_limited(pixel_type[:, :, ::1] img,
                                npy_intp p, npy_intp r, npy_intp c, npy_intp ID,
                                pixel_type neighborhood[]) nogil:
