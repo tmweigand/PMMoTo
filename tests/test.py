@@ -38,10 +38,10 @@ def my_function():
     boundaries = [0,0,0]
     inlet  = [1,0,0]
     outlet = [-1,0,0]
-    # rLookupFile = './rLookups/PA.rLookup'
+    rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
-    # file = './testDomains/membrane.dump.gz'
+    # file = './testDomains/50pack.out'
+    file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
     res = 1 ### Assume that the reservoir is always at the inlet!
@@ -56,8 +56,8 @@ def my_function():
 
     startTime = time.time()
 
-    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
+    # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,res,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
     sDEDTL = PMMoTo.calcEDT(rank,size,domain,sDL,sDL.grid,stats = True)
 

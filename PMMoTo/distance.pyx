@@ -387,6 +387,8 @@ class EDT(object):
                             own[1][0]:own[1][1],
                             own[2][0]:own[2][1]]
         self.distVals,self.distCounts  = np.unique(ownEDT,return_counts=True)
+        print(self.subDomain.ID,self.distVals)
+
 
 def calcEDT(rank,size,domain,subDomain,grid,stats=False):
 

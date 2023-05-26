@@ -102,7 +102,7 @@ class medialAxis(object):
         Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changed
         """
         gridShape = self.Domain.subNodes
-        factor = 0.95
+        factor = 0.05
         self.padding[0] = math.ceil(gridShape[0]*factor)
         self.padding[1] = math.ceil(gridShape[1]*factor)
         self.padding[2] = math.ceil(gridShape[2]*factor)
@@ -607,9 +607,9 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoffs):
 
       sDMA.updateSetInfo(setData,rank)
       for set in sDMA.Sets:
-        set.inaccessible = set.inaccessible[1]
-        set.trim = set.trim[1]
-        set.globalPathIDs = set.globalPathIDs[1]
+        set.inaccessible = set.inaccessible[0]
+        set.trim = set.trim[0]
+        set.globalPathIDs = set.globalPathIDs[0]
 
 
     return sDMA

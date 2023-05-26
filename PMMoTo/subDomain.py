@@ -2,9 +2,11 @@ import numpy as np
 from mpi4py import MPI
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenVerlet
 from . import communication
 import sys
 import pdb
+import math
 comm = MPI.COMM_WORLD
 
 """ Solid = 0, Pore = 1 """
@@ -247,7 +249,133 @@ class Domain(object):
         self.subNodes[0],self.subNodesRem[0] = divmod(self.nodes[0],self.subDomains[0])
         self.subNodes[1],self.subNodesRem[1] = divmod(self.nodes[1],self.subDomains[1])
         self.subNodes[2],self.subNodesRem[2] = divmod(self.nodes[2],self.subDomains[2])
-
+    
+    def periodicImageSphereData(self,sphereData):
+        numObj = sphereData.shape[1]
+        replicateSphereData = [[],[],[],[]]
+        newSphereData = [[],[],[],[]]
+        for i in range(numObj):
+            x = sphereData[0,i]
+            y = sphereData[1,i]
+            z = sphereData[2,i]
+            r = math.sqrt(sphereData[3,i])
+            nearBotX = x-r <= self.domainSize[0,0]
+            nearTopX = x+r >= self.domainSize[0,1]
+            nearBotY = y-r <= self.domainSize[1,0]
+            nearTopY = y+r >= self.domainSize[1,1]
+            nearBotZ = z-r <= self.domainSize[2,0]
+            nearTopZ = z+r >= self.domainSize[2,1]
+            checks = [nearBotX, nearTopX,
+                    nearBotY, nearTopY,
+                    nearBotZ, nearTopZ]
+            coords = [x,y,z]
+            if not any(checks):
+                continue
+            if self.boundaries[2]==2:
+                if checks[4]:
+                    shiftedZ = z+self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)                
+                elif checks [5]:
+                    shiftedZ = z-self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                        
+            if self.boundaries[0]==2:
+                if checks[0]:
+                    shiftedX = x+self.domainLength[0]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)                
+                elif checks[1]:
+                    shiftedX = x-self.domainLength[0]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+                else:
+                    shiftedX = x
+            
+                if self.boundaries[1]==2:
+                    if checks[2]:
+                        shiftedY = y+self.domainLength[1]
+                        replicateSphereData[0].append(shiftedX)
+                        replicateSphereData[1].append(shiftedY)
+                        replicateSphereData[2].append(z)
+                        replicateSphereData[3].append(r)
+                    elif checks [3]:
+                        shiftedY = y-self.domainLength[1]
+                        replicateSphereData[0].append(shiftedX)
+                        replicateSphereData[1].append(shiftedY)
+                        replicateSphereData[2].append(z)
+                        replicateSphereData[3].append(r)
+                    else:
+                        shiftedY = y
+            
+                    if self.boundaries[2]==2:
+                        if checks[4]:
+                            shiftedZ = z+self.domainLength[2]
+                            replicateSphereData[0].append(shiftedX)
+                            replicateSphereData[1].append(shiftedY)
+                            replicateSphereData[2].append(shiftedZ)
+                            replicateSphereData[3].append(r)
+                        elif checks [5]:
+                            shiftedZ = z-self.domainLength[2]
+                            replicateSphereData[0].append(shiftedX)
+                            replicateSphereData[1].append(shiftedY)
+                            replicateSphereData[2].append(shiftedZ)
+                            replicateSphereData[3].append(r)
+                if self.boundaries[2]==2:
+                    if checks[4]:
+                        shiftedZ = z+self.domainLength[2]
+                        replicateSphereData[0].append(shiftedX)
+                        replicateSphereData[1].append(y)
+                        replicateSphereData[2].append(shiftedZ)
+                        replicateSphereData[3].append(r)
+                    elif checks [5]:
+                        shiftedZ = z-self.domainLength[2]
+                        replicateSphereData[0].append(shiftedX)
+                        replicateSphereData[1].append(y)
+                        replicateSphereData[2].append(shiftedZ)
+                        replicateSphereData[3].append(r)
+            if self.boundaries[1]==2:
+                if checks[2]:
+                    shiftedY = y+self.domainLength[1]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)                
+                elif checks [3]:
+                    shiftedY = y-self.domainLength[1]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+                else:
+                    shiftedY = y
+                if self.boundaries[2]==2:
+                    if checks[4]:
+                        shiftedZ = z+self.domainLength[2]
+                        replicateSphereData[0].append(x)
+                        replicateSphereData[1].append(shiftedY)
+                        replicateSphereData[2].append(shiftedZ)
+                        replicateSphereData[3].append(r)
+                    elif checks [5]:
+                        shiftedZ = z-self.domainLength[2]
+                        replicateSphereData[0].append(x)
+                        replicateSphereData[1].append(shiftedY)
+                        replicateSphereData[2].append(shiftedZ)
+                        replicateSphereData[3].append(r)
+        newSphereData[0] = sphereData[0].tolist()+replicateSphereData[0]
+        newSphereData[1] = sphereData[1].tolist()+replicateSphereData[1]
+        newSphereData[2] = sphereData[2].tolist()+replicateSphereData[2]
+        newSphereData[3] = sphereData[3].tolist()+replicateSphereData[3]
+        return np.array(newSphereData)
 
 class subDomain(object):
     def __init__(self,ID,subDomains,Domain,Orientation):
@@ -277,7 +405,9 @@ class subDomain(object):
         self.poreNodes    = 0
         self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
         self.subDomainSize = np.zeros([3,1])
+        self.subDomainBounds = np.zeros([3,2])
         self.grid = None
+        self.sphereData = None
         self.globalBoundary = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.inlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.outlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
@@ -402,6 +532,10 @@ class subDomain(object):
         self.subDomainSize = [self.x[-1] - self.x[0],
                               self.y[-1] - self.y[0],
                               self.z[-1] - self.z[0]]
+        
+        self.subDomainBounds = [[self.x[0], self.x[-1]],
+                                [self.y[0], self.y[-1]],
+                                [self.z[0], self.z[-1]]]
 
 
     def gridCheck(self):
@@ -410,8 +544,14 @@ class subDomain(object):
             sys.exit()
 
 
-    def genDomainSphereData(self,sphereData):
-        self.grid = domainGen(self.x,self.y,self.z,sphereData)
+    def genDomainSphereData(self):
+        self.grid = domainGen(self.x,self.y,self.z,self.sphereData)
+        self.gridCheck()
+
+    def genDomainSphereDataVerlet(self):
+        rMax = self.sphereData[3].max()
+        rCut = rMax*8
+        self.grid = domainGenVerlet(rCut, rMax, self.x,self.y,self.z,self.sphereData)
         self.gridCheck()
 
     def genDomainInkBottle(self):
@@ -590,17 +730,49 @@ class subDomain(object):
         elif self.boundaryID[2][1] < 0 and self.Domain.inlet[2] < 0:
             self.res[:,:,0:resInd] = 1
 
+    def trimSphereData(self,sphereData):
+        numObj = sphereData.shape[1]
+        xList = []
+        yList = []
+        zList = []
+        rList = []
+        for i in range(numObj):
+            x = sphereData[0,i]
+            y = sphereData[1,i]
+            z = sphereData[2,i]
+            r = sphereData[3,i]
+            xCheck = self.subDomainBounds[0][0]-r <= x <= self.subDomainBounds[0][1]+r
+            yCheck = self.subDomainBounds[1][0]-r <= y <= self.subDomainBounds[1][1]+r
+            zCheck = self.subDomainBounds[2][0]-r <= z <= self.subDomainBounds[2][1]+r
+            if xCheck and yCheck and zCheck:
+                xList.append(x)
+                yList.append(y)
+                zList.append(z)
+                rList.append(r)
+        self.sphereData = np.array([xList,yList,zList,rList])
+
+
+
 
 
 def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd,dataFormat,file,dataRead,dataReadkwargs=None):
 
+
+    ## TODO: Subdomain generation should operate on ONLY the minimum number of atoms
+    ## i.e. each subdomain should be handed only the atoms that will be relevant for 
+    ## that volume. If evaluating only LJ cutoff, this is all atoms within the domain
+    ## plus those exterior to the domain by 2^(1/6)*(max sigma)/2. If evaluating the
+    ## coulombic interaction, a cutoff should be set past which coulombic interactions
+    ## are not evaluated. Thus each proc (for evaluation of coulombics) will need all 
+    ## atoms in the domain plus those exterior to the domain by the cutoff.
     numSubDomains = np.prod(subDomains)
 
     if (size != numSubDomains):
         if rank==0: 
             print("Number of Subdomains Must Equal Number of Processors!...Exiting")
         communication.raiseError()
-        
+    
+
     ### Get Domain INFO for All Procs ###
     if file is not None:
         if dataReadkwargs is None:
@@ -609,18 +781,28 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd
             domainSize,sphereData = dataRead(file,dataReadkwargs)
     if file is None:
         domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
+    
     domain = Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
     domain.getdXYZ()
     domain.getSubNodes()
-
+    # sphereData = domain.periodicImageSphereData(sphereData)
+    # if 2 in domain.boundaries: 
+    #     sphereData = domain.periodicImageSphereData(sphereData)
     orient = Orientation()
-
     sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains, Orientation = orient)
     sD.getInfo()
     sD.getNeighbors()
     sD.getXYZ()
+
+    # Be able to set boundaries of region of interest
+    # Trim sphereData to only contain spheres within subdomain plus those within a cutoff
+
     if dataFormat == "Sphere":
-        sD.genDomainSphereData(sphereData)
+        sD.trimSphereData(sphereData)
+        sD.genDomainSphereData()
+    if dataFormat == "SphereVerlet":
+        sD.trimSphereData(sphereData)
+        sD.genDomainSphereDataVerlet()
     if dataFormat == "InkBotle":
         sD.genDomainInkBottle()
     sD.setBoundaryConditions(rank)

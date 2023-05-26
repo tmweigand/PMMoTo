@@ -20,6 +20,7 @@ PMMoTo/medialAxis/_skeletonize_3d_cy.cpp
 PMMoTo/medialAxis/_skeletonize_3d_cy.html
 tests/dataDump/
 tests/dataOut/
+tests/paDataOut/
 tests/inkBottle/
 tests/kelseySpherePackTests/
 tests/porousMediaGenerate/

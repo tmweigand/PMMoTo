@@ -211,7 +211,7 @@ class Comm(object):
                     solidsAll[neigh]['orientID'][orientID] = solidsAll[neigh]['orientID'][orientID]-perCorrection
             elif (neigh == self.subDomain.ID):
                 oppIndex = self.Orientation.faces[fIndex]['oppIndex']
-                ssolidsAll[neigh]['orientID'][orientID] = np.append(solidsAll[neigh]['orientID'][orientID],faceSolids[oppIndex]-perCorrection,axis=0)
+                solidsAll[neigh]['orientID'][orientID] = np.append(solidsAll[neigh]['orientID'][orientID],faceSolids[oppIndex]-perCorrection,axis=0)
 
         # #### EDGES ####
         for eIndex in self.Orientation.edges:
