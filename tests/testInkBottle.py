@@ -14,8 +14,8 @@ def my_function():
         start_time = time.time()
 
     subDomains = [2,2,2]
-    nodes = [280,60,60]
-    #nodes = [560,120,120]
+    #nodes = [280,60,60]
+    nodes = [560,120,120]
     #nodes = [840,180,180]
     #nodes = [1120,240,240]
     #nodes = [2240,481,481]
@@ -29,8 +29,8 @@ def my_function():
     numFluidPhases = 2
     twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
 
-    wRes  = [[0,1],[0,0],[0,0]]
-    nwRes = [[1,0],[0,0],[0,0]]
+    wRes  = [[1,0],[0,0],[0,0]]
+    nwRes = [[0,1],[0,0],[0,0]]
     mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
 
     wOut  = [[0,0],[0,0],[0,0]]
@@ -41,8 +41,9 @@ def my_function():
     twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
     twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
     
-    pC = [7.69409]
+    pC = [1.67755]
     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+
 
 
 

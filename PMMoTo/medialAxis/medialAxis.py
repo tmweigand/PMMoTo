@@ -5,6 +5,7 @@ from .medialExtraction import _compute_thin_image
 from .. import nodes
 from .. import sets
 comm = MPI.COMM_WORLD
+import math
 
 
 class medialAxis(object):
@@ -104,13 +105,13 @@ class medialAxis(object):
         """
         gridShape = self.Domain.subNodes
         factor = 0.95
-        self.padding[0] = 1#math.ceil(gridShape[0]*factor)
-        self.padding[1] = 1#math.ceil(gridShape[1]*factor)
-        self.padding[2] = 1#math.ceil(gridShape[2]*factor)
+        self.padding[0] = math.ceil(gridShape[0]*factor)
+        self.padding[1] = math.ceil(gridShape[1]*factor)
+        self.padding[2] = math.ceil(gridShape[2]*factor)
 
-        # for n in [0,1,2]:
-        #     if self.padding[n] == gridShape[n]:
-        #         self.padding[n] = self.padding[n] - 1
+        for n in [0,1,2]:
+            if self.padding[n] == gridShape[n]:
+                self.padding[n] = self.padding[n] - 1
 
         
 
@@ -399,11 +400,14 @@ class medialAxis(object):
         
 
 
-def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
+def medialAxisEval(subDomain,grid,distance,connect,cutoff):
+
+    rank = subDomain.ID
+    size = subDomain.Domain.numSubDomains
 
     ### Initialize Classes
-    sDMA = medialAxis(Domain = Domain,subDomain = subDomain)
-    sDComm = communication.Comm(Domain = Domain,subDomain = subDomain,grid = grid)
+    sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain)
+    sDComm = communication.Comm(Domain = subDomain.Domain, subDomain = subDomain,grid = grid)
 
     ### Adding Padding so Identical MA at Processer Interfaces
     sDMA.genPadding()
@@ -418,65 +422,65 @@ def medialAxisEval(rank,size,Domain,subDomain,grid,distance,connect,cutoff):
 
       ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
       tempMA,neighMA = sDMA.genMAArrays()
-      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,subDomain.inlet,subDomain.outlet,Domain,subDomain,subDomain.Orientation)
+      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,subDomain.inlet,subDomain.outlet,subDomain.Domain,subDomain,subDomain.Orientation)
       sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,subDomain,subDomain.Orientation,sDMA.nodeInfo)
       sDMA.MA = np.ascontiguousarray(tempMA)
       
       sDMA.Sets,sDMA.setCount,sDMA.pathCount = sets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
       sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
 
-    #   ### Connect the Sets into Paths
-    #   sDMA.collectPaths()
+      ### Connect the Sets into Paths
+      sDMA.collectPaths()
 
-    #   ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
-    #   ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
-    #   ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
-    #   sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
-    #   sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
-    #   if error:
-    #       communication.raiseError()
-    #   setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
-    #   setData = comm.gather(setData, root=0)
+      ### Send Boundary Set Data to Neighbors and Match Boundary Sets. Gather Matched Sets
+      ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
+      ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
+      sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
+      sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+      if error:
+          communication.raiseError()
+      setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
+      setData = comm.gather(setData, root=0)
 
-    #   ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
-    #   connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
-    #   globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
-    #   if size > 1:
-    #       sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-    #       sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+      ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
+      connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
+      globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
+      if size > 1:
+          sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
+          sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
 
-    #       ### Generate Local <-> Global Connected Set IDs
-    #       sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
-    #       localGlobalConnectedSetIDs = comm.allgather(sDMA.localGlobalConnectedSetID) 
-    #       sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
-    #       sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
-
-
-    #   for s in sDMA.Sets:
-    #       s.getDistMinMax(distance)
-
-    #   ### Trim Sets on Paths that are Dead Ends
-    #   ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
-    #   sDMA.localTrimSets()
+          ### Generate Local <-> Global Connected Set IDs
+          sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
+          localGlobalConnectedSetIDs = comm.allgather(sDMA.localGlobalConnectedSetID) 
+          sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
+          sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
 
 
-    #   ### Collect only necessary Set object data for transfer to root
-    #   setData = sDMA.gatherSetInfo(rank)
-    #   ### Gather all lists into one on root
-    #   setData = comm.gather(setData,root=0)
+      for s in sDMA.Sets:
+          s.getDistMinMax(distance)
 
-    #   ### Initialize object for later scattering
-    #   if rank != 0:
-    #       listSetData = None
-    #   if rank == 0:
-    #       setData,cleanSetData = sDMA.globalCleanSets(setData)
-    #       cleanSetData = sDMA.globalTrimSets(cleanSetData)
-    #       cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
-    #       cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
-    #       listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
-    #   setData = comm.scatter(listSetData,root=0)
+      ### Trim Sets on Paths that are Dead Ends
+      ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
+      sDMA.localTrimSets()
 
-    #   sDMA.updateSetInfo(setData,rank)
+
+      ### Collect only necessary Set object data for transfer to root
+      setData = sDMA.gatherSetInfo(rank)
+      ### Gather all lists into one on root
+      setData = comm.gather(setData,root=0)
+
+      ### Initialize object for later scattering
+      if rank != 0:
+          listSetData = None
+      if rank == 0:
+          setData,cleanSetData = sDMA.globalCleanSets(setData)
+          cleanSetData = sDMA.globalTrimSets(cleanSetData)
+          cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
+          cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
+          listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
+      setData = comm.scatter(listSetData,root=0)
+
+      sDMA.updateSetInfo(setData,rank)
 
 
     return sDMA
