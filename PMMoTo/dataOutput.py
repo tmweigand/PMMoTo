@@ -249,3 +249,22 @@ def saveGridOneProc(fileName,x,y,z,grid):
     gridToVTK(fileName, x, y, z,
         start = [0,0,0],
         pointData = pointData)
+    
+def saveGridcsv(fileName,ID,x,y,z,grid):
+
+    checkFilePath(fileName)
+    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
+
+    printGridOut = np.zeros([grid.size,4])
+    c = 0
+    for i in range(0,grid.shape[0]):
+        for j in range(0,grid.shape[1]):
+            for k in range(0,grid.shape[2]):
+                printGridOut[c,0] = x[i]
+                printGridOut[c,1] = y[j]
+                printGridOut[c,2] = z[k]
+                printGridOut[c,3] = grid[i,j,k]
+                c = c + 1
+    
+    header = "x,y,z,Grid"
+    np.savetxt(fileProc+str(ID)+".csv",printGridOut, delimiter=',',header=header)

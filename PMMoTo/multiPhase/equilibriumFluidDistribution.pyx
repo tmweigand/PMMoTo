@@ -111,6 +111,12 @@ def calcDrainage(pc,mP):
     sw = eqDist.calcSaturation(mP.mpGrid,2)
     save = True
 
+    fileName = "dataOut/test/dist"
+    dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
+
+    fileName = "dataOut/distCSV"
+    dataOutput.saveGridcsv(fileName,mP.subDomain.ID,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist)
+
     setSaveDict = {'inlet': 'inlet',
                    'outlet':'outlet',
                     'boundary': 'boundary',
@@ -173,10 +179,14 @@ def calcDrainage(pc,mP):
                     ind = np.where( (ind == 1) & (wGrid == 1),1,0).astype(np.uint8)
                 
                 # Step 3g
+                print(eqDist.probeR)
                 morph = morphology.morph(ind,mP.inlet[mP.nwID],mP.subDomain,eqDist.probeR)
 
-                # fileName = "dataOut/test/morph"
-                # dataOutput.saveGrid(fileName,mP.subDomain,morph)
+                fileName = "dataOut/test/ind"
+                dataOutput.saveGrid(fileName,mP.subDomain,ind)
+
+                fileName = "dataOut/test/morph"
+                dataOutput.saveGrid(fileName,mP.subDomain,morph)
 
                 mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)
 
