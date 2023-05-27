@@ -268,9 +268,41 @@ class Domain(object):
             checks = [nearBotX, nearTopX,
                     nearBotY, nearTopY,
                     nearBotZ, nearTopZ]
-            coords = [x,y,z]
+            
             if not any(checks):
                 continue
+
+            ### X Face
+            if self.boundaries[0]==2:
+                if checks[0]:
+                    shiftedX = x + self.domainLength[0]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)                
+                if checks[1]:
+                    shiftedX = x - self.domainLength[0]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+
+            ### Y Face
+            if self.boundaries[1]==2:
+                if checks[2]:
+                    shiftedY = y + self.domainLength[1]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)                
+                if checks[3]:
+                    shiftedY = y - self.domainLength[1]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+
+            ### Z Face
             if self.boundaries[2]==2:
                 if checks[4]:
                     shiftedZ = z+self.domainLength[2]
@@ -278,103 +310,179 @@ class Domain(object):
                     replicateSphereData[1].append(y)
                     replicateSphereData[2].append(shiftedZ)
                     replicateSphereData[3].append(r)                
-                elif checks [5]:
+                if checks [5]:
                     shiftedZ = z-self.domainLength[2]
                     replicateSphereData[0].append(x)
                     replicateSphereData[1].append(y)
                     replicateSphereData[2].append(shiftedZ)
                     replicateSphereData[3].append(r)
+
+
+            ### XY Edge
+            if self.boundaries[0]==2 and self.boundaries[1]==2:
+                if checks[0] and checks[2]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)  
+                if checks[0] and checks[3]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)                
+                if checks[1] and checks[2]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[3]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(z)
+                    replicateSphereData[3].append(r)
+
+            ### XZ Edge
+            if self.boundaries[0]==2 and self.boundaries[2]==2:
+                if checks[0] and checks[4]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)  
+                if checks[0] and checks[5]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)                
+                if checks[1] and checks[4]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[5]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(y)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+
+            ### YZ Edge
+            if self.boundaries[1]==2 and self.boundaries[2]==2:
+                if checks[2] and checks[4]:
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)  
+                if checks[2] and checks[5]:
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)                
+                if checks[3] and checks[4]:
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[3] and checks[5]:
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(x)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+
+            ### Corners
+            if self.boundaries[0]==2 and self.boundaries[1]==2 and self.boundaries[2]==2:
+                if checks[0] and checks[2] and checks[4]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[0] and checks[2] and checks[5]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[0] and checks[3] and checks[4]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[0] and checks[3] and checks[5]:
+                    shiftedX = x + self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[2] and checks[4]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[2] and checks[5]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y + self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[3] and checks[4]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z + self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
+                if checks[1] and checks[3] and checks[5]:
+                    shiftedX = x - self.domainLength[0]
+                    shiftedY = y - self.domainLength[1]
+                    shiftedZ = z - self.domainLength[2]
+                    replicateSphereData[0].append(shiftedX)
+                    replicateSphereData[1].append(shiftedY)
+                    replicateSphereData[2].append(shiftedZ)
+                    replicateSphereData[3].append(r)
                         
-            if self.boundaries[0]==2:
-                if checks[0]:
-                    shiftedX = x+self.domainLength[0]
-                    replicateSphereData[0].append(shiftedX)
-                    replicateSphereData[1].append(y)
-                    replicateSphereData[2].append(z)
-                    replicateSphereData[3].append(r)                
-                elif checks[1]:
-                    shiftedX = x-self.domainLength[0]
-                    replicateSphereData[0].append(shiftedX)
-                    replicateSphereData[1].append(y)
-                    replicateSphereData[2].append(z)
-                    replicateSphereData[3].append(r)
-                else:
-                    shiftedX = x
-            
-                if self.boundaries[1]==2:
-                    if checks[2]:
-                        shiftedY = y+self.domainLength[1]
-                        replicateSphereData[0].append(shiftedX)
-                        replicateSphereData[1].append(shiftedY)
-                        replicateSphereData[2].append(z)
-                        replicateSphereData[3].append(r)
-                    elif checks [3]:
-                        shiftedY = y-self.domainLength[1]
-                        replicateSphereData[0].append(shiftedX)
-                        replicateSphereData[1].append(shiftedY)
-                        replicateSphereData[2].append(z)
-                        replicateSphereData[3].append(r)
-                    else:
-                        shiftedY = y
-            
-                    if self.boundaries[2]==2:
-                        if checks[4]:
-                            shiftedZ = z+self.domainLength[2]
-                            replicateSphereData[0].append(shiftedX)
-                            replicateSphereData[1].append(shiftedY)
-                            replicateSphereData[2].append(shiftedZ)
-                            replicateSphereData[3].append(r)
-                        elif checks [5]:
-                            shiftedZ = z-self.domainLength[2]
-                            replicateSphereData[0].append(shiftedX)
-                            replicateSphereData[1].append(shiftedY)
-                            replicateSphereData[2].append(shiftedZ)
-                            replicateSphereData[3].append(r)
-                if self.boundaries[2]==2:
-                    if checks[4]:
-                        shiftedZ = z+self.domainLength[2]
-                        replicateSphereData[0].append(shiftedX)
-                        replicateSphereData[1].append(y)
-                        replicateSphereData[2].append(shiftedZ)
-                        replicateSphereData[3].append(r)
-                    elif checks [5]:
-                        shiftedZ = z-self.domainLength[2]
-                        replicateSphereData[0].append(shiftedX)
-                        replicateSphereData[1].append(y)
-                        replicateSphereData[2].append(shiftedZ)
-                        replicateSphereData[3].append(r)
-            if self.boundaries[1]==2:
-                if checks[2]:
-                    shiftedY = y+self.domainLength[1]
-                    replicateSphereData[0].append(x)
-                    replicateSphereData[1].append(shiftedY)
-                    replicateSphereData[2].append(z)
-                    replicateSphereData[3].append(r)                
-                elif checks [3]:
-                    shiftedY = y-self.domainLength[1]
-                    replicateSphereData[0].append(x)
-                    replicateSphereData[1].append(shiftedY)
-                    replicateSphereData[2].append(z)
-                    replicateSphereData[3].append(r)
-                else:
-                    shiftedY = y
-                if self.boundaries[2]==2:
-                    if checks[4]:
-                        shiftedZ = z+self.domainLength[2]
-                        replicateSphereData[0].append(x)
-                        replicateSphereData[1].append(shiftedY)
-                        replicateSphereData[2].append(shiftedZ)
-                        replicateSphereData[3].append(r)
-                    elif checks [5]:
-                        shiftedZ = z-self.domainLength[2]
-                        replicateSphereData[0].append(x)
-                        replicateSphereData[1].append(shiftedY)
-                        replicateSphereData[2].append(shiftedZ)
-                        replicateSphereData[3].append(r)
-        newSphereData[0] = sphereData[0].tolist()+replicateSphereData[0]
-        newSphereData[1] = sphereData[1].tolist()+replicateSphereData[1]
-        newSphereData[2] = sphereData[2].tolist()+replicateSphereData[2]
-        newSphereData[3] = sphereData[3].tolist()+replicateSphereData[3]
+        newSphereData[0] = sphereData[0,:].tolist()+replicateSphereData[0]
+        newSphereData[1] = sphereData[1,:].tolist()+replicateSphereData[1]
+        newSphereData[2] = sphereData[2,:].tolist()+replicateSphereData[2]
+        newSphereData[3] = np.sqrt(sphereData[3,:]).tolist()+replicateSphereData[3]
+
         return np.array(newSphereData)
 
 class subDomain(object):
@@ -785,9 +893,9 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,resInd
     domain = Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
     domain.getdXYZ()
     domain.getSubNodes()
-    # sphereData = domain.periodicImageSphereData(sphereData)
-    # if 2 in domain.boundaries: 
-    #     sphereData = domain.periodicImageSphereData(sphereData)
+    #sphereData = domain.periodicImageSphereData(sphereData)
+    if 2 in domain.boundaries: 
+        sphereData = domain.periodicImageSphereData(sphereData)
     orient = Orientation()
     sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains, Orientation = orient)
     sD.getInfo()

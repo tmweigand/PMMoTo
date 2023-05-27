@@ -4,9 +4,9 @@ cimport numpy as cnp
 from libc.stdio cimport printf
 cnp.import_array()
 from mpi4py import MPI
-# from pykdtree.kdtree import KDTree
+from pykdtree.kdtree import KDTree
 ### if using WSL, uncomment line below. 
-from scipy.spatial import KDTree
+#from scipy.spatial import KDTree
 
 import edt
 from . import communication
@@ -26,7 +26,7 @@ def _fixInterfaceCalc(self,
                      cnp.ndarray[cnp.int32_t, ndim=2] _faceSolids,
                      cnp.ndarray[cnp.float32_t, ndim=3] _EDT,
                      cnp.ndarray[cnp.uint8_t, ndim=3] _visited,
-                     double minD,
+                     cnp.float32_t minD,
                      list coords,
                      cnp.ndarray[cnp.uint8_t, ndim=1] argOrder):
     """
@@ -74,6 +74,7 @@ def _fixInterfaceCalc(self,
                 if (maxD > minD):
                     d,ind = tree.query(_orderG,distance_upper_bound=maxD)
                     if d < maxD:
+                        
                         _EDT[orderL[0],orderL[1],orderL[2]] = d
                         distChanged = True
                         _visited[orderL[0],orderL[1],orderL[2]] = 1
@@ -387,7 +388,7 @@ class EDT(object):
                             own[1][0]:own[1][1],
                             own[2][0]:own[2][1]]
         self.distVals,self.distCounts  = np.unique(ownEDT,return_counts=True)
-        print(self.subDomain.ID,self.distVals)
+        #print(self.subDomain.ID,self.distVals)
 
 
 def calcEDT(rank,size,domain,subDomain,grid,stats=False):
