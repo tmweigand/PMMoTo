@@ -115,7 +115,7 @@ def calcDrainage(pc,mP):
     dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
 
     fileName = "dataOut/distCSV"
-    dataOutput.saveGridcsv(fileName,mP.subDomain.ID,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist)
+    dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
 
     setSaveDict = {'inlet': 'inlet',
                    'outlet':'outlet',

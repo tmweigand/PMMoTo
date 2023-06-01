@@ -250,11 +250,23 @@ def saveGridOneProc(fileName,x,y,z,grid):
         start = [0,0,0],
         pointData = pointData)
     
-def saveGridcsv(fileName,ID,x,y,z,grid):
+def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
 
-    if ID == 0:
+    rank = subDomain.ID
+
+    if rank == 0:
         checkFilePath(fileName)
     comm.barrier()
+
+    print(grid.shape)
+
+    if removeHalo:
+        own = subDomain.ownNodes
+        grid =  grid[own[0][0]:own[0][1],
+                     own[1][0]:own[1][1],
+                     own[2][0]:own[2][1]]
+        
+    print(grid.shape)
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
 
@@ -270,4 +282,4 @@ def saveGridcsv(fileName,ID,x,y,z,grid):
                 c = c + 1
     
     header = "x,y,z,Grid"
-    np.savetxt(fileProc+str(ID)+".csv",printGridOut, delimiter=',',header=header)
+    np.savetxt(fileProc+str(rank)+".csv",printGridOut, delimiter=',',header=header)
