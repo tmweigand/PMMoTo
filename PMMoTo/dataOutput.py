@@ -258,16 +258,12 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
         checkFilePath(fileName)
     comm.barrier()
 
-    print(grid.shape)
-
     if removeHalo:
         own = subDomain.ownNodes
         grid =  grid[own[0][0]:own[0][1],
                      own[1][0]:own[1][1],
                      own[2][0]:own[2][1]]
         
-    print(grid.shape)
-
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
 
     printGridOut = np.zeros([grid.size,4])
