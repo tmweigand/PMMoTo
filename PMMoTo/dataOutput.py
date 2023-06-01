@@ -252,7 +252,10 @@ def saveGridOneProc(fileName,x,y,z,grid):
     
 def saveGridcsv(fileName,ID,x,y,z,grid):
 
-    checkFilePath(fileName)
+    if ID == 0:
+        checkFilePath(fileName)
+    comm.barrier()
+
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
 
     printGridOut = np.zeros([grid.size,4])
