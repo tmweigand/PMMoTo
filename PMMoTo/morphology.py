@@ -51,11 +51,11 @@ class Morphology(object):
         if inlet[0] == 1:
             self.haloGrid[0,:,:]  = np.where(self.haloGrid[1,:,:] == 1,1,0)
         if inlet[1] == 1:
-            self.haloGrid[-1,:,:] = np.where(self.haloGrid[-2,:,:] == 1,1,0)
+            self.haloGrid[-1,:,:] = np.where(self.haloGrid[-1,:,:] == 1,1,0)
         if inlet[2] == 1:
             self.haloGrid[:,0,:]  = np.where(self.haloGrid[:,1,:] == 1,1,0)
         if inlet[3] == 1:
-            self.haloGrid[:,-1,:] = np.where(self.haloGrid[:,-2,:] == 1,1,0)
+            self.haloGrid[:,-1,:] = np.where(self.haloGrid[:,-1,:] == 1,1,0)
         if inlet[4] == 1:
             self.haloGrid[:,:,0]  = np.where(self.haloGrid[:,:,1] == 1,1,0)
         if inlet[5] == 1:
