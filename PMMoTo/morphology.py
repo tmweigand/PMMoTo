@@ -80,7 +80,7 @@ def morph(grid,inlet,subDomain,radius):
     sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
     sDMorph.genStructElem()
     sDMorph.haloGrid,sDMorph.halo = sDComm.haloCommunication(sDMorph.structRatio)
-    sDMorph.addReservoir(inlet)
+    #sDMorph.addReservoir(inlet)
     sDMorph.morphAdd()
 
     return sDMorph.gridOut

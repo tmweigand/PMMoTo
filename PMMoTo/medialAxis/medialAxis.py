@@ -2,6 +2,8 @@ import numpy as np
 from mpi4py import MPI
 from .. import communication
 from .medialExtraction import _compute_thin_image
+from .medialExtraction import _compute_thin_image_border
+from .medialExtraction import getInternalBoundaries
 from .. import nodes
 from .. import sets
 comm = MPI.COMM_WORLD
@@ -15,9 +17,10 @@ class medialAxis(object):
     Sets are broken into Reaches -> Medial Nodes -> Medial Clusters
     """
 
-    def __init__(self,Domain,subDomain):
+    def __init__(self,Domain,subDomain,grid):
         self.Domain = Domain
         self.subDomain = subDomain
+        self.grid = grid
         self.Orientation = subDomain.Orientation
         self.padding = np.zeros([3],dtype=np.int64)
         self.haloGrid = None
@@ -25,6 +28,25 @@ class medialAxis(object):
         self.haloPadNeigh = np.zeros(6)
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
+
+
+    def skeletonizeAxis_test(self):
+
+        self.MA  = np.copy(self.grid)
+        unchanged_borders = 0
+        
+        for i in range(0,25):#while unchanged_borders < self.Orientation.numFaces:
+            for fIndex in self.Orientation.faces:
+
+                self.MA = getInternalBoundaries(self.MA,fIndex)
+                sDComm = communication.Comm(Domain = self.subDomain.Domain,subDomain = self.subDomain,grid = self.MA)
+                self.MA = sDComm.updateBuffer()
+                self.MA,unchanged_borders = _compute_thin_image_border(self.MA,fIndex,unchanged_borders)
+
+        
+
+
+                
 
     def skeletonizeAxis(self,connect = False):
         """Compute the skeleton of a binary image.
@@ -68,7 +90,8 @@ class medialAxis(object):
 
         """
         self.haloGrid = np.ascontiguousarray(self.haloGrid)
-        image_o = np.copy(self.haloGrid)
+        #image_o = np.copy(self.haloGrid)
+        image_o = np.copy(self.subDomain.grid)
 
         # normalize to binary
         image_o[image_o != 0] = 1
@@ -92,9 +115,9 @@ class medialAxis(object):
                               self.halo[4] - self.haloPadNeigh[4] : dim[2] - self.halo[5] + self.haloPadNeigh[5]]
 
         else:
-            self.MA = image_o[self.halo[0]:dim[0] - self.halo[1],
-                              self.halo[2]:dim[1] - self.halo[3],
-                              self.halo[4]:dim[2] - self.halo[5]]
+            self.MA = image_o#[self.halo[0]:dim[0] - self.halo[1],
+                             # self.halo[2]:dim[1] - self.halo[3],
+                             # self.halo[4]:dim[2] - self.halo[5]]
                 
         self.MA = np.ascontiguousarray(self.MA)
 
@@ -406,17 +429,19 @@ def medialAxisEval(subDomain,grid,distance,connect,cutoff):
     size = subDomain.Domain.numSubDomains
 
     ### Initialize Classes
-    sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain)
+    sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain, grid = grid)
     sDComm = communication.Comm(Domain = subDomain.Domain, subDomain = subDomain,grid = grid)
 
     ### Adding Padding so Identical MA at Processer Interfaces
-    sDMA.genPadding()
+    #sDMA.genPadding()
 
     ### Send Padding Data to Neighbors
-    sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
+    #sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
+
 
     ### Determine MA
-    sDMA.skeletonizeAxis(connect)
+    sDMA.skeletonizeAxis_test()
+    #sDMA.skeletonizeAxis()
     
     if connect:
 

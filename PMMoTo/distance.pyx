@@ -195,8 +195,8 @@ class EDT(object):
         self.subDomain     = subDomain
         self.Domain        = Domain
         self.Orientation   = Orientation
-        self.EDT = np.zeros_like(self.subDomain.grid)
-        self.visited = np.zeros_like(self.subDomain.grid,dtype=np.uint8)
+        self.EDT = np.zeros_like(grid)
+        self.visited = np.zeros_like(grid,dtype=np.uint8)
         self.solids = None
         self.nS = 0
         self.faceSolids = []
@@ -240,6 +240,7 @@ class EDT(object):
         Trim to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
         """
         self.faceSolids = [[] for _ in range(len(self.Orientation.faces))]
+
         extend = [self.extendFactor*x for x in self.subDomainSize]
         for fIndex in self.Orientation.faces:
             pointsXYZ = []

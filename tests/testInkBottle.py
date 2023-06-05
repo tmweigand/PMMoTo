@@ -14,20 +14,20 @@ def my_function():
         start_time = time.time()
 
     subDomains = [2,2,2]
-    #nodes = [280,60,60]
+    #nodes = [140,30,30]
     nodes = [560,120,120]
     #nodes = [840,180,180]
     #nodes = [1120,240,240]
     #nodes = [2240,481,481]
 
-    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
-    domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
+    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
 
     numFluidPhases = 2
-    twoPhase = PMMoTo.multiPhase.multiPhase(domain,sDL,numFluidPhases)
+    twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
     wRes  = [[1,0],[0,0],[0,0]]
     nwRes = [[0,1],[0,0],[0,0]]
@@ -39,10 +39,13 @@ def my_function():
     
     #Initialize wetting saturated somain
     twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets)
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,10)
     
-    pC = [1.67755]
+    pC = [1.81122,2.16814]
+    #pC = [1.81122]
     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid)
 
 
 

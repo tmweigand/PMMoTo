@@ -90,7 +90,7 @@ cdef int getBoundaryIDReference(cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
+def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientation):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
@@ -151,8 +151,8 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   cdef cnp.uint8_t [:,:,:] _ind
   _ind = gridP
 
-  cdef cnp.int64_t [:,:,:] loopInfo
-  loopInfo = subDomain.loopInfo
+  cdef cnp.int64_t [:,:,:] _loopInfo
+  _loopInfo = loopInfo
 
   cdef int dN0,dN1,dN2
   dN0 = Domain.nodes[0]
@@ -163,12 +163,12 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   # Loop through Boundary Faces to get nodeInfo and nodeIndex
   c = 0
   for fIndex in range(0,numFaces):
-    iMin = loopInfo[fIndex][0][0]
-    iMax = loopInfo[fIndex][0][1]
-    jMin = loopInfo[fIndex][1][0]
-    jMax = loopInfo[fIndex][1][1]
-    kMin = loopInfo[fIndex][2][0]
-    kMax = loopInfo[fIndex][2][1]
+    iMin = _loopInfo[fIndex][0][0]
+    iMax = _loopInfo[fIndex][0][1]
+    jMin = _loopInfo[fIndex][1][0]
+    jMax = _loopInfo[fIndex][1][1]
+    kMin = _loopInfo[fIndex][2][0]
+    kMax = _loopInfo[fIndex][2][1]
     bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
     perFace  = subDomain.neighborPerF[fIndex]
     perAny = perFace.any()
@@ -228,12 +228,12 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
             c = c + 1
 
   # Loop through internal nodes to get nodeInfo and nodeIndex
-  iMin = loopInfo[numFaces][0][0]
-  iMax = loopInfo[numFaces][0][1]
-  jMin = loopInfo[numFaces][1][0]
-  jMax = loopInfo[numFaces][1][1]
-  kMin = loopInfo[numFaces][2][0]
-  kMax = loopInfo[numFaces][2][1]
+  iMin = _loopInfo[numFaces][0][0]
+  iMax = _loopInfo[numFaces][0][1]
+  jMin = _loopInfo[numFaces][1][0]
+  jMax = _loopInfo[numFaces][1][1]
+  kMin = _loopInfo[numFaces][2][0]
+  kMax = _loopInfo[numFaces][2][1]
   for i in range(iMin,iMax):
     for j in range(jMin,jMax):
       for k in range(kMin,kMax):
@@ -252,12 +252,12 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
   c = 0
   for fIndex in range(numFaces):
-    iMin = loopInfo[fIndex][0][0]
-    iMax = loopInfo[fIndex][0][1]
-    jMin = loopInfo[fIndex][1][0]
-    jMax = loopInfo[fIndex][1][1]
-    kMin = loopInfo[fIndex][2][0]
-    kMax = loopInfo[fIndex][2][1]
+    iMin = _loopInfo[fIndex][0][0]
+    iMax = _loopInfo[fIndex][0][1]
+    jMin = _loopInfo[fIndex][1][0]
+    jMax = _loopInfo[fIndex][1][1]
+    kMin = _loopInfo[fIndex][2][0]
+    kMax = _loopInfo[fIndex][2][1]
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
@@ -277,12 +277,12 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
             c = c + 1
 
   # Loop through internal nodes to get nodeDirections and _nodeDirectionsIndex
-  iMin = loopInfo[numFaces][0][0]
-  iMax = loopInfo[numFaces][0][1]
-  jMin = loopInfo[numFaces][1][0]
-  jMax = loopInfo[numFaces][1][1]
-  kMin = loopInfo[numFaces][2][0]
-  kMax = loopInfo[numFaces][2][1]
+  iMin = _loopInfo[numFaces][0][0]
+  iMax = _loopInfo[numFaces][0][1]
+  jMin = _loopInfo[numFaces][1][0]
+  jMax = _loopInfo[numFaces][1][1]
+  kMin = _loopInfo[numFaces][2][0]
+  kMax = _loopInfo[numFaces][2][1]
   for i in range(iMin,iMax):
    for j in range(jMin,jMax):
      for k in range(kMin,kMax):
