@@ -93,5 +93,4 @@ class multiPhase(object):
 
         for fluid in self.fluidIDs:
             self.loopInfo[fluid] = self.Orientation.getLoopInfo(self.mpGrid,self.subDomain,self.inlet[fluid],self.outlet[fluid],resSize)
-
         

@@ -245,9 +245,9 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
     sD.getXYZ(sD.buffer)
 
     if file is not None:
-        pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData)
+        pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 1)
     else:
-        pM = porousMedia.genPorousMedia(sD,dataFormat)
+        pM = porousMedia.genPorousMedia(sD,dataFormat,resSize = 1)
 
 
     return domain,sD,pM

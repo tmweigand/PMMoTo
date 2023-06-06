@@ -143,8 +143,8 @@ def calcDrainage(pc,mP):
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
 
-            fileName = "dataOut/test/indGrid"
-            dataOutput.saveGrid(fileName,mP.subDomain,ind)
+            # fileName = "dataOut/test/indGrid"
+            # dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
             # Step 3 - Check if Points were Marked
             continueFlag = eqDist.checkPoints(ind,1)
@@ -156,18 +156,18 @@ def calcDrainage(pc,mP):
                     nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
-                    setSaveDict = {'inlet': 'inlet',
-                                   'outlet':'outlet',
-                                   'boundary': 'boundary',
-                                   'localID': 'localID'}
+                    # setSaveDict = {'inlet': 'inlet',
+                    #                'outlet':'outlet',
+                    #                'boundary': 'boundary',
+                    #                'localID': 'localID'}
 
-                    eqDist.Sets = nwSets
-                    eqDist.setCount = nwSetCount
+                    # eqDist.Sets = nwSets
+                    # eqDist.setCount = nwSetCount
 
-                    dataOutput.saveSetData("dataOut/NWset",mP.subDomain,eqDist,**setSaveDict)
+                    # dataOutput.saveSetData("dataOut/NWset",mP.subDomain,eqDist,**setSaveDict)
 
-                    fileName = "dataOut/test/nwGrid"+str(p)
-                    dataOutput.saveGrid(fileName,mP.subDomain,nwGrid)
+                    # fileName = "dataOut/test/nwGrid"+str(p)
+                    # dataOutput.saveGrid(fileName,mP.subDomain,nwGrid)
 
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
                 wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
@@ -175,17 +175,12 @@ def calcDrainage(pc,mP):
                     wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
                     wGrid = eqDist.getInletConnectedNodes(wSets,1)
 
-                    fileName = "dataOut/test/wGrid"+str(p)
-                    dataOutput.saveGrid(fileName,mP.subDomain,wGrid)
+                    # fileName = "dataOut/test/wGrid"+str(p)
+                    # dataOutput.saveGrid(fileName,mP.subDomain,wGrid)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
                 indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                 ind = eqDist.getInletConnectedNodes(indSets,1)
-
-                fileName = "dataOut/test/ind"+str(p)
-                dataOutput.saveGrid(fileName,mP.subDomain,ind)
-
-                print("CHECK",wCheck,nwCheck)
 
                 # Step 3e - no Step 3e ha. 
 
@@ -197,14 +192,14 @@ def calcDrainage(pc,mP):
                 elif wCheck:
                     ind = np.where( (ind == 1) & (wGrid == 1),1,0).astype(np.uint8)
 
-                fileName = "dataOut/test/indFinal"+str(p)
-                dataOutput.saveGrid(fileName,mP.subDomain,ind)
+                # fileName = "dataOut/test/indFinal"+str(p)
+                # dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
                 # Step 3g
                 morph = morphology.morph(ind,mP.inlet[mP.nwID],mP.subDomain,eqDist.probeR)
 
-                fileName = "dataOut/test/morph"+str(p)
-                dataOutput.saveGrid(fileName,mP.subDomain,morph)
+                # fileName = "dataOut/test/morph"+str(p)
+                # dataOutput.saveGrid(fileName,mP.subDomain,morph)
 
                 mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)
 

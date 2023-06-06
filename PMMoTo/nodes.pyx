@@ -1,7 +1,4 @@
 #### One in getConnectedSets
-
-
-
 # cython: profile=True
 # cython: linetrace=True
 import math
@@ -130,6 +127,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   cdef int c,d,i,j,k,ii,jj,kk,availDirection,perAny,sInlet,sOutlet
   cdef int iLoc,jLoc,kLoc,globIndex
   cdef int iMin,iMax,jMin,jMax,kMin,kMax
+  cdef int _phase = phase
 
   cdef int numFaces,fIndex
   numFaces = Orientation.numFaces
@@ -177,7 +175,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
-          if _ind[i+1,j+1,k+1] == phase:
+          if _ind[i+1,j+1,k+1] == _phase:
 
             iLoc = iStart+i
             jLoc = jStart+j
@@ -237,7 +235,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   for i in range(iMin,iMax):
     for j in range(jMin,jMax):
       for k in range(kMin,kMax):
-        if (_ind[i+1,j+1,k+1] == phase):
+        if (_ind[i+1,j+1,k+1] == _phase):
           iLoc = iStart+i
           jLoc = jStart+j
           kLoc = kStart+k
@@ -261,13 +259,13 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
-          if _ind[i+1,j+1,k+1] == phase:
+          if _ind[i+1,j+1,k+1] == _phase:
             availDirection = 0
             for d in range(0,numDirections):
               ii = directions[d][0]
               jj = directions[d][1]
               kk = directions[d][2]
-              if (_ind[i+ii+1,j+jj+1,k+kk+1] == phase):
+              if (_ind[i+ii+1,j+jj+1,k+kk+1] == _phase):
                 node = _nodeTable[i+ii,j+jj,k+kk]
                 _nodeDirections[c,d] = 1
                 _nodeDirectionsIndex[c,d] = node
@@ -286,13 +284,13 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   for i in range(iMin,iMax):
    for j in range(jMin,jMax):
      for k in range(kMin,kMax):
-       if _ind[i+1,j+1,k+1] == phase:
+       if _ind[i+1,j+1,k+1] == _phase:
          availDirection = 0
          for d in range(0,numDirections):
            ii = directions[d][0]
            jj = directions[d][1]
            kk = directions[d][2]
-           if (_ind[i+ii+1,j+jj+1,k+kk+1] == phase):
+           if (_ind[i+ii+1,j+jj+1,k+kk+1] == _phase):
              node = _nodeTable[i+ii,j+jj,k+kk]
              _nodeDirections[c,d] = 1
              _nodeDirectionsIndex[c,d] = node
@@ -420,7 +418,7 @@ def getNodeType(neighbors):
 
 def getSetNodes(set,nNodes,_nI):
   cdef int bN,n,ind
-  bN = 0
+  bN =  0
   for n in range(0,set.numNodes):
     ind = nNodes - set.numNodes + n
     set.getNodes(n,_nI[ind,0],_nI[ind,1],_nI[ind,2])

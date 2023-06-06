@@ -101,7 +101,7 @@ class porousMedia(object):
         comm.Allreduce( [self.poreNodes, MPI.INT], [self.totalPoreNodes, MPI.INT], op = MPI.SUM )
 
 
-def genPorousMedia(subDomain,dataFormat,sphereData=None):
+def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
 
     pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation)
 
@@ -109,9 +109,9 @@ def genPorousMedia(subDomain,dataFormat,sphereData=None):
         pM.genDomainSphereData(sphereData)
     if dataFormat == "InkBotle":
         pM.genDomainInkBottle()
-    pM.setInletOutlet(resSize=33)
+    pM.setInletOutlet(resSize)
     pM.setWallBoundaryConditions()
-    pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,33)
+    pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)
     pM.getPorosity()
 
     loadBalancingCheck = False
