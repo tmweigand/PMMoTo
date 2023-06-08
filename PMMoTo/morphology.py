@@ -15,9 +15,7 @@ class Morphology(object):
         self.structElem = None
         self.radius = radius
         self.stuctRatio = np.zeros(3)
-        self.grid = np.copy(grid)
         self.gridOut = np.copy(grid)
-        self.resPad = np.zeros([6],dtype=np.int64)
 
     def genStructElem(self):
 
@@ -34,53 +32,28 @@ class Morphology(object):
 
         self.structElem = np.array(s <= self.radius * self.radius)
 
-
-    def addReservoir(self,inlet):
-
-        ### Add Reservoir of Phase 1
-        if np.sum(inlet) > 0:
-            c = 0
-            for c,n in enumerate(inlet):
-                if n == 1:
-                    self.resPad[c] = 1
-
-            self.haloGrid = np.pad(self.haloGrid, ((self.resPad[0], self.resPad[1]), 
-                                                   (self.resPad[2], self.resPad[3]), 
-                                                   (self.resPad[4], self.resPad[5])),
-                                                   'constant', constant_values=1)
-        if inlet[0] == 1:
-            self.haloGrid[0,:,:]  = np.where(self.haloGrid[1,:,:] == 1,1,0)
-        if inlet[1] == 1:
-            self.haloGrid[-1,:,:] = np.where(self.haloGrid[-1,:,:] == 1,1,0)
-        if inlet[2] == 1:
-            self.haloGrid[:,0,:]  = np.where(self.haloGrid[:,1,:] == 1,1,0)
-        if inlet[3] == 1:
-            self.haloGrid[:,-1,:] = np.where(self.haloGrid[:,-1,:] == 1,1,0)
-        if inlet[4] == 1:
-            self.haloGrid[:,:,0]  = np.where(self.haloGrid[:,:,1] == 1,1,0)
-        if inlet[5] == 1:
-            self.haloGrid[:,:,-1] = np.where(self.haloGrid[:,:,-1] == 1,1,0)
-
     def morphAdd(self):
 
+        gridEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
+        dim = gridEDT.shape
+        gridEDT = gridEDT[self.halo[0]:dim[0]-self.halo[1],
+                          self.halo[2]:dim[1]-self.halo[3],
+                          self.halo[4]:dim[2]-self.halo[5]]
+        gridOut = np.where( (gridEDT <= self.radius),1,0).astype(np.uint8)
+        self.gridOut = np.ascontiguousarray(gridOut)
 
-        self.gridOutEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
-        gridOut = np.where( (self.gridOutEDT <= self.radius),1,0).astype(np.uint8)
-        dim = gridOut.shape
-        self.gridOut = gridOut[self.resPad[0]+self.halo[0]:dim[0]-self.halo[1]-self.resPad[1],
-                               self.resPad[2]+self.halo[2]:dim[1]-self.halo[3]-self.resPad[3],
-                               self.resPad[4]+self.halo[4]:dim[2]-self.halo[5]-self.resPad[5]]
-        self.gridOut = np.ascontiguousarray(self.gridOut)
+        fileName = "dataOut/test/EDT2"
+        dataOutput.saveGridcsv(fileName,self.subDomain,self.subDomain.x,self.subDomain.y,self.subDomain.z,gridEDT,removeHalo = True)
 
 
 
-def morph(grid,inlet,subDomain,radius):
+
+def morph(grid,subDomain,radius):
 
     sDMorph = Morphology(Domain = subDomain.Domain,subDomain = subDomain, grid = grid, radius = radius)
     sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
     sDMorph.genStructElem()
     sDMorph.haloGrid,sDMorph.halo = sDComm.haloCommunication(sDMorph.structRatio)
-    #sDMorph.addReservoir(inlet)
     sDMorph.morphAdd()
 
     return sDMorph.gridOut

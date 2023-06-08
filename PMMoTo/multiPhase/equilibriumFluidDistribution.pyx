@@ -199,7 +199,7 @@ def calcDrainage(pc,mP):
                 # dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
                 # Step 3g
-                morph = morphology.morph(ind,mP.inlet[mP.nwID],mP.subDomain,eqDist.probeR)
+                morph = morphology.morph(ind,mP.subDomain,eqDist.probeR)
 
                 # fileName = "dataOut/test/morph"+str(p)
                 # dataOutput.saveGrid(fileName,mP.subDomain,morph)
