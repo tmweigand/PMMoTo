@@ -11,9 +11,14 @@ PMMoTo/__pycache__/
 PMMoTo/tmp/
 PMMoTo/*.c
 PMMoTo/*.html
+PMMoTo/tests/
+PMMoTo/*/*.c
+PMMoTo/*/*.html
+PMMoTo/*/*.cpp
 PMMoTo/distanceSAVE.pyx
 PMMoTo/medialAxis/_skeletonize_3d_cy.pyx
 PMMoTo/medialAxis/_skeletonize_3d_ORDER_cy.pyx.in
+PMMoTo/medialAxis/medialExtractionFunctions.pyx
 PMMoTo/medialAxis/_skeletonize_3d_RAND_cy.pyx
 PMMoTo/medialAxis/_skeletonize_3d_SAVE_cy.pyx.in
 PMMoTo/medialAxis/_skeletonize_3d_cy.cpp
