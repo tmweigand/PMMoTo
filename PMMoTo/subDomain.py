@@ -27,7 +27,8 @@ class subDomain(object):
         self.boundaryID  = -np.ones([6],dtype = np.int8)
         self.buffer      = np.ones([6],dtype = np.int8)
         self.nodes       = np.zeros([3],dtype = np.int64)
-        self.ownNodes    = np.zeros([3,2],dtype = np.int64)
+        self.ownNodes    = np.zeros([3],dtype = np.int64)
+        self.ownNodesIndex = np.zeros([6],dtype = np.int64)
         self.indexStart  = np.zeros([3],dtype = np.int64)
         self.subDomainSize = np.zeros([3])
         self.subID       = np.zeros([3],dtype = np.int64)
@@ -75,15 +76,21 @@ class subDomain(object):
                         self.nodes[0] = self.Domain.subNodes[0]
                         self.nodes[1] = self.Domain.subNodes[1]
                         self.nodes[2] = self.Domain.subNodes[2]
+                        self.ownNodes[0] = self.Domain.subNodes[0]
+                        self.ownNodes[1] = self.Domain.subNodes[1]
+                        self.ownNodes[2] = self.Domain.subNodes[2]
                         self.indexStart[0] = i * self.Domain.subNodes[0]
                         self.indexStart[1] = j * self.Domain.subNodes[1]
                         self.indexStart[2] = k * self.Domain.subNodes[2]
                         if (i == self.subDomains[0]-1):
                             self.nodes[0] += self.Domain.subNodesRem[0]
+                            self.ownNodes[0] += self.Domain.subNodesRem[0]
                         if (j == self.subDomains[1]-1):
                             self.nodes[1] += self.Domain.subNodesRem[1]
+                            self.ownNodes[1] += self.Domain.subNodesRem[1]
                         if (k == self.subDomains[2]-1):
                             self.nodes[2] += self.Domain.subNodesRem[2]
+                            self.ownNodes[2] += self.Domain.subNodesRem[2]
                     n = n + 1
 
         ### If boundaryID == 0, buffer is not added
@@ -111,9 +118,12 @@ class subDomain(object):
         for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
             self.z[c] = self.Domain.domainSize[2,0] + (self.indexStart[2] + k)*self.Domain.dZ + self.Domain.dZ/2
 
-        self.ownNodes[0] = [pad[0],self.nodes[0]+pad[0]]
-        self.ownNodes[1] = [pad[2],self.nodes[1]+pad[2]]
-        self.ownNodes[2] = [pad[4],self.nodes[2]+pad[4]]
+        self.ownNodesIndex[0] = pad[0] + self.ownNodesIndex[0]
+        self.ownNodesIndex[1] = self.ownNodesIndex[0] +self.ownNodes[0]
+        self.ownNodesIndex[2] = pad[2] + self.ownNodesIndex[2]
+        self.ownNodesIndex[3] = self.ownNodesIndex[2] + self.ownNodes[1]
+        self.ownNodesIndex[4] = pad[4] + self.ownNodesIndex[4]
+        self.ownNodesIndex[5] = self.ownNodesIndex[4] + self.ownNodes[2]
 
         self.nodes[0] = self.nodes[0] + pad[0] + pad[1]
         self.nodes[1] = self.nodes[1] + pad[2] + pad[3]

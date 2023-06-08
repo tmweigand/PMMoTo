@@ -4,7 +4,6 @@ import time
 import PMMoTo
 
 
-
 def my_function():
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
@@ -14,8 +13,8 @@ def my_function():
         start_time = time.time()
 
     subDomains = [2,2,2]
-    #nodes = [140,30,30]
-    nodes = [560,120,120]
+    nodes = [140,30,30]
+    #nodes = [560,120,120]
     #nodes = [840,180,180]
     #nodes = [1120,240,240]
     #nodes = [2240,481,481]
@@ -39,10 +38,10 @@ def my_function():
     
     #Initialize wetting saturated somain
     twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,10)
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
     
-    pC = [1.81122,2.16814]
-    #pC = [1.81122]
+    #pC = [1.81122,2.16814]
+    pC = [1.81122]
     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
 
     PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid)

@@ -260,18 +260,22 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
     comm.barrier()
 
     if removeHalo:
-        own = subDomain.ownNodes
-        grid =  grid[own[0][0]:own[0][1],
-                     own[1][0]:own[1][1],
-                     own[2][0]:own[2][1]]
-        
+        own = subDomain.ownNodesIndex
+        size = (own[1]-own[0])*(own[3]-own[2])*(own[5]-own[4])
+        printGridOut = np.zeros([size,4])
+    else:
+        own = np.zeros([6],dtype = np.int64)
+        own[1] = grid.shape[0]
+        own[3] = grid.shape[1]
+        own[4] = grid.shape[2]
+        printGridOut = np.zeros([grid.size,4])
+                
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
 
-    printGridOut = np.zeros([grid.size,4])
     c = 0
-    for i in range(0,grid.shape[0]):
-        for j in range(0,grid.shape[1]):
-            for k in range(0,grid.shape[2]):
+    for i in range(own[0],own[1]):
+        for j in range(own[2],own[3]):
+            for k in range(own[4],own[5]):
                 printGridOut[c,0] = x[i]
                 printGridOut[c,1] = y[j]
                 printGridOut[c,2] = z[k]

@@ -6,6 +6,7 @@ from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
 from . import communication
 from . import subDomain
+from . import dataOutput
 
 
 class porousMedia(object):
@@ -17,7 +18,7 @@ class porousMedia(object):
         self.inlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.outlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.loopInfo = np.zeros([self.Orientation.numFaces+1,3,2],dtype = np.int64)
-        self.ownNodes     = np.zeros([3,2],dtype = np.int64)
+        self.ownNodesIndex     = np.zeros([6],dtype = np.int64)
         self.poreNodes    = 0
         self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
 
@@ -93,10 +94,10 @@ class porousMedia(object):
             self.grid[:,:,-1] = 0
 
     def getPorosity(self):
-        own = self.subDomain.ownNodes
-        ownGrid =  self.grid[own[0][0]:own[0][1],
-                             own[1][0]:own[1][1],
-                             own[2][0]:own[2][1]]
+        own = self.subDomain.ownNodesIndex
+        ownGrid =  self.grid[own[0]:own[1],
+                             own[2]:own[3],
+                             own[4]:own[5]]
         self.poreNodes = np.sum(ownGrid)
         comm.Allreduce( [self.poreNodes, MPI.INT], [self.totalPoreNodes, MPI.INT], op = MPI.SUM )
 
