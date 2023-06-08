@@ -4,6 +4,7 @@ comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenVerlet
 from . import communication
 from . import Orientation
 from . import Domain
@@ -214,6 +215,27 @@ class subDomain(object):
                 t = ld[2]/sumTotalNodes*100.
                 print("Rank: %i has %2.1f%% of the Pore Nodes and %2.1f%% of the total Nodes" %(ld[0],p,t))
 
+    def trimSphereData(self,sphereData):
+        numObj = sphereData.shape[1]
+        xList = []
+        yList = []
+        zList = []
+        rList = []
+        for i in range(numObj):
+            x = sphereData[0,i]
+            y = sphereData[1,i]
+            z = sphereData[2,i]
+            r = sphereData[3,i]
+            r_sqrt = np.sqrt(sphereData[3,i])
+            xCheck = self.x[0]-r_sqrt <= x <= self.x[-1]+r_sqrt
+            yCheck = self.y[0]-r_sqrt <= y <= self.y[-1]+r_sqrt
+            zCheck = self.z[0]-r_sqrt <= z <= self.z[-1]+r_sqrt
+            if xCheck and yCheck and zCheck:
+                xList.append(x)
+                yList.append(y)
+                zList.append(z)
+                rList.append(r)
+        return np.array([xList,yList,zList,rList])
 
 
 def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs=None):
@@ -237,14 +259,18 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
     domain.getdXYZ()
     domain.getSubNodes()
 
+    if [2,2] in domain.boundaries: 
+        sphereData = domain.periodicImageSphereData(sphereData)
+
     orient = Orientation.Orientation()
 
     sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains, Orientation = orient)
     sD.getInfo()
     sD.getNeighbors()
     sD.getXYZ(sD.buffer)
-
+    
     if file is not None:
+        sphereData = sD.trimSphereData(sphereData)
         pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 1)
     else:
         pM = porousMedia.genPorousMedia(sD,dataFormat,resSize = 1)

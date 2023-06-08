@@ -53,10 +53,22 @@ def readPorousMediaXYZR(file):
 
     return domainDim,sphereData
 
-def readPorousMediaLammpsDump(file, rLookupFile=None):
+def readPorousMediaLammpsDump(file, dataReadkwargs):
     
     indexVars = ['x', 'y', 'z', 'type']
     indexes = []
+    rLookupFile = None
+    boundaryLims = None
+    for key,value in dataReadkwargs.items():
+        if key == 'rLookupFile':
+            rLookupFile=value
+        if key == 'boundaryLims':
+            boundaryLims = value
+            for limValues in boundaryLims:
+                if limValues[0] is None:
+                    limValues[0] = -np.inf
+                if limValues[1] is None:
+                    limValues[1] = np.inf
     if rLookupFile:
         sigmaLJ = []
         rLookup = open(rLookupFile,'r')
@@ -69,12 +81,6 @@ def readPorousMediaLammpsDump(file, rLookupFile=None):
             ### has a LJsigma of 0. i.e. this evaluates the maximum possible
             ### size of the free volume network
 
-            ### We could choose how to define the cutoff,
-            ### this implementation uses the abs value of LJ sigma
-            ### i.e., where the LJ potential fxn crosses 0
-
-            # sigmaLJ.append(float(line.split(" ")[2])/2)
-
             ### The following would select the energy minimum, i.e.
             ### movement of a particles center closer than this requires
             ### input force
@@ -82,9 +88,11 @@ def readPorousMediaLammpsDump(file, rLookupFile=None):
             sigmaLJ.append(1.12246204830937*float(line.split(" ")[2])/2)
 
 
-
+    
     else:
-        sigmaLJ = [0.25]
+        print('ERROR: Attempting to read LAMMPS dump file without atomic information.')
+        communication.raiseError()
+    maxR = max(sigmaLJ)
     if file.endswith('.gz'):
         domainFile = gzip.open(file,'rt')
     else:
@@ -101,15 +109,23 @@ def readPorousMediaLammpsDump(file, rLookupFile=None):
         elif (i == 5):
             xMin = float(preamLine.split(" ")[0])
             xMax = float(preamLine.split(" ")[1])
+            xD = xMax-xMin
         elif (i == 6):
             yMin = float(preamLine.split(" ")[0])
             yMax = float(preamLine.split(" ")[1])
+            yD = yMax-yMin
         elif (i == 7):
             zMin = float(preamLine.split(" ")[0])
             zMax = float(preamLine.split(" ")[1])
+            zD = zMax-zMin
         elif (i == 8):
             colTypes = [j.strip() for j in preamLine.split(" ")[2:]]
-
+    if boundaryLims:
+        domainDim = np.array([[max(xMin,boundaryLims[0][0]), min(xMax,boundaryLims[0][1])],
+                              [max(yMin,boundaryLims[1][0]), min(yMax,boundaryLims[1][1])],
+                              [max(zMin,boundaryLims[2][0]), min(zMax,boundaryLims[2][1])]])
+    else:
+        domainDim = np.array([[xMin, xMax],[yMin, yMax],[zMin, zMax]])
     for var in indexVars:
         indexes.append(colTypes.index(var))  
         
@@ -120,18 +136,32 @@ def readPorousMediaLammpsDump(file, rLookupFile=None):
 
     c = 0
     for line in Lines:
-        xSphere[c] = float(line.split(" ")[indexes[0]])
-        ySphere[c] = float(line.split(" ")[indexes[1]])
-        zSphere[c] = float(line.split(" ")[indexes[2]])
-        rSphere[c] = float(sigmaLJ[int(line.split(" ")[indexes[3]])-1])
-        c += 1
+        # NEED THIS CORRECTION IF USING UNWRAPPED COORDINATES, maybe flag?
+        # x = float(line.split(" ")[indexes[0]])-xD*math.floor((float(line.split(" ")[indexes[0]])-xMin)/xD)
+        # y = float(line.split(" ")[indexes[1]])-yD*math.floor((float(line.split(" ")[indexes[1]])-yMin)/yD)
+        # z = float(line.split(" ")[indexes[2]])-zD*math.floor((float(line.split(" ")[indexes[2]])-zMin)/zD)
+        
+        x = float(line.split(" ")[indexes[0]])
+        y = float(line.split(" ")[indexes[1]])
+        z = float(line.split(" ")[indexes[2]])
 
-    domainDim = np.array([[xMin, xMax],[yMin, yMax],[zMin, zMax]])
-    sphereData = np.zeros([4, numObjects])
-    sphereData[0,:] = xSphere
-    sphereData[1,:] = ySphere
-    sphereData[2,:] = zSphere
-    sphereData[3,:] = rSphere*rSphere
+        # Only keep atom if it is in the Domain, by a margin of the largest possible 
+        # radius. Done because subsampled region might not be the same size as the domain 
+        xCheck = domainDim[0][0]-maxR <= x <= domainDim[0][1]+maxR
+        yCheck = domainDim[1][0]-maxR <= y <= domainDim[1][1]+maxR
+        zCheck = domainDim[2][0]-maxR <= z <= domainDim[2][1]+maxR
+        if xCheck and yCheck and zCheck:
+            xSphere[c] = x
+            ySphere[c] = y
+            zSphere[c] = z
+            rSphere[c] = float(sigmaLJ[int(line.split(" ")[indexes[3]])-1])
+            c += 1
+
+    sphereData = np.zeros([4, c])
+    sphereData[0,:] = xSphere[:c]
+    sphereData[1,:] = ySphere[:c]
+    sphereData[2,:] = zSphere[:c]
+    sphereData[3,:] = rSphere[:c]*rSphere[:c]
     domainFile.close()
 
     return domainDim, sphereData

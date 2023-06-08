@@ -4,6 +4,7 @@ comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenVerlet
 from . import communication
 from . import subDomain
 
@@ -28,6 +29,12 @@ class porousMedia(object):
 
     def genDomainSphereData(self,sphereData):
         self.grid = domainGen(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
+        self.gridCheck()
+
+    def genDomainSphereDataVerlet(self,sphereData):
+        rMax = np.sqrt(sphereData[3].max())
+        rCut = rMax*8
+        self.grid = domainGenVerlet(rCut, rMax, self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
 
     def genDomainInkBottle(self):
@@ -107,6 +114,8 @@ def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
 
     if dataFormat == "Sphere":
         pM.genDomainSphereData(sphereData)
+    if dataFormat == "SphereVerlet":
+        pM.genDomainSphereDataVerlet(sphereData)
     if dataFormat == "InkBotle":
         pM.genDomainInkBottle()
     pM.setInletOutlet(resSize)

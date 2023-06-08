@@ -34,17 +34,17 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [100,100,100] # Total Number of Nodes in Domain
-
+    nodes = [250,250,250] # Total Number of Nodes in Domain
+    cutoffs = [0, 0.006]
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[1,1],[0,0],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[0,0]]
-    outlet = [[0,0],[0,0],[0,0]]
+    inlet  = [[0,0],[1,0],[0,0]]
+    outlet = [[0,0],[0,1],[0,0]]
 
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/10pack.out'
+    file = './testDomains/50pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -80,7 +80,7 @@ def my_function():
 
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
 
-    cutoff = 0.006
+    
     if drain:
         drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
 
@@ -90,7 +90,7 @@ def my_function():
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML.grid,sD_EDT.EDT,connect = False,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,sD_EDT.EDT,connect = True,cutoffs = cutoffs)
 
 
     endTime = time.time()
@@ -112,15 +112,16 @@ def my_function():
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
                 'trim' :'trim',
+                'inaccessible' :'inaccessible',
                 'boundary': 'boundary',
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'globalPathID':'globalPathID'}
+                'globalPathIDs':'globalPathIDs'}
     
     #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
     
-    #PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
+    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
 
     if testSerial:
 

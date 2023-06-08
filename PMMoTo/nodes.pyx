@@ -304,7 +304,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def updateMANeighborCount(grid,subDomain,Orientation,nodeInfo):
+def updateMANeighborCount(grid,subDomain,porousMedia,Orientation,nodeInfo):
   """
   Get Number of Neighbors on Boundary Nodes of Medial Axis with 2 Buffer
   Needed to accurately spoecify type of MA node
@@ -323,7 +323,7 @@ def updateMANeighborCount(grid,subDomain,Orientation,nodeInfo):
   _ind = grid
 
   cdef cnp.int64_t [:,:,:] loopInfo
-  loopInfo = subDomain.loopInfo
+  loopInfo = porousMedia.loopInfo
 
 
   # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
