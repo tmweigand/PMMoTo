@@ -42,8 +42,8 @@ class Morphology(object):
         gridOut = np.where( (gridEDT <= self.radius),1,0).astype(np.uint8)
         self.gridOut = np.ascontiguousarray(gridOut)
 
-        fileName = "dataOut/test/EDT2"
-        dataOutput.saveGridcsv(fileName,self.subDomain,self.subDomain.x,self.subDomain.y,self.subDomain.z,gridEDT,removeHalo = True)
+        # fileName = "dataOut/test/EDT2"
+        # dataOutput.saveGridcsv(fileName,self.subDomain,self.subDomain.x,self.subDomain.y,self.subDomain.z,gridEDT,removeHalo = True)
 
 
 

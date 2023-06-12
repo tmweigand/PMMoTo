@@ -175,14 +175,16 @@ class Orientation(object):
                 if eID[n] != 0:
                     if eID[n] > 0:
                         buf = None
-                        if buffer[fIndex] > 0:
-                            buf = -buffer[fIndex]*factor
-                        self.sendESlices[eIndex,n] = slice(-structRatio[n]-buffer[fIndex]*factor,buf)
+                        bufID = n*2+1
+                        if buffer[bufID] > 0:
+                            buf = -buffer[bufID]*factor
+                        self.sendESlices[eIndex,n] = slice(-structRatio[n]-buffer[bufID]*factor,buf)
                     else:
                         buf = None
-                        if buffer[fIndex] > 0:
-                            buf = buffer[fIndex]*factor
-                        self.sendESlices[eIndex,n] = slice(buf,structRatio[n]+buffer[fIndex]*factor)
+                        bufID = n*2
+                        if buffer[bufID] > 0:
+                            buf = buffer[bufID]*factor
+                        self.sendESlices[eIndex,n] = slice(buf,structRatio[n]+buffer[bufID]*factor)
                 else:
                     self.sendESlices[eIndex,n] = slice(None,None)
         #############
@@ -195,14 +197,16 @@ class Orientation(object):
             for n in range(len(cID)):
                 if cID[n] > 0:
                     buf = None
-                    if buffer[fIndex] > 0:
-                        buf = -buffer[fIndex]*factor
-                    self.sendCSlices[cIndex,n] = slice(-structRatio[n]-buffer[fIndex]*factor,buf)
+                    bufID = n*2+1
+                    if buffer[bufID] > 0:
+                        buf = -buffer[bufID]*factor
+                    self.sendCSlices[cIndex,n] = slice(-structRatio[n]-buffer[bufID]*factor,buf)
                 else:
                     buf = None
-                    if buffer[fIndex] > 0:
-                        buf = buffer[fIndex]*factor
-                    self.sendCSlices[cIndex,n] = slice(buf,structRatio[n]+buffer[fIndex]*factor)
+                    bufID = n*2
+                    if buffer[bufID] > 0:
+                        buf = buffer[bufID]*factor
+                    self.sendCSlices[cIndex,n] = slice(buf,structRatio[n]+buffer[bufID]*factor)
         ###############
 
     def getRecieveSlices(self,structRatio,pad,arr):

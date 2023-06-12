@@ -294,7 +294,6 @@ class Comm(object):
         self.bufferCommUnpack()
         return self.haloGrid
 
-
     def haloCommunication(self,size):
         self.haloCommPack(size)
         self.haloComm()
