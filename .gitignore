@@ -36,6 +36,7 @@ tests/profile_out.4
 tests/profile_out.5
 tests/profile_out.6
 tests/profile_out.7
+tests/*.csv
 tests/testDomains/10pack.out
 tests/testDomains/50pack.out
 tests/~$inkBottleDrainageSweepGridRefinement.xlsx

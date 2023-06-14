@@ -227,9 +227,9 @@ class subDomain(object):
             z = sphereData[2,i]
             r = sphereData[3,i]
             r_sqrt = np.sqrt(sphereData[3,i])
-            xCheck = self.x[0]-r_sqrt <= x <= self.x[-1]+r_sqrt
-            yCheck = self.y[0]-r_sqrt <= y <= self.y[-1]+r_sqrt
-            zCheck = self.z[0]-r_sqrt <= z <= self.z[-1]+r_sqrt
+            xCheck = self.x[0]-self.Domain.dX-r_sqrt <= x <= self.x[-1]+self.Domain.dX+r_sqrt
+            yCheck = self.y[0]-self.Domain.dY-r_sqrt <= y <= self.y[-1]+self.Domain.dY+r_sqrt
+            zCheck = self.z[0]-self.Domain.dZ-r_sqrt <= z <= self.z[-1]+self.Domain.dZ+r_sqrt
             if xCheck and yCheck and zCheck:
                 xList.append(x)
                 yList.append(y)

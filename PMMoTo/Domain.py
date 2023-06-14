@@ -111,12 +111,12 @@ class Domain(object):
             z = sphereData[2,i]
             r = sphereData[3,i]
             r_sqrt = np.sqrt(sphereData[3,i])
-            nearBotX = x-r_sqrt <= self.domainSize[0,0]
-            nearTopX = x+r_sqrt >= self.domainSize[0,1]
-            nearBotY = y-r_sqrt <= self.domainSize[1,0]
-            nearTopY = y+r_sqrt >= self.domainSize[1,1]
-            nearBotZ = z-r_sqrt <= self.domainSize[2,0]
-            nearTopZ = z+r_sqrt >= self.domainSize[2,1]
+            nearBotX = x-r_sqrt-self.dX <= self.domainSize[0,0]
+            nearTopX = x+r_sqrt+self.dX >= self.domainSize[0,1]
+            nearBotY = y-r_sqrt-self.dY <= self.domainSize[1,0]
+            nearTopY = y+r_sqrt+self.dY >= self.domainSize[1,1]
+            nearBotZ = z-r_sqrt-self.dZ <= self.domainSize[2,0]
+            nearTopZ = z+r_sqrt+self.dZ >= self.domainSize[2,1]
             checks = [nearBotX, nearTopX,
                     nearBotY, nearTopY,
                     nearBotZ, nearTopZ]

@@ -408,6 +408,7 @@ class EDT(object):
                     counts[ind] = counts[ind] + d[2][n]
 
             stats = np.stack((bins,counts), axis = 1)
+            # np.savetxt('./EDT_DF.csv',stats,delimiter=',')
             self.minD = bins[1]
             self.maxD = bins[-1]
             distData = [self.minD,self.maxD]
