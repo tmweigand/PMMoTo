@@ -32,7 +32,9 @@ def my_function():
     startTime = time.time()
     # optionally be able to set location of domain boundaries
     dataReadkwargs = {'rLookupFile':rLookupFile,
-                      'boundaryLims':boundaryLims}
+                      'boundaryLims':boundaryLims,
+                      'boundaries':boundaries,
+                      'nodes':nodes}
     
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"SphereVerlet",file,PMMoTo.readPorousMediaLammpsDump,dataReadkwargs)
     res=np.array([round(domain.dX,10),round(domain.dY,10),round(domain.dZ,10)])

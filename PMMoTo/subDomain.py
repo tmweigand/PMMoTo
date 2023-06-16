@@ -259,9 +259,6 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
     domain.getdXYZ()
     domain.getSubNodes()
 
-    if [2,2] in domain.boundaries: 
-        sphereData = domain.periodicImageSphereData(sphereData)
-
     orient = Orientation.Orientation()
 
     sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains, Orientation = orient)
