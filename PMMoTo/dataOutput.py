@@ -267,7 +267,7 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
         own = np.zeros([6],dtype = np.int64)
         own[1] = grid.shape[0]
         own[3] = grid.shape[1]
-        own[4] = grid.shape[2]
+        own[5] = grid.shape[2]
         printGridOut = np.zeros([grid.size,4])
                 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
