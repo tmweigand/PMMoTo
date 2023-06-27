@@ -122,11 +122,11 @@ def calcDrainage(pc,mP):
     sW = eqDist.calcSaturation(mP.mpGrid,2)
     save = True
 
-    fileName = "dataOut/test/distCSV"
-    dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
+    # fileName = "dataOut/test/distCSV"
+    # dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
 
-    # fileName = "dataOut/test/dist"
-    # dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
+    fileName = "dataOut/test/dist"
+    dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
 
     setSaveDict = {'inlet': 'inlet',
                    'outlet':'outlet',

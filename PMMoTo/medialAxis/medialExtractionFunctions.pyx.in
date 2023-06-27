@@ -7,7 +7,7 @@ from libc.stdio cimport printf
 from libcpp cimport bool
 
 import numpy as np
-from numpy cimport npy_intp, npy_uint8, ndarray
+from numpy cimport npy_intp, npy_int8, npy_uint8, ndarray, npy_float32
 cimport cython
 
 
@@ -81,13 +81,14 @@ _octree = [
 
 {{### Octant is From Perspective of Center Pixel see Octants.png}}
 {{py:
-faces=  {0:{'ID':(-1, 0, 0),'Octant':[1,3,5,7]},
-         1:{'ID':( 1, 0, 0),'Octant':[0,2,4,6]},
-         2:{'ID':( 0,-1, 0),'Octant':[0,1,4,5]},
-         3:{'ID':( 0, 1, 0),'Octant':[2,3,6,7]},
-         4:{'ID':( 0, 0,-1),'Octant':[4,5,6,7]},
-         5:{'ID':( 0, 0, 1),'Octant':[0,1,2,3]}
+faces=  {0:{'ID':(-1, 0, 0),'Octant':[1,3,5,7], 'dir': 1},
+         1:{'ID':( 1, 0, 0),'Octant':[0,2,4,6], 'dir':-1},
+         2:{'ID':( 0,-1, 0),'Octant':[0,1,4,5], 'dir': 1},
+         3:{'ID':( 0, 1, 0),'Octant':[2,3,6,7], 'dir':-1},
+         4:{'ID':( 0, 0,-1),'Octant':[4,5,6,7], 'dir': 1},
+         5:{'ID':( 0, 0, 1),'Octant':[0,1,2,3], 'dir':-1}
         }
+
 edges = {0 :{'ID':(-1, 0,-1),'Octant':[5,7]},
          1 :{'ID':(-1, 0, 1),'Octant':[1,3]},
          2 :{'ID':(-1,-1, 0),'Octant':[1,5]},
@@ -101,7 +102,6 @@ edges = {0 :{'ID':(-1, 0,-1),'Octant':[5,7]},
          10:{'ID':( 0, 1,-1),'Octant':[6,7]},
          11:{'ID':( 0, 1, 1),'Octant':[2,3]}
         }
-
 
 corners = {0:{'ID':(-1,-1,-1),'Octant':[5]},
            1:{'ID':(-1,-1, 1),'Octant':[1]},
@@ -529,7 +529,9 @@ cdef int is_Euler_invariant_Octant_{{_octant}}(pixel_type neighbors[],
 
 
 cdef void find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(pixel_type[:, :, ::1] img,
+                                        npy_float32[:, :, ::1] edt,
                                         int curr_border,
+                                        npy_intp [:,:] fLoop,
                                         vector[coordinate] & simple_border_points) nogil:
 
     cdef:
@@ -545,245 +547,172 @@ cdef void find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(pixel_type[
 {{py:
 ID = obj[n]['ID']
 numInd = np.sum(np.abs(ID))
-
-loopIndZ = [None] * numInd
-loopRangeZ = [None] * numInd
-loopIndNZ = [None] * (3-numInd)
-loopRangeNZ = [None] * (3-numInd)
-
-cIndZ = 0
-cIndNZ = 0
-for ind in range(0,3):
-    lDir = obj[n]['ID'][ind]
-    if lDir < 0:
-        loopIndZ[cIndZ] = index[ind]
-        loopRangeZ[cIndZ] = 0
-        cIndZ = cIndZ + 1
-    elif lDir > 0:
-        loopIndZ[cIndZ] = index[ind]
-        loopRangeZ[cIndZ] = "img.shape["+str(abs(ind))+"]-1"
-        cIndZ = cIndZ + 1
-    else:
-        loopIndNZ[cIndNZ] = index[ind]
-        loopRangeNZ[cIndNZ] = ind
-        cIndNZ = cIndNZ + 1
 }}
 
 {{if numInd == 1}}
 
-    for {{loopIndNZ[0]}} in range(1, img.shape[{{loopRangeNZ[0]}}] - 1):
-        for {{loopIndNZ[1]}} in range(1, img.shape[{{loopRangeNZ[1]}}] - 1):
-            {{loopIndZ[0]}} = {{loopRangeZ[0]}}
+    for x in range(fLoop[0,0], fLoop[0,1]):
+        for y in range(fLoop[1,0], fLoop[1,1]):
+            for z in range(fLoop[2,0], fLoop[2,1]):
 
-            if img[x, y, z] != 1:
-                continue
-
-            is_border_pt = (
-                        {{if obj[n]['ID'][0] != -1 }}
-                            curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
-                        {{endif}}
-                        {{if obj[n]['ID'][0] != 1 }}
-                            curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
-                        {{endif}}
-                        {{if  obj[n]['ID'][1] != -1 }}
-                            curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
-                        {{endif}}
-                        {{if obj[n]['ID'][1] != 1 }}
-                            curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
-                        {{endif}}
-                        {{if obj[n]['ID'][2] == 0 }}
-                            curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
-                        {{elif obj[n]['ID'][2] != -1}}
-                            curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
-                        {{endif}}
-                        {{if obj[n]['ID'][2] != 1 }}
-                            curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
-                        {{endif}}
-                           )
-
-            if not is_border_pt:
-                continue
-
-            get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
-            if (not is_endpoint(neighborhood)):
-                euler_char = 0
-                {{for nOct in obj[n]['Octant']}}
-                euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
-                {{endfor}}
-                if not euler_char==0 or not is_simple_point(neighborhood):
+                #img[x,y,z] = 155   
+                if img[x, y, z] != 1:
                     continue
 
-                point.x = x
-                point.y = y
-                point.z = z
-                point.ID = {{10+n}}
-                point.faceCount = is_endpoint_check(neighborhood)
-                simple_border_points.push_back(point)
+                is_border_pt = (
+                            {{if obj[n]['ID'][0] != -1 }}
+                                curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
+                            {{endif}}
+                            {{if obj[n]['ID'][0] != 1 }}
+                                curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
+                            {{endif}}
+                            {{if  obj[n]['ID'][1] != -1 }}
+                                curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
+                            {{endif}}
+                            {{if obj[n]['ID'][1] != 1 }}
+                                curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
+                            {{endif}}
+                            {{if obj[n]['ID'][2] == 0 }}
+                                curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
+                            {{elif obj[n]['ID'][2] != -1}}
+                                curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
+                            {{endif}}
+                            {{if obj[n]['ID'][2] != 1 }}
+                                curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
+                            {{endif}}
+                            )
 
-{{elif numInd == 2}}
+                if not is_border_pt:
+                    continue
 
-    for {{loopIndNZ[0]}} in range(1, img.shape[{{loopRangeNZ[0]}}] - 1):
-        {{loopIndZ[0]}} = {{loopRangeZ[0]}}
-        {{loopIndZ[1]}} = {{loopRangeZ[1]}}
+                get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
+                if (not is_endpoint(neighborhood)):
+                    euler_char = 0
+                    {{for nOct in obj[n]['Octant']}}
+                    euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
+                    {{endfor}}
+                    if not euler_char==0 or not is_simple_point(neighborhood):
+                        continue
 
-        if img[x, y, z] != 1:
-            continue
-
-        is_border_pt = (
-                    {{if obj[n]['ID'][0] != -1 }}
-                        curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
-                    {{endif}}
-                    {{if obj[n]['ID'][0] != 1 }}
-                        curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
-                    {{endif}}
-                    {{if  obj[n]['ID'][1] != -1 }}
-                        curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
-                    {{endif}}
-                    {{if obj[n]['ID'][1] != 1 }}
-                        curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
-                    {{endif}}
-                    {{if obj[n]['ID'][2] == 0 }}
-                        curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
-                    {{elif obj[n]['ID'][2] != -1}}
-                        curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
-                    {{endif}}
-                    {{if obj[n]['ID'][2] != 1 }}
-                        curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
-                    {{endif}}
-                        )
-
-        if not is_border_pt:
-            continue
-
-        get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
-        if (not is_endpoint(neighborhood)):
-            euler_char = 0
-            {{for nOct in obj[n]['Octant']}}
-            euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
-            {{endfor}}
-            if not euler_char == 0 or not is_simple_point(neighborhood):
-                continue
-
-            point.x = x
-            point.y = y
-            point.z = z
-            point.ID = {{20+n}}
-            point.faceCount = is_endpoint_check(neighborhood)
-            simple_border_points.push_back(point)
-
-{{elif numInd == 3}}
-
-    {{loopIndZ[0]}} = {{loopRangeZ[0]}}
-    {{loopIndZ[1]}} = {{loopRangeZ[1]}}
-    {{loopIndZ[2]}} = {{loopRangeZ[2]}}
-
-    if img[x, y, z] == 1:
-
-        is_border_pt = (
-                    {{if obj[n]['ID'][0] != -1 }}
-                        curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
-                    {{endif}}
-                    {{if obj[n]['ID'][0] != 1 }}
-                        curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
-                    {{endif}}
-                    {{if  obj[n]['ID'][1] != -1 }}
-                        curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
-                    {{endif}}
-                    {{if obj[n]['ID'][1] != 1 }}
-                        curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
-                    {{endif}}
-                    {{if obj[n]['ID'][2] == 0 }}
-                        curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
-                    {{elif obj[n]['ID'][2] != -1}}
-                        curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
-                    {{endif}}
-                    {{if obj[n]['ID'][2] != 1 }}
-                        curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
-                    {{endif}}
-                        )
-
-        if is_border_pt:
-
-            get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
-            if (not is_endpoint(neighborhood)):
-                euler_char = 0
-                {{for nOct in obj[n]['Octant']}}
-                euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
-                {{endfor}}
-                if euler_char==0 or is_simple_point(neighborhood):
                     point.x = x
                     point.y = y
                     point.z = z
-                    point.ID = {{40+n}}
+                    point.ID = {{10+n}}
                     point.faceCount = is_endpoint_check(neighborhood)
+                    point.edt = edt[x,y,z]
                     simple_border_points.push_back(point)
+
+{{elif numInd == 2}}
+
+    for x in range(fLoop[0,0], fLoop[0,1]):
+        for y in range(fLoop[1,0], fLoop[1,1]):
+            for z in range(fLoop[2,0], fLoop[2,1]):
+
+                #img[x,y,z] = 155
+                if img[x, y, z] != 1:
+                    continue
+
+                is_border_pt = (
+                            {{if obj[n]['ID'][0] != -1 }}
+                                curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
+                            {{endif}}
+                            {{if obj[n]['ID'][0] != 1 }}
+                                curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
+                            {{endif}}
+                            {{if  obj[n]['ID'][1] != -1 }}
+                                curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
+                            {{endif}}
+                            {{if obj[n]['ID'][1] != 1 }}
+                                curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
+                            {{endif}}
+                            {{if obj[n]['ID'][2] == 0 }}
+                                curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
+                            {{elif obj[n]['ID'][2] != -1}}
+                                curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
+                            {{endif}}
+                            {{if obj[n]['ID'][2] != 1 }}
+                                curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
+                            {{endif}}
+                                )
+
+                if not is_border_pt:
+                    continue
+
+                get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
+                if (not is_endpoint(neighborhood)):
+                    euler_char = 0
+                    {{for nOct in obj[n]['Octant']}}
+                    euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
+                    {{endfor}}
+                    if not euler_char == 0 or not is_simple_point(neighborhood):
+                        continue
+
+                    point.x = x
+                    point.y = y
+                    point.z = z
+                    point.ID = {{20+n}}
+                    point.faceCount = is_endpoint_check(neighborhood)
+                    point.edt = edt[x,y,z]
+                    simple_border_points.push_back(point)
+
+{{elif numInd == 3}}
+
+    for x in range(fLoop[0,0], fLoop[0,1]):
+        for y in range(fLoop[1,0], fLoop[1,1]):
+            for z in range(fLoop[2,0], fLoop[2,1]):
+
+                #img[x,y,z] = 155
+                if img[x, y, z] == 1:
+
+                    is_border_pt = (
+                                {{if obj[n]['ID'][0] != -1 }}
+                                    curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
+                                {{endif}}
+                                {{if obj[n]['ID'][0] != 1 }}
+                                    curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
+                                {{endif}}
+                                {{if  obj[n]['ID'][1] != -1 }}
+                                    curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
+                                {{endif}}
+                                {{if obj[n]['ID'][1] != 1 }}
+                                    curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
+                                {{endif}}
+                                {{if obj[n]['ID'][2] == 0 }}
+                                    curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
+                                {{elif obj[n]['ID'][2] != -1}}
+                                    curr_border == 4 and img[x  ,y  ,z-1] == 0     #B
+                                {{endif}}
+                                {{if obj[n]['ID'][2] != 1 }}
+                                    curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
+                                {{endif}}
+                                    )
+
+                    if is_border_pt:
+
+                        get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
+                        if (not is_endpoint(neighborhood)):
+                            euler_char = 0
+                            {{for nOct in obj[n]['Octant']}}
+                            euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
+                            {{endfor}}
+                            if euler_char==0 or is_simple_point(neighborhood):
+                                point.x = x
+                                point.y = y
+                                point.z = z
+                                point.ID = {{40+n}}
+                                point.faceCount = is_endpoint_check(neighborhood)
+                                point.edt = edt[x,y,z]
+                                simple_border_points.push_back(point)
 
 
 {{endif}}
 {{endfor}}
 {{endfor}}
 
-cdef void find_simple_point_candidates_boundary(pixel_type[:, :, ::1] img,
-                                        int curr_border,
-                                        vector[coordinate] & simple_border_points) nogil:
-
-    if curr_border == 0:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][0] != -1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-    if curr_border == 1:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][0] != 1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-    if curr_border == 2:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][1] != -1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-    if curr_border == 3:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][1] != 1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-    if curr_border == 4:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][2] != -1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-    if curr_border == 5:
-        {{for numObj,obj in enumerate(objects)}}
-            {{for n in obj}}
-                {{if obj[n]['ID'][2] != 1}}
-        find_simple_point_candidates_{{objectNames[numObj]}}_{{n}}(img, curr_border, simple_border_points)
-                {{endif}}
-            {{endfor}}
-        {{endfor}}
-
-
-
-### Code for Own Proc Boundaries
-{{for numObj,obj in enumerate([faces])}}
-{{for n in obj}}
-
-
-cdef void find_simple_point_candidates_internal{{objectNames[numObj]}}_{{n}}(pixel_type[:, :, ::1] img,
+cdef void find_simple_point_candidates_TEST(pixel_type[:, :, ::1] img,
+                                        npy_float32[:, :, ::1] edt,
+                                        int fErode,
+                                        npy_intp [:,:] fLoop,
                                         vector[coordinate] & simple_border_points) nogil:
 
     cdef:
@@ -796,73 +725,31 @@ cdef void find_simple_point_candidates_internal{{objectNames[numObj]}}_{{n}}(pix
         int[::1] Euler_LUT = LUT
 
 
-{{py:
-ID = obj[n]['ID']
-numInd = np.sum(np.abs(ID))
+    for x in range(fLoop[0,0], fLoop[0,1]):
+        for y in range(fLoop[1,0], fLoop[1,1]):
+            for z in range(fLoop[2,0], fLoop[2,1]):
 
-loopIndZ = [None] * numInd
-loopRangeZ = [None] * numInd
-loopIndNZ = [None] * (3-numInd)
-loopRangeNZ = [None] * (3-numInd)
+                #img[x,y,z] = 255
+                if img[x, y, z] != 1:
+                    continue
 
-cIndZ = 0
-cIndNZ = 0
-for ind in range(0,3):
-    lDir = obj[n]['ID'][ind]
-    if lDir < 0:
-        loopIndZ[cIndZ] = index[ind]
-        loopRangeZ[cIndZ] = 1
-        cIndZ = cIndZ + 1
-    elif lDir > 0:
-        loopIndZ[cIndZ] = index[ind]
-        loopRangeZ[cIndZ] = "img.shape["+str(abs(ind))+"]-2"
-        cIndZ = cIndZ + 1
-    else:
-        loopIndNZ[cIndNZ] = index[ind]
-        loopRangeNZ[cIndNZ] = ind
-        cIndNZ = cIndNZ + 1
-}}
+                is_border_pt = (
+                                fErode == 0 and img[x+1,y  ,z  ] == 0 or
+                                fErode == 1 and img[x-1,y  ,z  ] == 0 or
+                                fErode == 2 and img[x  ,y+1,z  ] == 0 or
+                                fErode == 3 and img[x  ,y-1,z  ] == 0 or
+                                fErode == 4 and img[x  ,y  ,z+1] == 0 or
+                                fErode == 5 and img[x  ,y  ,z-1] == 0    
+                            )
 
-{{if numInd == 1}}
+                if not is_border_pt:
+                    continue
 
-    for {{loopIndNZ[0]}} in range(1, img.shape[{{loopRangeNZ[0]}}] - 1):
-        for {{loopIndNZ[1]}} in range(1, img.shape[{{loopRangeNZ[1]}}] - 1):
-            {{loopIndZ[0]}} = {{loopRangeZ[0]}}
-
-            if img[x, y, z] != 1:
-                continue
-
-            is_border_pt = (
-                        {{if obj[n]['ID'][0] == 1 }}
-                            img[x-1,y  ,z  ] == 0   #W
-                        {{endif}}
-                        {{if obj[n]['ID'][0] == -1 }}
-                            img[x+1,y  ,z  ] == 0   #E
-                        {{endif}}
-                        {{if  obj[n]['ID'][1] == 1 }}
-                            img[x  ,y-1,z  ] == 0   #S
-                        {{endif}}
-                        {{if obj[n]['ID'][1] == -1 }}
-                            img[x  ,y+1,z  ] == 0   #N
-                        {{endif}}
-                        {{if obj[n]['ID'][2] == 1 }}
-                            img[x  ,y  ,z-1] == 0   #B
-                        {{endif}}
-                        {{if obj[n]['ID'][2] == -1 }}
-                            img[x  ,y  ,z+1] == 0   #U
-                        {{endif}}
-                           )
-
-            if not is_border_pt:
-                continue
-
-            get_neighborhood_boundary_{{objectNames[numObj]}}_{{n}}(img, x, y, z, neighborhood)
-            if (not is_endpoint(neighborhood)):
-                euler_char = 0
-                {{for nOct in obj[n]['Octant']}}
-                euler_char = euler_char + is_Euler_invariant_Octant_{{nOct}}(neighborhood, Euler_LUT)
-                {{endfor}}
-                if not euler_char==0 or not is_simple_point(neighborhood):
+                get_neighborhood(img, x, y, z, neighborhood)
+                #   Check conditions 2 and 3
+                if (is_endpoint(neighborhood) or
+                    not is_Euler_invariant(neighborhood, Euler_LUT) or
+                    not is_simple_point(neighborhood)):
                     continue
 
                 point.x = x
@@ -870,8 +757,56 @@ for ind in range(0,3):
                 point.z = z
                 point.ID = 0
                 point.faceCount = is_endpoint_check(neighborhood)
+                point.edt = edt[x,y,z]
                 simple_border_points.push_back(point)
 
-{{endif}}
-{{endfor}}
-{{endfor}}
+cdef void find_simple_point_candidates_TEST2(pixel_type[:, :, ::1] img,
+                                        npy_float32[:, :, ::1] edt,
+                                        int fErode,
+                                        npy_intp [:,:] fLoop,
+                                        vector[coordinate] & simple_border_points) nogil:
+
+    cdef:
+        cdef coordinate point
+
+        pixel_type neighborhood[27]
+        npy_intp x, y, z
+        bint is_border_pt
+        int euler_char = 0
+        int[::1] Euler_LUT = LUT
+
+
+    for x in range(fLoop[0,0], fLoop[0,1]):
+        for y in range(fLoop[1,0], fLoop[1,1]):
+            for z in range(fLoop[2,0], fLoop[2,1]):
+
+                #img[x,y,z] = 255
+                if img[x, y, z] != 1:
+                    continue
+
+                is_border_pt = (
+                                fErode == 0 and img[x+1,y  ,z  ] == 0 or
+                                fErode == 1 and img[x-1,y  ,z  ] == 0 or
+                                fErode == 2 and img[x  ,y+1,z  ] == 0 or
+                                fErode == 3 and img[x  ,y-1,z  ] == 0 or
+                                fErode == 4 and img[x  ,y  ,z+1] == 0 or
+                                fErode == 5 and img[x  ,y  ,z-1] == 0    
+                            )
+
+                if not is_border_pt:
+                    continue
+
+                get_neighborhood(img, x, y, z, neighborhood)
+                #   Check conditions 2 and 3
+                if (is_endpoint(neighborhood) or
+                    not is_Euler_invariant(neighborhood, Euler_LUT) or
+                    not is_simple_point(neighborhood)):
+                    continue
+
+                point.x = x
+                point.y = y
+                point.z = z
+                point.ID = 0
+                point.faceCount = is_endpoint_check(neighborhood)
+                point.edt = edt[x,y,z]
+                simple_border_points.push_back(point)

@@ -5,6 +5,8 @@ import edt
 import time
 import PMMoTo
 from skimage.morphology import skeletonize
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 import cProfile
 
@@ -33,18 +35,19 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [100,100,100] # Total Number of Nodes in Domain
+    subDomains = [3,3,3] # Specifies how Domain is broken among rrocs
+    nodes = [300,300,300] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[1,1],[0,0],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/10pack.out'
+    file = './testDomains/50pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -172,7 +175,7 @@ def my_function():
                 gridOut = np.asarray(gridOut)
 
                 pG = [0,0,0]
-                pgSize = nodes[0]
+                pgSize = int(nodes[0]/2)
 
                 if boundaries[0][0] == 1:
                     pG[0] = 1
@@ -213,14 +216,12 @@ def my_function():
                 skelMA = skeletonize(gridOut)
                 gridCopy = np.copy(gridOut)
                 #realMA,_ = PMMoTo.medialAxis.medialAxis._compute_thin_image_test(gridCopy)
-                realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
+                #realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
 
-                print(gridOut.shape)
-
-                arrayList = [gridOut,realDT,edtV,realMA,skelMA]
+                arrayList = [gridOut,realDT,edtV,skelMA]
 
                 for i,arr in enumerate(arrayList):
                     if pG[0] > 0 and pG[1]==0 and pG[2]==0:
@@ -242,8 +243,8 @@ def my_function():
                 gridOut = arrayList[0]
                 realDT = arrayList[1]
                 edtV = arrayList[2]
-                realMA = arrayList[3]
-                skelMA = arrayList[4]
+                #realMA = arrayList[3]
+                skelMA = arrayList[3]
 
 
                 ### Reconstruct SubDomains to Check EDT ####
@@ -280,8 +281,6 @@ def my_function():
                                                     sD[n].buffer[4] : pM[n].grid.shape[2] - sD[n].buffer[5]]
                             n = n + 1
 
-                PMMoTo.saveGridOneProc("dataOut/SingleEDT",x,y,z,np.ascontiguousarray(realDT))
-
                 diffEDT = np.abs(realDT-checkEDT)
                 diffEDT2 = np.abs(edtV-checkEDT)
 
@@ -306,11 +305,12 @@ def my_function():
                                                     sD[n].buffer[4] : pM[n].grid.shape[2] - sD[n].buffer[5]]
                             n = n + 1
 
-                diffMA = np.abs(realMA-checkMA)
-                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+                print("MA Check Sum:",np.sum(checkMA),np.sum(skelMA))
+                #diffMA = np.abs(realMA-checkMA)
+                #print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
-                PMMoTo.saveGridOneProc("dataOut/diffMA",x,y,z,diffMA)
-                PMMoTo.saveGridOneProc("dataOut/trueMA",x,y,z,np.ascontiguousarray(realMA))
+                #PMMoTo.saveGridOneProc("dataOut/diffMA",x,y,z,diffMA)
+                #PMMoTo.saveGridOneProc("dataOut/trueMA",x,y,z,np.ascontiguousarray(realMA))
                 PMMoTo.saveGridOneProc("dataOut/skelMA",x,y,z,np.ascontiguousarray(skelMA))
 
 

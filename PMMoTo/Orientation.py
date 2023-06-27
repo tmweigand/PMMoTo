@@ -133,17 +133,14 @@ class Orientation(object):
 
         return loopInfo
 
-    def getSendSlices(self,structRatio,buffer,updateBuffer=False):
+    def getSendSlices(self,structRatio,buffer,dim):
         """
         Determine slices of face, edge, and corner neighbor to send data 
-        structRatio is size of voxel window to send
-        buffer is XXX
+        structRatio is size of voxel window to send and is [nx,ny,nz]
+        buffer is the subDomain.buffer
+        dim is grid.shape
+        Buffer is always updated on edges and corners due to geometry contraints
         """
-
-        ### Determine if function is to update Buffer or add Halo
-        factor = 2
-        if updateBuffer:
-            factor = 1
 
         #############
         ### Faces ###
@@ -153,15 +150,9 @@ class Orientation(object):
             for n in range(len(fID)):
                 if fID[n] != 0:
                     if fID[n] > 0:
-                        buf = None
-                        if buffer[fIndex] > 0:
-                            buf = -buffer[fIndex]*factor
-                        self.sendFSlices[fIndex,n] = slice(-structRatio[n]-buffer[fIndex]*factor,buf)
+                        self.sendFSlices[fIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-buffer[n*2+1]-1)
                     else:
-                        buf = None
-                        if buffer[fIndex] > 0:
-                            buf = buffer[fIndex]*factor
-                        self.sendFSlices[fIndex,n] = slice(buf,structRatio[n]+buffer[fIndex]*factor)
+                        self.sendFSlices[fIndex,n] = slice(buffer[n*2]+1,buffer[n*2]+structRatio[n*2]+1)
                 else:
                     self.sendFSlices[fIndex,n] = slice(None,None)
         #############
@@ -174,17 +165,9 @@ class Orientation(object):
             for n in range(len(eID)):
                 if eID[n] != 0:
                     if eID[n] > 0:
-                        buf = None
-                        bufID = n*2+1
-                        if buffer[bufID] > 0:
-                            buf = -buffer[bufID]*factor
-                        self.sendESlices[eIndex,n] = slice(-structRatio[n]-buffer[bufID]*factor,buf)
+                        self.sendESlices[eIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
                     else:
-                        buf = None
-                        bufID = n*2
-                        if buffer[bufID] > 0:
-                            buf = buffer[bufID]*factor
-                        self.sendESlices[eIndex,n] = slice(buf,structRatio[n]+buffer[bufID]*factor)
+                        self.sendESlices[eIndex,n] = slice(buffer[n*2],buffer[n*2]+structRatio[n*2]+1)
                 else:
                     self.sendESlices[eIndex,n] = slice(None,None)
         #############
@@ -196,30 +179,21 @@ class Orientation(object):
             cID = self.corners[cIndex]['ID']
             for n in range(len(cID)):
                 if cID[n] > 0:
-                    buf = None
-                    bufID = n*2+1
-                    if buffer[bufID] > 0:
-                        buf = -buffer[bufID]*factor
-                    self.sendCSlices[cIndex,n] = slice(-structRatio[n]-buffer[bufID]*factor,buf)
+                    self.sendCSlices[cIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
                 else:
-                    buf = None
-                    bufID = n*2
-                    if buffer[bufID] > 0:
-                        buf = buffer[bufID]*factor
-                    self.sendCSlices[cIndex,n] = slice(buf,structRatio[n]+buffer[bufID]*factor)
+                    self.sendCSlices[cIndex,n] = slice(buffer[n*2],buffer[n*2]+structRatio[n*2]+1)
         ###############
 
-    def getRecieveSlices(self,structRatio,pad,arr):
-        """
-        Determine slices of face, edge, and corner neighbor to recieve data 
-        structRatio is 
-        pad is amout arr has increased 
-        arr is 
-        """
 
-        dim = arr.shape
-        if pad.shape != [3,2]:
-            pad = pad.reshape([3,2])
+
+    def getSendBufferSlices(self,buffer,dim):
+        """
+        Determine slices of face, edge, and corner neighbor to send data 
+        structRatio is size of voxel window to send and is [nx,ny,nz]
+        buffer is the subDomain.buffer
+        dim is grid.shape
+        Buffer is always updated on edges and corners due to geometry contraints
+        """
 
         #############
         ### Faces ###
@@ -229,11 +203,11 @@ class Orientation(object):
             for n in range(len(fID)):
                 if fID[n] != 0:
                     if fID[n] > 0:
-                        self.recvFSlices[fIndex,n] = slice(-structRatio[n],None)
+                        self.sendFSlices[fIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
                     else:
-                        self.recvFSlices[fIndex,n] = slice(None,structRatio[n])
+                        self.sendFSlices[fIndex,n] = slice(buffer[n*2],2*buffer[n*2])
                 else:
-                    self.recvFSlices[fIndex,n] = slice(0+pad[n,0],dim[n]-pad[n,1])
+                    self.sendFSlices[fIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
         #############
 
         #############
@@ -244,11 +218,11 @@ class Orientation(object):
             for n in range(len(eID)):
                 if eID[n] != 0:
                     if eID[n] > 0:
-                        self.recvESlices[eIndex,n] = slice(-structRatio[n],None)
+                        self.sendESlices[eIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
                     else:
-                        self.recvESlices[eIndex,n] = slice(None,structRatio[n])
+                        self.sendESlices[eIndex,n] = slice(buffer[n*2],2*buffer[n*2])
                 else:
-                    self.recvESlices[eIndex,n] = slice(0+pad[n,0],dim[n]-pad[n,1])
+                    self.sendESlices[eIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
         #############
 
         ###############
@@ -258,7 +232,427 @@ class Orientation(object):
             cID = self.corners[cIndex]['ID']
             for n in range(len(cID)):
                 if cID[n] > 0:
-                    self.recvCSlices[cIndex,n] = slice(-structRatio[n],None)
+                    self.sendCSlices[cIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
                 else:
-                    self.recvCSlices[cIndex,n] = slice(None,structRatio[n])
+                    self.sendCSlices[cIndex,n] = slice(buffer[n*2],2*buffer[n*2])
         ###############
+
+
+    def getRecieveSlices(self,halo,buffer,dim):
+        """
+        Determine slices of face, edge, and corner neighbor to recieve data 
+        Buffer is always updated on edges and corners due to geometry contraints
+        """
+
+        #############
+        ### Faces ###
+        #############
+        for fIndex in self.faces:
+            fID = self.faces[fIndex]['ID']
+            for n in range(len(fID)):
+                if fID[n] != 0:
+                    if fID[n] > 0:
+                        self.recvFSlices[fIndex,n] = slice(dim[n]-halo[n*2+1],dim[n])
+                    else:
+                        self.recvFSlices[fIndex,n] = slice(None,halo[n*2])
+                else:
+                    self.recvFSlices[fIndex,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
+        #############
+
+        #############
+        ### Edges ###
+        #############
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                if eID[n] != 0:
+                    if eID[n] > 0:
+                        self.recvESlices[eIndex,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
+                    else:
+                        self.recvESlices[eIndex,n] = slice(None,halo[n*2]+buffer[n*2])
+                else:
+                    self.recvESlices[eIndex,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
+        #############
+
+        ###############
+        ### Corners ###
+        ###############
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                if cID[n] > 0:
+                    self.recvCSlices[cIndex,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
+                else:
+                    self.recvCSlices[cIndex,n] = slice(None,halo[n*2]+buffer[n*2])
+        ###############
+
+    def getRecieveBufferSlices(self,buffer,dim):
+        """
+        Determine slices of face, edge, and corner neighbor to recieve data 
+        Buffer is always updated on edges and corners due to geometry contraints
+        """
+
+        #############
+        ### Faces ###
+        #############
+        for fIndex in self.faces:
+            fID = self.faces[fIndex]['ID']
+            for n in range(len(fID)):
+                if fID[n] != 0:
+                    if fID[n] > 0:
+                        self.recvFSlices[fIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
+                    else:
+                        self.recvFSlices[fIndex,n] = slice(None,buffer[n*2])
+                else:
+                    self.recvFSlices[fIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+        #############
+
+        #############
+        ### Edges ###
+        #############
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                if eID[n] != 0:
+                    if eID[n] > 0:
+                        self.recvESlices[eIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
+                    else:
+                        self.recvESlices[eIndex,n] = slice(None,buffer[n*2])
+                else:
+                    self.recvESlices[eIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+        #############
+
+        ###############
+        ### Corners ###
+        ###############
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                if cID[n] > 0:
+                    self.recvCSlices[cIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
+                else:
+                    self.recvCSlices[cIndex,n] = slice(None,buffer[n*2])
+        ###############
+
+
+
+    def getMALoopInfo(self,buffer,grid):
+        """
+        Determine slices of face, edge, and corner internal boundary slices 
+        """
+
+        FLoopI = np.empty([self.numFaces,3,2],dtype=np.int64)
+        FLoopB = np.empty([self.numFaces,3,2],dtype=np.int64)
+        ELoopI = np.empty([self.numFaces,self.numEdges,3,2],dtype=np.int64)
+        ELoopB = np.empty([self.numEdges,3,2],dtype=np.int64)
+        CLoopI = np.empty([self.numFaces,self.numCorners,3,2],dtype=np.int64)
+        CLoopB = np.empty([self.numCorners,3,2],dtype=np.int64)
+
+        dim = grid.shape
+
+        #############
+        ### Faces ###
+        #############
+        for fIndex in self.faces:
+            fID = self.faces[fIndex]['ID']
+            for n in range(len(fID)):
+                if fID[n] != 0:
+                    if fID[n] > 0:
+                        FLoopB[fIndex,n] = [dim[n]-buffer[n*2+1]-1,dim[n]-buffer[n*2+1]]
+                        FLoopI[fIndex,n] = [buffer[n*2+1]+1,dim[n]-buffer[n*2+1]-1]
+                    else:
+                        FLoopB[fIndex,n] = [buffer[n*2],buffer[n*2]+1]
+                        FLoopI[fIndex,n] = [buffer[n*2]+1,dim[n]-buffer[n*2]-1]
+                else:
+                    FLoopB[fIndex,n] = [buffer[n*2]+1,dim[n]-buffer[n*2+1]-1]
+                    FLoopI[fIndex,n] = [buffer[n*2]+1,dim[n]-buffer[n*2+1]-1]
+
+        #############
+
+        ######################
+        ### Boundary Edges ###
+        ######################
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                if eID[n] != 0:
+                    if eID[n] > 0:
+                        bufID = n*2+1
+                        ELoopB[eIndex,n] = [dim[n]-buffer[bufID]-1,dim[n]-buffer[bufID]]
+                    else:
+                        bufID = n*2
+                        ELoopB[eIndex,n] = [buffer[bufID],buffer[bufID]+1]
+                else:
+                    ELoopB[eIndex,n] = [buffer[n*2]+1,dim[n]-buffer[n*2+1]-1]
+        ######################
+
+        ######################
+        ### Internal Edges ###
+        ######################
+        for fIndex in self.faces:
+            erodeAxis = self.faces[fIndex]['argOrder']
+            for eIndex in self.edges:
+                eID = self.edges[eIndex]['ID']
+                for n in range(len(eID)):
+                    if n == erodeAxis[0]:
+                        if eID[n] != 0:
+                            if eID[n] > 0:
+                                bufID = n*2+1
+                                ELoopI[fIndex,eIndex,n] = [buffer[bufID],dim[n]-buffer[bufID]-2]
+                            else:
+                                bufID = n*2
+                                ELoopI[fIndex,eIndex,n] = [buffer[bufID]+1,dim[n]-buffer[bufID]-1] 
+                    else:                       
+                        if eID[n] != 0:
+                            if eID[n] > 0:
+                                bufID = n*2+1
+                                ELoopI[fIndex,eIndex,n] = [dim[n]-buffer[bufID]-1,dim[n]-buffer[bufID]]
+                            else:
+                                bufID = n*2
+                                ELoopI[fIndex,eIndex,n] = [buffer[bufID],buffer[bufID]+1]
+                        else:
+                            ELoopI[fIndex,eIndex,n] = [buffer[n*2]+1,dim[n]-buffer[n*2+1]-1]
+        ######################
+
+
+        ########################
+        ### Boundary Corners ###
+        ########################
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                if cID[n] > 0:
+                    bufID = n*2+1
+                    CLoopB[cIndex,n] = [dim[n]-buffer[bufID]-1,dim[n]-buffer[bufID]]
+                else:
+                    bufID = n*2
+                    CLoopB[cIndex,n] = [buffer[bufID],buffer[bufID]+1]
+        ########################
+
+        ########################
+        ### Internal Corners ###
+        ########################
+        for fIndex in self.faces:
+            erodeAxis = self.faces[fIndex]['argOrder']
+            for cIndex in self.corners:
+                cID = self.corners[cIndex]['ID']
+                for n in range(len(cID)):
+                    if n == erodeAxis[0]:
+                        if cID[n] > 0:
+                            bufID = n*2+1
+                            CLoopI[fIndex,cIndex,n] = [buffer[bufID],dim[n]-buffer[bufID]-2]
+                        else:
+                            bufID = n*2
+                            CLoopI[fIndex,cIndex,n] = [buffer[bufID]+1,dim[n]-buffer[bufID]-1]
+                    else:
+                        if cID[n] > 0:
+                            bufID = n*2+1
+                            CLoopI[fIndex,cIndex,n] = [dim[n]-buffer[bufID]-1,dim[n]-buffer[bufID]]
+                        else:
+                            bufID = n*2
+                            CLoopI[fIndex,cIndex,n] = [buffer[bufID],1+buffer[bufID]]
+                
+        ########################
+
+        return FLoopB,FLoopI,ELoopB,ELoopI,CLoopB,CLoopI
+
+    def getMALoopInfoALL(self,grid):
+        """
+        Determine slices of face, edge, and corner internal boundary slices 
+        """
+
+        FLoopI = np.empty([self.numFaces,3,2],dtype=np.int64)
+        FLoopB = np.empty([self.numFaces,3,2],dtype=np.int64)
+        ELoopI = np.empty([self.numFaces,self.numEdges,3,2],dtype=np.int64)
+        ELoopB = np.empty([self.numEdges,3,2],dtype=np.int64)
+        CLoopI = np.empty([self.numFaces,self.numCorners,3,2],dtype=np.int64)
+        CLoopB = np.empty([self.numCorners,3,2],dtype=np.int64)
+
+        dim = grid.shape
+
+        #############
+        ### Faces ###
+        #############
+        for fIndex in self.faces:
+            fID = self.faces[fIndex]['ID']
+            for n in range(len(fID)):
+                if fID[n] != 0:
+                    if fID[n] > 0:
+                        FLoopB[fIndex,n] = [dim[n]-1,dim[n]]
+                        FLoopI[fIndex,n] = [1,dim[n]-1]
+                    else:
+                        FLoopB[fIndex,n] = [0,1]
+                        FLoopI[fIndex,n] = [1,dim[n]-1]
+                else:
+                    FLoopB[fIndex,n] = [1,dim[n]-1]
+                    FLoopI[fIndex,n] = [1,dim[n]-1]
+
+        #############
+
+        ######################
+        ### Boundary Edges ###
+        ######################
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                if eID[n] != 0:
+                    if eID[n] > 0:
+                        ELoopB[eIndex,n] = [dim[n]-1,dim[n]]
+                    else:
+                        ELoopB[eIndex,n] = [0,1]
+                else:
+                    ELoopB[eIndex,n] = [1,dim[n]-1]
+        ######################
+
+        ######################
+        ### Internal Edges ###
+        ######################
+        for fIndex in self.faces:
+            erodeAxis = self.faces[fIndex]['argOrder']
+            for eIndex in self.edges:
+                eID = self.edges[eIndex]['ID']
+                for n in range(len(eID)):
+                    if n == erodeAxis[0]:
+                        if eID[n] != 0:
+                            if eID[n] > 0:
+                                ELoopI[fIndex,eIndex,n] = [1,dim[n]-2]
+                            else:
+                                ELoopI[fIndex,eIndex,n] = [1,dim[n]-2] 
+                    else:                       
+                        if eID[n] != 0:
+                            if eID[n] > 0:
+                                ELoopI[fIndex,eIndex,n] = [dim[n]-2,dim[n]-1]
+                            else:
+                                ELoopI[fIndex,eIndex,n] = [1,2]
+                        else:
+                            ELoopI[fIndex,eIndex,n] = [1,dim[n]-2]
+        ######################
+
+
+        ########################
+        ### Boundary Corners ###
+        ########################
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                if cID[n] > 0:
+                    CLoopB[cIndex,n] = [dim[n]-1,dim[n]]
+                else:
+                    CLoopB[cIndex,n] = [0,1]
+        ########################
+
+        ########################
+        ### Internal Corners ###
+        ########################
+        for fIndex in self.faces:
+            erodeAxis = self.faces[fIndex]['argOrder']
+            for cIndex in self.corners:
+                cID = self.corners[cIndex]['ID']
+                for n in range(len(cID)):
+                    if n == erodeAxis[0]:
+                        if cID[n] > 0:
+                            CLoopI[fIndex,cIndex,n] = [1,dim[n]-2]
+                        else:
+                            CLoopI[fIndex,cIndex,n] = [1,dim[n]-2]
+                    else:
+                        if cID[n] > 0:
+                            CLoopI[fIndex,cIndex,n] = [dim[n]-2,dim[n]-1]
+                        else:
+                            CLoopI[fIndex,cIndex,n] = [1,2]
+                
+        ########################
+
+        return FLoopB,FLoopI,ELoopB,ELoopI,CLoopB,CLoopI
+    
+
+
+
+
+
+    def getMALoopInfoTEST(self,buffer,padding,grid):
+        """
+        Determine slices of face, edge, and corner internal boundary slices 
+        """
+
+        FLoopI = np.zeros([3,2],dtype=np.int64)
+        FLoopB = np.zeros([self.numFaces,3,2],dtype=np.int64)
+        ELoopI = np.zeros([self.numEdges,3,2],dtype=np.int64)
+        ELoopB = np.zeros([self.numEdges,3,2],dtype=np.int64)
+        CLoopI = np.zeros([self.numCorners,3,2],dtype=np.int64)
+        CLoopB = np.zeros([self.numCorners,3,2],dtype=np.int64)
+
+        dim = grid.shape
+
+        #############
+        ### Faces ###
+        #############
+        for fIndex in self.faces:
+            fID = self.faces[fIndex]['ID']
+            for n in range(len(fID)):
+                if fID[n] != 0:
+                    if fID[n] > 0:
+                        FLoopB[fIndex,n] = [dim[n]-buffer[fIndex]-padding[fIndex]-1,dim[n]-buffer[fIndex]-1]
+                    else:
+                        FLoopB[fIndex,n] = [buffer[fIndex]+1,buffer[fIndex]+padding[fIndex]+1]
+                else:
+                    FLoopB[fIndex,n] = [buffer[n*2]+padding[n*2]+2,dim[n]-buffer[n*2+1]-padding[n*2+1]-2]
+                FLoopI[n] = [buffer[n*2]+padding[n*2]+1,dim[n]-buffer[n*2+1]-padding[n*2+1]-1]
+
+        #############
+
+        ######################
+        ### Boundary Edges ###
+        ######################
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                if eID[n] != 0:
+                    if eID[n] > 0:
+                        ELoopB[eIndex,n] = [dim[n]-buffer[n*2+1]-2*padding[n*2+1],dim[n]-buffer[n*2+1]]
+                    else:
+                        ELoopB[eIndex,n] = [buffer[n*2],buffer[n*2]+2*padding[n*2]] 
+                else:
+                    ELoopB[eIndex,n] = [buffer[n*2]+padding[n*2]+2,dim[n]-buffer[n*2+1]-padding[n*2+1]-2]
+        ######################
+
+        ######################
+        ### Internal Edges ###
+        ######################
+        for eIndex in self.edges:
+            eID = self.edges[eIndex]['ID']
+            for n in range(len(eID)):
+                    if eID[n] != 0:
+                        if eID[n] > 0:
+                            ELoopI[eIndex,n] = [dim[n]-buffer[n*2+1]-2*padding[n*2+1],dim[n]-buffer[n*2+1]]
+                        else:
+                            ELoopI[eIndex,n] = [buffer[n*2],buffer[n*2]+2*padding[n*2]] 
+                    else:
+                        ELoopI[eIndex,n] = [buffer[n*2]+padding[n*2]+2,dim[n]-buffer[n*2+1]-padding[n*2+1]-2]
+        ######################
+
+
+        ########################
+        ### Boundary Corners ###
+        ########################
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                if cID[n] > 0:
+                    CLoopB[cIndex,n] = [dim[n]-buffer[n*2+1]-2*padding[n*2+1],dim[n]-buffer[n*2+1]]
+                else:
+                    CLoopB[cIndex,n] = [buffer[n*2],buffer[n*2]+2*padding[n*2]]
+        ########################
+
+        ########################
+        ### Internal Corners ###
+        ########################
+        for cIndex in self.corners:
+            cID = self.corners[cIndex]['ID']
+            for n in range(len(cID)):
+                    if cID[n] > 0:
+                        CLoopI[cIndex,n] = [dim[n]-buffer[n*2+1]-2*padding[n*2+1],dim[n]-buffer[n*2+1]]
+                    else:
+                        CLoopI[cIndex,n] = [buffer[n*2],buffer[n*2]+2*padding[n*2]]
+        ########################
+
+        return FLoopB,FLoopI,ELoopB,ELoopI,CLoopB,CLoopI

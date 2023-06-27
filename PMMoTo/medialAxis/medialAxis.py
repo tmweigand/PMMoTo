@@ -1,9 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from .medialExtraction import _compute_thin_image
-from .medialExtraction import _compute_thin_image_border
-from .medialExtraction import getInternalBoundaries
+from . import medialExtraction
 from .. import nodes
 from .. import sets
 comm = MPI.COMM_WORLD
@@ -29,24 +27,6 @@ class medialAxis(object):
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-
-    def skeletonizeAxis_test(self):
-
-        self.MA  = np.copy(self.grid)
-        unchanged_borders = 0
-        
-        for i in range(0,25):#while unchanged_borders < self.Orientation.numFaces:
-            for fIndex in self.Orientation.faces:
-
-                self.MA = getInternalBoundaries(self.MA,fIndex)
-                sDComm = communication.Comm(Domain = self.subDomain.Domain,subDomain = self.subDomain,grid = self.MA)
-                self.MA = sDComm.updateBuffer()
-                self.MA,unchanged_borders = _compute_thin_image_border(self.MA,fIndex,unchanged_borders)
-
-        
-
-
-                
 
     def skeletonizeAxis(self,connect = False):
         """Compute the skeleton of a binary image.
@@ -440,7 +420,8 @@ def medialAxisEval(subDomain,grid,distance,connect,cutoff):
 
 
     ### Determine MA
-    sDMA.skeletonizeAxis_test()
+    mE = medialExtraction.medialExtraction(Domain = subDomain.Domain, subDomain = subDomain, grid = grid, edt = distance)
+    sDMA.MA = mE.skeletonizeAxis_test()
     #sDMA.skeletonizeAxis()
     
     if connect:

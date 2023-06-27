@@ -1,7 +1,6 @@
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from .medialExtraction import _compute_thin_image_surface
 from .. import nodes
 from .. import sets
 import math
