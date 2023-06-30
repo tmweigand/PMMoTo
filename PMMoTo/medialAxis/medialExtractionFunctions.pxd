@@ -19,10 +19,11 @@ cdef struct coordinate:
 cdef inline bool  compare(coordinate l, const coordinate r):
     return l.c > r.c;
 
-cdef void find_simple_point_candidates(pixel_type[:, :, ::1] img,
-                                       int curr_border,
-                                       vector[coordinate] & simple_border_points) nogil
-
+cdef void findSimplePoints(pixel_type[:, :, ::1] img,
+                           npy_float32[:, :, ::1] edt,
+                           int fErode,
+                           npy_intp[:,:] fLoop,
+                           vector[coordinate] & simple_border_points) nogil
 
 cdef void get_neighborhood(pixel_type[:, :, ::1] img,
                            npy_intp x, npy_intp y, npy_intp z,
@@ -38,18 +39,6 @@ cdef bint is_surface_point(pixel_type neighbors[]) nogil
 
 cdef int is_endpoint_check(pixel_type neighbors[]) nogil
 
-
-cdef void find_simple_point_candidates_TEST(pixel_type[:, :, ::1] img,
-                                        npy_float32[:, :, ::1] edt,
-                                        int fErode,
-                                        npy_intp[:,:] fLoop,
-                                        vector[coordinate] & simple_border_points) nogil
-
-cdef void find_simple_point_candidates_TEST2(pixel_type[:, :, ::1] img,
-                                        npy_float32[:, :, ::1] edt,
-                                        int fErode,
-                                        npy_intp[:,:] fLoop,
-                                        vector[coordinate] & simple_border_points) nogil
 
 cdef void find_simple_point_candidates_faces_0(pixel_type[:, :, ::1] img,
                                         npy_float32[:, :, ::1] edt,

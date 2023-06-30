@@ -35,19 +35,20 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [3,3,3] # Specifies how Domain is broken among rrocs
-    nodes = [300,300,300] # Total Number of Nodes in Domain
+    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
+    nodes = [500,500,500] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    #boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[0,0]]
-    outlet = [[0,0],[0,0],[0,0]]
+    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[1,0],[0,0],[0,0]]
+    outlet = [[0,1],[0,0],[0,0]]
 
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
+    file = './testDomains/10pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -55,8 +56,8 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
-    testAlgo = True
+    testSerial = False
+    testAlgo = False
 
     pC = [140,160]
 
@@ -69,8 +70,8 @@ def my_function():
 
     twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
-    wRes  = [[0,1],[0,0],[0,0]]
-    nwRes = [[1,0],[0,0],[0,0]]
+    wRes  = [[0,0],[0,0],[0,0]]
+    nwRes = [[0,0],[0,0],[0,0]]
     mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
 
     wOut  = [[0,0],[0,0],[0,0]]
@@ -92,8 +93,7 @@ def my_function():
 
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
-
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML.grid,sD_EDT.EDT,connect = False,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -123,7 +123,7 @@ def my_function():
     
     #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
     
-    #PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
+    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
 
     if testSerial:
 

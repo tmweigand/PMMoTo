@@ -37,64 +37,6 @@ cdef int[::1] LUT = fill_Euler_LUT()
 
 
 
-
-
-cdef void find_simple_point_candidates(pixel_type[:, :, ::1] img,
-                                       int curr_border,
-                                       vector[coordinate] & simple_border_points) nogil:
-    """Inner loop of compute_thin_image.
-
-    The algorithm of [Lee94]_ proceeds in two steps: (1) six directions are
-    checked for simple border points to remove, and (2) these candidates are
-    sequentially rechecked, see Sec 3 of [Lee94]_ for rationale and discussion.
-
-    This routine implements the first step above: it loops over the image
-    for a given direction and assembles candidates for removal.
-
-    """
-    cdef:
-        cdef coordinate point
-
-        pixel_type neighborhood[27]
-        npy_intp x, y, z, ID
-        bint is_border_pt
-        int[::1] Euler_LUT = LUT
-
-    # loop through the image
-    for x in range(1, img.shape[0] - 1):
-        for y in range(1, img.shape[1] - 1):
-            for z in range(1, img.shape[2] - 1):
-
-                # check if pixel is foreground
-                if img[x, y, z] != 1:
-                    continue
-
-                is_border_pt = (curr_border == 0 and img[x-1,y  ,z  ] == 0 or  #W
-                                curr_border == 1 and img[x+1,y  ,z  ] == 0 or  #E
-                                curr_border == 2 and img[x  ,y-1,z  ] == 0 or  #S
-                                curr_border == 3 and img[x  ,y+1,z  ] == 0 or  #N
-                                curr_border == 4 and img[x  ,y  ,z-1] == 0 or  #B
-                                curr_border == 5 and img[x  ,y  ,z+1] == 0     #U
-                                )
-                if not is_border_pt:
-                    continue
-
-                get_neighborhood(img, x, y, z, neighborhood)
-
-                #   Check conditions 2 and 3
-                if (is_endpoint(neighborhood) or
-                    not is_Euler_invariant(neighborhood, Euler_LUT) or
-                    not is_simple_point(neighborhood)):
-                    continue
-
-                point.x = x
-                point.y = y
-                point.z = z
-                point.ID = 0
-                point.faceCount = is_endpoint_check(neighborhood)
-                simple_border_points.push_back(point)
-
-
 cdef bint is_Euler_invariant(pixel_type neighbors[],
                              int[::1] lut) nogil:
     """Check if a point is Euler invariant.
@@ -2122,7 +2064,6 @@ cdef void find_simple_point_candidates_faces_0(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2176,7 +2117,6 @@ cdef void find_simple_point_candidates_faces_1(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2230,7 +2170,6 @@ cdef void find_simple_point_candidates_faces_2(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2284,7 +2223,6 @@ cdef void find_simple_point_candidates_faces_3(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2338,7 +2276,6 @@ cdef void find_simple_point_candidates_faces_4(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2392,7 +2329,6 @@ cdef void find_simple_point_candidates_faces_5(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155   
                 if img[x, y, z] != 1:
                     continue
 
@@ -2446,7 +2382,6 @@ cdef void find_simple_point_candidates_edges_0(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2497,7 +2432,6 @@ cdef void find_simple_point_candidates_edges_1(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2548,7 +2482,6 @@ cdef void find_simple_point_candidates_edges_2(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2599,7 +2532,6 @@ cdef void find_simple_point_candidates_edges_3(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2650,7 +2582,6 @@ cdef void find_simple_point_candidates_edges_4(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2701,7 +2632,6 @@ cdef void find_simple_point_candidates_edges_5(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2752,7 +2682,6 @@ cdef void find_simple_point_candidates_edges_6(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2803,7 +2732,6 @@ cdef void find_simple_point_candidates_edges_7(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2854,7 +2782,6 @@ cdef void find_simple_point_candidates_edges_8(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2905,7 +2832,6 @@ cdef void find_simple_point_candidates_edges_9(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -2956,7 +2882,6 @@ cdef void find_simple_point_candidates_edges_10(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -3007,7 +2932,6 @@ cdef void find_simple_point_candidates_edges_11(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] != 1:
                     continue
 
@@ -3058,7 +2982,6 @@ cdef void find_simple_point_candidates_corners_0(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3104,7 +3027,6 @@ cdef void find_simple_point_candidates_corners_1(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3150,7 +3072,6 @@ cdef void find_simple_point_candidates_corners_2(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3196,7 +3117,6 @@ cdef void find_simple_point_candidates_corners_3(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3242,7 +3162,6 @@ cdef void find_simple_point_candidates_corners_4(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3288,7 +3207,6 @@ cdef void find_simple_point_candidates_corners_5(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3334,7 +3252,6 @@ cdef void find_simple_point_candidates_corners_6(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3380,7 +3297,6 @@ cdef void find_simple_point_candidates_corners_7(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 155
                 if img[x, y, z] == 1:
 
                     is_border_pt = (
@@ -3405,11 +3321,11 @@ cdef void find_simple_point_candidates_corners_7(pixel_type[:, :, ::1] img,
                                 simple_border_points.push_back(point)
 
 
-cdef void find_simple_point_candidates_TEST(pixel_type[:, :, ::1] img,
-                                        npy_float32[:, :, ::1] edt,
-                                        int fErode,
-                                        npy_intp [:,:] fLoop,
-                                        vector[coordinate] & simple_border_points) nogil:
+cdef void findSimplePoints(pixel_type[:, :, ::1] img,
+                           npy_float32[:, :, ::1] edt,
+                           int fErode,
+                           npy_intp [:,:] fLoop,
+                           vector[coordinate] & simple_border_points) nogil:
 
     cdef:
         cdef coordinate point
@@ -3425,58 +3341,6 @@ cdef void find_simple_point_candidates_TEST(pixel_type[:, :, ::1] img,
         for y in range(fLoop[1,0], fLoop[1,1]):
             for z in range(fLoop[2,0], fLoop[2,1]):
 
-                #img[x,y,z] = 255
-                if img[x, y, z] != 1:
-                    continue
-
-                is_border_pt = (
-                                fErode == 0 and img[x+1,y  ,z  ] == 0 or
-                                fErode == 1 and img[x-1,y  ,z  ] == 0 or
-                                fErode == 2 and img[x  ,y+1,z  ] == 0 or
-                                fErode == 3 and img[x  ,y-1,z  ] == 0 or
-                                fErode == 4 and img[x  ,y  ,z+1] == 0 or
-                                fErode == 5 and img[x  ,y  ,z-1] == 0    
-                            )
-
-                if not is_border_pt:
-                    continue
-
-                get_neighborhood(img, x, y, z, neighborhood)
-                #   Check conditions 2 and 3
-                if (is_endpoint(neighborhood) or
-                    not is_Euler_invariant(neighborhood, Euler_LUT) or
-                    not is_simple_point(neighborhood)):
-                    continue
-
-                point.x = x
-                point.y = y
-                point.z = z
-                point.ID = 0
-                point.faceCount = is_endpoint_check(neighborhood)
-                point.edt = edt[x,y,z]
-                simple_border_points.push_back(point)
-
-cdef void find_simple_point_candidates_TEST2(pixel_type[:, :, ::1] img,
-                                        npy_float32[:, :, ::1] edt,
-                                        int fErode,
-                                        npy_intp [:,:] fLoop,
-                                        vector[coordinate] & simple_border_points) nogil:
-
-    cdef:
-        cdef coordinate point
-
-        pixel_type neighborhood[27]
-        npy_intp x, y, z
-        bint is_border_pt
-        int euler_char = 0
-        int[::1] Euler_LUT = LUT
-
-
-    for x in range(fLoop[0,0], fLoop[0,1]):
-        for y in range(fLoop[1,0], fLoop[1,1]):
-            for z in range(fLoop[2,0], fLoop[2,1]):
-
-                #img[x,y,z] = 255
                 if img[x, y, z] != 1:
                     continue
 

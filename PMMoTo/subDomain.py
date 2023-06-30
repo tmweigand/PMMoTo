@@ -31,11 +31,13 @@ class subDomain(object):
         self.ownNodesIndex = np.zeros([6],dtype = np.int64)
         self.indexStart  = np.zeros([3],dtype = np.int64)
         self.subDomainSize = np.zeros([3])
-        self.subID       = np.zeros([3],dtype = np.int64)
-        self.lookUpID    = np.zeros(subDomains,dtype=np.int64)
-        self.neighborF    = -np.ones(self.Orientation.numFaces,dtype = np.int64)
-        self.neighborE    = -np.ones(self.Orientation.numEdges,dtype = np.int64)
-        self.neighborC    = -np.ones(self.Orientation.numCorners,dtype = np.int64)
+        self.subID  = np.zeros([3],dtype = np.int64)
+        self.lookUpID = np.zeros(subDomains,dtype=np.int64)
+        self.neighborF  = -np.ones(self.Orientation.numFaces,dtype = np.int64)
+        self.neighborE = -np.ones(self.Orientation.numEdges,dtype = np.int64)
+        self.neighborC = -np.ones(self.Orientation.numCorners,dtype = np.int64)
+        self.externalE = -np.ones(self.Orientation.numEdges,dtype = np.int64)
+        self.externalC = -np.ones(self.Orientation.numCorners,dtype = np.int64)
         self.neighborPerF =  np.zeros([self.Orientation.numFaces,3],dtype = np.int64)
         self.neighborPerE =  np.zeros([self.Orientation.numEdges,3],dtype = np.int64)
         self.neighborPerC =  np.zeros([self.Orientation.numCorners,3],dtype = np.int64)
@@ -141,7 +143,9 @@ class subDomain(object):
     def getNeighbors(self):
         """
         Get the Face, Edge, and Corner Neighbors for Each Domain
-        -2 Represents No Assumed Boundary Condition
+        -4 Represents No Assumed Boundary Condition External Edge but subDomain Corner
+        -3 Reperensets No Assumed Boundary Condition External Face but subDomain Edge
+        -2 Represents No Assumed Boundary Condition Face / Internal Edge / Internal Corner
         -1 Assumed Wall Boundary Condition
         >=0 is neighbor Proc ID
         """
@@ -198,6 +202,19 @@ class subDomain(object):
             self.neighborPerE[cc,0] = lookPerI[cx,cy,cz]
             self.neighborPerE[cc,1] = lookPerJ[cx,cy,cz]
             self.neighborPerE[cc,2] = lookPerK[cx,cy,cz]
+            
+            ### Determine if External Face or Internal Edge
+            if self.neighborE[cc] == -2:
+                sum = 0
+                for f in e['faceIndex']:
+                    if self.neighborF[f] == -2:
+                        self.externalE[cc] = f ## External Face ID
+                    sum += self.neighborF[f]
+                if sum != -4:
+                    self.neighborE[cc] = -3 ## Internal Edge / External Face
+                else:
+                    self.externalE[cc] = -1 
+
 
         for cc,c in enumerate(self.Orientation.corners.values()):
             cx = c['ID'][0] + self.subID[0] + 1
@@ -207,6 +224,24 @@ class subDomain(object):
             self.neighborPerC[cc,0] = lookPerI[cx,cy,cz]
             self.neighborPerC[cc,1] = lookPerJ[cx,cy,cz]
             self.neighborPerC[cc,2] = lookPerK[cx,cy,cz]
+
+            ### Determine if External Edge / Internal Corner or External Face / Internal Corner
+            if self.neighborC[cc] == -2:
+                sum = 0
+                for f in c['faceIndex']:
+                    if self.neighborF[f] < 0:
+                        sum += self.neighborF[f]
+                if sum == -4: ## Internal Corner / External Edge
+                    self.neighborC[cc] = -4 
+                    for e in c['edgeIndex']:
+                        if self.neighborE[e] == -2:
+                            self.externalC[cc] = e ## External Edge ID
+                if sum == -2: ## Internal Corner / External Face
+                    self.neighborC[cc] = -3 
+                    for f in c['faceIndex']:
+                      if self.neighborF[f] == -2:
+                          self.externalC[cc] = f ## External Face ID
+
 
         self.lookUpID = lookIDPad
 

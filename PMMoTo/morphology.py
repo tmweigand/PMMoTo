@@ -14,23 +14,24 @@ class Morphology(object):
         self.Orientation = subDomain.Orientation
         self.structElem = None
         self.radius = radius
-        self.stuctRatio = np.zeros(3)
+        self.stuctRatio = np.zeros(6)
         self.gridOut = np.copy(grid)
 
     def genStructElem(self):
 
-        self.structRatio = np.array([math.ceil(self.radius/self.Domain.dX),
-                                     math.ceil(self.radius/self.Domain.dY),
-                                     math.ceil(self.radius/self.Domain.dZ)],dtype=np.int64)
+        self.structRatio = np.array([math.ceil(self.radius/self.Domain.dX),math.ceil(self.radius/self.Domain.dX),
+                                     math.ceil(self.radius/self.Domain.dY),math.ceil(self.radius/self.Domain.dY),
+                                     math.ceil(self.radius/self.Domain.dZ),math.ceil(self.radius/self.Domain.dZ)],
+                                     dtype=np.int64)
 
-        x = np.linspace(-self.structRatio[0]*self.Domain.dX,self.structRatio[0]*self.Domain.dX,self.structRatio[0]*2+1)
-        y = np.linspace(-self.structRatio[1]*self.Domain.dY,self.structRatio[1]*self.Domain.dY,self.structRatio[1]*2+1)
-        z = np.linspace(-self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*2+1)
+        # x = np.linspace(-self.structRatio[0]*self.Domain.dX,self.structRatio[0]*self.Domain.dX,self.structRatio[0]*2+1)
+        # y = np.linspace(-self.structRatio[1]*self.Domain.dY,self.structRatio[1]*self.Domain.dY,self.structRatio[1]*2+1)
+        # z = np.linspace(-self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*self.Domain.dZ,self.structRatio[2]*2+1)
         
-        xg,yg,zg = np.meshgrid(x,y,z,indexing='ij')
-        s = xg**2 + yg**2 + zg**2
+        # xg,yg,zg = np.meshgrid(x,y,z,indexing='ij')
+        # s = xg**2 + yg**2 + zg**2
 
-        self.structElem = np.array(s <= self.radius * self.radius)
+        # self.structElem = np.array(s <= self.radius * self.radius)
 
     def morphAdd(self):
 
