@@ -195,8 +195,8 @@ class EDT(object):
         self.subDomain     = subDomain
         self.Domain        = Domain
         self.Orientation   = Orientation
-        self.EDT = np.zeros_like(self.subDomain.grid)
-        self.visited = np.zeros_like(self.subDomain.grid,dtype=np.uint8)
+        self.EDT = np.zeros_like(grid)
+        self.visited = np.zeros_like(grid,dtype=np.uint8)
         self.solids = None
         self.nS = 0
         self.faceSolids = []
@@ -240,6 +240,7 @@ class EDT(object):
         Trim to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
         """
         self.faceSolids = [[] for _ in range(len(self.Orientation.faces))]
+
         extend = [self.extendFactor*x for x in self.subDomainSize]
         for fIndex in self.Orientation.faces:
             pointsXYZ = []
@@ -384,10 +385,10 @@ class EDT(object):
         """
         Get Inforation (non-zero min/max) of distance tranform
         """
-        own = self.subDomain.ownNodes
-        ownEDT =  self.EDT[own[0][0]:own[0][1],
-                            own[1][0]:own[1][1],
-                            own[2][0]:own[2][1]]
+        own = self.subDomain.ownNodesIndex
+        ownEDT =  self.EDT[own[0]:own[1],
+                           own[2]:own[3],
+                           own[4]:own[5]]
         distVals,distCounts  = np.unique(ownEDT,return_counts=True)
         EDTData = [self.subDomain.ID,distVals,distCounts]
         EDTData = comm.gather(EDTData, root=0)

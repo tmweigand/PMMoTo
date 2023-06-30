@@ -22,18 +22,18 @@ def checkFilePath(fileName):
         os.makedirs(fileName)
 
 
-def saveGridData(fileName,rank,Domain,subDomain,**kwargs):
+def saveGridData(fileName,rank,Domain,subDomain,grid,**kwargs):
 
     if rank == 0:
         checkFilePath(fileName)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.indexStart,subDomain.grid.shape],root=0)
+    allInfo = comm.gather([subDomain.indexStart,grid.shape],root=0)
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
     fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointData = {"grid" : subDomain.grid}
-    pointDataInfo = {"grid" : (subDomain.grid.dtype, 1)}
+    pointData = {"grid" : grid}
+    pointDataInfo = {"grid" : (grid.dtype, 1)}
     for key, value in kwargs.items():
         pointData[key]=value
         pointDataInfo[key]= (value.dtype,1)
@@ -74,7 +74,7 @@ def saveMultiPhaseData(fileName,rank,Domain,subDomain,multiPhase):
         checkFilePath(fileName)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.indexStart,subDomain.grid.shape],root=0)
+    allInfo = comm.gather([subDomain.indexStart,multiPhase.mpGrid.shape],root=0)
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
     fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
@@ -120,7 +120,8 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
         checkFilePath(fileName)
     comm.barrier()
 
-    procSetCounts = comm.gather(setList.setCount,root=0)
+    procSetCounts = comm.allgather(setList.setCount)
+    nonZeroProc = np.where(np.asarray(procSetCounts) > 0)[0][0]
 
     ### Place Set Values in Arrays
     if setList.setCount > 0:
@@ -171,7 +172,7 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
             )
 
 
-    if rank==0:
+    if rank == nonZeroProc:
         w = vtk.VtkParallelFile(fileName, vtk.VtkPUnstructuredGrid)
         w.openGrid()
         pointData = pointDataInfo
@@ -202,7 +203,7 @@ def saveGrid(fileName,subDomain,grid):
         checkFilePath(fileName)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.indexStart,subDomain.grid.shape],root=0)
+    allInfo = comm.gather([subDomain.indexStart,grid.shape],root=0)
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
     fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
@@ -259,18 +260,22 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
     comm.barrier()
 
     if removeHalo:
-        own = subDomain.ownNodes
-        grid =  grid[own[0][0]:own[0][1],
-                     own[1][0]:own[1][1],
-                     own[2][0]:own[2][1]]
-        
+        own = subDomain.ownNodesIndex
+        size = (own[1]-own[0])*(own[3]-own[2])*(own[5]-own[4])
+        printGridOut = np.zeros([size,4])
+    else:
+        own = np.zeros([6],dtype = np.int64)
+        own[1] = grid.shape[0]
+        own[3] = grid.shape[1]
+        own[5] = grid.shape[2]
+        printGridOut = np.zeros([grid.size,4])
+                
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
 
-    printGridOut = np.zeros([grid.size,4])
     c = 0
-    for i in range(0,grid.shape[0]):
-        for j in range(0,grid.shape[1]):
-            for k in range(0,grid.shape[2]):
+    for i in range(own[0],own[1]):
+        for j in range(own[2],own[3]):
+            for k in range(own[4],own[5]):
                 printGridOut[c,0] = x[i]
                 printGridOut[c,1] = y[j]
                 printGridOut[c,2] = z[k]

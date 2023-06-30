@@ -1,7 +1,4 @@
 #### One in getConnectedSets
-
-
-
 # cython: profile=True
 # cython: linetrace=True
 import math
@@ -90,7 +87,7 @@ cdef int getBoundaryIDReference(cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
+def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientation):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
@@ -130,6 +127,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   cdef int c,d,i,j,k,ii,jj,kk,availDirection,perAny,sInlet,sOutlet
   cdef int iLoc,jLoc,kLoc,globIndex
   cdef int iMin,iMax,jMin,jMax,kMin,kMax
+  cdef int _phase = phase
 
   cdef int numFaces,fIndex
   numFaces = Orientation.numFaces
@@ -151,8 +149,8 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   cdef cnp.uint8_t [:,:,:] _ind
   _ind = gridP
 
-  cdef cnp.int64_t [:,:,:] loopInfo
-  loopInfo = subDomain.loopInfo
+  cdef cnp.int64_t [:,:,:] _loopInfo
+  _loopInfo = loopInfo
 
   cdef int dN0,dN1,dN2
   dN0 = Domain.nodes[0]
@@ -163,12 +161,12 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   # Loop through Boundary Faces to get nodeInfo and nodeIndex
   c = 0
   for fIndex in range(0,numFaces):
-    iMin = loopInfo[fIndex][0][0]
-    iMax = loopInfo[fIndex][0][1]
-    jMin = loopInfo[fIndex][1][0]
-    jMax = loopInfo[fIndex][1][1]
-    kMin = loopInfo[fIndex][2][0]
-    kMax = loopInfo[fIndex][2][1]
+    iMin = _loopInfo[fIndex][0][0]
+    iMax = _loopInfo[fIndex][0][1]
+    jMin = _loopInfo[fIndex][1][0]
+    jMax = _loopInfo[fIndex][1][1]
+    kMin = _loopInfo[fIndex][2][0]
+    kMax = _loopInfo[fIndex][2][1]
     bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
     perFace  = subDomain.neighborPerF[fIndex]
     perAny = perFace.any()
@@ -177,7 +175,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
-          if _ind[i+1,j+1,k+1] == phase:
+          if _ind[i+1,j+1,k+1] == _phase:
 
             iLoc = iStart+i
             jLoc = jStart+j
@@ -228,16 +226,16 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
             c = c + 1
 
   # Loop through internal nodes to get nodeInfo and nodeIndex
-  iMin = loopInfo[numFaces][0][0]
-  iMax = loopInfo[numFaces][0][1]
-  jMin = loopInfo[numFaces][1][0]
-  jMax = loopInfo[numFaces][1][1]
-  kMin = loopInfo[numFaces][2][0]
-  kMax = loopInfo[numFaces][2][1]
+  iMin = _loopInfo[numFaces][0][0]
+  iMax = _loopInfo[numFaces][0][1]
+  jMin = _loopInfo[numFaces][1][0]
+  jMax = _loopInfo[numFaces][1][1]
+  kMin = _loopInfo[numFaces][2][0]
+  kMax = _loopInfo[numFaces][2][1]
   for i in range(iMin,iMax):
     for j in range(jMin,jMax):
       for k in range(kMin,kMax):
-        if (_ind[i+1,j+1,k+1] == phase):
+        if (_ind[i+1,j+1,k+1] == _phase):
           iLoc = iStart+i
           jLoc = jStart+j
           kLoc = kStart+k
@@ -252,22 +250,22 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
   # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
   c = 0
   for fIndex in range(numFaces):
-    iMin = loopInfo[fIndex][0][0]
-    iMax = loopInfo[fIndex][0][1]
-    jMin = loopInfo[fIndex][1][0]
-    jMax = loopInfo[fIndex][1][1]
-    kMin = loopInfo[fIndex][2][0]
-    kMax = loopInfo[fIndex][2][1]
+    iMin = _loopInfo[fIndex][0][0]
+    iMax = _loopInfo[fIndex][0][1]
+    jMin = _loopInfo[fIndex][1][0]
+    jMax = _loopInfo[fIndex][1][1]
+    kMin = _loopInfo[fIndex][2][0]
+    kMax = _loopInfo[fIndex][2][1]
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
-          if _ind[i+1,j+1,k+1] == phase:
+          if _ind[i+1,j+1,k+1] == _phase:
             availDirection = 0
             for d in range(0,numDirections):
               ii = directions[d][0]
               jj = directions[d][1]
               kk = directions[d][2]
-              if (_ind[i+ii+1,j+jj+1,k+kk+1] == phase):
+              if (_ind[i+ii+1,j+jj+1,k+kk+1] == _phase):
                 node = _nodeTable[i+ii,j+jj,k+kk]
                 _nodeDirections[c,d] = 1
                 _nodeDirectionsIndex[c,d] = node
@@ -277,22 +275,22 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
             c = c + 1
 
   # Loop through internal nodes to get nodeDirections and _nodeDirectionsIndex
-  iMin = loopInfo[numFaces][0][0]
-  iMax = loopInfo[numFaces][0][1]
-  jMin = loopInfo[numFaces][1][0]
-  jMax = loopInfo[numFaces][1][1]
-  kMin = loopInfo[numFaces][2][0]
-  kMax = loopInfo[numFaces][2][1]
+  iMin = _loopInfo[numFaces][0][0]
+  iMax = _loopInfo[numFaces][0][1]
+  jMin = _loopInfo[numFaces][1][0]
+  jMax = _loopInfo[numFaces][1][1]
+  kMin = _loopInfo[numFaces][2][0]
+  kMax = _loopInfo[numFaces][2][1]
   for i in range(iMin,iMax):
    for j in range(jMin,jMax):
      for k in range(kMin,kMax):
-       if _ind[i+1,j+1,k+1] == phase:
+       if _ind[i+1,j+1,k+1] == _phase:
          availDirection = 0
          for d in range(0,numDirections):
            ii = directions[d][0]
            jj = directions[d][1]
            kk = directions[d][2]
-           if (_ind[i+ii+1,j+jj+1,k+kk+1] == phase):
+           if (_ind[i+ii+1,j+jj+1,k+kk+1] == _phase):
              node = _nodeTable[i+ii,j+jj,k+kk]
              _nodeDirections[c,d] = 1
              _nodeDirectionsIndex[c,d] = node
@@ -306,7 +304,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,subDomain,Orientation):
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def updateMANeighborCount(grid,subDomain,Orientation,nodeInfo):
+def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):
   """
   Get Number of Neighbors on Boundary Nodes of Medial Axis with 2 Buffer
   Needed to accurately spoecify type of MA node
@@ -325,7 +323,7 @@ def updateMANeighborCount(grid,subDomain,Orientation,nodeInfo):
   _ind = grid
 
   cdef cnp.int64_t [:,:,:] loopInfo
-  loopInfo = subDomain.loopInfo
+  loopInfo = porousMedia.loopInfo
 
 
   # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
@@ -420,7 +418,7 @@ def getNodeType(neighbors):
 
 def getSetNodes(set,nNodes,_nI):
   cdef int bN,n,ind
-  bN = 0
+  bN =  0
   for n in range(0,set.numNodes):
     ind = nNodes - set.numNodes + n
     set.getNodes(n,_nI[ind,0],_nI[ind,1],_nI[ind,2])

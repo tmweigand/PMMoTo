@@ -8,7 +8,7 @@ from distutils.core import setup,Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 import Cython.Compiler.Options
-Cython.Compiler.Options.annotate = True
+Cython.Compiler.Options.annotate = False
 
 CYTHON_VERSION = '0.23.4'
 
@@ -123,7 +123,7 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/tmweigand/PMMoTo",
     cmdclass=cmdclass,
-    ext_modules=cythonize(ext_modules,annotate=True,compiler_directives={'language_level' : "3"}),
+    ext_modules=cythonize(ext_modules,annotate=False,compiler_directives={'language_level' : "3"}),
     include_dirs=numpy.get_include(),
     install_requires=[
         'numpy>=1.22.3',
