@@ -36,7 +36,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [175,175,150] # Total Number of Nodes in Domain
+    nodes = [350,350,300] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
@@ -49,7 +49,7 @@ def my_function():
 
     rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/membranedata.71005000.gz'
+    file = './testDomains/membrane.71005000.gz'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -126,7 +126,9 @@ def my_function():
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'globalPathIDs':'globalPathIDs'}
+                'globalPathIDs':'globalPathIDs',
+                'maxDistance':'maxDistance',
+                'minDistance':'minDistance'}
     
     #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
     
