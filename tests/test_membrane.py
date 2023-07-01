@@ -36,50 +36,56 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [200,200,200] # Total Number of Nodes in Domain
+    nodes = [175,175,150] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    dataReadBoundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
     #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[1,0],[0,0],[0,0]]
-    outlet = [[0,1],[0,0],[0,0]]
+    inlet  = [[0,0],[0,0],[1,0]]
+    outlet = [[0,0],[0,0],[0,1]]
 
 
-    # rLookupFile = './rLookups/PA.rLookup'
+    rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/50pack.out'
+    file = './testDomains/membranedata.71005000.gz'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
 
     numSubDomains = np.prod(subDomains)
-
+    boundaryLims = [[None,None],
+                    [None,None],
+                    [-74.7950144680851, 74.7950144680851]]
     drain = False
     testSerial = False
     testAlgo = False
 
     pC = [140,160]
-    cutoffs = [0,0.006]
+    cutoffs = [0,1]
     startTime = time.time()
-
+    dataReadkwargs = {'rLookupFile':rLookupFile,
+                  'boundaryLims':boundaryLims,
+                  'boundaries':dataReadBoundaries,
+                  'nodes':nodes}
     # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
-    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"SphereVerlet",file,PMMoTo.readPorousMediaLammpsDump,dataReadkwargs)
 
-    numFluidPhases = 2
+    # numFluidPhases = 2
 
-    twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
+    # twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
-    wRes  = [[0,0],[0,0],[0,0]]
-    nwRes = [[0,0],[0,0],[0,0]]
-    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
+    # wRes  = [[0,0],[0,0],[0,0]]
+    # nwRes = [[0,0],[0,0],[0,0]]
+    # mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
 
-    wOut  = [[0,0],[0,0],[0,0]]
-    nwOut = [[0,0],[0,0],[0,0]]
-    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+    # wOut  = [[0,0],[0,0],[0,0]]
+    # nwOut = [[0,0],[0,0],[0,0]]
+    # mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
 
-    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID)
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize=1)
+    # twoPhase.initializeMPGrid(constantPhase = twoPhase.wID)
+    # twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize=1)
 
 
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)

@@ -432,7 +432,7 @@ class medialAxis(object):
         
 
 
-def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
+def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoffs):
 
     rank = subDomain.ID
     size = subDomain.Domain.numSubDomains
