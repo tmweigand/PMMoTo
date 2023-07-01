@@ -27,41 +27,6 @@ class medialAxis(object):
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
 
-
-    def skeletonizeAxis(self,connect = False):
-
-        self.haloGrid = np.ascontiguousarray(self.haloGrid)
-        #image_o = np.copy(self.haloGrid)
-        image_o = np.copy(self.subDomain.grid)
-
-        # normalize to binary
-        image_o[image_o != 0] = 1
-
-        # do the computation
-        image_o = np.asarray(_compute_thin_image(image_o))
-
-        dim = image_o.shape
-
-        ### Grab Medial Axis with Single and Two Buffer to 
-        self.haloPadNeigh = np.zeros_like(self.halo)
-        self.haloPadNeighNot = np.ones_like(self.halo)
-        for n in range(0,6):
-            if self.halo[n] > 0:
-                self.haloPadNeigh[n] = 1
-                self.haloPadNeighNot[n] = 0
-
-        if connect:
-            self.MA = image_o[self.halo[0] - self.haloPadNeigh[0] : dim[0] - self.halo[1] + self.haloPadNeigh[1],
-                              self.halo[2] - self.haloPadNeigh[2] : dim[1] - self.halo[3] + self.haloPadNeigh[3],
-                              self.halo[4] - self.haloPadNeigh[4] : dim[2] - self.halo[5] + self.haloPadNeigh[5]]
-
-        else:
-            self.MA = image_o#[self.halo[0]:dim[0] - self.halo[1],
-                             # self.halo[2]:dim[1] - self.halo[3],
-                             # self.halo[4]:dim[2] - self.halo[5]]
-                
-        self.MA = np.ascontiguousarray(self.MA)
-
     def genMAArrays(self):
         """
         Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes

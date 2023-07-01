@@ -436,9 +436,12 @@ def calcEDT(subDomain,grid,stats=False,sendClass=False):
         sDEDT.solidsAll = sDComm.EDTCommunication(sDEDT.solidsAll,sDEDT.faceSolids,sDEDT.edgeSolids,sDEDT.cornerSolids)
         sDEDT.fixInterface()
 
+        ### Update EDT Buffer
+        sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = sDEDT.EDT)
+        sDEDT.EDT = sDComm.updateBuffer()
+
     if stats:
         sDEDT.genStats()
-
 
     if sendClass:
         return sDEDT
