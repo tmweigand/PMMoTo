@@ -24,6 +24,8 @@ PMMoTo/medialAxis/_skeletonize_3d_SAVE_cy.pyx.in
 PMMoTo/medialAxis/_skeletonize_3d_cy.cpp
 PMMoTo/medialAxis/_skeletonize_3d_cy.html
 tests/dataDump/
+tests/mf_*.py
+tests/testDomains/membranedata*
 tests/dataOut/
 tests/inkBottle/
 tests/kelseySpherePackTests/
