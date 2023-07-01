@@ -1,9 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from .medialExtraction import _compute_thin_image
-from .medialExtraction import _compute_thin_image_border
-from .medialExtraction import getInternalBoundaries
+from . import medialExtraction
 from .. import nodes
 from .. import sets
 comm = MPI.COMM_WORLD
@@ -28,115 +26,6 @@ class medialAxis(object):
         self.haloPadNeigh = np.zeros(6)
         self.haloPadNeighNot = np.zeros(6)
         self.MA = None
-
-
-    def skeletonizeAxis_test(self):
-
-        self.MA  = np.copy(self.grid)
-        unchanged_borders = 0
-        
-        for i in range(0,25):#while unchanged_borders < self.Orientation.numFaces:
-            for fIndex in self.Orientation.faces:
-
-                self.MA = getInternalBoundaries(self.MA,fIndex)
-                sDComm = communication.Comm(Domain = self.subDomain.Domain,subDomain = self.subDomain,grid = self.MA)
-                self.MA = sDComm.updateBuffer()
-                self.MA,unchanged_borders = _compute_thin_image_border(self.MA,fIndex,unchanged_borders)
-
-        
-
-
-                
-
-    def skeletonizeAxis(self,connect = False):
-        """Compute the skeleton of a binary image.
-
-        Thinning is used to reduce each connected component in a binary image
-        to a single-pixel wide skeleton.
-
-        Parameters
-        ----------
-        image : ndarray, 2D or 3D
-            A binary image containing the objects to be skeletonized. Zeros
-            represent background, nonzero values are foreground.
-
-        Returns
-        -------
-        skeleton : ndarray
-            The thinned image.
-
-        See Also
-        --------
-        skeletonize, medial_axis
-
-        Notes
-        -----
-        The method of [Lee94]_ uses an octree data structure to examine a 3x3x3
-        neighborhood of a pixel. The algorithm proceeds by iteratively sweeping
-        over the image, and removing pixels at each iteration until the image
-        stops changing. Each iteration consists of two steps: first, a list of
-        candidates for removal is assembled; then pixels from this list are
-        rechecked sequentially, to better preserve connectivity of the image.
-
-        The algorithm this function implements is different from the algorithms
-        used by either `skeletonize` or `medial_axis`, thus for 2D images the
-        results produced by this function are generally different.
-
-        References
-        ----------
-        .. [Lee94] T.-C. Lee, R.L. Kashyap and C.-N. Chu, Building skeleton models
-               via 3-D medial surface/axis thinning algorithms.
-               Computer Vision, Graphics, and Image Processing, 56(6):462-478, 1994.
-
-        """
-        self.haloGrid = np.ascontiguousarray(self.haloGrid)
-        #image_o = np.copy(self.haloGrid)
-        image_o = np.copy(self.subDomain.grid)
-
-        # normalize to binary
-        image_o[image_o != 0] = 1
-
-        # do the computation
-        image_o = np.asarray(_compute_thin_image(image_o))
-
-        dim = image_o.shape
-
-        ### Grab Medial Axis with Single and Two Buffer to 
-        self.haloPadNeigh = np.zeros_like(self.halo)
-        self.haloPadNeighNot = np.ones_like(self.halo)
-        for n in range(0,6):
-            if self.halo[n] > 0:
-                self.haloPadNeigh[n] = 1
-                self.haloPadNeighNot[n] = 0
-
-        if connect:
-            self.MA = image_o[self.halo[0] - self.haloPadNeigh[0] : dim[0] - self.halo[1] + self.haloPadNeigh[1],
-                              self.halo[2] - self.haloPadNeigh[2] : dim[1] - self.halo[3] + self.haloPadNeigh[3],
-                              self.halo[4] - self.haloPadNeigh[4] : dim[2] - self.halo[5] + self.haloPadNeigh[5]]
-
-        else:
-            self.MA = image_o#[self.halo[0]:dim[0] - self.halo[1],
-                             # self.halo[2]:dim[1] - self.halo[3],
-                             # self.halo[4]:dim[2] - self.halo[5]]
-                
-        self.MA = np.ascontiguousarray(self.MA)
-
-
-    def genPadding(self):
-        """
-        Current Parallel MA implementation simply pads subDomains to match. Very work ineffcieint and needs to be changed
-        """
-        gridShape = self.Domain.subNodes
-        factor = 0.95
-        self.padding[0] = math.ceil(gridShape[0]*factor)
-        self.padding[1] = math.ceil(gridShape[1]*factor)
-        self.padding[2] = math.ceil(gridShape[2]*factor)
-
-        for n in [0,1,2]:
-            if self.padding[n] == gridShape[n]:
-                self.padding[n] = self.padding[n] - 1
-
-        
 
     def genMAArrays(self):
         """
@@ -543,7 +432,7 @@ class medialAxis(object):
         
 
 
-def medialAxisEval(subDomain,porousMedia,distance,connect,cutoffs):
+def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
 
     rank = subDomain.ID
     size = subDomain.Domain.numSubDomains
@@ -553,25 +442,16 @@ def medialAxisEval(subDomain,porousMedia,distance,connect,cutoffs):
     sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain, grid = grid)
     sDComm = communication.Comm(Domain = subDomain.Domain, subDomain = subDomain,grid = grid)
 
-    ### Adding Padding so Identical MA at Processer Interfaces
-    #sDMA.genPadding()
-
-    ### Send Padding Data to Neighbors
-    #sDMA.haloGrid,sDMA.halo = sDComm.haloCommunication(sDMA.padding)
-
-
-    ### Determine MA
-    sDMA.skeletonizeAxis_test()
-    #sDMA.skeletonizeAxis()
+    ### Extract MA
+    mE = medialExtraction.medialExtraction(Domain = subDomain.Domain, subDomain = subDomain, grid = grid, edt = distance)
+    sDMA.MA,sDMA.haloPadNeigh,sDMA.haloPadNeighNot = mE.extractMedialAxis(connect)
     
     if connect:
       
       ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
       tempMA,neighMA = sDMA.genMAArrays()
-      inlet = [i for subarr in subDomain.Domain.inlet for i in subarr] 
-      outlet = [i for subarr in subDomain.Domain.outlet for i in subarr]
-      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,inlet,outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
-      sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,subDomain,porousMedia,subDomain.Orientation,sDMA.nodeInfo)
+      sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,porousMedia.inlet,porousMedia.outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
+      sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,porousMedia,subDomain.Orientation,sDMA.nodeInfo)
       sDMA.MA = np.ascontiguousarray(tempMA)
       
       sDMA.Sets,sDMA.setCount,sDMA.pathCount = sets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)

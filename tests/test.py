@@ -5,6 +5,8 @@ import edt
 import time
 import PMMoTo
 from skimage.morphology import skeletonize
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 import cProfile
 
@@ -34,12 +36,14 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [250,250,250] # Total Number of Nodes in Domain
-    cutoffs = [0, 0.006]
+    nodes = [200,200,200] # Total Number of Nodes in Domain
+
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[1,1],[0,0],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[1,0],[0,0]]
-    outlet = [[0,0],[0,1],[0,0]]
+    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[1,0],[0,0],[0,0]]
+    outlet = [[0,1],[0,0],[0,0]]
 
 
     # rLookupFile = './rLookups/PA.rLookup'
@@ -52,8 +56,8 @@ def my_function():
     numSubDomains = np.prod(subDomains)
 
     drain = False
-    testSerial = True
-    testAlgo = True
+    testSerial = False
+    testAlgo = False
 
     pC = [140,160]
 
@@ -66,8 +70,8 @@ def my_function():
 
     twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
-    wRes  = [[0,1],[0,0],[0,0]]
-    nwRes = [[1,0],[0,0],[0,0]]
+    wRes  = [[0,0],[0,0],[0,0]]
+    nwRes = [[0,0],[0,0],[0,0]]
     mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
 
     wOut  = [[0,0],[0,0],[0,0]]
@@ -89,8 +93,7 @@ def my_function():
 
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
-
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,sD_EDT.EDT,connect = True,cutoffs = cutoffs)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
 
 
     endTime = time.time()
@@ -173,7 +176,7 @@ def my_function():
                 gridOut = np.asarray(gridOut)
 
                 pG = [0,0,0]
-                pgSize = nodes[0]
+                pgSize = int(nodes[0]/2)
 
                 if boundaries[0][0] == 1:
                     pG[0] = 1
@@ -214,14 +217,12 @@ def my_function():
                 skelMA = skeletonize(gridOut)
                 gridCopy = np.copy(gridOut)
                 #realMA,_ = PMMoTo.medialAxis.medialAxis._compute_thin_image_test(gridCopy)
-                realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
+                #realMA = PMMoTo.medialAxis.medialAxis._compute_thin_image(gridCopy)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
 
-                print(gridOut.shape)
-
-                arrayList = [gridOut,realDT,edtV,realMA,skelMA]
+                arrayList = [gridOut,realDT,edtV,skelMA]
 
                 for i,arr in enumerate(arrayList):
                     if pG[0] > 0 and pG[1]==0 and pG[2]==0:
@@ -243,8 +244,8 @@ def my_function():
                 gridOut = arrayList[0]
                 realDT = arrayList[1]
                 edtV = arrayList[2]
-                realMA = arrayList[3]
-                skelMA = arrayList[4]
+                #realMA = arrayList[3]
+                skelMA = arrayList[3]
 
 
                 ### Reconstruct SubDomains to Check EDT ####
@@ -281,8 +282,6 @@ def my_function():
                                                     sD[n].buffer[4] : pM[n].grid.shape[2] - sD[n].buffer[5]]
                             n = n + 1
 
-                PMMoTo.saveGridOneProc("dataOut/SingleEDT",x,y,z,np.ascontiguousarray(realDT))
-
                 diffEDT = np.abs(realDT-checkEDT)
                 diffEDT2 = np.abs(edtV-checkEDT)
 
@@ -307,11 +306,12 @@ def my_function():
                                                     sD[n].buffer[4] : pM[n].grid.shape[2] - sD[n].buffer[5]]
                             n = n + 1
 
-                diffMA = np.abs(realMA-checkMA)
-                print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
+                print("MA Check Sum:",np.sum(checkMA),np.sum(skelMA))
+                #diffMA = np.abs(realMA-checkMA)
+                #print("L2 MA Error Total Different Voxels",np.sum(diffMA) )
 
-                PMMoTo.saveGridOneProc("dataOut/diffMA",x,y,z,diffMA)
-                PMMoTo.saveGridOneProc("dataOut/trueMA",x,y,z,np.ascontiguousarray(realMA))
+                #PMMoTo.saveGridOneProc("dataOut/diffMA",x,y,z,diffMA)
+                #PMMoTo.saveGridOneProc("dataOut/trueMA",x,y,z,np.ascontiguousarray(realMA))
                 PMMoTo.saveGridOneProc("dataOut/skelMA",x,y,z,np.ascontiguousarray(skelMA))
 
 

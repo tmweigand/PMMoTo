@@ -81,10 +81,10 @@ class equilibriumDistribution(object):
 
     def calcSaturation(self,grid,nwID):
 
-        own = self.subDomain.ownNodes
-        ownGrid =  grid[own[0][0]:own[0][1],
-                        own[1][0]:own[1][1],
-                        own[2][0]:own[2][1]]
+        own = self.subDomain.ownNodesIndex
+        ownGrid =  grid[own[0]:own[1],
+                        own[2]:own[3],
+                        own[4]:own[5]]
         nwNodes = np.count_nonzero(ownGrid==nwID)
         allnwNodes = np.zeros(1,dtype=np.uint64)
         comm.Allreduce( [np.int64(nwNodes), MPI.INT], [allnwNodes, MPI.INT], op = MPI.SUM )
@@ -100,10 +100,10 @@ class equilibriumDistribution(object):
         if ID == 0:
             count = np.size(grid) - np.count_nonzero(grid > 0)
         else:
-            own = self.subDomain.ownNodes
-            ownGrid =  grid[own[0][0]:own[0][1],
-                            own[1][0]:own[1][1],
-                            own[2][0]:own[2][1]]
+            own = self.subDomain.ownNodesIndex
+            ownGrid =  grid[own[0]:own[1],
+                            own[2]:own[3],
+                            own[4]:own[5]]
             count = np.count_nonzero(ownGrid==ID)
         allCount = np.zeros(1,dtype=np.uint64)
         comm.Allreduce( [np.int64(count), MPI.INT], [allCount, MPI.INT], op = MPI.SUM )
@@ -122,8 +122,11 @@ def calcDrainage(pc,mP):
     sW = eqDist.calcSaturation(mP.mpGrid,2)
     save = True
 
-    # fileName = "dataOut/test/dist"
-    # dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
+    # fileName = "dataOut/test/distCSV"
+    # dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
+
+    fileName = "dataOut/test/dist"
+    dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
 
     setSaveDict = {'inlet': 'inlet',
                    'outlet':'outlet',
@@ -196,7 +199,7 @@ def calcDrainage(pc,mP):
                 # dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
                 # Step 3g
-                morph = morphology.morph(ind,mP.inlet[mP.nwID],mP.subDomain,eqDist.probeR)
+                morph = morphology.morph(ind,mP.subDomain,eqDist.probeR)
 
                 # fileName = "dataOut/test/morph"+str(p)
                 # dataOutput.saveGrid(fileName,mP.subDomain,morph)

@@ -385,10 +385,10 @@ class EDT(object):
         """
         Get Inforation (non-zero min/max) of distance tranform
         """
-        own = self.subDomain.ownNodes
-        ownEDT =  self.EDT[own[0][0]:own[0][1],
-                            own[1][0]:own[1][1],
-                            own[2][0]:own[2][1]]
+        own = self.subDomain.ownNodesIndex
+        ownEDT =  self.EDT[own[0]:own[1],
+                           own[2]:own[3],
+                           own[4]:own[5]]
         distVals,distCounts  = np.unique(ownEDT,return_counts=True)
         EDTData = [self.subDomain.ID,distVals,distCounts]
         EDTData = comm.gather(EDTData, root=0)
@@ -437,9 +437,12 @@ def calcEDT(subDomain,grid,stats=False,sendClass=False):
         sDEDT.solidsAll = sDComm.EDTCommunication(sDEDT.solidsAll,sDEDT.faceSolids,sDEDT.edgeSolids,sDEDT.cornerSolids)
         sDEDT.fixInterface()
 
+        ### Update EDT Buffer
+        sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = sDEDT.EDT)
+        sDEDT.EDT = sDComm.updateBuffer()
+
     if stats:
         sDEDT.genStats()
-
 
     if sendClass:
         return sDEDT
