@@ -92,15 +92,19 @@ class equilibriumDistribution(object):
         return sw
 
 
-    def checkPoints(self,grid,ID):
+    def checkPoints(self,grid,ID,includeInlet=False):
         """
         Check to make sure nodes of type ID exist in domain
         """
+        if includeInlet:
+            own = self.ownNodesIndex
+        else:
+            own = self.subDomain.ownNodesIndex
+
         noPoints = False
         if ID == 0:
             count = np.size(grid) - np.count_nonzero(grid > 0)
         else:
-            own = self.subDomain.ownNodesIndex
             ownGrid =  grid[own[0]:own[1],
                             own[2]:own[3],
                             own[4]:own[5]]
@@ -183,18 +187,15 @@ def calcDrainage(pc,mP):
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
                 indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
-                ind = eqDist.getInletConnectedNodes(indSets,1)
+                #ind = eqDist.getInletConnectedNodes(indSets,1)
+                ind2 = eqDist.getInletConnectedNodes(indSets,1)
 
                 # Step 3e - no Step 3e ha. 
 
                 # Step 3f -- Unsure about these checks!
-                if wCheck and nwCheck:
-                    ind = np.where( (ind == 1) & (nwGrid == 1) & (wGrid == 0),1,0).astype(np.uint8)
-                elif nwCheck:
-                    ind = np.where( (ind == 1) & (nwGrid == 1),1,0).astype(np.uint8)
-                elif wCheck:
-                    ind = np.where( (ind == 1) & (wGrid == 1),1,0).astype(np.uint8)
-
+                if nwCheck:
+                    ind = np.where( (ind2 != 1) & (nwGrid != 1),0,ind).astype(np.uint8)
+                    
                 # fileName = "dataOut/test/indFinal"+str(p)
                 # dataOutput.saveGrid(fileName,mP.subDomain,ind)
 
