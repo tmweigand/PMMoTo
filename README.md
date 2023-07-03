@@ -1,4 +1,4 @@
 # PMMoTo
 Porous Media Morphological and Topological Analysis Toolkit
 
-![logo-1-text.pdf](https://github.com/tmweigand/PMMoTo/files/11932364/logo-1-text.pdf)
+![logo-1-text](https://github.com/tmweigand/PMMoTo/assets/68024672/5f667c8f-5498-4597-9af0-76fd6a9bc59a)
