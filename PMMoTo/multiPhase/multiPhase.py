@@ -116,4 +116,3 @@ class multiPhase(object):
                 self.ownNodesIndex[fluid][4] = self.subDomain.ownNodesIndex[4] - resSize
             if pad[fN,5] > 0:
                 self.ownNodesIndex[fluid][5] = self.subDomain.ownNodesIndex[5] + resSize
-        print(self.subDomain.ID,self.subDomain.ownNodesIndex,self.ownNodesIndex)
