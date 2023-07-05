@@ -97,7 +97,7 @@ class equilibriumDistribution(object):
         Check to make sure nodes of type ID exist in domain
         """
         if includeInlet:
-            own = self.ownNodesIndex
+            own = self.multiPhase.ownNodesIndex[ID]
         else:
             own = self.subDomain.ownNodesIndex
 
@@ -158,7 +158,7 @@ def calcDrainage(pc,mP):
             if continueFlag:
 
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
-                nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
+                nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID,includeInlet=True)
                 if nwCheck:
                     nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
