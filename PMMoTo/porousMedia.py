@@ -32,11 +32,12 @@ class porousMedia(object):
         self.grid = domainGen(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
 
+
     def genDomainSphereDataVerlet(self,sphereData):
-        rMax = np.sqrt(sphereData[3].max())
-        rCut = rMax*8
-        self.grid = domainGenVerlet(rCut, rMax, self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
+        verletDomains = [20,20,20]
+        self.grid = domainGenVerlet(verletDomains,self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
+
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
