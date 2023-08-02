@@ -284,3 +284,4 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
     
     header = "x,y,z,Grid"
     np.savetxt(fileProc+str(rank)+".csv",printGridOut, delimiter=',',header=header)
+    
