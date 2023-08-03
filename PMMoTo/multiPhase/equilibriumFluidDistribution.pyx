@@ -82,7 +82,7 @@ class equilibriumDistribution(object):
 
         for s in sets:
             # print(s.numNodes)
-            if s.numNodes < minSetSize:
+            if s.numGlobalNodes < minSetSize:
                 for node in s.nodes:
                     nodes.append(node)
                     

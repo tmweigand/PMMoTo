@@ -90,6 +90,7 @@ class Set(object):
       self.boundary = boundary
       self.numBoundaries  = 0
       self.numNodes = numNodes
+      self.numGlobalNodes = numNodes
       self.numBoundaryNodes = numBoundaryNodes
       self.localID = localID
       self.globalID = 0
@@ -132,7 +133,6 @@ class Set(object):
       self.boundaryNodeID[n,0] = i
       self.boundaryNodeID[n,1] = j
       self.boundaryNodeID[n,2] = k
-
 
     def getDistMinMax(self,data):
       for n in self.nodes:
@@ -184,6 +184,7 @@ def getBoundarySets(Sets,setCount,subDomain):
           bD = boundaryData[subDomain.ID]['NeighborProcID'][neighborProc]
           if bSet.pathID >= 0:
             bD['setID'][bSet.localID] = {'boundaryNodes':bSet.boundaryNodes,
+                                         'numNodes':bSet.numNodes,
                                          'ProcID':subDomain.ID,
                                          'nodes':bSet.nodes,
                                          'inlet':bSet.inlet,
@@ -192,6 +193,7 @@ def getBoundarySets(Sets,setCount,subDomain):
                                          'connectedSets':bSet.connectedSets}
           else:
             bD['setID'][bSet.localID] = {'boundaryNodes':bSet.boundaryNodes,
+                                         'numNodes':bSet.numNodes,
                                          'ProcID':subDomain.ID,
                                          'inlet':bSet.inlet,
                                          'outlet':bSet.outlet}
@@ -203,11 +205,11 @@ def getBoundarySets(Sets,setCount,subDomain):
   boundSetCount = len(boundarySets)
   return boundaryData,boundarySets,boundSetCount
 
-def matchProcessorBoundarySets(subDomain,boundaryData,paths):
+def matchProcessorBoundarySets(subDomain,boundaryData,Sets,paths):
   """
   Loop through own and neighbor procs and match by boundary nodes
   Input:
-  Output: [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
+  Output: [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,otherNodes,ownPath,otherPath]
   """
   otherBD = {}
   matchedSets = []
@@ -242,7 +244,7 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
     for ownSet in ownBD_NP['setID'].keys():
       ownBD_Set = ownBD_NP['setID'][ownSet]
 
-      ownNodes  = ownBD_Set['boundaryNodes']
+      ownBNodes = ownBD_Set['boundaryNodes']
       ownInlet  = ownBD_Set['inlet']
       ownOutlet = ownBD_Set['outlet']
       if paths:
@@ -258,14 +260,16 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
       while testSetKey < numOtherSetKeys:
         inlet = False; outlet = False
 
-        otherNodes  = otherBD_NP['setID'][otherSetKeys[testSetKey]]['boundaryNodes']
+        otherNumNodes = otherBD_NP['setID'][otherSetKeys[testSetKey]]['numNodes']
+        otherBNodes = otherBD_NP['setID'][otherSetKeys[testSetKey]]['boundaryNodes']
         otherInlet  = otherBD_NP['setID'][otherSetKeys[testSetKey]]['inlet']
         otherOutlet = otherBD_NP['setID'][otherSetKeys[testSetKey]]['outlet']
         if paths:
           otherPath = otherBD_NP['setID'][otherSetKeys[testSetKey]]['pathID']
           otherConnections = otherBD_NP['setID'][otherSetKeys[testSetKey]]['connectedSets']
 
-        if len(set(ownNodes).intersection(otherNodes)) > 0:
+        matchedBNodes = len(set(ownBNodes).intersection(otherBNodes))
+        if matchedBNodes > 0:
           if (ownInlet or otherInlet):
             inlet = True
           if (ownOutlet or otherOutlet):
@@ -275,12 +279,20 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
             matchedSetsConnections.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections])
           else:
             matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet])
+          
+          ### Update Global Nodes Count for Set
+          Sets[ownSet].numGlobalNodes += otherNumNodes - matchedBNodes
+
+          
           matchedOut = True
+
+
         testSetKey += 1
 
       if not matchedOut:
         error = True 
-        print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownNodes,ownBD_Set['nodes'])
+        print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownBNodes)
+        #print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownNodes,ownBD_Set['nodes'])
 
 
   return matchedSets,matchedSetsConnections,error
@@ -630,6 +642,7 @@ def organizeSets(subDomain,size,setData):
             globalInletList[ind] = s[4]
             globalOutletList[ind] = s[5]
             globalIDList[ind] = s[6]
+
     globalSetID = np.c_[np.asarray(globalSetList,dtype=np.int64),
                         np.asarray(globalIDList,dtype=np.int64),
                         np.asarray(globalInletList,dtype=np.int64),
@@ -1213,7 +1226,7 @@ def collectSets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
   if size > 1:
     boundaryData,boundarySets,boundSetCount = getBoundarySets(Sets,setCount,subDomain)
     boundaryData = setCOMM(subDomain.Orientation,subDomain,boundaryData)
-    matchedSets,_,error = matchProcessorBoundarySets(subDomain,boundaryData,False)
+    matchedSets,_,error = matchProcessorBoundarySets(subDomain,boundaryData,Sets,False)
     if error:
         communication.raiseError()
     data = [matchedSets,setCount,boundSetCount]
