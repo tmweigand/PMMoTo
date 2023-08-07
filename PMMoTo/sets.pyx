@@ -205,7 +205,7 @@ def getBoundarySets(Sets,setCount,subDomain):
   boundSetCount = len(boundarySets)
   return boundaryData,boundarySets,boundSetCount
 
-def matchProcessorBoundarySets(subDomain,boundaryData,Sets,paths):
+def matchProcessorBoundarySets(subDomain,boundaryData,paths):
   """
   Loop through own and neighbor procs and match by boundary nodes
   Input:
@@ -244,6 +244,7 @@ def matchProcessorBoundarySets(subDomain,boundaryData,Sets,paths):
     for ownSet in ownBD_NP['setID'].keys():
       ownBD_Set = ownBD_NP['setID'][ownSet]
 
+      ownNumNodes = ownBD_Set['numNodes']
       ownBNodes = ownBD_Set['boundaryNodes']
       ownInlet  = ownBD_Set['inlet']
       ownOutlet = ownBD_Set['outlet']
@@ -274,19 +275,20 @@ def matchProcessorBoundarySets(subDomain,boundaryData,Sets,paths):
             inlet = True
           if (ownOutlet or otherOutlet):
             outlet = True
+
+          ### Get numGlobalNodes
+          if subDomain.ID < nbProc:
+            setNodes = ownNumNodes
+          else:
+            setNodes = ownNumNodes - matchedBNodes
+          
           if paths:
-            matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath])
+            matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,setNodes,ownPath,otherPath])
             matchedSetsConnections.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections])
           else:
-            matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet])
-          
-          ### Update Global Nodes Count for Set
-          Sets[ownSet].numGlobalNodes += otherNumNodes - matchedBNodes
-
+            matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,setNodes])
           
           matchedOut = True
-
-
         testSetKey += 1
 
       if not matchedOut:
@@ -546,9 +548,9 @@ def organizePathAndSets(subDomain,size,setData,paths):
 
 def organizeSets(subDomain,size,setData):
   """
-  Input: [matchedSets,setCount,boundSetCount]
-  Matched Sets contains:
-    [subDomain.ID,ownSetID,neighProc,neighSetID,Inlet,Outlet,globalSetID]
+  Input: [[subDomain.ID,ownSetID,neighProc,neighSetID,Inlet,Outlet,numSetNodes],
+          setCount,
+          boundSetCount]
   Output: globalIndexStart,globalBoundarySetID
   """
 
@@ -557,7 +559,7 @@ def organizeSets(subDomain,size,setData):
     #############################################
     ### Gather all information from all Procs ###
     #############################################
-    allMatchedSets = np.zeros([0,6],dtype=np.int64)
+    allMatchedSets = np.zeros([0,7],dtype=np.int64)
     numSets = np.zeros(size,dtype=np.int64)
     numBoundSets = np.zeros(size,dtype=np.int64)
     for n in range(0,size):
@@ -567,7 +569,6 @@ def organizeSets(subDomain,size,setData):
         allMatchedSets = np.append(allMatchedSets,setData[n][0],axis=0)
     allMatchedSets = np.c_[allMatchedSets,-np.ones(allMatchedSets.shape[0],dtype=np.int64)]
     #############################################
-
 
     ############################
     ### Propagate Inlet Info ###
@@ -608,21 +609,42 @@ def organizeSets(subDomain,size,setData):
     #############################
     cID = 0
     for s in allMatchedSets:
-      if s[6] == -1:
-        s[6] = cID
+      if s[7] == -1:
+        s[7] = cID
         indexs = np.where( (allMatchedSets[:,0]==s[2])
                         & (allMatchedSets[:,1]==s[3]))[0].tolist()
         while indexs:
           ind = indexs.pop()
           addIndexs  = np.where( (allMatchedSets[:,0]==allMatchedSets[ind,2])
                                 & (allMatchedSets[:,1]==allMatchedSets[ind,3])
-                                & (allMatchedSets[:,6] == -1) )[0].tolist()
+                                & (allMatchedSets[:,7] == -1) )[0].tolist()
           for aI in addIndexs:
             if aI not in indexs:
               indexs.append(aI)
-          allMatchedSets[ind,6] = cID
+          allMatchedSets[ind,7] = cID
         cID = cID + 1
     #############################
+
+    ###########################
+    ### Sum Total Set Nodes ###
+    ###########################
+    for n,s in enumerate(allMatchedSets):
+      if s[6] > 0:
+        indexs = np.where((allMatchedSets[:,0]==s[0]) 
+                           & (allMatchedSets[:,1]==s[1]) )[0].tolist()
+        while indexs:
+          ind = indexs.pop()
+          if ind != n:
+            allMatchedSets[ind,6] = 0
+
+    for n in range(cID):
+      indexs = np.where(allMatchedSets[:,7] == n)[0].tolist() 
+      sumNodes = 0
+      for nI in indexs:
+        sumNodes += allMatchedSets[nI,6]
+      for nI in indexs:
+        allMatchedSets[nI,6] = sumNodes
+    ###########################
 
     #######################################################
     ### Get Unique Entries and Inlet/Outlet/ID for Sets ###
@@ -630,23 +652,27 @@ def organizeSets(subDomain,size,setData):
     globalSetList = []
     globalInletList = []
     globalOutletList = []
+    globalNumNodeList = []
     globalIDList = []
     for s in allMatchedSets:
         if [s[0],s[1]] not in globalSetList:
             globalSetList.append([s[0],s[1]])
             globalInletList.append(s[4])
             globalOutletList.append(s[5])
-            globalIDList.append(s[6])
+            globalNumNodeList.append(s[6])
+            globalIDList.append(s[7])
         else:
             ind = globalSetList.index([s[0],s[1]])
             globalInletList[ind] = s[4]
             globalOutletList[ind] = s[5]
-            globalIDList[ind] = s[6]
+            globalNumNodeList[ind] = s[6]
+            globalIDList[ind] = s[7]
 
     globalSetID = np.c_[np.asarray(globalSetList,dtype=np.int64),
                         np.asarray(globalIDList,dtype=np.int64),
                         np.asarray(globalInletList,dtype=np.int64),
-                        np.asarray(globalOutletList,dtype=np.int64)]
+                        np.asarray(globalOutletList,dtype=np.int64),
+                        np.asarray(globalNumNodeList,dtype=np.int64)]
     ####################################################
 
     ###########################################
@@ -681,6 +707,7 @@ def updateSetID(rank,Sets,globalIndexStart,globalBoundarySetID):
       s.globalID = int(gBSetID[ind,2])
       s.inlet = bool(gBSetID[ind,3])
       s.outlet = bool(gBSetID[ind,4])
+      s.numGlobalNodes = int(gBSetID[ind,5])
     else:
       s.globalID = globalIndexStart + c
       c = c + 1
@@ -1222,13 +1249,18 @@ def collectSets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
   size = subDomain.size
 
   nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phaseID,inlet,outlet,subDomain.Domain,loopInfo,subDomain,subDomain.Orientation)
-  Sets,setCount = getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,)
+  Sets,setCount = getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex)
+
   if size > 1:
     boundaryData,boundarySets,boundSetCount = getBoundarySets(Sets,setCount,subDomain)
     boundaryData = setCOMM(subDomain.Orientation,subDomain,boundaryData)
-    matchedSets,_,error = matchProcessorBoundarySets(subDomain,boundaryData,Sets,False)
-    if error:
+    matchedSets,_,error = matchProcessorBoundarySets(subDomain,boundaryData,False)
+    
+    errArray = np.array(error,dtype=np.uint8)
+    comm.Allreduce(MPI.IN_PLACE, errArray, op=MPI.MAX)
+    if errArray:
         communication.raiseError()
+
     data = [matchedSets,setCount,boundSetCount]
     data = comm.gather(data, root=0)
     gIS,gBSetID = organizeSets(subDomain,size,data)
