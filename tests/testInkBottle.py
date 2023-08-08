@@ -13,18 +13,20 @@ def my_function():
         start_time = time.time()
 
     subDomains = [2,2,2]
-    nodes = [140,30,30]
-    #nodes = [560,120,120]
-    #nodes = [840,180,180]
-    #nodes = [1120,240,240]
-    #nodes = [2240,481,481]
+    nodes = [140,30,30]  ##res = 10
+    #nodes = [280,60,60]   ##res = 20
+    #nodes = [560,120,120] ##res = 40
+    #nodes = [1120,240,240] ##res = 80
+    # nodes = [1680,360,360] ##res = 120
+
+    res = 10
 
     boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
-
+    # print("A")
     numFluidPhases = 2
     twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
@@ -36,15 +38,78 @@ def my_function():
     nwOut = [[0,0],[0,0],[0,0]]
     mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
     
-    #Initialize wetting saturated somain
-    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
+    #Initialize wetting saturated domain
+    ##res size should be 1 for imbibition
+    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) ##drainage
+    # twoPhase.initializeMPGrid(constantPhase = twoPhase.nwID) ##imbibition
+    # twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
     
-    #pC = [1.81122,2.16814]
-    pC = [1.81122]
-    drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    
+    # pC = [1.68832, 1.65837, 1.63524, 1.61783]
 
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid)
+    # drainL = PMMoTo.multiPhase.calcImbibition(pC,twoPhase)
+    
+    # #Initialize from previous fluid distribution
+    # inputFile = 'dataOut/twoPhase/twoPhase_imbibe_pc_1.61783'
+    # twoPhase.initializeMPGrid(inputFile = inputFile) 
+    
+    pC = [2.46250]
+#     pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
+# 1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
+# 2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
+# 4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
+# 7.60403, 7.69393] 
+        
+    print("Run Drainage")
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = res)
+    drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    
+#     # # #Initialize from previous fluid distribution
+#     inputFile = 'dataOut/twoPhase/twoPhase_drain_pc_7.69393'
+#     twoPhase.initializeMPGrid(inputFile = inputFile) 
+    
+#     pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
+# 1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
+# 2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
+# 4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
+# 7.60403]
+
+#     print("Run Imbibition")
+#     twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
+    
+#     # # pC = [1.67755, 1.7127]
+#     drainL = PMMoTo.multiPhase.calcImbibition(pC,twoPhase)
+    
+
+    # # #Initialize from previous fluid distribution
+    # inputFile = 'dataOut/twoPhase/twoPhase_pc_1.67755'
+    # twoPhase.initializeMPGrid(inputFile = inputFile) 
+    
+    
+    # twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 120)
+    
+#     pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
+# 1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
+# 2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
+# 4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
+# 7.60403, 7.69393] 
+#     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    
+    
+    
+#     pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
+# 1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
+# 2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
+# 4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
+# 7.60403, 7.69393] 
+    
+    # interval = 0.9
+    # sW = [0.9,0.8,0.7,0.6,0.5]
+    #drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    #drainL = PMMoTo.multiPhase.calcDrainageSW(sW,twoPhase,interval)
+    #drainL = PMMoTo.multiPhase.calcImbibition(pC,twoPhase)
+
+    #PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid)
 
 
 

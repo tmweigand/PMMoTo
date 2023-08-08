@@ -30,6 +30,8 @@ class porousMedia(object):
     def genDomainSphereData(self,sphereData):
         self.grid = domainGen(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
+        sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
+        self.grid = sDComm.updateBuffer()
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
