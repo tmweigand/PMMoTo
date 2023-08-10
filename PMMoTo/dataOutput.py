@@ -285,3 +285,25 @@ def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
     header = "x,y,z,Grid"
     np.savetxt(fileProc+str(rank)+".csv",printGridOut, delimiter=',',header=header)
     
+    
+    # fileProc = "ID3."
+    # grid.tofile(fileProc+str(rank)+".raw")
+    
+    # fileProc = fileName+"/"+"ID3."
+    # formatted_rank = "{:05}".format(rank)
+    # grid.tofile(fileProc + formatted_rank)
+    
+    
+def saveGridraw(fileName,subDomain,grid):
+    
+    rank = subDomain.ID
+
+    if rank == 0:
+        checkFilePath(fileName)
+    comm.barrier()
+    
+    fileProc = fileName+"/"+"ID3."
+    formatted_rank = "{:05}".format(rank)
+    grid.tofile(fileProc + formatted_rank)
+
+    
