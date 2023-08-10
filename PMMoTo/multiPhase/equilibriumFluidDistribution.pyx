@@ -412,9 +412,9 @@ def calcOpenSW(sW,mP,interval,minSetSize):
         if save:
             fileName = "dataOut/Open/twoPhase_open_sw_"+str(s)
             dataOutput.saveGrid(fileName,mP.subDomain,mP.porousMedia.grid)      
-                
-            fileName = "dataOut/OpenCSV/twoPhase_open_sw_"+str(s)
-            dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,mP.mpGrid,removeHalo = True)
+            
+            fileName = "dataOut/OpenRAW/twoPhase_open_sw_"+str(s)
+            dataOutput.saveGridraw(fileName,mP.subDomain,mP.mpGrid)
 
                     
     return eqDist
