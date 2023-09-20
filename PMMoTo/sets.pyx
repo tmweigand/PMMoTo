@@ -795,276 +795,6 @@ def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,g
                 if mID not in Sets[ll].globalConnectedSets:
                   Sets[ll].globalConnectedSets.append(mID)
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-def getConnectedMedialAxis(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex,MANodeType):
-  """
-  Connects the NxNxN  nodes into connected sets.
-  1. Path - Exactly 2 Neighbors or 1 Neighbor and on Boundary
-  2. Medial Cluster - More than 2 Neighbors
-
-  Create Two Queues for Paths and Clusters
-
-  TO DO: Clean up function call so plassing less variables. Use dictionary?
-  """
-  cdef int node,ID,nodeValue,d,oppDir,avail,n,index,bN
-  cdef int numNodesMA,numSetNodes,numNodes,numBNodes,setCount
-
-  numNodesMA = np.sum(grid)
-
-  nodeIndex = np.zeros([numNodesMA,9],dtype=np.int64)
-  cdef cnp.int64_t [:,::1] _nodeIndex
-  _nodeIndex = nodeIndex
-  for i in range(numNodesMA):
-    _nodeIndex[i,3] = -1
-
-  nodeReachDict = np.zeros(numNodesMA,dtype=np.uint64)
-  cdef cnp.uint64_t [:] _nodeReachDict
-  _nodeReachDict = nodeReachDict
-
-  cdef cnp.int8_t [:,:] _nodeInfo
-  _nodeInfo = nodeInfo
-
-  cdef cnp.uint64_t [:,:] _nodeInfoIndex
-  _nodeInfoIndex = nodeInfoIndex
-
-  cdef cnp.uint8_t [:,:] _nodeDirections
-  _nodeDirections = nodeDirections
-
-  cdef cnp.uint64_t [:,:] _nodeDirectionsIndex
-  _nodeDirectionsIndex = nodeDirectionsIndex
-
-  cdef cnp.int8_t [:] cNode
-  cdef cnp.uint64_t [:] cNodeIndex
-  cdef cnp.int64_t [:] MANodeInfo
-
-  numSetNodes = 0
-  numNodes = 0
-  numBNodes = 0
-  setCount = 0
-  pathCount = 0
-
-  Sets = []
-  clusterQueues = [] #Store Clusters Identified from Paths
-  clusterQueue = []
-  pathQueues = []  #Store Paths Identified from Cluster
-  pathQueue = []
-  clusterToPathsConnect = [] #Track clusters to paths
-  pathToClustersConnect = [] #Track paths to clusters
-
-  ##############################
-  ### Loop Through All Nodes ###
-  ##############################
-  for node in range(0,numNodesMA):
-
-    if _nodeInfo[node,6] == 1:  #Visited
-      pass
-    else:
-      ID = node
-      cNode = _nodeInfo[ID]
-
-
-      # Is Node a Path or Cluster?
-      pathNode = nodes.getNodeType(MANodeType[ID])
-      if pathNode:
-        pathQueues = [[ID]]
-      else:
-        clusterQueues = [[ID]]
-
-      #  if Path or Cluster
-      while pathQueues or clusterQueues:
-        sBound = False; sInlet = False; sOutlet = False
-
-        if pathQueues:
-          pathQueue = pathQueues.pop(-1)
-
-          ###############################
-          ### Loop through Path Nodes ###
-          ###############################
-          while pathQueue:
-
-            ########################
-            ### Gather Node Info ###
-            ########################
-            ID = pathQueue.pop(-1)
-            if _nodeInfo[ID,6] == 1:
-              pass
-            else:
-              cNode = _nodeInfo[ID]
-              cNodeIndex = _nodeInfoIndex[ID,:]
-              MANodeInfo = _nodeIndex[numNodes,:]
-              _nodeReachDict[ID] = setCount
-              pathNode,numBNodes,sBound,sInlet,sOutlet = nodes.getMANodeInfo(cNode,cNodeIndex,MANodeInfo,MANodeType[ID],numBNodes,setCount,sBound,sInlet,sOutlet)
-              numSetNodes += 1
-              numNodes += 1
-              #########################
-
-
-              ##########################
-              ### Find Neighbor Node ###
-              ##########################
-              while (cNode[4] > 0):
-                nodeValue = -1
-                found = False
-                d = cNode[5]
-                while d >= 0 and not found:
-                  if _nodeDirections[ID,d] == 1:
-                    found = True
-                    cNode[4] -= 1
-                    cNode[5] = d
-                    oppDir = directions[d][4]
-                    nodeValue = _nodeDirectionsIndex[ID,d]
-                    _nodeDirections[nodeValue,oppDir] = 0
-                    _nodeDirections[ID,d] = 0
-                  else:
-                    d -= 1
-                ########################
-
-                #############################
-                ### Add Neighbor to Queue ###
-                #############################
-                if (nodeValue > -1):
-                  pathNode = nodes.getNodeType(MANodeType[nodeValue])
-                  if _nodeInfo[nodeValue,6]:
-                    pass
-                  else:
-                    if pathNode:
-                      pathQueue.append(nodeValue)
-                    else:
-                      clusterToPathsConnect.append(nodeValue)
-                      clusterQueues.append([nodeValue])
-                  _nodeInfo[nodeValue,4] = _nodeInfo[nodeValue,4] - 1
-
-              cNode[6] = 1 #Visited
-            ##############################
-
-          ############################
-          ### Add Path Set to List ###
-          ############################
-          if numSetNodes > 0:
-            Sets.append(Set(localID = setCount,
-                               pathID = pathCount,
-                               inlet = sInlet,
-                               outlet = sOutlet,
-                               boundary = sBound,
-                               numNodes = numSetNodes,
-                               numBoundaryNodes = numBNodes,
-                               type = 0,
-                               connectedNodes = clusterToPathsConnect))
-
-            nodes.getSetNodes(Sets[setCount],numNodes,_nodeIndex)
-            setCount = setCount + 1
-          clusterToPathsConnect = []
-          numSetNodes = 0
-          numBNodes = 0
-          ############################
-
-
-        ##################################
-        ### Loop through Cluster Nodes ###
-        ##################################
-        if clusterQueues:
-          clusterQueue = clusterQueues.pop(-1)
-          while clusterQueue:
-
-            ########################
-            ### Gather Node Info ###
-            ########################
-            ID = clusterQueue.pop(-1)
-            if _nodeInfo[ID,6] == 1:
-              pass
-            else:
-              cNode = _nodeInfo[ID]
-              cNodeIndex = _nodeInfoIndex[ID,:]
-              MANodeInfo = _nodeIndex[numNodes,:]
-              _nodeReachDict[ID] = setCount
-              pathNode,numBNodes,sBound,sInlet,sOutlet = nodes.getMANodeInfo(cNode,cNodeIndex,MANodeInfo,MANodeType[ID],numBNodes,setCount,sBound,sInlet,sOutlet)
-              numSetNodes += 1
-              numNodes += 1
-              ########################
-
-              ##########################
-              ### Find Neighbor Node ###
-              ##########################
-              while (cNode[4] > 0):
-                nodeValue = -1
-                found = False
-                d = cNode[5]
-                while d >= 0 and not found:
-                  if _nodeDirections[ID,d] == 1:
-                    found = True
-                    cNode[4] -= 1
-                    cNode[5] = d
-                    oppDir = directions[d][4]
-                    nodeValue = _nodeDirectionsIndex[ID,d]
-                    _nodeDirections[nodeValue,oppDir] = 0
-                    _nodeDirections[ID,d] = 0
-                  else:
-                    d -= 1
-              ##########################
-
-                #############################
-                ### Add Neighbor to Queue ###
-                #############################
-                if (nodeValue > -1):
-                  pathNode = nodes.getNodeType(MANodeType[nodeValue])
-                  if _nodeInfo[nodeValue,6]:
-                    pass
-                  else:
-                    if pathNode:
-                      pathQueues.append([nodeValue])
-                      pathToClustersConnect.append(nodeValue)
-                    else:
-                      clusterQueue.append(nodeValue)
-                  _nodeInfo[nodeValue,4] = _nodeInfo[nodeValue,4] - 1
-                #############################
-
-              cNode[6] = 1 #Visited
-
-
-          ###############################
-          ### Add Cluster Set to List ###
-          ###############################
-          if numSetNodes > 0:
-            setType = 1
-            if numSetNodes > 15:
-              setType = 2
-            Sets.append(Set(localID = setCount,
-                                pathID = pathCount,
-                                inlet = sInlet,
-                                outlet = sOutlet,
-                                boundary = sBound,
-                                numNodes = numSetNodes,
-                                numBoundaryNodes = numBNodes,
-                                type = setType,
-                                connectedNodes = pathToClustersConnect))
-                                  
-            nodes.getSetNodes(Sets[setCount],numNodes,_nodeIndex)
-            setCount = setCount + 1
-          pathToClustersConnect = []
-          numSetNodes = 0
-          numBNodes = 0
-          ###############################
-
-      pathCount += 1
-
-
-  ###########################
-  ### Grab Connected Sets ###
-  ###########################
-  for s in Sets:
-    for n in s.connectedNodes:
-      ID = _nodeReachDict[n]
-      if ID not in s.connectedSets:
-        s.connectedSets.append(ID)
-      if ID not in Sets[ID].connectedSets:
-        Sets[ID].connectedSets.append(s.localID)
-  ###########################
-
-
-  return Sets,setCount,pathCount
-
-
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -1079,11 +809,11 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
 
   numNodes = np.count_nonzero(grid==phaseID)
 
-  nodeIndex = np.zeros([numNodes,9],dtype=np.int64)
-  cdef cnp.int64_t [:,::1] _nodeIndex
+  nodeIndex = np.zeros([numNodes,9],dtype=np.uint64)
+  cdef cnp.uint64_t [:,::1] _nodeIndex
   _nodeIndex = nodeIndex
   for i in range(numNodes):
-    _nodeIndex[i,3] = -1
+    _nodeIndex[i,3] = 50 # Only Use <25 so okay flag
 
   nodeSetDict = np.zeros(numNodes,dtype=np.uint64)
   cdef cnp.uint64_t [:] _nodeSetDict
@@ -1103,7 +833,7 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
 
   cdef cnp.int8_t [:] cNode
   cdef cnp.uint64_t [:] cNodeIndex
-  cdef cnp.int64_t [:] NodeInfo
+  cdef cnp.uint64_t [:] NodeInfo
 
   numNodesCount = 0
   numSetNodes = 0
@@ -1188,7 +918,7 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
                                   numNodes = numSetNodes,
                                   numBoundaryNodes = numBNodes))
 
-        nodes.getSetNodes(Sets[setCount],numNodesCount,_nodeIndex)
+        getSetNodes(Sets[setCount],numNodesCount,_nodeIndex)
         setCount = setCount + 1
 
       numSetNodes = 0
@@ -1200,7 +930,15 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
 
   return Sets,setCount
 
-
+def getSetNodes(set,nNodes,_nI):
+  cdef int bN,n,ind
+  bN =  0
+  for n in range(0,set.numNodes):
+    ind = nNodes - set.numNodes + n
+    set.getNodes(n,_nI[ind,0],_nI[ind,1],_nI[ind,2])
+    if _nI[ind,3] < 50:
+      set.getBoundaryNodes(bN,_nI[ind,4],_nI[ind,3],_nI[ind,5],_nI[ind,6],_nI[ind,7])
+      bN = bN + 1
 
 
 def collectSets(grid,phaseID,inlet,outlet,loopInfo,subDomain):

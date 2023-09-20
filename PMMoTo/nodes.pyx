@@ -353,33 +353,6 @@ def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):
   return maNodeType
 
 
-def getMANodeInfo(cNode,cNodeIndex,maNode,availDirections,numBNodes,setCount,sBound,sInlet,sOutlet):
-  """
-  Get Node Info for Medial Axis
-  """
-
-  maNode[0] = cNodeIndex[0]  #i
-  maNode[1] = cNodeIndex[1]  #j
-  maNode[2] = cNodeIndex[2]  #k
-  if cNode[0]:  #Boundary
-    sBound = True
-    numBNodes = numBNodes + 1
-    maNode[3] = cNode[3]  #BoundaryID
-    maNode[4] = cNodeIndex[3] #Global Index
-    if cNode[1]:  #Inlet
-      sInlet = True
-    if cNode[2]:  #Outlet
-      sOutlet = True
-
-  maNode[5] = cNodeIndex[4]  #global i
-  maNode[6] = cNodeIndex[5]  #global j
-  maNode[7] = cNodeIndex[6]  #global k
-  maNode[8] = setCount
-
-  pathNode = getNodeType(availDirections)
-
-  return pathNode,numBNodes,sBound,sInlet,sOutlet
-
 def getAllNodeInfo(cNode,cNodeIndex,Node,numBNodes,setCount,sBound,sInlet,sOutlet):
   """
   Get Node Info for Medial Axis
@@ -404,24 +377,3 @@ def getAllNodeInfo(cNode,cNodeIndex,Node,numBNodes,setCount,sBound,sInlet,sOutle
   Node[8] = setCount
 
   return numBNodes,sBound,sInlet,sOutlet
-
-
-def getNodeType(neighbors):
-  """
-  Determine if Medial Path or Medial Cluster
-  """
-  pathNode = False
-  if neighbors < 3:
-    pathNode = True
-  return pathNode
-
-
-def getSetNodes(set,nNodes,_nI):
-  cdef int bN,n,ind
-  bN =  0
-  for n in range(0,set.numNodes):
-    ind = nNodes - set.numNodes + n
-    set.getNodes(n,_nI[ind,0],_nI[ind,1],_nI[ind,2])
-    if _nI[ind,3] > -1:
-      set.getBoundaryNodes(bN,_nI[ind,4],_nI[ind,3],_nI[ind,5],_nI[ind,6],_nI[ind,7])
-      bN = bN + 1
