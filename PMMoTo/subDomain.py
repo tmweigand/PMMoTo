@@ -4,6 +4,7 @@ comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenVerlet
 from . import communication
 from . import Orientation
 from . import Domain
@@ -259,6 +260,27 @@ class subDomain(object):
                 t = ld[2]/sumTotalNodes*100.
                 print("Rank: %i has %2.1f%% of the Pore Nodes and %2.1f%% of the total Nodes" %(ld[0],p,t))
 
+    def trimSphereData(self,sphereData):
+        numObj = sphereData.shape[1]
+        xList = []
+        yList = []
+        zList = []
+        rList = []
+        for i in range(numObj):
+            x = sphereData[0,i]
+            y = sphereData[1,i]
+            z = sphereData[2,i]
+            r = sphereData[3,i]
+            r_sqrt = np.sqrt(sphereData[3,i])
+            xCheck = self.x[0] - self.Domain.dX - r_sqrt <= x <= self.x[-1] + self.Domain.dX + r_sqrt
+            yCheck = self.y[0] - self.Domain.dY - r_sqrt <= y <= self.y[-1] + self.Domain.dY + r_sqrt
+            zCheck = self.z[0] - self.Domain.dZ - r_sqrt <= z <= self.z[-1] + self.Domain.dZ + r_sqrt
+            if xCheck and yCheck and zCheck:
+                xList.append(x)
+                yList.append(y)
+                zList.append(z)
+                rList.append(r)
+        return np.array([xList,yList,zList,rList])
 
 
 def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs=None):
@@ -288,8 +310,9 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
     sD.getInfo()
     sD.getNeighbors()
     sD.getXYZ(sD.buffer)
-
+    
     if file is not None:
+        sphereData = sD.trimSphereData(sphereData)
         pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 1)
     else:
         pM = porousMedia.genPorousMedia(sD,dataFormat,resSize = 1)

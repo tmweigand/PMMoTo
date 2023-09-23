@@ -4,6 +4,7 @@ from .. import communication
 from . import medialExtraction
 from .. import nodes
 from .. import sets
+from . import medialSets
 comm = MPI.COMM_WORLD
 import math
 
@@ -71,6 +72,48 @@ class medialAxis(object):
             if self.paths[p]['boundarySets']:
                 self.boundPathCount = self.boundPathCount + 1
 
+    def globalCollectPaths(self,cutoffs,cleanSetData):
+        """
+        Collect Sets into Paths
+        """
+        self.paths = {}
+        for i,cutoff in enumerate(cutoffs):
+            self.paths[cutoff] = {}
+
+            setIDQueue = []
+            pathID = 0
+            for set in cleanSetData:
+                if set[2] == 1 and set[4][i] == 0 and set[5][i] == 0:
+                    setIDQueue.append(set[0])
+                    set[7][i] = pathID
+                    pathID+=1
+            setIDQueue.reverse()
+
+            while len(setIDQueue) > 0:
+                setID = setIDQueue.pop()
+                if cleanSetData[setID][8][i] == 0:
+                    cleanSetData[setID][8][i] = 1
+                    if cleanSetData[setID][7][i] not in self.paths[cutoff].keys():
+                        self.paths[cutoff][cleanSetData[setID][7][i]] = {'Sets':[],
+                                        'inlet':0,
+                                        'outlet':0}
+                    self.paths[cutoff][cleanSetData[setID][7][i]]['Sets'].append(setID)
+                    if self.paths[cutoff][cleanSetData[setID][7][i]]['inlet'] == 0:
+                        self.paths[cutoff][cleanSetData[setID][7][i]]['inlet'] = cleanSetData[setID][2]
+                    if self.paths[cutoff][cleanSetData[setID][7][i]]['outlet'] == 0:
+                        self.paths[cutoff][cleanSetData[setID][7][i]]['outlet'] = cleanSetData[setID][3]
+                    for neighborID in cleanSetData[setID][1]:
+                        if cleanSetData[neighborID][8][i] == 0 and cleanSetData[neighborID][4][i] == 0 and cleanSetData[neighborID][5][i] == 0:
+                            cleanSetData[neighborID][7][i] = cleanSetData[setID][7][i]
+                            setIDQueue.append(neighborID)
+            
+            for pathID in self.paths[cutoff]:
+                if self.paths[cutoff][pathID]['outlet'] != 1:
+                    for setID in self.paths[cutoff][pathID]['Sets']:
+                        cleanSetData[setID][7][i] = -1
+            
+            self.paths[cutoff] = {pathID: self.paths[cutoff][pathID] for pathID in self.paths[cutoff] if (self.paths[cutoff][pathID]['inlet'] == 1 and self.paths[cutoff][pathID]['outlet'] == 1)}
+
 
     def genLocalGlobalConnectedSetsID(self,connectedSetData):
         """
@@ -105,47 +148,67 @@ class medialAxis(object):
                 self.globalLocalConnectedSetID[nSets[lID]][nP].append(lID)
 
 
+    # def updatePaths(self,globalPathIndexStart,globalPathBoundarySetID):
+    #     self.paths = {}
+    #     c = 0
+    #     for nS in range(0,self.setCount):
+    #         pathID = self.Sets[nS].pathID
+
+    #         ind = np.where(globalPathBoundarySetID[:,1]==pathID)[0]
+    #         if ind:
+    #             ind = ind[0]
+    #             pathID = globalPathBoundarySetID[ind,2]
+    #             setInlet = globalPathBoundarySetID[ind,3]
+    #             setOutlet = globalPathBoundarySetID[ind,4]
+
+    #             if pathID not in self.paths.keys():
+    #                 self.paths[pathID] = {'Sets':-1,'boundarySets':[],'inlet':setInlet,'outlet':setOutlet}
+    #             self.paths[pathID]['Sets'] = nS
+
+    #             if self.Sets[nS].boundary:
+    #                 self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
+    #         else:
+    #             pathID = globalPathIndexStart + c
+    #             c = c + 1
+    #             if pathID not in self.paths.keys():
+    #                 self.paths[pathID] = {'Sets':[],'boundarySets':[],'inlet':False,'outlet':False}
+    #             self.paths[pathID]['Sets'] = nS
+
+    #             if self.Sets[nS].boundary:
+    #                 self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
+
+    #             if self.Sets[nS].inlet:
+    #                 self.paths[pathID]['inlet'] = True
+
+    #             if self.Sets[nS].outlet:
+    #                 self.paths[pathID]['outlet'] = True
+
     def updatePaths(self,globalPathIndexStart,globalPathBoundarySetID):
-        self.paths = {}
-        c = 0
-        for nS in range(0,self.setCount):
-            pathID = self.Sets[nS].pathID
+        self.Paths = {}
+        for set in self.Sets:
 
-            ind = np.where(globalPathBoundarySetID[:,1]==pathID)[0]
-            if ind:
-                ind = ind[0]
-                pathID = globalPathBoundarySetID[ind,2]
-                setInlet = globalPathBoundarySetID[ind,3]
-                setOutlet = globalPathBoundarySetID[ind,4]
+            ### Get inlet and outlet information from globalPathBoundarySet ID
+            ind = np.where(globalPathBoundarySetID[:,1]==set.pathID)[0]
 
-                if pathID not in self.paths.keys():
-                    self.paths[pathID] = {'Sets':-1,'boundarySets':[],'inlet':setInlet,'outlet':setOutlet}
-                self.paths[pathID]['Sets'] = nS
-
-                if self.Sets[nS].boundary:
-                    self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
-            else:
-                pathID = globalPathIndexStart + c
-                c = c + 1
-                if pathID not in self.paths.keys():
-                    self.paths[pathID] = {'Sets':[],'boundarySets':[],'inlet':False,'outlet':False}
-                self.paths[pathID]['Sets'] = nS
-
-                if self.Sets[nS].boundary:
-                    self.paths[pathID]['boundarySets'].append(self.Sets[nS].globalID)
-
-                if self.Sets[nS].inlet:
-                    self.paths[pathID]['inlet'] = True
-
-                if self.Sets[nS].outlet:
-                    self.paths[pathID]['outlet'] = True
+            if set.pathID not in self.Paths.keys():
+                self.Paths[set.pathID] = {'Sets':[set.globalID],'boundarySets':[],'inlet':False,'outlet':False}
+            else: 
+                self.Paths[set.pathID]['Sets'].append(set.globalID)
+            
+            if set.boundary:
+                self.Paths[set.pathID]['boundarySets'].append(set.globalID)
+            
+            if set.inlet:
+                self.Paths[set.pathID]['inlet'] = True
+            if set.outlet:
+                self.Paths[set.pathID]['outlet'] = True
 
     def globalCleanSets(self,setData):
         
         setData = [i for j in setData for i in j]
 
         ## Sort by id
-        setData.sort()
+        setData = sorted(setData,key=lambda x: x[0])
         ## Remove repeated entries, based on 
         ## sets added to local lists to check
         ## connectivity
@@ -159,9 +222,9 @@ class medialAxis(object):
                 # if sorted(cleanSetData[set[0]][1]) != sorted(set[1]):
                 #     print('WARNING: Global connectivity information does not match for sets shared by subprocesses.')
                 cleanSetData[set[0]][1] = list(frozenset(cleanSetData[set[0]][1] + set[1]))
-                if cleanSetData[set[0]][5] != set[5]:
+                if cleanSetData[set[0]][6] != set[6]:
                     # print('WARNING: Min distance values are not equal.')
-                    cleanSetData[set[0]][5] = min(cleanSetData[set[0]][5],set[5])
+                    cleanSetData[set[0]][6] = min(cleanSetData[set[0]][6],set[6])
         
         ### There exist cases where a set has itself listed as a neighbor, remove these. SEE ISSUE 21
         for i,set in enumerate(cleanSetData):
@@ -190,44 +253,41 @@ class medialAxis(object):
                 endCheck  = (len(set[1]) < 2)
 
                 if isoCheck or forkCheck or endCheck:
-                    set[4] = True
+                    set[4] = 1
                     trimsAdded = 1
         
         return cleanSetData
     
-    def globalInaccessibleTrimSets(self,cleanSetData):
-        trimsAdded = 1
-        while trimsAdded:
-            trimsAdded = 0
-            for set in cleanSetData:
-                if set[5] == 1:
-                    set[6] = 1
-                if (set[2] == 1)  or (set[3] == 1) or (set[6] == 1):
-                    continue
-
-                nConnectedTrim = 0
-                for connectedSetID in set[1]:
-                    if cleanSetData[connectedSetID][6]:
-                        nConnectedTrim += 1
-
-                isoCheck = (nConnectedTrim == len(set[1]))
-                forkCheck = (nConnectedTrim == (len(set[1])-1))
-                endCheck  = (len(set[1]) < 2)
-
-                if isoCheck or forkCheck or endCheck:
-                    set[6] = 1
-                    trimsAdded = 1
+    def globalInaccessibleTrimSets(self,cutoffs,cleanSetData):
         
-        return cleanSetData
-    
-    def globalInaccessibleSets(self,cleanSetData,cutoff):
+        for i in range(len(cutoffs)):
+            trimsAdded = 1
+            while trimsAdded:
+                trimsAdded = 0
+                for set in cleanSetData:
+                    if set[5][i] == 1:
+                        if set[4][i] == 1:
+                            continue
+                        elif set[4][i] != 1:
+                            set[4][i] = 1
+                            trimsAdded = 1
+                            continue 
+                    if (set[2] == 1)  or (set[3] == 1) or (set[4][i] == 1):
+                        continue
 
-        ### Perform extra iterations of fork trimming
-        ### will apply to Sets not connected to inlet
-        for set in cleanSetData:
-            if set[7] < cutoff:
-                set[5] = 1
-                    
+                    nConnectedTrim = 0
+                    for connectedSetID in set[1]:
+                        if cleanSetData[connectedSetID][4][i]:
+                            nConnectedTrim += 1
+
+                    isoCheck = (nConnectedTrim == len(set[1]))
+                    forkCheck = (nConnectedTrim == (len(set[1])-1))
+                    endCheck  = (len(set[1]) < 2)
+
+                    if isoCheck or forkCheck or endCheck:
+                        set[4][i] = 1
+                        trimsAdded = 1
+        
         return cleanSetData
 
     def globalCreateListSetData(self,size,setData,cleanSetData):
@@ -238,6 +298,7 @@ class medialAxis(object):
             set[5] = cleanSetData[setID][5]
             set[6] = cleanSetData[setID][6]
             set[7] = cleanSetData[setID][7]
+            set[8] = cleanSetData[setID][8]
 
         listSetData = []
         for i in range(size):
@@ -283,7 +344,63 @@ class medialAxis(object):
                     set.trim = True
                     trimsAdded = 1
 
-    def gatherSetInfo(self,rank):
+    def localInaccessibleSets(self,cutoffs):
+
+        for set in self.Sets:
+            set.inaccessible = np.array([0] * len(cutoffs))
+            for i,cutoff in enumerate(cutoffs):
+                if set.minDistance < cutoff:
+                    set.inaccessible[i:] = 1
+                    break
+
+    def localInaccessibleTrimSets(self,cutoffs):
+        """
+        Iteratively flip trim flag at rank level until no new changes are made 
+        Trim flag is flipped from 0 to 1 if:
+        (1) set is a dead end (only one neighbor)
+        (2) set is upstream from a dead end (number of neighbors - 1 = number of neighbors flagged for trim)
+        (3) set is surrounded by trimmed sets (number of neighbors = number of neighbors flagged for trim)
+
+        At this stage, sets that touch > 1 boundary are skipped to prevent preemptive trims of sets that span
+        multiple subdomains
+        """
+        idHashTable = []
+        for set in self.Sets:
+            idHashTable.append(set.globalID)
+            set.trim = np.array([0] * len(cutoffs))
+        
+        for i in range(len(cutoffs)):
+            trimsAdded = 1
+            while trimsAdded:
+                trimsAdded = 0
+                for set in self.Sets:
+                    if set.inaccessible[i]:
+                        if set.trim[i] == 1:
+                            continue
+                        elif set.trim[i] != 1:
+                            set.trim[i] = 1
+                            trimsAdded = 1
+                            continue
+                    if set.outlet or set.inlet or (set.numBoundaries > 1) or set.trim[i]:
+                        continue
+                    
+                    nConnectedTrim = 0
+                    
+                    for connectedSet in set.globalConnectedSets:
+                        if (connectedSet in idHashTable):
+                            setsIndex = idHashTable.index(connectedSet)
+                            if self.Sets[setsIndex].trim[i]:
+                                nConnectedTrim += 1
+
+                    isoCheck = (nConnectedTrim == len(set.globalConnectedSets))
+                    forkCheck = (nConnectedTrim == (len(set.globalConnectedSets)-1))
+                    endCheck  = (len(set.globalConnectedSets) < 2)
+
+                    if isoCheck or forkCheck or endCheck:
+                        set.trim[i] = 1
+                        trimsAdded = 1
+    
+    def gatherSetInfo(self,cutoffs,rank):
         """
         Convert list of Set objects into a list of lists
         containing only the information needed to trim and
@@ -292,8 +409,9 @@ class medialAxis(object):
 
         setData = []
         for s in self.Sets:
+            s.globalPathIDs = [-1]*len(cutoffs)
             ### globalID,globalID of connected sets, on inlet, on outlet, is trimmed, globalPathID init to -1, visited flag, rank of contributing for reconstruction via scatter
-            setData.append([s.globalID, s.globalConnectedSets, s.inlet, s.outlet, s.trim, s.inaccessible, s.inaccessibleTrim, s.minDistance, rank])
+            setData.append([s.globalID, s.globalConnectedSets, s.inlet, s.outlet, s.trim, s.inaccessible, s.minDistance, s.globalPathIDs, [0]*len(cutoffs), rank])
 
         return setData
     
@@ -303,19 +421,20 @@ class medialAxis(object):
         Set objects contained in a list on all ranks
         """
         self.Sets.sort()
-        setData.sort()
+        setData = sorted(setData,key=lambda x: x[0])
         for i, set in enumerate(self.Sets):
             set.trim = setData[i][4]
             set.inaccessible = setData[i][5]
-            set.inaccessibleTrim = setData[i][6]
-            set.minDistance = setData[i][7]
+            set.minDistance = setData[i][6]
+            set.globalPathIDs = setData[i][7]
         
 
 
-def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
+def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoffs):
 
     rank = subDomain.ID
     size = subDomain.Domain.numSubDomains
+    grid = porousMedia.grid
 
     ### Initialize Classes
     sDMA = medialAxis(Domain = subDomain.Domain, subDomain = subDomain, grid = grid)
@@ -326,14 +445,14 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
     sDMA.MA,sDMA.haloPadNeigh,sDMA.haloPadNeighNot = mE.extractMedialAxis(connect)
     
     if connect:
-
+      
       ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
       tempMA,neighMA = sDMA.genMAArrays()
       sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.nodeTable = nodes.getNodeInfo(rank,tempMA,1,porousMedia.inlet,porousMedia.outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
       sDMA.MANodeType = nodes.updateMANeighborCount(neighMA,porousMedia,subDomain.Orientation,sDMA.nodeInfo)
       sDMA.MA = np.ascontiguousarray(tempMA)
       
-      sDMA.Sets,sDMA.setCount,sDMA.pathCount = sets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
+      sDMA.Sets,sDMA.setCount,sDMA.pathCount = medialSets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
       sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
 
       ### Connect the Sets into Paths
@@ -354,7 +473,8 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
       globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
       if size > 1:
           sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
-          sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
+          if rank == 0:
+            sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
 
           ### Generate Local <-> Global Connected Set IDs
           sDMA.genLocalGlobalConnectedSetsID(connectedSetData)
@@ -362,17 +482,20 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
           sDMA.genGlobalLocalConnectedSetsID(localGlobalConnectedSetIDs)
           sets.getGlobalConnectedSets(rank,size,subDomain,sDMA.Sets,connectedSetData,localGlobalConnectedSetIDs,sDMA.globalLocalConnectedSetID)
 
-
+      list_of_pathIDs = []
       for s in sDMA.Sets:
           s.getDistMinMax(distance)
+          if s.pathID not in list_of_pathIDs:
+            list_of_pathIDs.append(s.pathID)
 
       ### Trim Sets on Paths that are Dead Ends
       ### Trim sets that are not viable inlet-outlet pathways via subdomain level observation
-      sDMA.localTrimSets()
+      sDMA.localInaccessibleSets(cutoffs)
+      sDMA.localInaccessibleTrimSets(cutoffs)
 
 
       ### Collect only necessary Set object data for transfer to root
-      setData = sDMA.gatherSetInfo(rank)
+      setData = sDMA.gatherSetInfo(cutoffs,rank)
       ### Gather all lists into one on root
       setData = comm.gather(setData,root=0)
 
@@ -381,13 +504,16 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoff):
           listSetData = None
       if rank == 0:
           setData,cleanSetData = sDMA.globalCleanSets(setData)
-          cleanSetData = sDMA.globalTrimSets(cleanSetData)
-          cleanSetData = sDMA.globalInaccessibleSets(cleanSetData,cutoff)
-          cleanSetData = sDMA.globalInaccessibleTrimSets(cleanSetData)
+        #   cleanSetData = sDMA.globalTrimSets(cleanSetData)
+          cleanSetData = sDMA.globalInaccessibleTrimSets(cutoffs,cleanSetData)
+          sDMA.globalCollectPaths(cutoffs,cleanSetData)
           listSetData = sDMA.globalCreateListSetData(size,setData,cleanSetData)
       setData = comm.scatter(listSetData,root=0)
 
       sDMA.updateSetInfo(setData,rank)
-
+      for set in sDMA.Sets:
+        set.inaccessible = set.inaccessible[1]
+        set.trim = set.trim[1]
+        set.globalPathIDs = set.globalPathIDs[1]
 
     return sDMA

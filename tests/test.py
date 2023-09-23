@@ -48,7 +48,7 @@ def my_function():
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
-    file = './testDomains/10pack.out'
+    file = './testDomains/50pack.out'
     # file = './testDomains/membrane.dump.gz'
     # file = './testDomains/pack_sub.dump.gz'
     #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
@@ -60,7 +60,7 @@ def my_function():
     testAlgo = False
 
     pC = [140,160]
-
+    cutoffs = [0,0.006]
     startTime = time.time()
 
     # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
@@ -84,7 +84,7 @@ def my_function():
 
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
 
-    cutoff = 0.006
+    
     if drain:
         drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
 
@@ -93,7 +93,7 @@ def my_function():
 
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True,cutoff = cutoff)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True,cutoffs = cutoffs)
 
 
     endTime = time.time()
@@ -115,11 +115,12 @@ def my_function():
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
                 'trim' :'trim',
+                'inaccessible' :'inaccessible',
                 'boundary': 'boundary',
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'globalPathID':'globalPathID'}
+                'globalPathIDs':'globalPathIDs'}
     
     #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
     

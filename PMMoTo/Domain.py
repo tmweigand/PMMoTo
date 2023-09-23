@@ -100,3 +100,4 @@ class Domain(object):
 
         if error:
           communication.raiseError()
+    

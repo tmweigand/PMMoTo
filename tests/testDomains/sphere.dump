@@ -1,0 +1,10 @@
+ITEM: TIMESTEP
+0
+ITEM: NUMBER OF ATOMS
+1
+ITEM: BOX BOUNDS pp pp pp
+-100 100
+-100 100
+-100 100
+ITEM: ATOMS id mol type mass q x y z
+1 1 1 1 1 0 0 0

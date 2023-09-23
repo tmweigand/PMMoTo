@@ -8,7 +8,7 @@ from distutils.core import setup,Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 import Cython.Compiler.Options
-Cython.Compiler.Options.annotate = False
+Cython.Compiler.Options.annotate = True
 
 CYTHON_VERSION = '0.23.4'
 
@@ -106,6 +106,9 @@ ext_modules += [
     Extension("PMMoTo.medialAxis.medialExtraction", 
               ["PMMoTo/medialAxis/medialExtraction.pyx"],
               include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("PMMoTo.medialAxis.medialSets", 
+              ["PMMoTo/medialAxis/medialSets.pyx"],
+              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
     Extension("PMMoTo.medialAxis.medialExtractionFunctions", 
               ["PMMoTo/medialAxis/medialExtractionFunctions.pyx"],
               include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
@@ -123,7 +126,7 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/tmweigand/PMMoTo",
     cmdclass=cmdclass,
-    ext_modules=cythonize(ext_modules,annotate=False,compiler_directives={'language_level' : "3"}),
+    ext_modules=cythonize(ext_modules,annotate=True,compiler_directives={'language_level' : "3"}),
     include_dirs=numpy.get_include(),
     install_requires=[
         'numpy>=1.22.3',
@@ -133,6 +136,7 @@ setup(
         'edt>=2.3.1',
         'scipy>=1.9.3',
         'pyevtk>=1.5.0',
-        'pyvista>=0.39.1'
+        'pyvista>=0.39.1',
+        'quantimpy>=0.2.6'
     ]
 )
