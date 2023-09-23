@@ -33,13 +33,13 @@ class medialAxis(object):
         Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes
         """
         dim = self.MA.shape
-        tempMA = self.MA[self.haloPadNeigh[0]) : dim[0] - self.haloPadNeigh[1]),
-                         self.haloPadNeigh[2]) : dim[1] - self.haloPadNeigh[3]),
-                         self.haloPadNeigh[4]) : dim[2] - self.haloPadNeigh[5])]
+        tempMA = self.MA[self.haloPadNeigh[0] : dim[0] - self.haloPadNeigh[1],
+                         self.haloPadNeigh[2] : dim[1] - self.haloPadNeigh[3],
+                         self.haloPadNeigh[4] : dim[2] - self.haloPadNeigh[5]]
                 
-        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[0]), self.haloPadNeighNot[1])), 
-                                    (self.haloPadNeighNot[2]), self.haloPadNeighNot[3])), 
-                                    (self.haloPadNeighNot[4]), self.haloPadNeighNot[5])) ), 
+        neighMA = np.pad(self.MA, ( (self.haloPadNeighNot[0], self.haloPadNeighNot[1]), 
+                                    (self.haloPadNeighNot[2], self.haloPadNeighNot[3]), 
+                                    (self.haloPadNeighNot[4], self.haloPadNeighNot[5]) ), 
                                     'constant', constant_values=0)
         return tempMA,neighMA
 
