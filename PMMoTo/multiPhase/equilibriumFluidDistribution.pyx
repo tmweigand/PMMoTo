@@ -352,7 +352,7 @@ def calcOpenSW(sW,mP,interval,minSetSize):
 
     eqDist = equilibriumDistribution(mP)
  
-    save = True  #Save result?
+    save = False  #Save result?
     
     ## Make sure sw targets are ordered largest to smallest
     sW.sort(reverse=True)

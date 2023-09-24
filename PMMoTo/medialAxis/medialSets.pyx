@@ -4,106 +4,32 @@ import math
 import numpy as np
 cimport numpy as cnp
 cimport cython
-from libc.stdlib cimport malloc, free
-import pdb
-
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from ..dataOutput import communication
-from .. import distance
-from .. import morphology
-from .. import nodes
 from .. import sets
-import sys
 
-cdef int numDirections = 26
+from .. import Orientation
+cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
-directions = [[-1,-1,-1,  0, 13],  #0
-              [-1,-1, 1,  1, 12],  #1
-              [-1,-1, 0,  2, 14],  #2
-              [-1, 1,-1,  3, 10],  #3
-              [-1, 1, 1,  4,  9],  #4
-              [-1, 1, 0,  5, 11],  #5
-              [-1, 0,-1,  6, 16],  #6
-              [-1, 0, 1,  7, 15],  #7
-              [-1, 0, 0,  8, 17],  #8
-              [ 1,-1,-1,  9,  4],  #9
-              [ 1,-1, 1, 10,  3],  #10
-              [ 1,-1, 0, 11,  5],  #11
-              [ 1, 1,-1, 12,  1],  #12
-              [ 1, 1, 1, 13,  0],  #13
-              [ 1, 1, 0, 14,  2],  #14
-              [ 1, 0,-1, 15,  7],  #15
-              [ 1, 0, 1, 16,  6],  #16
-              [ 1, 0, 0, 17,  8],  #17
-              [ 0,-1,-1, 18, 22],  #18
-              [ 0,-1, 1, 19, 21],  #19
-              [ 0,-1, 0, 20, 23],  #20
-              [ 0, 1,-1, 21, 19],  #21
-              [ 0, 1, 1, 22, 18],  #22
-              [ 0, 1, 0, 23, 20],  #23
-              [ 0, 0,-1, 24, 25],  #24
-              [ 0, 0, 1, 25, 24]]  #25
-
-
-### Faces/Edges for Faces,Edges,Corners ###
-allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
-            [1, 2, 7, 8, 19, 20, 25],         # 1
-            [2, 8, 20],                       # 2
-            [3, 5, 6, 8, 21, 23, 24],         # 3
-            [4, 5, 7, 8, 22, 23, 25],         # 4
-            [5, 8, 23],                       # 5
-            [6, 8, 24],                       # 6
-            [7, 8, 25],                       # 7
-            [8],                              # 8
-            [9, 11, 15, 17, 18, 20, 24],      # 9
-            [10, 11, 16, 17, 19, 20, 25],     # 10
-            [11, 17, 20],                     # 11
-            [12, 14, 15, 17, 21, 23, 24],     # 12
-            [13, 14, 16, 17, 22, 23, 25],     # 13
-            [14, 17, 23],                     # 14
-            [15, 17, 24],                     # 15
-            [16, 17, 25],                     # 16
-            [17],                             # 17
-            [18, 20, 24],                     # 18
-            [19, 20, 25],                     # 19
-            [20],                             # 20
-            [21, 23, 24],                     # 21
-            [22, 23, 25],                     # 22
-            [23],                             # 23
-            [24],                             # 24
-            [25]]                             # 25
-
+cdef int numNeighbors
+directions = cOrient.directions
+numNeighbors = cOrient.numNeighbors
 
 class medialSet(sets.Set):
     def __init__(self, 
-                localID = 0, 
-                pathID = -1, 
-                inlet = False, 
-                outlet = False, 
-                boundary = False, 
-                numNodes = 0, 
-                numBoundaryNodes = 0, 
-                type = 0, 
-                connectedNodes = None):
-      self.inlet = inlet
-      self.outlet = outlet
-      self.boundary = boundary
-      self.numBoundaries  = 0
-      self.numNodes = numNodes
-      self.numBoundaryNodes = numBoundaryNodes
-      self.localID = localID
-      self.globalID = 0
+                 localID = 0, 
+                 inlet = False, 
+                 outlet = False, 
+                 boundary = False, 
+                 numNodes = 0, 
+                 numBoundaryNodes = 0,
+                 pathID = -1, 
+                 type = 0, 
+                 connectedNodes = None):
+      super().__init__(localID, inlet, outlet, boundary, numNodes, numBoundaryNodes)
       self.pathID = pathID
-      self.globalPathID = 0
-      self.nodes = np.zeros([numNodes,3],dtype=np.uint64) #i,j,k
-      self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
-      self.boundaryFaces = np.zeros(26,dtype=np.uint8)
-      self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)
       self.type = type
       self.connectedNodes = connectedNodes
-      self.connectedSets = []
-      self.globalConnectedSets = []
       self.trim = False
       self.inaccessible = 0
       self.inaccessibleTrim = 0
@@ -111,22 +37,6 @@ class medialSet(sets.Set):
       self.maxDistance = -math.inf
       self.minDistanceNode = -1
       self.maxDistanceNode = -1
-
-    def __lt__(self,obj):
-      return ((self.globalID) < (obj.globalID))
-
-    def setNodes(self,nodes):
-      self.nodes = nodes
-
-    def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
-        self.boundaryNodes = boundaryNodes[:,0]
-        self.boundaryNodeID = boundaryNodes[:,1:4]
-        for ID,bF in enumerate(boundaryFaces):
-          if bF:
-            faces = allFaces[ID]
-            for f in faces:
-              self.boundaryFaces[f] = 1
-        self.numBoundaries = np.sum(self.boundaryFaces)
 
     def getDistMinMax(self,data):
       for n in self.nodes:
@@ -489,3 +399,428 @@ def getConnectedMedialAxis(rank,grid,nodeInfo,nodeInfoIndex,nodeDirections,nodeD
 
 
   return Sets,setCount,pathCount
+
+
+def organizePathAndSets(subDomain,size,setData,paths):
+  """
+  Input: [matchedSets,setCount,boundSetCount,pathCount,boundPathCount]
+  Matched Sets contains:
+    [subDomain.ID,ownSetID,neighProc,neighSetID,Inlet,Outlet,ownPath,otherPath,globalSetID]]
+  Output: globalIndexStart,globalBoundarySetID
+
+  This function collects all of the matched Sets from all Procs. 
+  """
+
+  if subDomain.ID == 0:
+
+    #########################################
+    ### Gather Information from all Procs ###
+    #########################################
+    allMatchedSets = np.zeros([0,9],dtype=np.int64)
+    numSets = np.zeros(size,dtype=np.int64)
+    numBoundSets = np.zeros(size,dtype=np.int64)
+    numPaths = np.zeros(size,dtype=np.int64)
+    numBoundPaths = np.zeros(size,dtype=np.int64)
+    for n in range(0,size):
+      numSets[n] = setData[n][1]
+      numBoundSets[n] = setData[n][2]
+      numPaths[n] = setData[n][3]
+      numBoundPaths[n] = setData[n][4]
+      if numBoundSets[n] > 0:
+        allMatchedSets = np.append(allMatchedSets,setData[n][0],axis=0)
+    allMatchedSets = np.c_[allMatchedSets,-np.ones(allMatchedSets.shape[0],dtype=np.int64)]
+    #########################################
+
+
+    ############################
+    ### Propagate Inlet Info ###
+    ############################
+    for s in allMatchedSets:
+        if s[4] == 1:
+            indexs = np.where( (allMatchedSets[:,0]==s[2])
+                             & (allMatchedSets[:,1]==s[3]))[0].tolist()
+            while indexs:
+                ind = indexs.pop()
+                addIndexs  = np.where( (allMatchedSets[:,0]==allMatchedSets[ind,2])
+                                     & (allMatchedSets[:,1]==allMatchedSets[ind,3])
+                                     & (allMatchedSets[:,4]==0) )[0].tolist()
+                if addIndexs:
+                    indexs.extend(addIndexs)
+                allMatchedSets[ind,4] = 1
+    ############################
+
+    #############################
+    ### Propagate Outlet Info ###
+    #############################
+    for s in allMatchedSets:
+        if s[5] == 1:
+          indexs = np.where( (allMatchedSets[:,0]==s[2])
+                           & (allMatchedSets[:,1]==s[3]))[0].tolist()
+          while indexs:
+            ind = indexs.pop()
+            addIndexs  = np.where( (allMatchedSets[:,0]==allMatchedSets[ind,2])
+                                 & (allMatchedSets[:,1]==allMatchedSets[ind,3])
+                                 & (allMatchedSets[:,5]==0) )[0].tolist()
+            if addIndexs:
+              indexs.extend(addIndexs)
+            allMatchedSets[ind,5] = 1
+    #############################
+
+    #############################
+    ### Generate globalSetID ###
+    #############################
+    cID = 0
+    for s in allMatchedSets:
+      if s[9] == -1:
+        s[9] = cID
+        indexs = np.where( (allMatchedSets[:,0]==s[2])
+                        & (allMatchedSets[:,1]==s[3]))[0].tolist()
+        while indexs:
+          ind = indexs.pop()
+          addIndexs  = np.where( (allMatchedSets[:,0]==allMatchedSets[ind,2])
+                                & (allMatchedSets[:,1]==allMatchedSets[ind,3])
+                                & (allMatchedSets[:,9] == -1) )[0].tolist()
+          for aI in addIndexs:
+            if aI not in indexs:
+              indexs.append(aI)
+          allMatchedSets[ind,9] = cID
+        cID = cID + 1
+    #############################
+
+    ####################################################
+    ### Get Unique Entries and Inlet/Outlet for Sets ###
+    ####################################################
+    globalSetList = []
+    globalInletList = []
+    globalOutletList = []
+    globalIDList = []
+    for s in allMatchedSets:
+        if [s[0],s[1]] not in globalSetList:
+            globalSetList.append([s[0],s[1]])
+            globalInletList.append(s[4])
+            globalOutletList.append(s[5])
+            globalIDList.append(s[9])
+        else:
+            ind = globalSetList.index([s[0],s[1]])
+            globalInletList[ind] = s[4]
+            globalOutletList[ind] = s[5]
+            globalIDList[ind] = s[9]
+    globalSetID = np.c_[np.asarray(globalSetList),
+                        np.asarray(globalIDList,dtype=np.int64),
+                        np.asarray(globalInletList),
+                        np.asarray(globalOutletList)]
+    ####################################################
+
+
+    ###########################################
+    ### Prepare Data to send to other procs ###
+    ###########################################
+    localSetStart = np.zeros(size,dtype=np.int64)
+    globalSetScatter = globalSetID
+    localSetStart[0] = cID
+    for n in range(1,size):
+      localSetStart[n] = localSetStart[n-1] + numSets[n-1] - numBoundSets[n-1]
+
+    #####################################################
+    ### Get Unique Entries and Inlet/Outlet for Paths ###
+    #####################################################
+    globalPathList = []
+    globalInletList = []
+    globalOutletList = []
+    for s in allMatchedSets:
+      if [s[0],s[7]] not in globalPathList:
+        globalPathList.append([s[0],s[7]])
+        globalInletList.append(s[4])
+        globalOutletList.append(s[5])
+      else:
+        ind = globalPathList.index([s[0],s[7]])
+        globalInletList[ind] = max(s[4],globalInletList[ind])
+        globalOutletList[ind] = max(s[5],globalOutletList[ind])
+    globalPathID = np.c_[np.asarray(globalPathList),-np.ones(len(globalPathList)),np.asarray(globalInletList),np.asarray(globalOutletList)]
+    #####################################################
+
+
+    ############################################
+    ### Create Dictionary for Sets and Paths ###
+    ############################################
+    setPathDict = {}
+    for c,s in enumerate(allMatchedSets):
+
+      if s[0] not in setPathDict.keys():
+        setPathDict[s[0]] = {'Paths':{}}
+      if s[2] not in setPathDict.keys():
+        setPathDict[s[2]] = {'Paths':{}}
+
+      own = setPathDict[s[0]]['Paths']
+      other = setPathDict[s[2]]['Paths']
+
+      if s[7] not in own.keys():
+        own[s[7]] = {'Neigh':[[s[2],s[8]]],'Inlet':False,'Outlet':False}
+      else:
+        if [s[2],s[8]] not in own[s[7]]['Neigh']:
+          own[s[7]]['Neigh'].append([s[2],s[8]])
+
+      if s[8] not in other.keys():
+        other[s[8]] =  {'Neigh':[[s[0],s[7]]],'Inlet':False,'Outlet':False}
+      else:
+        if [s[0],s[7]] not in other[s[8]]['Neigh']:
+          other[s[8]]['Neigh'].append([s[0],s[7]])
+
+      if not own[s[7]]['Inlet']:
+        own[s[7]]['Inlet'] = s[4]
+      if not own[s[7]]['Outlet']:
+        own[s[7]]['Outlet'] = s[5]
+      if not other[s[8]]['Inlet']:
+        other[s[8]]['Inlet'] = s[4]
+      if not other[s[8]]['Outlet']:
+        other[s[8]]['Outlet'] = s[5]
+    ############################################
+
+
+    ##################################################
+    ### Loop through All Paths and Gather all Sets ###
+    ##################################################
+    cID = 0
+    for proc in setPathDict.keys():
+      for path in setPathDict[proc]['Paths'].keys():
+        ind = np.where( (globalPathID[:,0]==proc) & (globalPathID[:,1]==path))
+        inlet = globalPathID[ind,3]
+        outlet = globalPathID[ind,4]
+
+        if (globalPathID[ind,2] < 0):
+          globalPathID[ind,2] = cID
+
+          visited = [[proc,path]]
+          queue = setPathDict[proc]['Paths'][path]['Neigh']
+          while queue:
+            cPP = queue.pop(-1)
+            indC =  np.where( (globalPathID[:,0]==cPP[0]) & (globalPathID[:,1]==cPP[1]))
+
+            if (globalPathID[indC,2] < 0):
+              globalPathID[indC,2] = cID
+            else:
+              print("HMMM",globalPathID[indC,2],cID)
+
+            if not inlet:
+              inlet = globalPathID[indC,3]
+            if not outlet:
+              outlet = globalPathID[indC,4]
+
+            for more in setPathDict[cPP[0]]['Paths'][cPP[1]]['Neigh']:
+              if more not in queue and more not in visited:
+                queue.append(more)
+            visited.append(cPP)
+
+          for v in visited:
+            indV = np.where( (globalPathID[:,0]==v[0]) & (globalPathID[:,1]==v[1]))
+            globalPathID[indV,3] = inlet
+            globalPathID[indV,4] = outlet
+
+          cID += 1
+    ##################################################
+
+
+    ###########################################
+    ### Generate Local and Global Numbering ###
+    ###########################################
+    localPathStart = np.zeros(size,dtype=np.int64)
+    globalPathScatter = [globalPathID[np.where(globalPathID[:,0]==0)]]
+    localPathStart[0] = cID
+    for n in range(1,size):
+      localPathStart[n] = localPathStart[n-1] + numPaths[n-1] - numBoundPaths[n-1]
+      globalPathScatter.append(globalPathID[np.where(globalPathID[:,0]==n)])
+    ###########################################
+
+  else:
+      localSetStart = None
+      globalSetScatter = None
+      localPathStart = None
+      globalPathScatter = None
+
+
+  globalIndexStart = comm.scatter(localSetStart, root=0)
+  globalBoundarySetID = comm.bcast(globalSetScatter, root=0)
+  globalPathIndexStart = comm.scatter(localPathStart, root=0)
+  globalPathBoundarySetID = comm.scatter(globalPathScatter, root=0)
+
+  return globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID
+
+
+
+
+def getBoundarySets(Sets,subDomain):
+  """
+  Get the Sets the are on a valid subDomain Boundary.
+  Organize data so sending procID, boundary nodes.
+  """
+
+  nI = subDomain.subID[0] + 1  # PLUS 1 because lookUpID is Padded
+  nJ = subDomain.subID[1] + 1  # PLUS 1 because lookUpID is Padded
+  nK = subDomain.subID[2] + 1  # PLUS 1 because lookUpID is Padded
+
+  boundaryData = {subDomain.ID: {'NeighborProcID':{}}}
+
+  bSetCount = 0
+  boundarySets = []
+
+  for set in Sets:
+    if set.boundary:
+      bSetCount += 1
+      boundarySets.append(set)
+
+  for bSet in boundarySets[:]:
+    for face in range(0,numNeighbors):
+      if bSet.boundaryFaces[face] > 0:
+
+        i = directions[face][0]
+        j = directions[face][1]
+        k = directions[face][2]
+
+        neighborProc = subDomain.lookUpID[i+nI,j+nJ,k+nK]
+
+        if neighborProc < 0:
+          bSet.boundaryFaces[face] = 0
+        else:
+          if neighborProc not in boundaryData[subDomain.ID]['NeighborProcID'].keys():
+            boundaryData[subDomain.ID]['NeighborProcID'][neighborProc] = {'setID':{}}
+          bD = boundaryData[subDomain.ID]['NeighborProcID'][neighborProc]
+          bD['setID'][bSet.localID] = {'boundaryNodes':bSet.boundaryNodes,
+                                         'numNodes':bSet.numNodes,
+                                         'ProcID':subDomain.ID,
+                                         'nodes':bSet.nodes,
+                                         'inlet':bSet.inlet,
+                                         'outlet':bSet.outlet,
+                                         'pathID':bSet.pathID,
+                                         'connectedSets':bSet.connectedSets}
+
+    if (np.sum(bSet.boundaryFaces) == 0):
+      boundarySets.remove(bSet)
+      bSet.boundary = False
+
+  boundSetCount = len(boundarySets)
+  return boundaryData,boundarySets,boundSetCount
+
+
+
+def matchProcessorBoundarySets(subDomain,boundaryData):
+  """
+  Loop through own and neighbor procs and match by boundary nodes
+  Input:
+  Output: [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,otherNodes,ownPath,otherPath]
+  """
+  otherBD = {}
+  matchedSets = []
+  matchedSetsConnections = []
+  error = False
+
+  ####################################################################
+  ### Sort Out Own Proc Bondary Data and Other Procs Boundary Data ###
+  ####################################################################
+  countOwnSets = 0
+  countOtherSets = 0
+  for procID in boundaryData.keys():
+    if procID == subDomain.ID:
+      ownBD = boundaryData[procID]
+      for nbProc in ownBD['NeighborProcID'].keys():
+        for ownSet in ownBD['NeighborProcID'][nbProc]['setID'].keys():
+          countOwnSets += 1
+
+    else:
+      otherBD[procID] = boundaryData[procID]
+      for _ in otherBD[procID]['NeighborProcID'][procID]['setID'].keys():
+        countOtherSets += 1
+  ####################################################################
+
+  ###########################################################
+  ### Loop through own Proc Boundary Data to Find a Match ###
+  ###########################################################
+  c = 0
+  for nbProc in ownBD['NeighborProcID'].keys():
+    ownBD_NP =  ownBD['NeighborProcID'][nbProc]
+    for ownSet in ownBD_NP['setID'].keys():
+      ownBD_Set = ownBD_NP['setID'][ownSet]
+
+      ownNumNodes = ownBD_Set['numNodes']
+      ownBNodes = ownBD_Set['boundaryNodes']
+      ownInlet  = ownBD_Set['inlet']
+      ownOutlet = ownBD_Set['outlet']
+      ownPath = ownBD_Set['pathID']
+      ownConnections = ownBD_Set['connectedSets']
+
+      otherBD_NP = otherBD[nbProc]['NeighborProcID'][nbProc]
+      otherSetKeys = list(otherBD_NP['setID'].keys())
+      numOtherSetKeys = len(otherSetKeys)
+
+      testSetKey = 0
+      matchedOut = False
+      while testSetKey < numOtherSetKeys:
+        inlet = False; outlet = False
+
+        otherNumNodes = otherBD_NP['setID'][otherSetKeys[testSetKey]]['numNodes']
+        otherBNodes = otherBD_NP['setID'][otherSetKeys[testSetKey]]['boundaryNodes']
+        otherInlet  = otherBD_NP['setID'][otherSetKeys[testSetKey]]['inlet']
+        otherOutlet = otherBD_NP['setID'][otherSetKeys[testSetKey]]['outlet']
+        otherPath = otherBD_NP['setID'][otherSetKeys[testSetKey]]['pathID']
+        otherConnections = otherBD_NP['setID'][otherSetKeys[testSetKey]]['connectedSets']
+
+        matchedBNodes = len(set(ownBNodes).intersection(otherBNodes))
+        if matchedBNodes > 0:
+          if (ownInlet or otherInlet):
+            inlet = True
+          if (ownOutlet or otherOutlet):
+            outlet = True
+
+          ### Get numGlobalNodes
+          if subDomain.ID < nbProc:
+            setNodes = ownNumNodes
+          else:
+            setNodes = ownNumNodes - matchedBNodes
+          
+          matchedSets.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,setNodes,ownPath,otherPath])
+          matchedSetsConnections.append([subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections])
+          
+          matchedOut = True
+        testSetKey += 1
+
+      if not matchedOut:
+        error = True 
+        print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownBNodes)
+        #print("Set Not Matched! Hmmm",subDomain.ID,nbProc,ownSet,ownNodes,ownBD_Set['nodes'])
+
+
+  return matchedSets,matchedSetsConnections,error
+
+
+
+def updateSetPathID(rank,Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID):
+  """
+  globalBoundarySetID = [subDomain.ID,setLocalID,globalID,Inlet,Outlet]
+  globalBoundaryPathID = [subDomain.ID,setLocalID,globalID,Inlet,Outlet]
+  """
+  gBSetID = globalBoundarySetID[np.where(globalBoundarySetID[:,0]==rank)]
+  c = 0; c2 = 0
+  for s in Sets:
+    if s.boundary == True:
+      indS = np.where(gBSetID[:,1]==s.localID)[0][0]
+      s.globalID = int(gBSetID[indS,2])
+      s.inlet = bool(gBSetID[indS,3])
+      s.outlet = bool(gBSetID[indS,4])
+
+      indP = np.where(globalPathBoundarySetID[:,1]==s.pathID)[0][0]
+      s.pathID = globalPathBoundarySetID[indP,2]
+    else:
+      s.globalID = globalIndexStart + c
+      c = c + 1
+      indP = np.where(globalPathBoundarySetID[:,1]==s.pathID)[0]
+      if len(indP)==1:
+        indP = indP[0]
+        s.pathID = globalPathBoundarySetID[indP,2]
+      else:
+        newID = globalPathIndexStart + c2
+        ## Check if globalPathBoundarySetID exists to correctly initialize 2D append: see issue 20
+        if globalPathBoundarySetID.size == 0:
+          globalPathBoundarySetID = np.array([[rank,s.pathID,newID,s.inlet,s.outlet]])
+        else:
+          globalPathBoundarySetID = np.append(globalPathBoundarySetID,[[rank,s.pathID,newID,s.inlet,s.outlet]],axis=0)
+        s.pathID = newID
+        c2 = c2 + 1

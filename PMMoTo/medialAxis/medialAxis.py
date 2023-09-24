@@ -453,7 +453,7 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoffs):
       sDMA.MA = np.ascontiguousarray(tempMA)
       
       sDMA.Sets,sDMA.setCount,sDMA.pathCount = medialSets.getConnectedMedialAxis(rank,sDMA.MA,sDMA.nodeInfo,sDMA.nodeInfoIndex,sDMA.nodeDirections,sDMA.nodeDirectionsIndex,sDMA.MANodeType)
-      sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = sets.getBoundarySets(sDMA.Sets,sDMA.setCount,subDomain)
+      sDMA.boundaryData,sDMA.boundarySets,sDMA.boundSetCount = medialSets.getBoundarySets(sDMA.Sets,subDomain)
 
       ### Connect the Sets into Paths
       sDMA.collectPaths()
@@ -462,7 +462,7 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoffs):
       ### matchedSets = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],inlet,outlet,ownPath,otherPath]
       ### matchedSetsConnections = [subDomain.ID,ownSet,nbProc,otherSetKeys[testSetKey],ownConnections,otherConnections]
       sDMA.boundaryData = sets.setCOMM(subDomain.Orientation,subDomain,sDMA.boundaryData)
-      sDMA.matchedSets,sDMA.matchedSetsConnections,error = sets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData,True)
+      sDMA.matchedSets,sDMA.matchedSetsConnections,error = medialSets.matchProcessorBoundarySets(subDomain,sDMA.boundaryData)
       if error:
           communication.raiseError()
       setData = [sDMA.matchedSets,sDMA.setCount,sDMA.boundSetCount,sDMA.pathCount,sDMA.boundPathCount]
@@ -470,9 +470,9 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect,cutoffs):
 
       ### Gather Connected Sets and Update Path and Set Infomation (ID,Inlet/Outlet)
       connectedSetData =  comm.allgather(sDMA.matchedSetsConnections)
-      globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = sets.organizePathAndSets(subDomain,size,setData,True)
+      globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID = medialSets.organizePathAndSets(subDomain,size,setData,True)
       if size > 1:
-          sets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
+          medialSets.updateSetPathID(rank,sDMA.Sets,globalIndexStart,globalBoundarySetID,globalPathIndexStart,globalPathBoundarySetID)
           if rank == 0:
             sDMA.updatePaths(globalPathIndexStart,globalPathBoundarySetID)
 

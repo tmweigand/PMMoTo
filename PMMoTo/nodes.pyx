@@ -1,59 +1,28 @@
-#### One in getConnectedSets
 # cython: profile=True
 # cython: linetrace=True
 import math
 import numpy as np
 cimport numpy as cnp
 cimport cython
-from libc.stdlib cimport malloc, free
-import pdb
-
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from . import communication
-from . import distance
-from . import morphology
-import sys
 
-cdef int numDirections = 26
+
+from . import Orientation
+cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
-directions =  [[-1,-1,-1,  0, 13],
-              [-1,-1, 1,  1, 12],
-              [-1,-1, 0,  2, 14],
-              [-1, 1,-1,  3, 10],
-              [-1, 1, 1,  4,  9],
-              [-1, 1, 0,  5, 11],
-              [-1, 0,-1,  6, 16],
-              [-1, 0, 1,  7, 15],
-              [-1, 0, 0,  8, 17],
-              [ 1,-1,-1,  9,  4],
-              [ 1,-1, 1, 10,  3],
-              [ 1,-1, 0, 11,  5],
-              [ 1, 1,-1, 12,  1],
-              [ 1, 1, 1, 13,  0],
-              [ 1, 1, 0, 14,  2],
-              [ 1, 0,-1, 15,  7],
-              [ 1, 0, 1, 16,  6],
-              [ 1, 0, 0, 17,  8],
-              [ 0,-1,-1, 18, 22],
-              [ 0,-1, 1, 19, 21],
-              [ 0,-1, 0, 20, 23],
-              [ 0, 1,-1, 21, 19],
-              [ 0, 1, 1, 22, 18],
-              [ 0, 1, 0, 23, 20],
-              [ 0, 0,-1, 24, 25],
-              [ 0, 0, 1, 25, 24]]
-
+cdef int numNeighbors
+directions = cOrient.directions
+numNeighbors = cOrient.numNeighbors
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 cdef int getBoundaryIDReference(cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
   """
-  Method for Determining which type of Boundary and ID
-  See direction array for definitions of faces, edges, and corners
+  Determining boundary ID
 
-  Input: boundaryID[3] corresponding to [x,y,z] and values can be [-1,0,1]
-  Output: ID corresponding to face,edge,corner
+  Input: boundaryID[3] corresponding to [x,y,z] and values range from [-1,0,1]
+  Output: boundaryID
   """
 
   cdef int cI,cJ,cK
@@ -156,7 +125,6 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   dN0 = Domain.nodes[0]
   dN1 = Domain.nodes[1]
   dN2 = Domain.nodes[2]
-
 
   # Loop through Boundary Faces to get nodeInfo and nodeIndex
   c = 0
@@ -261,7 +229,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
         for k in range(kMin,kMax):
           if _ind[i+1,j+1,k+1] == _phase:
             availDirection = 0
-            for d in range(0,numDirections):
+            for d in range(0,numNeighbors):
               ii = directions[d][0]
               jj = directions[d][1]
               kk = directions[d][2]
@@ -286,7 +254,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
      for k in range(kMin,kMax):
        if _ind[i+1,j+1,k+1] == _phase:
          availDirection = 0
-         for d in range(0,numDirections):
+         for d in range(0,numNeighbors):
            ii = directions[d][0]
            jj = directions[d][1]
            kk = directions[d][2]
@@ -340,7 +308,7 @@ def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):
        for k in range(kMin,kMax):
          if _ind[i+1,j+1,k+1] == 1:
            availDirection = 0
-           for d in range(0,numDirections):
+           for d in range(0,numNeighbors):
              ii = directions[d][0]
              jj = directions[d][1]
              kk = directions[d][2]

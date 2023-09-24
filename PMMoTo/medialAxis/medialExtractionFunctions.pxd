@@ -4,7 +4,6 @@ import numpy as np
 from numpy cimport npy_intp, npy_int8, npy_uint8, ndarray, npy_float32
 from libcpp cimport bool
 
-
 ctypedef npy_uint8 pixel_type
 
 # struct to hold 3D coordinates
