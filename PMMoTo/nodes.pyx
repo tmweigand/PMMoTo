@@ -351,29 +351,3 @@ def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):
            c = c + 1
 
   return maNodeType
-
-
-def getAllNodeInfo(cNode,cNodeIndex,Node,numBNodes,setCount,sBound,sInlet,sOutlet):
-  """
-  Get Node Info for Medial Axis
-  """
-
-  Node[0] = cNodeIndex[0]  #i
-  Node[1] = cNodeIndex[1]  #j
-  Node[2] = cNodeIndex[2]  #k
-  if cNode[0]:  #Boundary
-    sBound = True
-    numBNodes = numBNodes + 1
-    Node[3] = cNode[3]  #BoundaryID
-    Node[4] = cNodeIndex[3] #Global Index
-    if cNode[1]:  #Inlet
-      sInlet = True
-    if cNode[2]:  #Outlet
-      sOutlet = True
-
-  Node[5] = cNodeIndex[4]  #global i
-  Node[6] = cNodeIndex[5]  #global j
-  Node[7] = cNodeIndex[6]  #global k
-  Node[8] = setCount
-
-  return numBNodes,sBound,sInlet,sOutlet

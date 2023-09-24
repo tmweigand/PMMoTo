@@ -115,24 +115,18 @@ class Set(object):
     def __lt__(self,obj):
       return ((self.globalID) < (obj.globalID))
 
-    def getNodes(self,n,i,j,k):
-      self.nodes[n,0] = i
-      self.nodes[n,1] = j
-      self.nodes[n,2] = k
+    def setNodes(self,nodes):
+      self.nodes = nodes
 
-    def getAllBoundaryFaces(self,ID):
-      faces = allFaces[ID]
-      for f in faces:
-        self.boundaryFaces[f] = 1
-      self.numBoundaries = np.sum(self.boundaryFaces)
-
-    def getBoundaryNodes(self,n,ID,ID2,i,j,k):
-      self.boundaryNodes[n] = ID
-      self.boundaryFaces[ID2] = 1
-      self.getAllBoundaryFaces(ID2)
-      self.boundaryNodeID[n,0] = i
-      self.boundaryNodeID[n,1] = j
-      self.boundaryNodeID[n,2] = k
+    def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
+        self.boundaryNodes = boundaryNodes[:,0]
+        self.boundaryNodeID = boundaryNodes[:,1:4]
+        for ID,bF in enumerate(boundaryFaces):
+          if bF:
+            faces = allFaces[ID]
+            for f in faces:
+              self.boundaryFaces[f] = 1
+        self.numBoundaries = np.sum(self.boundaryFaces)
 
     def getDistMinMax(self,data):
       for n in self.nodes:
@@ -142,8 +136,6 @@ class Set(object):
         if data[n[0],n[1],n[2]] > self.maxDistance:
           self.maxDistance = data[n[0],n[1],n[2]]
           self.maxDistanceNode = n
-
-
 
 
 def getBoundarySets(Sets,setCount,subDomain):
@@ -298,7 +290,6 @@ def matchProcessorBoundarySets(subDomain,boundaryData,paths):
 
 
   return matchedSets,matchedSetsConnections,error
-
 
 
 def organizePathAndSets(subDomain,size,setData,paths):
@@ -836,6 +827,77 @@ def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,g
                   Sets[ll].globalConnectedSets.append(mID)
 
 
+def getNodeInfo(cNode,numBNodes):
+  """
+  Get Node Info for Medial Axis
+  """
+
+  if cNode[0]:  #Boundary
+    sBound = True
+    numBNodes = numBNodes + 1
+    if cNode[1]:  #Inlet
+      sInlet = True
+    if cNode[2]:  #Outlet
+      sOutlet = True
+
+  return numBNodes,sBound,sInlet,sOutlet
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+def getSetNodes(set,nNodes,indexMatch,nodeInfo,nodeInfoIndex):
+  """
+    Add all the nodes and boundaryNodes to the Set class.
+    Match the index from MA extraction to nodeIndex
+    If interior:
+        i,j,k
+    If boundaryID add to boundary nodes
+        globalIndex,boundaryID,globalI,globalJ,globalK
+  """
+  cdef cnp.uint64_t [:] _indexMatch
+  _indexMatch = indexMatch
+
+  cdef cnp.int8_t [:,:] _nodeInfo
+  _nodeInfo = nodeInfo
+
+  cdef cnp.uint64_t [:,:] _nodeInfoIndex
+  _nodeInfoIndex = nodeInfoIndex
+
+  nodes = np.zeros([set.numNodes,3],dtype=np.uint64)
+  cdef cnp.uint64_t [:,::1] _nodes
+  _nodes = nodes
+
+  bNodes = np.zeros([set.numBoundaryNodes,4],dtype=np.uint64)
+  cdef cnp.uint64_t [:,::1] _bNodes
+  _bNodes = bNodes
+
+  boundaryFaces = np.zeros(26,dtype=np.uint8)
+  cdef cnp.uint8_t [:] _boundaryFaces
+  _boundaryFaces = boundaryFaces
+
+  cdef int bN,n,ind,cIndex,inNodes,setNodes
+
+  setNodes = set.numNodes
+  inNodes = nNodes
+  bN = 0
+  for n in range(0,setNodes):
+    ind = inNodes - setNodes + n
+    cIndex = _indexMatch[ind]
+    _nodes[n,0] = _nodeInfoIndex[cIndex,0]  #i
+    _nodes[n,1] = _nodeInfoIndex[cIndex,1]  #j
+    _nodes[n,2] = _nodeInfoIndex[cIndex,2]  #k
+
+    if _nodeInfo[cIndex,0]:
+        _bNodes[bN,0] = _nodeInfoIndex[cIndex,3] #globalIndex
+        _bNodes[bN,1] = _nodeInfoIndex[cIndex,4] #globalI
+        _bNodes[bN,2] = _nodeInfoIndex[cIndex,5] #globalJ
+        _bNodes[bN,3] = _nodeInfoIndex[cIndex,6] #globalK
+        _boundaryFaces[ _nodeInfo[cIndex,3] ] = 1
+        bN = bN + 1
+
+  set.setNodes(nodes)
+  set.setBoundaryNodes(bNodes,boundaryFaces)
+
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex):
@@ -844,26 +906,17 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
   1. Inlet
   2. Outlet
   """
-  cdef int node,ID,nodeValue,d,oppDir,avail,n,index,bN
-  cdef int numNodes,numSetNodes,numNodesCount,numBoundNodes,setCount
+  cdef int node,ID,nodeValue,d,oppDir
+  cdef int numNodes,numSetNodes,numNodesPhase,setCount
 
-  numNodes = np.count_nonzero(grid==phaseID)
+  numNodesPhase = np.count_nonzero(grid==phaseID)
 
-  nodeIndex = np.zeros([numNodes,9],dtype=np.uint64)
-  cdef cnp.uint64_t [:,::1] _nodeIndex
-  _nodeIndex = nodeIndex
-  for i in range(numNodes):
-    _nodeIndex[i,3] = 50 # Only Use <25 so okay flag
-
-  nodeSetDict = np.zeros(numNodes,dtype=np.uint64)
-  cdef cnp.uint64_t [:] _nodeSetDict
-  _nodeSetDict = nodeSetDict
+  indexMatch = np.zeros(numNodesPhase,dtype=np.uint64)
+  cdef cnp.uint64_t [:] _indexMatch
+  _indexMatch = indexMatch
 
   cdef cnp.int8_t [:,:] _nodeInfo
   _nodeInfo = nodeInfo
-
-  cdef cnp.uint64_t [:,:] _nodeInfoIndex
-  _nodeInfoIndex = nodeInfoIndex
 
   cdef cnp.uint8_t [:,:] _nodeDirections
   _nodeDirections = nodeDirections
@@ -872,10 +925,8 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
   _nodeDirectionsIndex = nodeDirectionsIndex
 
   cdef cnp.int8_t [:] cNode
-  cdef cnp.uint64_t [:] cNodeIndex
-  cdef cnp.uint64_t [:] NodeInfo
 
-  numNodesCount = 0
+  numNodes = 0
   numSetNodes = 0
   numBNodes = 0
   setCount = 0
@@ -885,7 +936,7 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
   ##############################
   ### Loop Through All Nodes ###
   ##############################
-  for node in range(0,numNodes):
+  for node in range(0,numNodesPhase):
 
     if _nodeInfo[node,6] == 1:  #Visited
       pass
@@ -905,13 +956,11 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
           pass
         else:
           cNode = _nodeInfo[ID]
-          cNodeIndex = _nodeInfoIndex[ID,:]
-          _nodeSetDict[ID] = setCount
-          NodeInfo = _nodeIndex[numNodesCount,:]
-          numBNodes,sBound,sInlet,sOutlet = nodes.getAllNodeInfo(cNode,cNodeIndex,NodeInfo,numBNodes,setCount,sBound,sInlet,sOutlet)
+          _indexMatch[numNodes] = ID
+          numBNodes,sBound,sInlet,sOutlet = getNodeInfo(cNode,numBNodes)
 
           numSetNodes +=  1
-          numNodesCount += 1
+          numNodes += 1
         ########################
 
 
@@ -958,28 +1007,13 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
                                   numNodes = numSetNodes,
                                   numBoundaryNodes = numBNodes))
 
-        getSetNodes(Sets[setCount],numNodesCount,_nodeIndex)
+        getSetNodes(Sets[setCount],numNodes,indexMatch,nodeInfo,nodeInfoIndex)
         setCount = setCount + 1
 
       numSetNodes = 0
       numBNodes = 0
-      sInlet = False
-      sOutlet = False
-      sBound = False
-
 
   return Sets,setCount
-
-def getSetNodes(set,nNodes,_nI):
-  cdef int bN,n,ind
-  bN =  0
-  for n in range(0,set.numNodes):
-    ind = nNodes - set.numNodes + n
-    set.getNodes(n,_nI[ind,0],_nI[ind,1],_nI[ind,2])
-    if _nI[ind,3] < 50:
-      set.getBoundaryNodes(bN,_nI[ind,4],_nI[ind,3],_nI[ind,5],_nI[ind,6],_nI[ind,7])
-      bN = bN + 1
-
 
 def collectSets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
 

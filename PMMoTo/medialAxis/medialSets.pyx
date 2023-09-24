@@ -121,14 +121,12 @@ class medialSet(sets.Set):
     def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
         self.boundaryNodes = boundaryNodes[:,0]
         self.boundaryNodeID = boundaryNodes[:,1:4]
-        for bF in boundaryFaces:
-            self.getAllBoundaryFaces(bF)
-
-    def getAllBoundaryFaces(self,ID):
-      faces = allFaces[ID]
-      for f in faces:
-        self.boundaryFaces[f] = 1
-      self.numBoundaries = np.sum(self.boundaryFaces)
+        for ID,bF in enumerate(boundaryFaces):
+          if bF:
+            faces = allFaces[ID]
+            for f in faces:
+              self.boundaryFaces[f] = 1
+        self.numBoundaries = np.sum(self.boundaryFaces)
 
     def getDistMinMax(self,data):
       for n in self.nodes:
