@@ -1,6 +1,6 @@
 # cython: profile=True
 # cython: linetrace=True
-import math
+
 import numpy as np
 cimport numpy as cnp
 cimport cython
@@ -40,6 +40,7 @@ class Set(object):
       self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)
       self.connectedSets = []
       self.globalConnectedSets = []
+      
 
     def __lt__(self,obj):
       return ((self.globalID) < (obj.globalID))
@@ -48,6 +49,7 @@ class Set(object):
       self.nodes = nodes
 
     def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
+        self.boundary = True
         self.boundaryNodes = boundaryNodes[:,0]
         self.boundaryNodeID = boundaryNodes[:,1:4]
         Orient = Orientation.Orientation()
@@ -359,49 +361,6 @@ def updateSetID(rank,Sets,globalIndexStart,globalBoundarySetID):
       s.globalID = globalIndexStart + c
       c = c + 1
 
-def setCOMM(Orientation,subDomain,data):
-  """
-  Transmit data to Neighboring Processors
-  """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = communication.subDomainComm(Orientation,subDomain,data[subDomain.ID]['NeighborProcID'])
-
-  #############
-  ### Faces ###
-  #############
-  for fIndex in Orientation.faces:
-    neigh = subDomain.neighborF[fIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvFace[fIndex]
-
-  #############
-  ### Edges ###
-  #############
-  for eIndex in Orientation.edges:
-    neigh = subDomain.neighborE[eIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvEdge[eIndex]
-
-  ###############
-  ### Corners ###
-  ###############
-  for cIndex in Orientation.corners:
-    neigh = subDomain.neighborC[cIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvCorner[cIndex]
-
-  return data
-
-
-
 def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,globalLocalIDs):
   """
   Update global IDS and use mathedSets to get Global Connections
@@ -449,7 +408,7 @@ def getGlobalConnectedSets(rank,size,subDomain,Sets,matchedSets,localGlobalIDs,g
                   Sets[ll].globalConnectedSets.append(mID)
 
 
-def getNodeInfo(cNode,numBNodes):
+def getNodeInfo(cNode,numBNodes,sBound,sInlet,sOutlet):
   """
   Get Node Info for Medial Axis
   """
@@ -522,7 +481,7 @@ def getSetNodes(set,nNodes,indexMatch,nodeInfo,nodeInfoIndex):
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex):
+def getConnectedSets(grid,phaseID,Nodes):
   """
   Connects the NxNxN (or NXN) nodes into connected sets.
   1. Inlet
@@ -538,13 +497,16 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
   _indexMatch = indexMatch
 
   cdef cnp.int8_t [:,:] _nodeInfo
-  _nodeInfo = nodeInfo
+  _nodeInfo = Nodes[0]
+
+  cdef cnp.uint64_t [:,:] _nodeInfoIndex
+  _nodeInfoIndex = Nodes[1]
 
   cdef cnp.uint8_t [:,:] _nodeDirections
-  _nodeDirections = nodeDirections
+  _nodeDirections = Nodes[2]
 
   cdef cnp.uint64_t [:,:] _nodeDirectionsIndex
-  _nodeDirectionsIndex = nodeDirectionsIndex
+  _nodeDirectionsIndex = Nodes[3]
 
   cdef cnp.int8_t [:] cNode
 
@@ -579,7 +541,7 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
         else:
           cNode = _nodeInfo[ID]
           _indexMatch[numNodes] = ID
-          numBNodes,sBound,sInlet,sOutlet = getNodeInfo(cNode,numBNodes)
+          numBNodes,sBound,sInlet,sOutlet = getNodeInfo(cNode,numBNodes,sBound,sInlet,sOutlet)
 
           numSetNodes +=  1
           numNodes += 1
@@ -629,7 +591,7 @@ def getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDirections,nod
                                   numNodes = numSetNodes,
                                   numBoundaryNodes = numBNodes))
 
-        getSetNodes(Sets[setCount],numNodes,indexMatch,nodeInfo,nodeInfoIndex)
+        getSetNodes(Sets[setCount],numNodes,indexMatch,_nodeInfo,_nodeInfoIndex)
         setCount = setCount + 1
 
       numSetNodes = 0
@@ -642,12 +604,12 @@ def collectSets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
   rank = subDomain.ID
   size = subDomain.size
 
-  nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex,nodeTable  = nodes.getNodeInfo(rank,grid,phaseID,inlet,outlet,subDomain.Domain,loopInfo,subDomain,subDomain.Orientation)
-  Sets,setCount = getConnectedSets(rank,grid,phaseID,nodeInfo,nodeInfoIndex,nodeDir,nodeDirIndex)
+  Nodes  = nodes.getNodeInfo(rank,grid,phaseID,inlet,outlet,subDomain.Domain,loopInfo,subDomain,subDomain.Orientation)
+  Sets,setCount = getConnectedSets(grid,phaseID,Nodes)
 
   if size > 1:
     boundaryData,boundarySets,boundSetCount = getBoundarySets(Sets,subDomain)
-    boundaryData = setCOMM(subDomain.Orientation,subDomain,boundaryData)
+    boundaryData = communication.setCOMM(subDomain.Orientation,subDomain,boundaryData)
     matchedSets,_,error = matchProcessorBoundarySets(subDomain,boundaryData)
     
     errArray = np.array(error,dtype=np.uint8)

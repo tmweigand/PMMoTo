@@ -10,25 +10,25 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import cProfile
 
-# def profile(filename=None, comm=MPI.COMM_WORLD):
-#   def prof_decorator(f):
-#     def wrap_f(*args, **kwargs):
-#       pr = cProfile.Profile()
-#       pr.enable()
-#       result = f(*args, **kwargs)
-#       pr.disable()
+def profile(filename=None, comm=MPI.COMM_WORLD):
+  def prof_decorator(f):
+    def wrap_f(*args, **kwargs):
+      pr = cProfile.Profile()
+      pr.enable()
+      result = f(*args, **kwargs)
+      pr.disable()
 
-#       if filename is None:
-#         pr.print_stats()
-#       else:
-#         filename_r = filename + ".{}".format(comm.rank)
-#         pr.dump_stats(filename_r)
+      if filename is None:
+        pr.print_stats()
+      else:
+        filename_r = filename + ".{}".format(comm.rank)
+        pr.dump_stats(filename_r)
 
-#       return result
-#     return wrap_f
-#   return prof_decorator
+      return result
+    return wrap_f
+  return prof_decorator
 
-# @profile(filename="profile_out")
+@profile(filename="profile_out")
 def my_function():
 
     comm = MPI.COMM_WORLD
@@ -36,15 +36,25 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [200,200,200] # Total Number of Nodes in Domain
+    nodes = [400,400,400] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
     #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
     #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[1,0],[0,0],[0,0]]
     outlet = [[0,1],[0,0],[0,0]]
 
+    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
+    #nodes = [125,125,100] # Total Number of Nodes in Domain
+
+    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
+    boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    dataReadBoundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[0,0],[0,0],[1,0]]
+    outlet = [[0,0],[0,0],[0,1]]
 
     # rLookupFile = './rLookups/PA.rLookup'
     # rLookupFile = None
@@ -60,7 +70,7 @@ def my_function():
     testAlgo = False
 
     pC = [140,160]
-    cutoffs = [0,0.006]
+    cutoffs = [0]
     startTime = time.time()
 
     # domain,sDL = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaLammpsDump,rLookupFile)
@@ -79,7 +89,7 @@ def my_function():
     mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
 
     twoPhase.initializeMPGrid(constantPhase = twoPhase.wID)
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize=1)
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize=0)
 
 
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
@@ -93,7 +103,8 @@ def my_function():
 
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True,cutoffs = cutoffs)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True, trim  = True)
+    #sDMAL = PMMoTo.medialAxis.medialAxisTrim(sDMAL,pML,sDL,sD_EDT.EDT,cutoffs)
 
 
     endTime = time.time()
@@ -107,10 +118,14 @@ def my_function():
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)
 
-    setSaveDict = {'inlet': 'inlet',
-                'outlet':'outlet',
-                'boundary': 'boundary',
-                'localID': 'localID'}
+    # setSaveDict = {'inlet': 'inlet',
+    #             'outlet':'outlet',
+    #             'boundary': 'boundary',
+    #             'localID': 'localID',
+    #             }
+
+    for s in sDMAL.Sets.sets:
+        s.numConnectedSets = len(s.connectedSets)
 
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
@@ -120,11 +135,12 @@ def my_function():
                 'localID': 'localID',
                 'type': 'type',
                 'numBoundaries': 'numBoundaries',
-                'globalPathIDs':'globalPathIDs'}
+                'pathID': 'pathID',
+                'numConnectedSets':'numConnectedSets'}
     
     #PMMoTo.saveSetData("dataOut/set",sDL,drainL,**setSaveDict)
     
-    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL,**setSaveDict)
+    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL.Sets,**setSaveDict)
 
     if testSerial:
 

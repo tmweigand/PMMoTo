@@ -126,8 +126,8 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
     ### Place Set Values in Arrays
     if setList.setCount > 0:
         dim = 0
-        for ss in range(0,setList.setCount):
-            dim = dim + setList.Sets[ss].numNodes
+        for ss in setList.sets:
+            dim = dim + ss.numNodes
         x = np.zeros(dim)
         y = np.zeros(dim)
         z = np.zeros(dim)
@@ -140,29 +140,28 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
 
         ### Handle kwargs
         for key, value in kwargs.items():
-
-            if not hasattr(setList.Sets[0], value):
+            if not hasattr(setList.sets[0], value):
                 if rank == 0:
                     print("Error: Cannot save set data as kwarg %s is not an attribute in Set" %value)
                 communication.raiseError()
 
-            dataType = type(getattr(setList.Sets[0],value))
+            dataType = type(getattr(setList.sets[0],value))
             if dataType == bool: ### pyectk does not support bool?
-                dataType = np.uint8
+               dataType = np.uint8
             pointData[key] = np.zeros(dim,dtype=dataType)
             pointDataInfo[key] = (pointData[key].dtype,1)
 
     
         c = 0
-        for ss in range(0,setList.setCount):
-            for no in setList.Sets[ss].nodes:
+        for ss in setList.sets:
+            for no in ss.nodes:
                 x[c] = subDomain.x[no[0]]
                 y[c] = subDomain.y[no[1]]
                 z[c] = subDomain.z[no[2]]
 
-                globalID[c] = setList.Sets[ss].globalID
+                globalID[c] = ss.globalID
                 for key, value in kwargs.items():
-                    pointData[key][c] = getattr(setList.Sets[ss],value)
+                    pointData[key][c] = getattr(ss,value)
                 c = c + 1
 
         fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."

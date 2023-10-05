@@ -19,8 +19,8 @@ class porousMedia(object):
         self.inlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.outlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
         self.loopInfo = np.zeros([self.Orientation.numFaces+1,3,2],dtype = np.int64)
-        self.ownNodesIndex     = np.zeros([6],dtype = np.int64)
-        self.poreNodes    = 0
+        self.ownNodesIndex = np.zeros([6],dtype = np.int64)
+        self.poreNodes = 0
         self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
 
     def gridCheck(self):
@@ -34,12 +34,12 @@ class porousMedia(object):
         sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
         self.grid = sDComm.updateBuffer()
 
-
     def genDomainSphereDataVerlet(self,sphereData):
         verletDomains = [20,20,20]
         self.grid = domainGenVerlet(verletDomains,self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
-
+        sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
+        self.grid = sDComm.updateBuffer()
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
@@ -49,36 +49,50 @@ class porousMedia(object):
         """
         Determine inlet/outlet Info and Pad Grid
         """
+        inletSize = np.zeros_like(self.inlet)
+        outletSize = np.zeros_like(self.outlet)
 
         if (self.subDomain.boundaryID[0] == 0 and  self.Domain.inlet[0][0]):
-            self.inlet[0] = resSize
+            self.inlet[0] = True
+            inletSize[0]  = resSize
         if (self.subDomain.boundaryID[1] == 0 and  self.Domain.inlet[0][1]):
-            self.inlet[1] = resSize
+            self.inlet[1] = True
+            inletSize[1]  = resSize
         if (self.subDomain.boundaryID[2] == 0 and  self.Domain.inlet[1][0]):
-            self.inlet[2] = resSize
+            self.inlet[2] = True
+            inletSize[2]  = resSize
         if (self.subDomain.boundaryID[3] == 0 and  self.Domain.inlet[1][1]):
-            self.inlet[3] = resSize
+            self.inlet[3] = True
+            inletSize[3]  = resSize
         if (self.subDomain.boundaryID[4] == 0 and  self.Domain.inlet[2][0]):
-            self.inlet[4] = resSize
+            self.inlet[4] = True
+            inletSize[4]  = resSize
         if (self.subDomain.boundaryID[5] == 0 and  self.Domain.inlet[2][1]):
-            self.inlet[5] = resSize
+            self.inlet[5] = True
+            inletSize[5]  = resSize
 
         if (self.subDomain.boundaryID[0] == 0 and  self.Domain.outlet[0][0]):
-            self.outlet[0] = resSize
+            self.outlet[0] = True
+            outletSize[0]  = resSize
         if (self.subDomain.boundaryID[1] == 0 and  self.Domain.outlet[0][1]):
-            self.outlet[1] = resSize
+            self.outlet[1] = True
+            outletSize[1]  = resSize
         if (self.subDomain.boundaryID[2] == 0 and  self.Domain.outlet[1][0]):
-            self.outlet[2] = resSize
+            self.outlet[2] = True
+            outletSize[2]  = resSize
         if (self.subDomain.boundaryID[3] == 0 and  self.Domain.outlet[1][1]):
-            self.outlet[3] = resSize
+            self.outlet[3] = True
+            outletSize[3]  = resSize
         if (self.subDomain.boundaryID[4] == 0 and  self.Domain.outlet[2][0]):
-            self.outlet[4] = resSize
+            self.outlet[4] = True
+            outletSize[4]  = resSize
         if (self.subDomain.boundaryID[5] == 0 and  self.Domain.outlet[2][1]):
-            self.outlet[5] = resSize   
+            self.outlet[5] = True
+            outletSize[5]  = resSize  
 
         pad = np.zeros([6],dtype = np.int8)
         for f in range(0,self.Orientation.numFaces):
-            pad[f] = self.inlet[f] + self.outlet[f]      
+            pad[f] = inletSize[f] + outletSize[f]      
         
         ### If Inlet/Outlet Res, Pad and Update XYZ
         if np.sum(pad) > 0:
@@ -112,7 +126,7 @@ class porousMedia(object):
         comm.Allreduce( [self.poreNodes, MPI.INT], [self.totalPoreNodes, MPI.INT], op = MPI.SUM )
 
 
-def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
+def genPorousMedia(subDomain,dataFormat,sphereData = None,resSize = 0):
 
     pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation)
 

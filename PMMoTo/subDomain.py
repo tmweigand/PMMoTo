@@ -12,11 +12,6 @@ from . import porousMedia
 
 """ Solid = 0, Pore = 1 """
 
-""" TO DO:
-           Switch to pass periodic info and not generate from samples??
-           Redo Domain decomposition - Maybe
-"""
-
 class subDomain(object):
     def __init__(self,ID,subDomains,Domain,Orientation):
         self.ID          = ID
@@ -283,7 +278,7 @@ class subDomain(object):
         return np.array([xList,yList,zList,rList])
 
 
-def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs=None):
+def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs = None):
 
     numSubDomains = np.prod(subDomains)
 
@@ -313,9 +308,9 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
     
     if file is not None:
         sphereData = sD.trimSphereData(sphereData)
-        pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 1)
+        pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 0)
     else:
-        pM = porousMedia.genPorousMedia(sD,dataFormat,resSize = 1)
+        pM = porousMedia.genPorousMedia(sD,dataFormat)
 
 
     return domain,sD,pM

@@ -1,21 +1,17 @@
+# cython: profile=True
+# cython: linetrace=True
+
 # distutils: language = c++
 import numpy as np
 from mpi4py import MPI
 from .. import communication
-from .. import nodes
-from .. import sets
-from .. import dataOutput
 comm = MPI.COMM_WORLD
-import math
 
 from . cimport medialExtractionFunctions as mEFunc
-from libc.string cimport memcpy
 from libcpp.vector cimport vector
-from libc.stdio cimport printf
-from libcpp cimport bool
 
 import numpy as np
-from numpy cimport npy_intp, npy_int8, npy_uint8, ndarray, npy_float32
+from numpy cimport npy_intp, npy_float32
 cimport cython
 
 class medialExtraction(object):
@@ -372,16 +368,21 @@ class medialExtraction(object):
                 haloPadNeighNot[n] = 0
 
         dim = self.MA.shape
-        if connect:
+
+        if not connect:
+            self.MA = self.MA[self.halo[0]:dim[0]-self.halo[1],
+                              self.halo[2]:dim[1]-self.halo[3],
+                              self.halo[4]:dim[2]-self.halo[5]]
+
+            return np.ascontiguousarray(self.MA)
+
+        else:
             self.MA = self.MA[self.halo[0] - haloPadNeigh[0] : dim[0] - self.halo[1] + haloPadNeigh[1],
                               self.halo[2] - haloPadNeigh[2] : dim[1] - self.halo[3] + haloPadNeigh[3],
                               self.halo[4] - haloPadNeigh[4] : dim[2] - self.halo[5] + haloPadNeigh[5]]
-        else:
-            self.MA = self.MA[self.halo[0]:dim[0]-self.halo[1],
-                            self.halo[2]:dim[1]-self.halo[3],
-                            self.halo[4]:dim[2]-self.halo[5]]
+            
+            return np.ascontiguousarray(self.MA),haloPadNeigh,haloPadNeighNot
 
-        return np.ascontiguousarray(self.MA),haloPadNeigh,haloPadNeighNot
 
 
     @cython.boundscheck(False)

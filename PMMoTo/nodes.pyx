@@ -15,44 +15,6 @@ cdef int numNeighbors
 directions = cOrient.directions
 numNeighbors = cOrient.numNeighbors
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-cdef int getBoundaryIDReference(cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
-  """
-  Determining boundary ID
-
-  Input: boundaryID[3] corresponding to [x,y,z] and values range from [-1,0,1]
-  Output: boundaryID
-  """
-
-  cdef int cI,cJ,cK
-  cdef int i,j,k
-  i = boundaryID[0]
-  j = boundaryID[1]
-  k = boundaryID[2]
-
-  if i < 0:
-    cI = 0
-  elif i > 0:
-    cI = 9
-  else:
-    cI = 18
-
-  if j < 0:
-    cJ = 0
-  elif j > 0:
-    cJ = 3
-  else:
-    cJ = 6
-
-  if k < 0:
-    cK = 0
-  elif k > 0:
-    cK = 1
-  else:
-    cK = 2
-
-  return cI+cJ+cK
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -61,15 +23,18 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
 
-  Input: Binary grid and Domain,Subdomain,Orientation information
+  Input: Binary grid and Domain,Subdomain,Orientation information,indexOrder
+
+  IndexOrder arranges the ordering of loopInfo so inlet and outlet faces 
+  are first to ensure optimal looping and correct boundary values
 
   Output:
   nodeInfo: [boundary,inlet,outlet,boundaryID,availDirection,lastDirection,visited]
   nodeInfoIndex:[i,j,k,globalIndex,global i,global j,global k]
   nodeDirections: availble directions[26]
   nodeDirectionsIndex: index of availble directions[26]
-  nodeTable: Lookuptable for [i,j,k] = c
   """
+
   numNodes = np.sum(grid)
   nodeInfo = np.zeros([numNodes,7],dtype=np.int8)
   nodeInfo[:,3] = -1 #Initialize BoundaryID
@@ -89,11 +54,11 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   cdef cnp.uint64_t [:,:] _nodeDirectionsIndex
   _nodeDirectionsIndex = nodeDirectionsIndex
 
-  nodeTable = -np.ones_like(grid,dtype=np.int64)
-  cdef cnp.int64_t [:,:,:] _nodeTable
+  nodeTable = -np.ones_like(grid,dtype=np.uint64)
+  cdef cnp.uint64_t [:,:,:] _nodeTable
   _nodeTable = nodeTable
 
-  cdef int c,d,i,j,k,ii,jj,kk,availDirection,perAny,sInlet,sOutlet
+  cdef int c,d,i,j,k,ii,jj,kk,availDirection,sInlet,sOutlet
   cdef int iLoc,jLoc,kLoc,globIndex
   cdef int iMin,iMax,jMin,jMax,kMin,kMax
   cdef int _phase = phase
@@ -136,8 +101,6 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
     kMin = _loopInfo[fIndex][2][0]
     kMax = _loopInfo[fIndex][2][1]
     bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
-    perFace  = subDomain.neighborPerF[fIndex]
-    perAny = perFace.any()
     sInlet = inlet[fIndex]
     sOutlet = outlet[fIndex]
     for i in range(iMin,iMax):
@@ -178,7 +141,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
             elif(k >= kShape-2):
               boundaryID[2] = 1
 
-            boundID = getBoundaryIDReference(boundaryID)
+            boundID = cOrient.getBoundaryIDReference(boundaryID)
             _nodeInfo[c,0] = 1
             _nodeInfo[c,1] = sInlet
             _nodeInfo[c,2] = sOutlet
@@ -267,7 +230,7 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
          _nodeInfo[c,4] = availDirection
          c = c + 1
 
-  return nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex,nodeTable
+  return [nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex]
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking
