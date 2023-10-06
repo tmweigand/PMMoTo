@@ -130,9 +130,9 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect = False, trim = F
             mSets.update_trimmed_connected_sets()
             mSets.pack_untrimmed_sets()
             allTrimSetData = comm.gather(mSets.trimSetData, root=0)
-            setInfo = mSets.unpack_untrimmed_sets(allTrimSetData)
-            setInfo = mSets.serial_trim_sets(setInfo)
-            mSets.repack_global_trimmed_sets(setInfo)
+            setInfo,indexMap = mSets.unpack_untrimmed_sets(allTrimSetData)
+            setInfo = mSets.serial_trim_sets(setInfo,indexMap)
+            setInfo = mSets.repack_global_trimmed_sets(setInfo)
 
 
 

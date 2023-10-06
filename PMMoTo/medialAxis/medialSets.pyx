@@ -17,13 +17,26 @@ from numpy cimport npy_intp, npy_int8, npy_uint8, ndarray, npy_float32
 from libcpp cimport bool
 from libcpp.map cimport map
 
+cdef struct boundaryData:
+    npy_intp ID
+    npy_intp procID
+    npy_intp pathID
+    npy_intp numNodes
+    bool inlet
+    bool outlet
+    bool boundary
+    vector[npy_intp] nodes
+    vector[npy_intp] boundaryNodes
+    vector[npy_intp] connected_sets
+
+
 cdef struct vertex:
     npy_intp ID
     bool inlet
     bool outlet
     bool boundary
     bool trim
-    vector[npy_intp]  procID
+    vector[npy_intp] procID
     vector[npy_intp] connected_sets
 
 
@@ -403,69 +416,85 @@ class medSets(object):
     Organize all untrimmed sets and combine sets on diffrent processes
     Perform a depth first search and trim if not connected to inlet and outlet
     """
-    setInfo = {}
+
+    cdef int n,nn,conSet,sID,nP,index
+    cdef vector[vertex] setInfo
+    cdef vertex node
+    cdef map[npy_intp,npy_intp] indexConvert
+    cdef bool check
+
     if self.subDomain.ID == 0:
 
+      n = 0
       for nP,procData in enumerate(trimSetData):
         for sID in procData[nP]['setID'].keys():
-          if sID not in setInfo:
-            setInfo[sID] = {'procID':[nP],
-                            'inlet':procData[nP]['setID'][sID]['inlet'],
-                            'outlet':procData[nP]['setID'][sID]['outlet'],
-                            'boundary':procData[nP]['setID'][sID]['boundary'],
-                            'connectedSets':procData[nP]['setID'][sID]['connectedSets'],
-                            'trim':False}
+
+          # Not in  Set
+          if indexConvert.find(sID) == indexConvert.end():
+            node.ID = sID
+            indexConvert[sID] = n
+            node.procID.push_back( nP )
+            node.inlet = procData[nP]['setID'][sID]['inlet']
+            node.outlet = procData[nP]['setID'][sID]['outlet']
+            node.boundary = procData[nP]['setID'][sID]['boundary']
+            node.trim = False
+
+            for conSet in procData[nP]['setID'][sID]['connectedSets']:
+              node.connected_sets.push_back(conSet)
+
+            setInfo.push_back(node)
+
+            node.procID.clear()
+            node.connected_sets.clear()
+
+            n += 1
+
           else:
-            #if setInfo[sID]['boundary']:
-            if nP not in setInfo[sID]['procID']:
-              setInfo[sID]['procID'].append(nP)
-            for cSet in procData[nP]['setID'][sID]['connectedSets']:
-              if cSet not in setInfo[sID]['connectedSets']:
-                setInfo[sID]['connectedSets'].append(cSet)
-    
-    return setInfo
+            index = indexConvert[sID]
+            check = True
+            for nn in range(0,setInfo[index].procID.size()):
+              if setInfo[index].procID[nn] == nP:
+                check = False
+            if check:
+              setInfo[index].procID.push_back( nP )
+
+
+            for conSet in procData[nP]['setID'][sID]['connectedSets']:
+              check = True
+              for nn in range(0,setInfo[index].connected_sets.size()):
+                if setInfo[index].connected_sets[nn] == conSet:
+                  check = False
+              if check:
+                setInfo[index].connected_sets.push_back(conSet)
+
+    return setInfo,indexConvert
 
 
 
   @cython.boundscheck(False)  # Deactivate bounds checking
   @cython.wraparound(False)   # Deactivate negative indexing.
-  def serial_trim_sets(self,setInfo):
+  def serial_trim_sets(self,setInfo,indexMap):
     """
-    Trim global sets in serial
+    Serial Code!
+    Trim global sets
     """
     
-    cdef int numSet = len(setInfo)
+    cdef int n,nn,nnn,sID,conSet,trim,cNode,numCSets
 
-    cdef int n,nn,nnn,sID,pID,conSet,trim,cNode,numCSets
     cdef vector[vertex] vertices
-    cdef vertex node
+    vertices = setInfo
+    cdef int numSet = vertices.size()
+
+
     cdef vector[bool] visitedC
     cdef vector[npy_intp] queueC,setConnectC
     cdef map[npy_intp,npy_intp] indexConvert
+    indexConvert = indexMap
 
     for sID in range(0,numSet):
       visitedC.push_back(0)
 
     if self.subDomain.ID == 0: 
-
-
-      #### Convert setInfo to c++ to optimize DFS.
-      #### Also should have each proc send vector of struts? 
-      for n,sID in enumerate(setInfo):
-        node.ID = sID
-        for pID in setInfo[sID]['procID']:
-          node.procID.push_back(pID)
-        node.inlet = setInfo[sID]['inlet']
-        node.outlet = setInfo[sID]['outlet']
-        node.boundary = setInfo[sID]['boundary']
-        node.trim = setInfo[sID]['trim']
-        for conSet in setInfo[sID]['connectedSets']:
-          node.connected_sets.push_back(conSet)
-        vertices.push_back(node)
-        indexConvert[sID] = n
-
-        node.procID.clear()
-        node.connected_sets.clear()
 
       for n in range(0,numSet):
         if vertices[n].trim == True or visitedC[n] == True:
@@ -503,24 +532,22 @@ class medSets(object):
                   trim += 1
               if trim >= numCSets - 1:
                 vertices[nn].trim = True
-            
+                        
           setConnectC.clear()
 
-      for n in range(0,numSet):
-        sID = vertices[n].ID
-        setInfo[sID]['trim'] = vertices[n].trim
-
-    return setInfo
+    return vertices
 
   def repack_global_trimmed_sets(self,setInfo):
     """
+    Serial Code!
     Re-pack setInfo to send out
     """
     if self.subDomain.ID == 0: 
+  
       sendSetInfo = [[] for _ in range(self.subDomain.size)]
-      for s in setInfo.keys():
-        for nP in setInfo[s]['procID']:
-          sendSetInfo[nP].append([s,setInfo[s]['trim']])
+      for s in setInfo:
+        for nP in s['procID']:
+           sendSetInfo[nP].append([s['ID'],s['trim']])
 
     else:
       sendSetInfo = None
