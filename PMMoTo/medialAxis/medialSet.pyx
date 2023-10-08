@@ -11,6 +11,7 @@ from .. import sets
 class medialSet(sets.Set):
     def __init__(self, 
                  localID = 0, 
+                 proc_ID = 0,
                  inlet = False, 
                  outlet = False, 
                  boundary = False, 
@@ -19,7 +20,7 @@ class medialSet(sets.Set):
                  pathID = -1, 
                  type = 0, 
                  connectedNodes = None):
-      super().__init__(localID, inlet, outlet, boundary, numNodes, numBoundaryNodes)
+      super().__init__(localID, proc_ID, inlet, outlet, boundary, numNodes, numBoundaryNodes)
       self.pathID = pathID
       self.type = type
       self.connectedNodes = connectedNodes

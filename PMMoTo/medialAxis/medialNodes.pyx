@@ -57,11 +57,13 @@ def getConnectedMedialAxis(subDomain,grid,Nodes,MANodeType):
   Create Two Queues for Paths and Clusters
 
   """
-  cdef int node,ID,nodeValue,d,oppDir,n
+  cdef int node,ID,nodeValue,d,oppDir,n,proc_ID
   cdef int numNodesMA,numSetNodes = 0,numNodes = 0,numBNodes = 0
   cdef int setCount = 0,pathCount = 0
   cdef bint sInlet,sOutlet,sBound
   cdef list Sets = []
+
+  proc_ID = subDomain.ID
 
   numNodesMA = np.sum(grid)
 
@@ -187,6 +189,7 @@ def getConnectedMedialAxis(subDomain,grid,Nodes,MANodeType):
           ############################
           if numSetNodes > 0:
             Sets.append(medialSet.medialSet(localID = setCount,
+                               proc_ID = proc_ID,
                                pathID = pathCount,
                                inlet = sInlet,
                                outlet = sOutlet,
@@ -273,6 +276,7 @@ def getConnectedMedialAxis(subDomain,grid,Nodes,MANodeType):
             if numSetNodes > 15:
               setType = 2
             Sets.append(medialSet.medialSet(localID = setCount,
+                                proc_ID = proc_ID,
                                 pathID = pathCount,
                                 inlet = sInlet,
                                 outlet = sOutlet,

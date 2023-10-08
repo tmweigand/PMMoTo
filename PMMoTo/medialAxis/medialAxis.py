@@ -77,26 +77,8 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect = False, trim = F
 
         sDMA.Sets = mSets
 
-
-        mSets.get_boundary_sets()
-        mSets.pack_boundary_data()
-
-        boundaryData = communication.setCOMMNEW(subDomain.Orientation,subDomain,mSets.boundaryData)
-
-        mSets.unpack_boundary_data(boundaryData)
-        mSets.match_boundary_sets()
-        mSets.pack_matched_sets()
-
-        ### Generate global information for sets 
-        allMatchedSetData = comm.gather(mSets.matchedSetData, root=0)
-        mSets.organize_matched_sets(allMatchedSetData)
-
-        ### Generate and Update global ID information
-        globalIDInfo = comm.gather([mSets.setCount,mSets.boundarySetCount], root=0)
-        mSets.organize_globalSetID(globalIDInfo)
-        mSets.update_globalSetID()
-        mSets.update_connected_sets()
-
+        ## Update Set Information
+        mSets.match_and_update_sets()
 
         ### Collect paths from medialSets
         mPaths = mSets.collect_paths()

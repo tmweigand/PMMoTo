@@ -20,12 +20,14 @@ numNeighbors = cOrient.numNeighbors
 class Set(object):
     def __init__(self, 
                 localID = 0, 
+                proc_ID = 0,
                 inlet = False, 
                 outlet = False, 
                 boundary = False, 
                 numNodes = 0, 
                 numBoundaryNodes = 0):    
       self.localID = localID   
+      self.proc_ID = proc_ID
       self.inlet = inlet
       self.outlet = outlet
       self.boundary = boundary
@@ -50,7 +52,7 @@ class Set(object):
 
     def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
         self.boundary = True
-        self.boundaryNodes = boundaryNodes[:,0]
+        self.boundaryNodes = np.sort(boundaryNodes[:,0])
         self.boundaryNodeID = boundaryNodes[:,1:4]
         Orient = Orientation.Orientation()
         allFaces = Orient.allFaces
