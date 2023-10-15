@@ -39,14 +39,14 @@ class equilibriumDistribution(object):
     def getpC(self,radius):
         self.pC = 2.*self.gamma/radius
 
-    def getInletConnectedNodes(self,sets,flag):
+    def getInletConnectedNodes(self,Sets,flag):
         """
         Grab from Sets that are on the Inlet Reservoir and create binary grid
         """
         nodes = []
         gridOut = np.zeros_like(self.multiPhase.mpGrid)
 
-        for s in sets:
+        for s in Sets.sets:
             if s.inlet:
                 for node in s.nodes:
                     nodes.append(node)
@@ -171,7 +171,7 @@ def calcDrainage(pc,mP):
             ### Get Sphere Radius from Pressure
             eqDist.getDiameter(p)
 
-            # Step 1 - Reservoirs are not contained in mdGrid or grid but rather added when needed so this step is unnecessary
+            # Step 1 - Reservoirs are not contained in mpGrid or grid but rather added when needed so this step is unnecessary
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
@@ -187,7 +187,7 @@ def calcDrainage(pc,mP):
                 nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
                 if nwCheck:
  
-                    nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                    nwSets,nwSetCount = sets.collect_sets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
                     # setSaveDict = {'inlet': 'inlet',
@@ -208,7 +208,7 @@ def calcDrainage(pc,mP):
                 wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
                 if wCheck:
  
-                    wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
+                    wSets = sets.collect_sets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
                     wGrid = eqDist.getInletConnectedNodes(wSets,1)
                     
                     
@@ -226,7 +226,7 @@ def calcDrainage(pc,mP):
                     # dataOutput.saveGrid(fileName,mP.subDomain,wGrid)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
-                indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                indSets = sets.collect_sets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                 ind2 = eqDist.getInletConnectedNodes(indSets,1)
                 # fileName = "dataOut/test/Step3c"
                 # dataOutput.saveGrid(fileName,mP.subDomain,ind2)
@@ -300,17 +300,17 @@ def calcDrainageSW(sW,mP,interval):
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
                 nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
                 if nwCheck:
-                    nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                    nwSets,nwSetCount = sets.collect_sets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
 
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
                 wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
                 if wCheck:
-                    wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
+                    wSets,wSetCount = sets.collect_sets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
                     wGrid = eqDist.getInletConnectedNodes(wSets,1)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
-                indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                indSets,indSetCount = sets.collect_sets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                 ind2 = eqDist.getInletConnectedNodes(indSets,1)
 
                 # Step 3f -- Unsure about these checks!
@@ -394,7 +394,7 @@ def calcOpenSW(sW,mP,interval,minSetSize):
                     wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
                     if wCheck:
                         sW_new = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
-                        wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
+                        wSets,wSetCount = sets.collect_sets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
                         mP.mpGrid = eqDist.removeSmallSets(wSets,mP.mpGrid,mP.nwID,minSetSize)
             
             # Step 4
@@ -463,7 +463,7 @@ def calcImbibition(pc,mP):
                 if allnwNodes[0] != mP.porousMedia.totalPoreNodes[0]:
                     ## run connected sets, otherwise skip
    
-                    nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                    nwSets,nwSetCount = sets.collect_sets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                     nwGrid = eqDist.getDisconnectedNodes(nwSets,1)
                     
                     # setSaveDict = {'inlet': 'inlet',
@@ -506,7 +506,7 @@ def calcImbibition(pc,mP):
                 ## F Get CC (w) connected to w reservoir on mpGrid
                 wCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
                 if wCheck:
-                    wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
+                    wSets,wSetCount = sets.collect_sets(mP.mpGrid,mP.nwID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
                     wGrid = eqDist.getInletConnectedNodes(wSets,1)
 
                     ## G If porespace point NOT in F set AND result prev is NOT 2 (w), mpGrid = n ELSE mpGrid = w

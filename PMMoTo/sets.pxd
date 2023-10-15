@@ -7,28 +7,21 @@ from libcpp.algorithm cimport binary_search
 cdef struct boundary_set:
     npy_intp ID
     npy_intp proc_ID
-    npy_intp path_ID
     npy_intp num_nodes
     npy_intp num_global_nodes
     bool inlet
     bool outlet
     vector[npy_intp] n_proc_ID
     vector[npy_intp] boundary_nodes
-    vector[npy_intp] connected_sets
-
 
 cdef struct matched_set:
     npy_intp ID
     npy_intp global_ID
     npy_intp proc_ID
-    npy_intp path_ID
     bool inlet
     bool outlet
     vector[npy_intp] n_ID
     vector[npy_intp] n_proc_ID
-    vector[npy_intp] n_path_ID
-    vector[npy_intp] connected_sets
-    vector[npy_intp] n_connected_sets
 
 cdef struct vertex:
     npy_intp ID
@@ -37,7 +30,6 @@ cdef struct vertex:
     bool boundary
     bool trim
     vector[npy_intp] proc_ID
-    vector[npy_intp] connected_sets
 
 
 cdef inline boundary_set c_convert_boundary_set(set):
@@ -49,12 +41,10 @@ cdef inline boundary_set c_convert_boundary_set(set):
     b_set.ID = set.localID
     b_set.proc_ID = set.proc_ID
     b_set.n_proc_ID = set.neighborProcID
-    b_set.path_ID = set.pathID
     b_set.num_nodes = set.numNodes
     b_set.inlet = set.inlet
     b_set.outlet = set.outlet
     b_set.boundary_nodes = set.boundaryNodes
-    b_set.connected_sets = set.connectedSets
 
     return b_set
 
@@ -70,7 +60,6 @@ cdef inline vertex c_convert_vertex(set):
     n_set.boundary = set.boundary
     n_set.trim = set.trim
     n_set.proc_ID.push_back(set.proc_ID)
-    n_set.connected_sets = set.connectedSets
 
     return n_set
 

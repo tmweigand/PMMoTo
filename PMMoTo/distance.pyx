@@ -1,7 +1,5 @@
-import math
 import numpy as np
 cimport numpy as cnp
-from libc.stdio cimport printf
 cnp.import_array()
 from mpi4py import MPI
 from pykdtree.kdtree import KDTree
@@ -418,7 +416,7 @@ class EDT(object):
         self.minD = distData[0]
         self.maxD = distData[1]
 
-def calcEDT(subDomain,grid,stats=False,sendClass=False):
+def calcEDT(subDomain,grid,stats = False,sendClass = False):
 
     size = subDomain.Domain.numSubDomains
     rank = subDomain.ID

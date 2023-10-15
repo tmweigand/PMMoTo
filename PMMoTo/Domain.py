@@ -11,7 +11,7 @@ class Domain(object):
                  subDomains = [1,1,1],
                  boundaries = [[0,0],[0,0],[0,0]],
                  inlet = [[0,0],[0,0],[0,0]],
-                 outlet  =[[0,0],[0,0],[0,0]]):
+                 outlet =[[0,0],[0,0],[0,0]]):
         self.nodes        = nodes
         self.domainSize   = domainSize
         self.boundaries   = boundaries
@@ -25,7 +25,8 @@ class Domain(object):
         self.dX = 0
         self.dY = 0
         self.dZ = 0
-        self.inputChecks()
+        self.periodic_check()
+        self.input_checks()
 
     def getdXYZ(self):
         """
@@ -46,7 +47,17 @@ class Domain(object):
         self.subNodes[1],self.subNodesRem[1] = divmod(self.nodes[1],self.subDomains[1])
         self.subNodes[2],self.subNodesRem[2] = divmod(self.nodes[2],self.subDomains[2])
 
-    def inputChecks(self):
+    def periodic_check(self):
+        """
+        Check if any external boundary is periodic
+        """
+        self.periodic = False
+        for dirB in self.boundaries:
+            for nB in dirB:
+                if nB == 2:
+                    self.periodic = True
+
+    def input_checks(self):
         """
         Ensure Input Parameters are Valid
         """
@@ -96,7 +107,7 @@ class Domain(object):
                         print("Error: Boundary must be type (0) None at Outlet")
         if sN > 1:
             error = True
-            print("Error: Only 1 Outlet Allowed")  
+            print("Error: Only 1 Outlet Allowed")
 
         if error:
           communication.raiseError()

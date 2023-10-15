@@ -7,7 +7,8 @@ cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
-
+from . import set
+from . import sets
 from . import Orientation
 cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
@@ -18,7 +19,7 @@ numNeighbors = cOrient.numNeighbors
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientation):
+def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientation):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
@@ -233,52 +234,143 @@ def getNodeInfo(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientati
   return [nodeInfo,nodeInfoIndex,nodeDirections,nodeDirectionsIndex]
 
 
+cdef get_node_boundary_info(cnp.int8_t[:] cNode,int numBNodes,bint sBound,bint sInlet,bint sOutlet):
+  """
+  Get Node Info about Boundary, Inlet, Outlet
+  """
+
+  if cNode[0]:  #Boundary
+    sBound = True
+    numBNodes = numBNodes + 1
+    if cNode[1]:  #Inlet
+      sInlet = True
+    if cNode[2]:  #Outlet
+      sOutlet = True
+
+  return numBNodes,sBound,sInlet,sOutlet
+
+
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):
+def get_connected_sets(subDomain,grid,phaseID,Nodes):
   """
-  Get Number of Neighbors on Boundary Nodes of Medial Axis with 2 Buffer
-  Needed to accurately spoecify type of MA node
+  Connects the NxNxN (or NXN) nodes into connected sets.
+  1. Inlet
+  2. Outlet
   """
-  cdef int i,j,k,ii,jj,kk,c,d
-  cdef int iMin,iMax,jMin,jMax,kMin,kMax
-  cdef int availDirection,node
-  cdef int numFaces,fIndex
-  numFaces = Orientation.numFaces
+  cdef int node,ID,nodeValue,d,oppDir,rank
+  cdef int numNodes,numSetNodes,numNodesPhase,setCount
 
-  maNodeType = np.copy(nodeInfo[:,4])
-  cdef cnp.int8_t [:] _maNodeType
-  _maNodeType = maNodeType
+  rank = subDomain.ID
 
-  cdef cnp.uint8_t [:,:,:] _ind
-  _ind = grid
+  numNodesPhase = np.count_nonzero(grid == phaseID)
 
-  cdef cnp.int64_t [:,:,:] loopInfo
-  loopInfo = porousMedia.loopInfo
+  indexMatch = np.zeros(numNodesPhase,dtype=np.uint64)
+  cdef cnp.uint64_t [:] _indexMatch
+  _indexMatch = indexMatch
+
+  cdef cnp.int8_t [:,:] _nodeInfo
+  _nodeInfo = Nodes[0]
+
+  cdef cnp.uint64_t [:,:] _nodeInfoIndex
+  _nodeInfoIndex = Nodes[1]
+
+  cdef cnp.uint8_t [:,:] _nodeDirections
+  _nodeDirections = Nodes[2]
+
+  cdef cnp.uint64_t [:,:] _nodeDirectionsIndex
+  _nodeDirectionsIndex = Nodes[3]
+
+  cdef cnp.int8_t [:] cNode
+
+  numNodes = 0
+  numSetNodes = 0
+  numBNodes = 0
+  setCount = 0
+
+  Sets = []
+
+  ##############################
+  ### Loop Through All Nodes ###
+  ##############################
+  for node in range(0,numNodesPhase):
+
+    if _nodeInfo[node,6] == 1:  #Visited
+      pass
+    else:
+      ID = node
+      cNode = _nodeInfo[ID]
+      queue=[node]
+      sBound = False; sInlet = False; sOutlet = False
+
+      while queue:
+
+        ########################
+        ### Gather Node Info ###
+        ########################
+        ID = queue.pop(-1)
+        if _nodeInfo[ID,6] == 1:
+          pass
+        else:
+          cNode = _nodeInfo[ID]
+          _indexMatch[numNodes] = ID
+          numBNodes,sBound,sInlet,sOutlet = get_node_boundary_info(cNode,numBNodes,sBound,sInlet,sOutlet)
+
+          numSetNodes +=  1
+          numNodes += 1
+        ########################
 
 
-  # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
-  c = 0
-  for fIndex in range(numFaces):
-   iMin = loopInfo[fIndex][0][0]
-   iMax = loopInfo[fIndex][0][1]
-   jMin = loopInfo[fIndex][1][0]
-   jMax = loopInfo[fIndex][1][1]
-   kMin = loopInfo[fIndex][2][0]
-   kMax = loopInfo[fIndex][2][1]
-   for i in range(iMin,iMax):
-     for j in range(jMin,jMax):
-       for k in range(kMin,kMax):
-         if _ind[i+1,j+1,k+1] == 1:
-           availDirection = 0
-           for d in range(0,numNeighbors):
-             ii = directions[d][0]
-             jj = directions[d][1]
-             kk = directions[d][2]
-             if (_ind[i+ii+1,j+jj+1,k+kk+1] == 1):
-               availDirection += 1
+          ##########################
+          ### Find Neighbor Node ###
+          ##########################
+          while (cNode[4] > 0):
+            nodeValue = -1
+            found = False
+            d = cNode[5]
+            while d >= 0  and not found:
+              if _nodeDirections[ID,d] == 1:
+                found = True
+                cNode[4] = cNode[4] - 1
+                cNode[5] = d
+                oppDir = directions[d][4]
+                nodeValue = _nodeDirectionsIndex[ID,d]
+                _nodeDirections[nodeValue,oppDir] = 0
+                _nodeDirections[ID,d] = 0
+              else:
+                d = d - 1
+            ########################
 
-           _maNodeType[c] = availDirection
-           c = c + 1
+            #############################
+            ### Add Neighbor to Queue ###
+            #############################
+            if (nodeValue > -1):
+              if _nodeInfo[nodeValue,6]:
+                pass
+              else:
+                queue.append(nodeValue)
+              _nodeInfo[nodeValue,4] = _nodeInfo[nodeValue,4] - 1
+          cNode[6] = 1 #Visited
+          ##############################
 
-  return maNodeType
+          ############################
+          ### Add Nodes to Set ###
+          ############################
+      if numSetNodes > 0:
+        Sets.append(set.Set(localID = setCount,
+                                  proc_ID = rank,
+                                  inlet = sInlet,
+                                  outlet = sOutlet,
+                                  boundary = sBound,
+                                  numNodes = numSetNodes,
+                                  numBoundaryNodes = numBNodes))
+
+        Sets[setCount].get_set_nodes(numNodes,indexMatch,_nodeInfo,_nodeInfoIndex,subDomain)
+        setCount = setCount + 1
+
+      numSetNodes = 0
+      numBNodes = 0
+
+  allSets = sets.Sets(Sets,setCount,subDomain)
+
+  return allSets

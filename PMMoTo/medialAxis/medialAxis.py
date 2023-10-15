@@ -67,9 +67,7 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect = False, trim = F
         tempMA,neighMA = sDMA.genMAArrays()
 
 
-        #print(sDMA.subDomain.ID,porousMedia.inlet,porousMedia.outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
-
-        Nodes = nodes.getNodeInfo(rank,tempMA,1,porousMedia.inlet,porousMedia.outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
+        Nodes = nodes.get_node_info(rank,tempMA,1,porousMedia.inlet,porousMedia.outlet,subDomain.Domain,porousMedia.loopInfo,subDomain,subDomain.Orientation)
         maNodesType = medialNodes.updateMANeighborCount(neighMA,porousMedia,subDomain.Orientation,Nodes[0])
         sDMA.MA = np.ascontiguousarray(tempMA)
         
@@ -80,11 +78,14 @@ def medialAxisEval(subDomain,porousMedia,grid,distance,connect = False, trim = F
         ## Update Set Information
         mSets.match_and_update_sets()
 
+        ## Update Path Information
+        mPaths = mSets.collect_paths()
+
         ### Collect paths from medialSets
         mPaths = mSets.collect_paths()
         mPaths.get_boundary_paths()
         mPaths.pack_boundary_data()
-        boundaryData = communication.setCOMMNEW(subDomain.Orientation,subDomain,mPaths.boundaryData)
+        boundaryData = communication.set_COMM(subDomain.Orientation,subDomain,mPaths.boundaryData)
 
         mPaths.unpack_boundary_data(boundaryData)
         mPaths.match_boundary_paths()

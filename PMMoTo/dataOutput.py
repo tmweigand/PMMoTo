@@ -239,8 +239,6 @@ def saveGrid(fileName,subDomain,grid):
             pointData=pointDataInfo
             )
 
-
-
 def saveGridOneProc(fileName,x,y,z,grid):
 
     checkFilePath(fileName)

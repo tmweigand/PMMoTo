@@ -1,50 +1,52 @@
 # cython: profile=True
 # cython: linetrace=True
-import math
+
 import numpy as np
 cimport numpy as cnp
 cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from .. import set
+from . import communication
+from . import nodes
 
-class medialSet(set.Set):
+from . import Orientation
+cOrient = Orientation.cOrientation()
+Orient = Orientation.Orientation()
+cdef int[26][5] directions
+cdef int numNeighbors
+directions = cOrient.directions
+numNeighbors = cOrient.numNeighbors
+
+class Set(object):
     def __init__(self, 
-                 localID = 0, 
-                 proc_ID = 0,
-                 inlet = False, 
-                 outlet = False, 
-                 boundary = False, 
-                 numNodes = 0, 
-                 numBoundaryNodes = 0,
-                 pathID = -1, 
-                 type = 0, 
-                 connectedNodes = None):
-      super().__init__(localID, proc_ID, inlet, outlet, boundary, numNodes, numBoundaryNodes)
-      self.pathID = pathID
-      self.type = type
-      self.connectedNodes = connectedNodes
-      self.connectedSets = []
-      self.globalConnectedSets = []
-      self.trim = False
-      self.inaccessible = False
-      self.minDistance = math.inf
-      self.maxDistance = -math.inf
-      self.neighborProcID = []
-      self.matchedSet = []
-      self.connectedSets = []
-      self.globalConnectedSets = []
-
-    def getDistMinMax(self,data):
-      for n in self.nodes:
-        if data[n[0],n[1],n[2]] < self.minDistance:
-          self.minDistance = data[n[0],n[1],n[2]]
-        if data[n[0],n[1],n[2]] > self.maxDistance:
-          self.maxDistance = data[n[0],n[1],n[2]]
+                localID = 0, 
+                proc_ID = 0,
+                inlet = False, 
+                outlet = False, 
+                boundary = False, 
+                numNodes = 0, 
+                numBoundaryNodes = 0):    
+      self.localID = localID   
+      self.proc_ID = proc_ID
+      self.inlet = inlet
+      self.outlet = outlet
+      self.boundary = boundary
+      self.numNodes = numNodes
+      self.numBoundaryNodes = numBoundaryNodes
+      self.numBoundaries  = 0
+      self.numGlobalNodes = numNodes
+      self.globalID = 0
+      self.nodes = np.zeros([numNodes,3],dtype=np.int64) #i,j,k
+      self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
+      self.boundaryFaces = np.zeros(26,dtype=np.uint8)
+      self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)
+      
+    def setNodes(self,nodes):
+      self.nodes = nodes
 
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)   # Deactivate negative indexing.
-    def getSetNodes(self,nNodes,indexMatch,nodeInfo,nodeInfoIndex):
+    def get_set_nodes(self,nNodes,indexMatch,nodeInfo,nodeInfoIndex,subDomain):
       """
         Add all the nodes and boundaryNodes to the Set class.
         Match the index from MA extraction to nodeIndex
@@ -76,7 +78,6 @@ class medialSet(set.Set):
       cdef cnp.uint8_t [:] _boundaryFaces
       _boundaryFaces = boundaryFaces
 
-
       setNodes = self.numNodes
       inNodes = nNodes
       bN =  0
@@ -98,3 +99,17 @@ class medialSet(set.Set):
       self.setNodes(nodes)
       if bN > 0:
         self.setBoundaryNodes(bNodes,boundaryFaces)
+
+
+    def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
+        self.boundary = True
+        self.boundaryNodes = np.sort(boundaryNodes[:,0])
+        self.boundaryNodeID = boundaryNodes[:,1:4]
+        Orient = Orientation.Orientation()
+        allFaces = Orient.allFaces
+        for ID,bF in enumerate(boundaryFaces):
+          if bF:
+            faces = allFaces[ID]
+            for f in faces:
+              self.boundaryFaces[f] = 1
+        self.numBoundaries = np.sum(self.boundaryFaces)

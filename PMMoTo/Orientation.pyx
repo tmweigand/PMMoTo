@@ -201,7 +201,7 @@ class Orientation(object):
     def getLoopInfo(self,grid,subDomain,inlet,outlet,resPad):
         """
         Grap  Loop Information to Cycle through the Boundary Faces and Internal Nodes
-        Reservois are Treated as Entire Face  
+        Reservoirs are Treated as Entire Face  
         Order ensure that inlet/outlet edges and corners are included in optimized looping 
         """
 

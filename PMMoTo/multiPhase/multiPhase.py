@@ -42,7 +42,6 @@ class multiPhase(object):
             if self.subDomain.ID:
                 print("No input Parameter given. Setting phase distribution to 1")
 
-
     def saveMPGrid(self,fileName):
         dataOutput.saveMultiPhaseData(fileName,self.subDomain.ID,self.Domain,self.subDomain,self)
 
@@ -51,6 +50,7 @@ class multiPhase(object):
         Determine Inlet/Outlet for Each Fluid Phase
         TO DO: Optimize loopInfo so phases dont loop over other phase reservoirs
         """
+        #print(self.subDomain.ID,inlets,outlets,self.subDomain.boundaryID)
         pad = np.zeros([self.numFluidPhases,6],dtype = np.int8)
         for fN,fluid in enumerate(self.fluidIDs):
             ### INLET ###
@@ -86,6 +86,8 @@ class multiPhase(object):
             ### Only Pad Inlet 
             for f in range(0,self.Orientation.numFaces):
                 pad[fN,f] = self.inlet[fluid][f]      
+
+            #print(self.subDomain.ID,self.subDomain.boundaryID,pad)
             
             ### If Inlet/Outlet Res, Pad and Update XYZ
             if np.sum(pad[fN]) > 0:
@@ -96,7 +98,9 @@ class multiPhase(object):
                 self.porousMedia.grid = np.pad( self.porousMedia.grid , ( (pad[fN,0], pad[fN,1]), 
                                                                           (pad[fN,2], pad[fN,3]), 
                                                                           (pad[fN,4], pad[fN,5]) ), 'constant', constant_values = 1)
-                self.subDomain.getXYZ(pad[fN])
+                
+            ### Update Subdomain Information     
+            self.subDomain.get_XYZ_mulitphase(pad[fN],inlets[fluid],resSize)
 
 
         for fN,fluid in enumerate(self.fluidIDs):

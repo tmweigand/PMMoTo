@@ -314,8 +314,6 @@ def getConnectedMedialAxis(subDomain,grid,Nodes,MANodeType):
   return mSets
 
 
-
-
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 def updateMANeighborCount(grid,porousMedia,Orientation,nodeInfo):

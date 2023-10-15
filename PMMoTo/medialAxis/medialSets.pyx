@@ -1,7 +1,7 @@
 # distutils: language = c++
-
 # cython: profile=True
 # cython: linetrace=True
+
 import numpy as np
 cimport cython
 from mpi4py import MPI
@@ -9,16 +9,12 @@ comm = MPI.COMM_WORLD
 from . import medialPath
 from .. import communication
 
-cimport cython
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
-import numpy as np
 from numpy cimport npy_intp
 from libcpp cimport bool
 from libcpp.map cimport map
 from libcpp.unordered_map cimport unordered_map
-from libcpp.algorithm cimport binary_search
-
 
 from .. import Orientation
 cOrient = Orientation.cOrientation()
@@ -26,60 +22,6 @@ cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
 numNeighbors = cOrient.numNeighbors
-
-cdef boundary_set c_convert_boundary_set(set):
-    """
-    Convert Python Set Object to C++ struct
-    """
-    cdef boundary_set b_set
-
-    b_set.ID = set.localID
-    b_set.proc_ID = set.proc_ID
-    b_set.n_proc_ID = set.neighborProcID
-    b_set.path_ID = set.pathID
-    b_set.num_nodes = set.numNodes
-    b_set.inlet = set.inlet
-    b_set.outlet = set.outlet
-    b_set.boundary_nodes = set.boundaryNodes
-    b_set.connected_sets = set.connectedSets
-
-    return b_set
-
-cdef vertex c_convert_vertex(set):
-    """
-    Convert Python Set Object to C++ struct
-    """
-    cdef vertex n_set
-
-    n_set.ID = set.localID
-    n_set.inlet = set.inlet
-    n_set.outlet = set.outlet
-    n_set.boundary = set.boundary
-    n_set.trim = set.trim
-    n_set.proc_ID.push_back(set.proc_ID)
-    n_set.connected_sets = set.connectedSets
-
-    return n_set
-
-
-cdef int count_matched_nodes(vector[npy_intp] list1, vector[npy_intp] list2):
-    cdef int count = 0
-    for l in list1:
-        if (binary_search(list2.begin(), list2.end(), l)):
-            count += 1
-    return count
-
-cdef bool match_boundary_nodes(vector[npy_intp] list1, vector[npy_intp] list2):
-    """
-    Input: Two Sorted Lists
-    Output: Bool of at least one shared element
-    """
-    cdef bool match =  False
-    for l in list1:
-        if (binary_search(list2.begin(), list2.end(), l)):
-            match = True
-            break
-    return match
 
 
 class medSets(object):
@@ -124,7 +66,8 @@ class medSets(object):
             if neighborProc < 0:
               set.boundaryFaces[face] = 0
             else:
-              procList.append(neighborProc)
+              if neighborProc not in procList:
+                procList.append(neighborProc)
 
         if (np.sum(set.boundaryFaces) == 0):
           set.boundary = False
@@ -142,7 +85,7 @@ class medSets(object):
     ### Grab boundary sets and send to neighboring procs
     self.get_boundary_sets()
     send_boundary_data = self.pack_boundary_data()
-    recv_boundary_data = communication.setCOMMNEW(self.subDomain.Orientation,self.subDomain,send_boundary_data)
+    recv_boundary_data = communication.set_COMM(self.subDomain.Orientation,self.subDomain,send_boundary_data)
     n_boundary_data = self.unpack_boundary_data(recv_boundary_data)
 
     ### Match boundary sets from neighboring procs and send to root for global ID generation
@@ -176,7 +119,7 @@ class medSets(object):
     """
     Collect the Boundary Set Information to Send to neighbor procs
     """
-    send_boundary_data = {self.subDomain.ID: {'nProcID':{}}}
+    send_boundary_data = {self.subDomain.ID: {'n_proc_ID':{}}}
     cdef boundary_set b_set
     cdef int nP,ID
 
@@ -184,9 +127,9 @@ class medSets(object):
 
     for set in self.boundary_sets:
         for nP in set['n_proc_ID']:
-            if nP not in send_boundary_data[ID]['nProcID'].keys():
-                send_boundary_data[ID]['nProcID'][nP] = {'setID':{}}
-            bD = send_boundary_data[ID]['nProcID'][nP]
+            if nP not in send_boundary_data[ID]['n_proc_ID'].keys():
+                send_boundary_data[ID]['n_proc_ID'][nP] = {'setID':{}}
+            bD = send_boundary_data[ID]['n_proc_ID'][nP]
             bD['setID'][set['ID']] = set
 
     return send_boundary_data
@@ -196,12 +139,12 @@ class medSets(object):
     Unpack the boundary data into neighborBoundarySets
     """
     n_boundary_sets = []
-    for n_proc_ID in boundary_data[self.subDomain.ID]['nProcID'].keys():
+    for n_proc_ID in boundary_data[self.subDomain.ID]['n_proc_ID'].keys():
       if n_proc_ID == self.subDomain.ID:
         pass
       else:
-        for set in boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'].keys():
-          n_boundary_sets.append(boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'][set])
+        for set in boundary_data[n_proc_ID]['n_proc_ID'][n_proc_ID]['setID'].keys():
+          n_boundary_sets.append(boundary_data[n_proc_ID]['n_proc_ID'][n_proc_ID]['setID'][set])
 
     return n_boundary_sets
 

@@ -378,11 +378,11 @@ def subDomainComm(Orientation,subDomain,sendData):
 
     return recvDataFace,recvDataEdge,recvDataCorner
 
-def setCOMMNEW(Orientation,subDomain,data):
+def set_COMM(Orientation,subDomain,data):
   """
   Transmit data to Neighboring Processors
   """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(Orientation,subDomain,data[subDomain.ID]['nProcID'])
+  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(Orientation,subDomain,data[subDomain.ID]['n_proc_ID'])
 
   #############
   ### Faces ###
@@ -390,10 +390,10 @@ def setCOMMNEW(Orientation,subDomain,data):
   for fIndex in Orientation.faces:
     neigh = subDomain.neighborF[fIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
+      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
         if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvFace[fIndex]
+          data[neigh] = {'n_proc_ID':{}}
+        data[neigh]['n_proc_ID'][neigh] = dataRecvFace[fIndex]
 
   #############
   ### Edges ###
@@ -401,10 +401,10 @@ def setCOMMNEW(Orientation,subDomain,data):
   for eIndex in Orientation.edges:
     neigh = subDomain.neighborE[eIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
+      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
         if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvEdge[eIndex]
+          data[neigh] = {'n_proc_ID':{}}
+        data[neigh]['n_proc_ID'][neigh] = dataRecvEdge[eIndex]
 
   ###############
   ### Corners ###
@@ -412,52 +412,9 @@ def setCOMMNEW(Orientation,subDomain,data):
   for cIndex in Orientation.corners:
     neigh = subDomain.neighborC[cIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
+      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
         if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvCorner[cIndex]
-
-  return data
-
-
-
-def setCOMM(Orientation,subDomain,data):
-  """
-  Transmit data to Neighboring Processors
-  """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(Orientation,subDomain,data[subDomain.ID]['NeighborProcID'])
-
-  #############
-  ### Faces ###
-  #############
-  for fIndex in Orientation.faces:
-    neigh = subDomain.neighborF[fIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvFace[fIndex]
-
-  #############
-  ### Edges ###
-  #############
-  for eIndex in Orientation.edges:
-    neigh = subDomain.neighborE[eIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvEdge[eIndex]
-
-  ###############
-  ### Corners ###
-  ###############
-  for cIndex in Orientation.corners:
-    neigh = subDomain.neighborC[cIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['NeighborProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'NeighborProcID':{}}
-        data[neigh]['NeighborProcID'][neigh] = dataRecvCorner[cIndex]
+          data[neigh] = {'n_proc_ID':{}}
+        data[neigh]['n_proc_ID'][neigh] = dataRecvCorner[cIndex]
 
   return data

@@ -101,11 +101,12 @@ class subDomain(object):
         Determine actual coordinate information (x,y,z)
         If boundaryID and Domain.boundary == 0, buffer is not added
         Everywhere else a buffer is added
+        Pad is also Reservoir Size for mulitPhase 
         """
 
-        self.x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype=np.double)
-        self.y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype=np.double)
-        self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype=np.double)
+        self.x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
+        self.y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
+        self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
 
         for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
             self.x[c] = self.Domain.domainSize[0,0] + (self.indexStart[0] + i)*self.Domain.dX + self.Domain.dX/2
@@ -134,6 +135,57 @@ class subDomain(object):
         self.subDomainSize = [self.x[-1] - self.x[0],
                               self.y[-1] - self.y[0],
                               self.z[-1] - self.z[0]]
+
+
+    def get_XYZ_mulitphase(self,pad,inlet,res_size):
+        """
+        Determine actual coordinate information (x,y,z)
+        If boundaryID and Domain.boundary == 0, buffer is not added
+        Everywhere else a buffer is added
+        Pad is also Reservoir Size for mulitPhase 
+        """
+
+        self.x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
+        self.y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
+        self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
+
+        for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
+            self.x[c] = self.Domain.domainSize[0,0] + (self.indexStart[0] + i)*self.Domain.dX + self.Domain.dX/2
+
+        for c,j in enumerate(range(-pad[2], self.nodes[1] + pad[3])):
+            self.y[c] = self.Domain.domainSize[1,0] + (self.indexStart[1] + j)*self.Domain.dY + self.Domain.dY/2
+
+        for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
+            self.z[c] = self.Domain.domainSize[2,0] + (self.indexStart[2] + k)*self.Domain.dZ + self.Domain.dZ/2
+
+        self.ownNodesIndex[0] = pad[0] + self.ownNodesIndex[0]
+        self.ownNodesIndex[1] = self.ownNodesIndex[0] + self.ownNodes[0]
+        self.ownNodesIndex[2] = pad[2] + self.ownNodesIndex[2]
+        self.ownNodesIndex[3] = self.ownNodesIndex[2] + self.ownNodes[1]
+        self.ownNodesIndex[4] = pad[4] + self.ownNodesIndex[4]
+        self.ownNodesIndex[5] = self.ownNodesIndex[4] + self.ownNodes[2]
+
+        self.nodes[0] = self.nodes[0] + pad[0] + pad[1]
+        self.nodes[1] = self.nodes[1] + pad[2] + pad[3]
+        self.nodes[2] = self.nodes[2] + pad[4] + pad[5]
+
+        for nFace,inFace in enumerate(inlet):
+            if pad[nFace*2] != 0 or pad[nFace*2+1] != 0:
+                pass
+            elif inFace[0] > 0:
+                self.indexStart[nFace] = self.indexStart[nFace] + res_size
+
+        self.subDomainSize = [self.x[-1] - self.x[0],
+                              self.y[-1] - self.y[0],
+                              self.z[-1] - self.z[0]]
+        
+        ### Correct Domain.nodes for multiPhase Reservoir
+        for nFace,inFace in enumerate(inlet):
+            if inFace[0] > 0:
+                self.Domain.nodes[nFace] += res_size
+            if inFace[1] > 0:
+                self.Domain.nodes[nFace] += res_size
+        
 
 
     def getNeighbors(self):

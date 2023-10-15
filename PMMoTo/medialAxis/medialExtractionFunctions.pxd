@@ -15,7 +15,7 @@ cdef struct coordinate:
     npy_intp faceCount
     npy_float32 edt
 
-cdef inline bool  compare(coordinate l, const coordinate r):
+cdef inline bool compare(coordinate l, const coordinate r):
     return l.c > r.c;
 
 cdef void findSimplePoints(pixel_type[:, :, ::1] img,
