@@ -5,13 +5,10 @@ import edt
 import math
 comm = MPI.COMM_WORLD
 
-from . import dataOutput
-
 class Morphology(object):
     def __init__(self,Domain,subDomain,grid,radius):
         self.Domain = Domain
         self.subDomain = subDomain
-        self.Orientation = subDomain.Orientation
         self.structElem = None
         self.radius = radius
         self.stuctRatio = np.zeros(6)
@@ -33,28 +30,34 @@ class Morphology(object):
 
         # self.structElem = np.array(s <= self.radius * self.radius)
 
-    def morphAdd(self):
+    def morphAdd(self,phase):
+        """
+        Perform a morpological addition on a given phase
+        """
 
-        gridEDT = edt.edt3d(np.logical_not(self.haloGrid), anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
-        dim = gridEDT.shape
-        gridEDT = gridEDT[self.halo[0]:dim[0]-self.halo[1],
+        ### Convert input grid or multiphase grid to binary for EDT
+        grid = np.where(self.haloGrid == phase,0,1)
+
+        ### Perform EDT on haloed grid so no errors on boundaries
+        gridEDT = edt.edt3d(grid, anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
+
+        ### Morph Add based on EDT
+        gridOut = np.where( (gridEDT <= self.radius),phase,self.haloGrid).astype(np.uint8)
+
+        ### Trim Halo
+        dim = gridOut.shape
+        gridOut = gridOut[self.halo[0]:dim[0]-self.halo[1],
                           self.halo[2]:dim[1]-self.halo[3],
                           self.halo[4]:dim[2]-self.halo[5]]
-        gridOut = np.where( (gridEDT <= self.radius),1,0).astype(np.uint8)
         self.gridOut = np.ascontiguousarray(gridOut)
 
-        # fileName = "dataOut/test/EDT2"
-        # dataOutput.saveGridcsv(fileName,self.subDomain,self.subDomain.x,self.subDomain.y,self.subDomain.z,gridEDT,removeHalo = True)
 
-
-
-
-def morph(grid,subDomain,radius):
+def morph(phase,grid,subDomain,radius):
 
     sDMorph = Morphology(Domain = subDomain.Domain,subDomain = subDomain, grid = grid, radius = radius)
     sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
     sDMorph.genStructElem()
     sDMorph.haloGrid,sDMorph.halo = sDComm.haloCommunication(sDMorph.structRatio)
-    sDMorph.morphAdd()
+    sDMorph.morphAdd(phase)
 
     return sDMorph.gridOut
