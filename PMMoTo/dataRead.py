@@ -196,6 +196,7 @@ def readPorousMediaLammpsDump(file, dataReadkwargs):
     boundaryLims = None
     boundaries = None
     nodes = None
+    waterMolecule = None
     for key,value in dataReadkwargs.items():
         if key == 'rLookupFile':
             rLookupFile=value
@@ -210,23 +211,41 @@ def readPorousMediaLammpsDump(file, dataReadkwargs):
             boundaries = value
         if key == 'nodes':
             nodes = value
+        if key == 'waterMolecule':
+            waterMolecule = True
     if rLookupFile:
         sigmaLJ = []
         rLookup = open(rLookupFile,'r')
         lookupLines = rLookup.readlines()
-        for line in lookupLines:
-            ### For the purposes of being able to specify arbitrarily
-            ### sized particles, this definition of cutoff location
-            ### relies on the assumption that the 'test particle'
-            ### (as LJ interactions occur only between > 1 particles)
-            ### has a LJsigma of 0. i.e. this evaluates the maximum possible
-            ### size of the free volume network
+        if waterMolecule:
+            for line in lookupLines:
+                ### For the purposes of being able to specify arbitrarily
+                ### sized particles, this definition of cutoff location
+                ### relies on the assumption that the 'test particle'
+                ### (as LJ interactions occur only between > 1 particles)
+                ### has a LJsigma of 0. i.e. this evaluates the maximum possible
+                ### size of the free volume network
 
-            ### The following would select the energy minimum, i.e.
-            ### movement of a particles center closer than this requires
-            ### input force
+                ### The following would select the energy minimum, i.e.
+                ### movement of a particles center closer than this requires
+                ### input force
+                combinedSigma = 1.12246204830937*(float(line.split(" ")[2])+3.178)/2
+                sigmaLJ.append(combinedSigma/2)
+        else:
+            for line in lookupLines:
+                ### For the purposes of being able to specify arbitrarily
+                ### sized particles, this definition of cutoff location
+                ### relies on the assumption that the 'test particle'
+                ### (as LJ interactions occur only between > 1 particles)
+                ### has a LJsigma of 0. i.e. this evaluates the maximum possible
+                ### size of the free volume network
 
-            sigmaLJ.append(1.12246204830937*float(line.split(" ")[2])/2)
+                ### The following would select the energy minimum, i.e.
+                ### movement of a particles center closer than this requires
+                ### input force
+
+                combinedSigma = 1.12246204830937*(float(line.split(" ")[2])+0.0)/2
+                sigmaLJ.append(combinedSigma/2)
 
 
     

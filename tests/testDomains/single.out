@@ -1,0 +1,10 @@
+ITEM: TIMESTEP
+10000000
+ITEM: NUMBER OF ATOMS
+1
+ITEM: BOX BOUNDS pp pp pp
+-5 5
+-5 5
+-5 5
+ITEM: ATOMS id mol type mass q x y z vx vy vz v_peratompress c_peratomvol[1]
+1 1 1 12.01 1 0 0 0 0.000920378 -0.00144856 0.000145068 1.09007e+06 8.10101
