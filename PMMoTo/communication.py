@@ -382,7 +382,7 @@ def set_COMM(Orientation,subDomain,data):
   """
   Transmit data to Neighboring Processors
   """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(Orientation,subDomain,data[subDomain.ID]['n_proc_ID'])
+  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(Orientation,subDomain,data[subDomain.ID]['nProcID'])
 
   #############
   ### Faces ###
@@ -390,10 +390,10 @@ def set_COMM(Orientation,subDomain,data):
   for fIndex in Orientation.faces:
     neigh = subDomain.neighborF[fIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
+      if neigh in data[subDomain.ID]['nProcID'].keys():
         if neigh not in data:
-          data[neigh] = {'n_proc_ID':{}}
-        data[neigh]['n_proc_ID'][neigh] = dataRecvFace[fIndex]
+          data[neigh] = {'nProcID':{}}
+        data[neigh]['nProcID'][neigh] = dataRecvFace[fIndex]
 
   #############
   ### Edges ###
@@ -401,10 +401,10 @@ def set_COMM(Orientation,subDomain,data):
   for eIndex in Orientation.edges:
     neigh = subDomain.neighborE[eIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
+      if neigh in data[subDomain.ID]['nProcID'].keys():
         if neigh not in data:
-          data[neigh] = {'n_proc_ID':{}}
-        data[neigh]['n_proc_ID'][neigh] = dataRecvEdge[eIndex]
+          data[neigh] = {'nProcID':{}}
+        data[neigh]['nProcID'][neigh] = dataRecvEdge[eIndex]
 
   ###############
   ### Corners ###
@@ -412,9 +412,9 @@ def set_COMM(Orientation,subDomain,data):
   for cIndex in Orientation.corners:
     neigh = subDomain.neighborC[cIndex]
     if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['n_proc_ID'].keys():
+      if neigh in data[subDomain.ID]['nProcID'].keys():
         if neigh not in data:
-          data[neigh] = {'n_proc_ID':{}}
-        data[neigh]['n_proc_ID'][neigh] = dataRecvCorner[cIndex]
+          data[neigh] = {'nProcID':{}}
+        data[neigh]['nProcID'][neigh] = dataRecvCorner[cIndex]
 
   return data

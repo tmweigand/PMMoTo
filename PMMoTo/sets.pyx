@@ -78,17 +78,17 @@ class Sets(object):
     """
     Collect the Boundary Set Information to Send to neighbor procs
     """
-    send_boundary_data = {self.subDomain.ID: {'n_proc_ID':{}}}
+    send_boundary_data = {self.subDomain.ID: {'nProcID':{}}}
     cdef boundary_set b_set
     cdef int nP,ID
 
     ID = self.subDomain.ID
 
     for set in self.boundary_sets:
-        for nP in set['n_proc_ID']:
-            if nP not in send_boundary_data[ID]['n_proc_ID'].keys():
-                send_boundary_data[ID]['n_proc_ID'][nP] = {'setID':{}}
-            bD = send_boundary_data[ID]['n_proc_ID'][nP]
+        for nP in set['nProcID']:
+            if nP not in send_boundary_data[ID]['nProcID'].keys():
+                send_boundary_data[ID]['nProcID'][nP] = {'setID':{}}
+            bD = send_boundary_data[ID]['nProcID'][nP]
             bD['setID'][set['ID']] = set
 
     return send_boundary_data
@@ -98,12 +98,12 @@ class Sets(object):
     Unpack the boundary data into neighborBoundarySets
     """
     n_boundary_sets = []
-    for n_proc_ID in boundary_data[self.subDomain.ID]['n_proc_ID'].keys():
+    for n_proc_ID in boundary_data[self.subDomain.ID]['nProcID'].keys():
       if n_proc_ID == self.subDomain.ID:
         pass
       else:
-        for set in boundary_data[n_proc_ID]['n_proc_ID'][n_proc_ID]['setID'].keys():
-          n_boundary_sets.append(boundary_data[n_proc_ID]['n_proc_ID'][n_proc_ID]['setID'][set])
+        for set in boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'].keys():
+          n_boundary_sets.append(boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'][set])
 
     return n_boundary_sets
 
@@ -205,12 +205,12 @@ class Sets(object):
             m_set_data.ID = b_set.ID
             m_set_data.proc_ID = b_set.proc_ID
             m_set_data.n_ID.push_back(m_set.ID)
-            m_set_data.n_proc_ID.push_back(m_set.proc_ID)
+            m_set_data.nProcID.push_back(m_set.proc_ID)
 
         ### Load and clear
         send_matched_set_data[ID]['setID'][b_set.ID] = m_set_data
         m_set_data.n_ID.clear()
-        m_set_data.n_proc_ID.clear()
+        m_set_data.nProcID.clear()
         m_set_data.clear()
 
     return send_matched_set_data
@@ -299,7 +299,7 @@ class Sets(object):
 
                 ### Add connected sets to set_connect and queue
                 for n_con_set in range(c_set.n_ID.size()):
-                    set_ID.first = c_set.n_proc_ID[n_con_set]
+                    set_ID.first = c_set.nProcID[n_con_set]
                     set_ID.second = c_set.n_ID[n_con_set]
                     index = index_convert[set_ID]
                     if visited[set_ID] == False:

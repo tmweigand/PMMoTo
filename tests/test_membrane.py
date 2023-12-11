@@ -33,7 +33,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [500,500,400] # Total Number of Nodes in Domain
+    nodes = [489,750,750] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
@@ -43,41 +43,53 @@ def my_function():
 
 
     rLookupFile = './rLookups/PA.rLookup'
-    file = './testDomains/membrane.71005000.gz'
+    file = './testDomains/pa_ng_05.out'
 
 
     boundaryLims = [[None,None],
                     [None,None],
-                    [-74.7950144680851, 74.7950144680851]]
+                    [125, 274.97]]
 
     startTime = time.time()
     dataReadkwargs = {'rLookupFile':rLookupFile,
                   'boundaryLims':boundaryLims,
                   'boundaries':dataReadBoundaries,
+                  # 'waterMolecule':True,
                   'nodes':nodes}
 
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"SphereVerlet",file,PMMoTo.readPorousMediaLammpsDump,dataReadkwargs)
-
+    procID = rank*np.ones_like(pML.grid)
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
-
-    waterRadius = 1.
-    sD_twoPhase = np.where(sD_EDT.EDT > waterRadius,2,pML.grid).astype(np.uint8)
+    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True, trim  = True)
+    sD_twoPhase = np.where(sD_EDT.EDT > 1.0,2,pML.grid).astype(np.uint8)
     #sD_twoPhase = PMMoTo.morph(2,sD_twoPhaseMID,sDL,waterRadius)
-
     wSets = PMMoTo.sets.collect_sets(sD_twoPhase,2,pML.inlet,pML.outlet,pML.loopInfo,pML.subDomain)
 
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT,MA=sDMAL.MA,PROC=procID)
+    connectedFlag = False
     for s in wSets.sets:
        if s.inlet and s.outlet:
-          print("Connected")
-
+          connectedFlag=True
+    if connectedFlag and (rank == 0):
+       print("Connected")
     endTime = time.time()
     print("Parallel Time:",endTime-startTime)
 
+    for s in sDMAL.Sets.sets:
+        s.numConnectedSets = len(s.connectedSets)
+
     setSaveDict = {'inlet': 'inlet',
                 'outlet':'outlet',
-                'globalID': 'globalID'}
-        
-    PMMoTo.saveSetData("dataOut/set",sDL,wSets,**setSaveDict)
+                'trim' :'trim',
+                'inaccessible' :'inaccessible',
+                'boundary': 'boundary',
+                'localID': 'localID',
+                'type': 'type',
+                'numBoundaries': 'numBoundaries',
+                'pathID': 'pathID',
+                'numConnectedSets':'numConnectedSets'}
+    
+    PMMoTo.saveSetData("dataOut/set",sDL,sDMAL.Sets,**setSaveDict)
 
 
 

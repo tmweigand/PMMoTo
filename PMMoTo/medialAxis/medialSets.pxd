@@ -12,7 +12,7 @@ cdef struct boundary_set:
     npy_intp num_global_nodes
     bool inlet
     bool outlet
-    vector[npy_intp] n_proc_ID
+    vector[npy_intp] nProcID
     vector[npy_intp] boundary_nodes
     vector[npy_intp] connected_sets
 
@@ -25,7 +25,7 @@ cdef struct matched_set:
     bool inlet
     bool outlet
     vector[npy_intp] n_ID
-    vector[npy_intp] n_proc_ID
+    vector[npy_intp] nProcID
     vector[npy_intp] n_path_ID
     vector[npy_intp] connected_sets
     vector[npy_intp] n_connected_sets
@@ -48,7 +48,7 @@ cdef inline boundary_set c_convert_boundary_set(set):
 
     b_set.ID = set.localID
     b_set.proc_ID = set.proc_ID
-    b_set.n_proc_ID = set.neighborProcID
+    b_set.nProcID = set.neighborProcID
     b_set.path_ID = set.pathID
     b_set.num_nodes = set.numNodes
     b_set.inlet = set.inlet
