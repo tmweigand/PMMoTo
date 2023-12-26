@@ -81,10 +81,10 @@ class Corner(CubeFeature):
                 self.extend[n][1] = 0
 
 
-numFaces = 6
-numEdges = 12
-numCorners = 8
-numNeighbors = 26
+num_faces = 6
+num_edges = 12
+num_corners = 8
+num_neighbors = 26
 
 faces = {0:{'ID':(-1, 0, 0),'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir': 1},
          1:{'ID':( 1, 0, 0),'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
@@ -202,14 +202,14 @@ allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
             [25]]                             # 25
 
 cdef class cOrientation(object):
-    cdef public int numFaces,numEdges,numCorners,numNeighbors
+    cdef public int num_faces,num_edges,num_corners,num_neighbors
     cdef public int[26][5] directions
     cdef public int[6][4] face_info
     def __cinit__(self):
-        self.numFaces = 6
-        self.numEdges = 12
-        self.numCorners = 8
-        self.numNeighbors = 26
+        self.num_faces = 6
+        self.num_edges = 12
+        self.num_corners = 8
+        self.num_neighbors = 26
         self.directions = [[-1,-1,-1,  0, 13],  #0
                            [-1,-1, 1,  1, 12],  #1
                            [-1,-1, 0,  2, 14],  #2
@@ -303,7 +303,7 @@ def get_loop_info(grid,subDomain,inlet,outlet,res_pad):
     Order ensures that inlet/outlet edges and corners are included in optimized looping 
     """
     order = get_index_ordering(inlet,outlet)
-    loop_info = np.zeros([numFaces+1,3,2],dtype = np.int64)
+    loop_info = np.zeros([num_faces+1,3,2],dtype = np.int64)
 
     range_info = 2*np.ones([6],dtype=np.uint8)
     for f_index in faces:
@@ -346,13 +346,13 @@ def get_loop_info(grid,subDomain,inlet,outlet,res_pad):
                 loop_info[f_index,order[1]] = [range_info[order[1]*2],g_s[1]-range_info[order[1]*2+1]]
                 loop_info[f_index,order[2]] = [0,range_info[order[2]*2]]
 
-    loop_info[numFaces][order[0]] = [range_info[order[0]*2],g_s[0]-range_info[order[0]*2+1]]
-    loop_info[numFaces][order[1]] = [range_info[order[1]*2],g_s[1]-range_info[order[1]*2+1]]
-    loop_info[numFaces][order[2]] = [range_info[order[2]*2],g_s[2]-range_info[order[2]*2+1]]
+    loop_info[num_faces][order[0]] = [range_info[order[0]*2],g_s[0]-range_info[order[0]*2+1]]
+    loop_info[num_faces][order[1]] = [range_info[order[1]*2],g_s[1]-range_info[order[1]*2+1]]
+    loop_info[num_faces][order[2]] = [range_info[order[2]*2],g_s[2]-range_info[order[2]*2+1]]
     
     return loop_info
 
-def getSendSlices(struct_ratio,buffer,dim):
+def get_send_halo(struct_ratio,buffer,dim):
     """
     Determine slices of face, edge, and corner neighbor to send data 
     structRatio is size of voxel window to send and is [nx,ny,nz]
@@ -360,9 +360,9 @@ def getSendSlices(struct_ratio,buffer,dim):
     dim is grid.shape
     Buffer is always updated on edges and corners due to geometry contraints
     """
-    send_faces = np.empty([numFaces,3],dtype=object)
-    send_edges = np.empty([numEdges,3],dtype=object)
-    send_corner = np.empty([numCorners,3],dtype=object)
+    send_faces = np.empty([num_faces,3],dtype=object)
+    send_edges = np.empty([num_edges,3],dtype=object)
+    send_corner = np.empty([num_corners,3],dtype=object)
 
     #############
     ### Faces ###
@@ -408,7 +408,7 @@ def getSendSlices(struct_ratio,buffer,dim):
 
     return send_faces,send_edges,send_corner
 
-def getSendBufferSlices(buffer,dim):
+def get_send_buffer(buffer,dim):
     """
     Determine slices of face, edge, and corner neighbor to send data 
     structRatio is size of voxel window to send and is [nx,ny,nz]
@@ -417,9 +417,9 @@ def getSendBufferSlices(buffer,dim):
     Buffer is always updated on edges and corners due to geometry contraints
     """
 
-    send_faces = np.empty([numFaces,3],dtype=object)
-    send_edges = np.empty([numEdges,3],dtype=object)
-    send_corner = np.empty([numCorners,3],dtype=object)
+    send_faces = np.empty([num_faces,3],dtype=object)
+    send_edges = np.empty([num_edges,3],dtype=object)
+    send_corner = np.empty([num_corners,3],dtype=object)
 
     #############
     ### Faces ###
@@ -466,15 +466,15 @@ def getSendBufferSlices(buffer,dim):
     return send_faces,send_edges,send_corner
 
 
-def getRecieveSlices(halo,buffer,dim):
+def get_recv_halo(halo,buffer,dim):
     """
     Determine slices of face, edge, and corner neighbor to recieve data 
     Buffer is always updated on edges and corners due to geometry contraints
     """
 
-    recv_faces = np.empty([numFaces,3],dtype=object)
-    recv_edges = np.empty([numEdges,3],dtype=object)
-    recv_corners = np.empty([numCorners,3],dtype=object)
+    recv_faces = np.empty([num_faces,3],dtype=object)
+    recv_edges = np.empty([num_edges,3],dtype=object)
+    recv_corners = np.empty([num_corners,3],dtype=object)
 
     #############
     ### Faces ###
@@ -520,15 +520,15 @@ def getRecieveSlices(halo,buffer,dim):
 
     return recv_faces,recv_edges,recv_corners
 
-def getRecieveBufferSlices(buffer,dim):
+def get_recv_buffer(buffer,dim):
     """
     Determine slices of face, edge, and corner neighbor to recieve data 
     Buffer is always updated on edges and corners due to geometry contraints
     """
 
-    recv_faces = np.empty([numFaces,3],dtype=object)
-    recv_edges = np.empty([numEdges,3],dtype=object)
-    recv_corners = np.empty([numCorners,3],dtype=object)
+    recv_faces = np.empty([num_faces,3],dtype=object)
+    recv_edges = np.empty([num_edges,3],dtype=object)
+    recv_corners = np.empty([num_corners,3],dtype=object)
 
 
     #############

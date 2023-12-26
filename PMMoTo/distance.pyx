@@ -116,11 +116,10 @@ def _fixInterfaceCalc(tree,
 
 
 class EDT(object):
-    def __init__(self,subDomain,Domain,grid):
+    def __init__(self,subDomain,grid):
+        self.subDomain = subDomain
         self.extendFactor  = 0.7
-        self.useIndex      = False
-        self.subDomain     = subDomain
-        self.Domain        = Domain
+        self.grid = grid
         self.EDT = np.zeros_like(grid)
         self.solids = None
         self.faceSolids = []
@@ -128,7 +127,6 @@ class EDT(object):
         self.cornerSolids = []
         self.solidsAll = {self.subDomain.ID: {'orientID':{}}}
         self.external_solids = {key: None for key in Orientation.features}
-        self.grid = grid
         self.distVals = None
         self.distCounts  = None
         self.minD = 0
@@ -138,7 +136,7 @@ class EDT(object):
         """
         Determine the Euclidian distance on each process knowing the values may be too high
         """
-        self.EDT = edt.edt3d(self.grid, anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
+        self.EDT = edt.edt3d(self.grid, anisotropy=(self.subDomain.Domain.dX, self.subDomain.Domain.dY, self.subDomain.Domain.dZ))
 
 
     def partition_boundary_solids(self):
@@ -198,7 +196,7 @@ class EDT(object):
         Loop through faces and correct distance with external_solids
         """
         visited = np.zeros_like(self.grid,dtype=np.uint8)
-        minD = min(self.Domain.dX,self.Domain.dY,self.Domain.dZ)
+        minD = min(self.subDomain.Domain.dX,self.subDomain.Domain.dY,self.subDomain.Domain.dZ)
         coords = [self.subDomain.x,self.subDomain.y,self.subDomain.z]
 
         for face in self.subDomain.faces:
@@ -275,20 +273,18 @@ def calcEDT(subDomain,grid,stats = False,sendClass = False):
     size = subDomain.Domain.numSubDomains
     rank = subDomain.ID
 
-    sDEDT = EDT(Domain = subDomain.Domain, subDomain = subDomain, grid = grid)
-    sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
+    sDEDT = EDT(subDomain = subDomain, grid = grid)
 
     sDEDT.genLocalEDT()
     if size > 1 or (size == 1 and any(subDomain.boundaryID == 2)):
         sDEDT.solids = nodes.get_boundary_nodes(grid,0)
         face_solids,edge_solids,corner_solids = sDEDT.partition_boundary_solids()
     
-        sDEDT.external_solids = sDComm.EDTCommunication(sDEDT.external_solids,face_solids,edge_solids,corner_solids)
+        sDEDT.external_solids = communication.pass_external_data(subDomain,face_solids,edge_solids,corner_solids)
         sDEDT.fixInterface()
 
         ### Update EDT Buffer
-        sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = sDEDT.EDT)
-        sDEDT.EDT = sDComm.update_buffer()
+        sDEDT.EDT = communication.update_buffer(subDomain,sDEDT.EDT)
 
     if stats:
         sDEDT.genStats()

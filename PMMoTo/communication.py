@@ -4,343 +4,322 @@ from mpi4py import MPI
 import sys
 comm = MPI.COMM_WORLD
 
-
-
 def raiseError():
     MPI.Finalize()
     sys.exit()
 
-class Comm(object):
-    def __init__(self,Domain,subDomain,grid = None):
-        self.Domain = Domain
-        self.subDomain = subDomain
-        self.grid = grid
-        self.dim = self.grid.shape
-        self.halo = np.zeros([6],dtype=np.int64)
-        self.haloData = {self.subDomain.ID: {'NeighborProcID':{}}} 
+def update_buffer(subDomain,grid):
+    buffer_data = buffer_pack(subDomain,grid)
+    f,e,c = communicate(subDomain,buffer_data)
+    buffer_grid = buffer_unpack(subDomain,grid,f,e,c)
+    return buffer_grid
 
-    def buffer_pack(self):
-        """
-        Grab The Slices (based on Buffer Size [1,1,1]) to pack and send to Neighbors
-        for faces, edges and corners.
-        """
+def generate_halo(subDomain,grid,halo):
+    halo_data,halo_out = halo_pack(subDomain,grid,halo)
+    f,e,c = communicate(subDomain,halo_data)
+    halo_grid = halo_unpack(subDomain,grid,halo_out,f,e,c)
+    return halo_grid,halo
 
-        sendFSlices,sendESlices,sendCSlices = Orientation.getSendBufferSlices(self.subDomain.buffer,self.dim)
-
-        halo_data = {}
-        for n_proc in self.subDomain.n_procs:
-            if n_proc > -1 and n_proc != self.subDomain.ID:
-                halo_data[n_proc] = {'ID':{}}
-                for feature in self.subDomain.n_procs[n_proc]:
-                    halo_data[n_proc]['ID'][feature] = None
-
-        slices = sendFSlices
-        for face in self.subDomain.faces:
-            if face.n_proc > -1 and face.n_proc != self.subDomain.ID:
-                s = slices[face.ID,:]
-                halo_data[face.n_proc]['ID'][face.info['ID']] = self.grid[s[0],s[1],s[2]]
-
-        slices = sendESlices
-        for edge in self.subDomain.edges:
-            if edge.n_proc > -1 and edge.n_proc != self.subDomain.ID:
-                s = slices[edge.ID,:]
-                halo_data[edge.n_proc]['ID'][edge.info['ID']] = self.grid[s[0],s[1],s[2]]
-
-        slices = sendCSlices
-        for corner in self.subDomain.corners:
-            if corner.n_proc > -1 and corner.n_proc != self.subDomain.ID:
-                s = slices[corner.ID,:]
-                halo_data[corner.n_proc]['ID'][corner.info['ID']] = self.grid[s[0],s[1],s[2]]
-
-        return halo_data
+def pass_external_data(subDomain,face_solids,edge_solids,corner_solids):
+    external_data = external_nodes_pack(subDomain,face_solids,edge_solids,corner_solids)
+    f,e,c = communicate(subDomain,external_data)
+    external_solids = external_nodes_unpack(subDomain,f,e,c,face_solids,edge_solids,corner_solids)
+    return external_solids
 
 
-    def bufferComm(self,data):
+def buffer_pack(subDomain,grid):
+    """
+    Grab The Slices (based on Buffer Size [1,1,1]) to pack and send to Neighbors
+    for faces, edges and corners.
+    """
 
-        face_recv,edge_recv,corner_recv = subDomainComm(self.subDomain,data)
-        return face_recv,edge_recv,corner_recv
+    send_faces,send_edges,send_corners = Orientation.get_send_buffer(subDomain.buffer,grid.shape)
 
-    def buffer_unpack(self,face_recv,edge_recv,corner_recv):
-        """
-        Unpack buffer information and account for serial periodic boundary conditions
-        """
-        halo_grid = np.copy(self.grid)
-        recvFSlices,recvESlices,recvCSlices = Orientation.getRecieveBufferSlices(self.subDomain.buffer,halo_grid.shape)
-        sendFSlices,sendESlices,sendCSlices = Orientation.getSendBufferSlices(self.subDomain.buffer,self.dim)
+    buffer_data = {}
+    for n_proc in subDomain.n_procs:
+        if n_proc > -1 and n_proc != subDomain.ID:
+            buffer_data[n_proc] = {'ID':{}}
+            for feature in subDomain.n_procs[n_proc]:
+                buffer_data[n_proc]['ID'][feature] = None
 
-        #### Faces ####
-        r_slices = recvFSlices
-        s_slices = sendFSlices
-        for face in self.subDomain.faces:
+    slices = send_faces
+    for face in subDomain.faces:
+        if face.n_proc > -1 and face.n_proc != subDomain.ID:
+            s = slices[face.ID,:]
+            buffer_data[face.n_proc]['ID'][face.info['ID']] = grid[s[0],s[1],s[2]]
 
-            if (face.n_proc > -1 and face.n_proc != self.subDomain.ID):
-                r_s = r_slices[face.ID,:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = face_recv[face.ID]['ID'][face.opp_info['ID']]
+    slices = send_edges
+    for edge in subDomain.edges:
+        if edge.n_proc > -1 and edge.n_proc != subDomain.ID:
+            s = slices[edge.ID,:]
+            buffer_data[edge.n_proc]['ID'][edge.info['ID']] = grid[s[0],s[1],s[2]]
 
-            elif face.n_proc == self.subDomain.ID:
-                r_s = r_slices[face.ID,:]
-                s_s = s_slices[face.info['oppIndex'],:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = self.grid[s_s[0],s_s[1],s_s[2]]
+    slices = send_corners
+    for corner in subDomain.corners:
+        if corner.n_proc > -1 and corner.n_proc != subDomain.ID:
+            s = slices[corner.ID,:]
+            buffer_data[corner.n_proc]['ID'][corner.info['ID']] = grid[s[0],s[1],s[2]]
 
-        #### Edges ####
-        r_slices = recvESlices
-        s_slices = sendESlices
-        for edge in self.subDomain.edges:
+    return buffer_data
 
-            if (edge.n_proc > -1 and edge.n_proc != self.subDomain.ID):
-                r_s = r_slices[edge.ID,:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = edge_recv[edge.ID]['ID'][edge.opp_info['ID']]
+def buffer_unpack(subDomain,grid,face_recv,edge_recv,corner_recv):
+    """
+    Unpack buffer information and account for serial periodic boundary conditions
+    """
+    buffer_grid = np.copy(grid)
+    recv_faces,recv_edges,recv_corners = Orientation.get_recv_buffer(subDomain.buffer,buffer_grid.shape)
+    send_faces,send_edges,send_corners = Orientation.get_send_buffer(subDomain.buffer,grid.shape)
 
-            elif edge.n_proc == self.subDomain.ID:
-                r_s = r_slices[edge.ID,:]
-                s_s = s_slices[edge.info['oppIndex'],:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = self.grid[s_s[0],s_s[1],s_s[2]]
+    #### Faces ####
+    r_slices = recv_faces
+    s_slices = send_faces
+    for face in subDomain.faces:
+        if (face.n_proc > -1 and face.n_proc != subDomain.ID):
+            r_s = r_slices[face.ID,:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = face_recv[face.ID]['ID'][face.opp_info['ID']]
+        elif face.n_proc == subDomain.ID:
+            r_s = r_slices[face.ID,:]
+            s_s = s_slices[face.info['oppIndex'],:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
 
-        #### Corners ####
-        r_slices = recvCSlices
-        s_slices = sendCSlices
-        for corner in self.subDomain.corners:
+    #### Edges ####
+    r_slices = recv_edges
+    s_slices = send_edges
+    for edge in subDomain.edges:
+        if (edge.n_proc > -1 and edge.n_proc != subDomain.ID):
+            r_s = r_slices[edge.ID,:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = edge_recv[edge.ID]['ID'][edge.opp_info['ID']]
+        elif edge.n_proc == subDomain.ID:
+            r_s = r_slices[edge.ID,:]
+            s_s = s_slices[edge.info['oppIndex'],:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
 
-            if (corner.n_proc > -1 and corner.n_proc != self.subDomain.ID):
-                r_s = r_slices[corner.ID,:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = corner_recv[corner.ID]['ID'][corner.opp_info['ID']]
-
-            elif corner.n_proc == self.subDomain.ID:
-                r_s = r_slices[corner.ID,:]
-                s_s = s_slices[corner.info['oppIndex'],:]
-                halo_grid[r_s[0],r_s[1],r_s[2]] = self.grid[s_s[0],s_s[1],s_s[2]]
-        
-        return halo_grid
-
-    def haloCommPack(self,haloIn):
-        """
-        Grab The Slices (based on Size) to pack and send to Neighbors
-        for faces, edges and corners
-        """
-
-        sendFSlices,sendESlices,sendCSlices = Orientation.getSendSlices(haloIn,self.subDomain.buffer,self.dim)
-
-        self.slices = Orientation.sendFSlices
-        for fIndex in Orientation.faces:
-            neigh = self.subDomain.neighborF[fIndex]
-            if neigh > -1:
-                self.halo[fIndex]= haloIn[fIndex]
-                if neigh not in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    self.haloData[self.subDomain.ID]['NeighborProcID'][neigh] = {'Index':{}}
-                self.haloData[self.subDomain.ID]['NeighborProcID'][neigh]['Index'][fIndex] = self.grid[self.slices[fIndex,0],self.slices[fIndex,1],self.slices[fIndex,2]]
-
-
-        self.slices = Orientation.sendESlices
-        for eIndex in Orientation.edges:
-            neigh = self.subDomain.neighborE[eIndex]
-            if neigh > -1:
-                if neigh not in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    self.haloData[self.subDomain.ID]['NeighborProcID'][neigh] = {'Index':{}}
-                self.haloData[self.subDomain.ID]['NeighborProcID'][neigh]['Index'][eIndex] = self.grid[self.slices[eIndex,0],self.slices[eIndex,1],self.slices[eIndex,2]] 
-
-        self.slices = Orientation.sendCSlices
-        for cIndex in Orientation.corners:
-            neigh = self.subDomain.neighborC[cIndex]
-            if neigh > -1:
-                if neigh not in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    self.haloData[self.subDomain.ID]['NeighborProcID'][neigh] = {'Index':{}}
-                self.haloData[self.subDomain.ID]['NeighborProcID'][neigh]['Index'][cIndex] = self.grid[self.slices[cIndex,0],self.slices[cIndex,1],self.slices[cIndex,2]]
-
-        self.haloGrid = np.pad(self.grid, ( (self.halo[0], self.halo[1]), (self.halo[2], self.halo[3]), (self.halo[4], self.halo[5]) ), 'constant', constant_values=255)
-
-    def haloComm(self):
-        self.dataRecvFace,self.dataRecvEdge,self.dataRecvCorner = subDomainComm(self.subDomain,self.haloData[self.subDomain.ID]['NeighborProcID'])
-
-    def haloCommUnpack(self):
-        Orientation.getRecieveSlices(self.halo,self.subDomain.buffer,self.haloGrid.shape)
-
-        #### Faces ####
-        self.slices = Orientation.recvFSlices
-        for fIndex in Orientation.faces:
-            neigh = self.subDomain.neighborF[fIndex]
-            oppIndex = Orientation.faces[fIndex]['oppIndex']
-            if (neigh > -1 and neigh != self.subDomain.ID):
-                if neigh in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    if neigh not in self.haloData:
-                        self.haloData[neigh] = {'NeighborProcID':{}}
-                    self.haloData[neigh]['NeighborProcID'][neigh] = self.dataRecvFace[fIndex]['Index'][oppIndex]
-                    self.haloGrid[self.slices[fIndex,0],self.slices[fIndex,1],self.slices[fIndex,2]] = self.haloData[neigh]['NeighborProcID'][neigh]
-
-        #### Edges ####
-        self.slices = Orientation.recvESlices
-        for eIndex in Orientation.edges:
-            neigh = self.subDomain.neighborE[eIndex]
-            oppIndex = Orientation.edges[eIndex]['oppIndex']
-            if (neigh > -1 and neigh != self.subDomain.ID):
-                if neigh in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    if neigh not in self.haloData:
-                        self.haloData[neigh] = {'NeighborProcID':{}}
-                    self.haloData[neigh]['NeighborProcID'][neigh] = self.dataRecvEdge[eIndex]['Index'][oppIndex]
-                    self.haloGrid[self.slices[eIndex,0],self.slices[eIndex,1],self.slices[eIndex,2]] = self.haloData[neigh]['NeighborProcID'][neigh]
-
-        #### Corners ####
-        self.slices = Orientation.recvCSlices
-        for cIndex in Orientation.corners:
-            neigh = self.subDomain.neighborC[cIndex]
-            oppIndex = Orientation.corners[cIndex]['oppIndex']
-            if (neigh > -1 and neigh != self.subDomain.ID):
-                if neigh in self.haloData[self.subDomain.ID]['NeighborProcID'].keys():
-                    if neigh not in self.haloData:
-                        self.haloData[neigh] = {'NeighborProcID':{}}
-                    self.haloData[neigh]['NeighborProcID'][neigh] = self.dataRecvCorner[cIndex]['Index'][oppIndex]
-                    self.haloGrid[self.slices[cIndex,0],self.slices[cIndex,1],self.slices[cIndex,2]] = self.haloData[neigh]['NeighborProcID'][neigh]
-
-    def EDTCommPack(self,face_solids,edge_solids,corner_solids):
-        """
-        Send boundary solids data. Send data is OPPOSITE from ID. 
-        """
-        self.send_data = {}
-        for n_proc in self.subDomain.n_procs:
-            if n_proc != self.subDomain.ID:
-                self.send_data[n_proc] = {'ID':{}}
-                for feature in self.subDomain.n_procs[n_proc]:
-                    self.send_data[n_proc]['ID'][feature] = None
-        
-        for face in self.subDomain.faces:
-            if face.n_proc != self.subDomain.ID:
-                self.send_data[face.n_proc]['ID'][face.info['ID']] = face_solids[face.ID]
-
-        for edge in self.subDomain.edges:
-            if edge.n_proc != self.subDomain.ID:
-                self.send_data[edge.n_proc]['ID'][edge.info['ID']] = edge_solids[edge.ID]
-
-        for corner in self.subDomain.corners:
-            if corner.n_proc != self.subDomain.ID:
-                self.send_data[corner.n_proc]['ID'][corner.info['ID']] = corner_solids[corner.ID]
-
-    def EDTComm(self):
-        
-        if self.send_data:
-            self.dataRecvFace,self.dataRecvEdge,self.dataRecvCorner = subDomainComm(self.subDomain,self.send_data)
-
-    def EDTCommUnpackNEW(self,external_solids,face_solids,edge_solids,corner_solids):
-
-        #### FACE ####
-        for face in self.subDomain.faces:
-            period_correction = face.periodic_correction*self.Domain.domainLength
-            if (face.n_proc > -1 and face.n_proc  != self.subDomain.ID):
-                opp_ID = Orientation.faces[face.info['oppIndex']]['ID']
-                external_solids[face.info['ID']] = self.dataRecvFace[face.ID]['ID'][opp_ID] - period_correction
-            elif (face.n_proc == self.subDomain.ID):
-                external_solids[face.info['ID']] = face_solids[face.info['oppIndex']] - period_correction
-
-        #### EDGE ####
-        for edge in self.subDomain.edges:
-            period_correction = edge.periodic_correction*self.Domain.domainLength
-            if (edge.n_proc > -1 and edge.n_proc != self.subDomain.ID):
-                opp_ID = Orientation.edges[edge.info['oppIndex']]['ID']
-                external_solids[edge.info['ID']] = self.dataRecvEdge[edge.ID]['ID'][opp_ID] - period_correction
-            elif (edge.n_proc == self.subDomain.ID):
-                external_solids[edge.info['ID']] = edge_solids[edge.info['oppIndex']] - period_correction
-
-        #### Corner ####
-        for corner in self.subDomain.corners:
-            period_correction = corner.periodic_correction*self.Domain.domainLength
-            if (corner.n_proc > -1 and corner.n_proc != self.subDomain.ID):
-                opp_ID = Orientation.corners[corner.info['oppIndex']]['ID']
-                external_solids[corner.info['ID']] = self.dataRecvCorner[corner.ID]['ID'][opp_ID] - period_correction
-            elif (corner.n_proc == self.subDomain.ID):
-                external_solids[corner.info['ID']] = corner_solids[corner.info['oppIndex']] - period_correction
-
-
-    def update_buffer(self):
-        halo_data = self.buffer_pack()
-        f,e,c = self.bufferComm(halo_data)
-        halo_grid = self.buffer_unpack(f,e,c)
-        return halo_grid
-
-    def haloCommunication(self,haloIn):
-        self.haloCommPack(haloIn)
-        self.haloComm()
-        self.haloCommUnpack()
-        return self.haloGrid,self.halo
-
-    def EDTCommunication(self,external_solids,face_solids,edge_solids,corner_solids):
-        self.EDTCommPack(face_solids,edge_solids,corner_solids)
-        self.EDTComm()
-        self.EDTCommUnpackNEW(external_solids,face_solids,edge_solids,corner_solids)
-        return external_solids
+    #### Corners ####
+    r_slices = recv_corners
+    s_slices = send_corners
+    for corner in subDomain.corners:
+        if (corner.n_proc > -1 and corner.n_proc != subDomain.ID):
+            r_s = r_slices[corner.ID,:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = corner_recv[corner.ID]['ID'][corner.opp_info['ID']]
+        elif corner.n_proc == subDomain.ID:
+            r_s = r_slices[corner.ID,:]
+            s_s = s_slices[corner.info['oppIndex'],:]
+            buffer_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
     
+    return buffer_grid
 
-def subDomainComm(subDomain,sendData):
+def halo_pack(subDomain,grid,halo):
+    """
+    Grab The Slices (based on Size) to pack and send to Neighbors
+    for faces, edges and corners
+    """
+
+    send_faces,send_edges,send_corners = Orientation.get_send_halo(halo,subDomain.buffer,grid.shape)
+
+    halo_out = np.zeros(Orientation.num_faces)
+    for face in subDomain.faces:
+        if face.n_proc > -1:
+            halo_out[face.ID] = halo[face.ID]
+
+    halo_data = {}
+    for n_proc in subDomain.n_procs:
+        if n_proc > -1 and n_proc != subDomain.ID:
+            halo_data[n_proc] = {'ID':{}}
+            for feature in subDomain.n_procs[n_proc]:
+                halo_data[n_proc]['ID'][feature] = None
+
+    slices = send_faces
+    for face in subDomain.faces:
+        if face.n_proc > -1 and face.n_proc != subDomain.ID:
+            s = slices[face.ID,:]
+            halo_data[face.n_proc]['ID'][face.info['ID']] = grid[s[0],s[1],s[2]]
+
+    slices = send_edges
+    for edge in subDomain.edges:
+        if edge.n_proc > -1 and edge.n_proc != subDomain.ID:
+            s = slices[edge.ID,:]
+            halo_data[edge.n_proc]['ID'][edge.info['ID']] = grid[s[0],s[1],s[2]]
+
+    slices = send_corners
+    for corner in subDomain.corners:
+        if corner.n_proc > -1 and corner.n_proc != subDomain.ID:
+            s = slices[corner.ID,:]
+            halo_data[corner.n_proc]['ID'][corner.info['ID']] = grid[s[0],s[1],s[2]]
+
+    return halo_data,halo_out
+
+def halo_unpack(subDomain,grid,halo,face_recv,edge_recv,corner_recv):
+
+    halo_grid = np.pad(grid,((halo[0], halo[1]), (halo[2], halo[3]), (halo[4], halo[5])), 'constant', constant_values=255)
+    recv_faces,recv_edges,recv_corners = Orientation.get_recv_halo(halo,subDomain.buffer,halo_grid.shape)
+    send_faces,send_edges,send_corners = Orientation.get_send_halo(subDomain.buffer,grid.shape)
+
+
+    #### Faces ####
+    r_slices = recv_faces
+    s_slices = send_faces
+    for face in subDomain.faces:
+        if (face.n_proc > -1 and face.n_proc != subDomain.ID):
+            r_s = r_slices[face.ID,:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = face_recv[face.ID]['ID'][face.opp_info['ID']]
+        elif face.n_proc == subDomain.ID:
+            r_s = r_slices[face.ID,:]
+            s_s = s_slices[face.info['oppIndex'],:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
+
+    #### Edges ####
+    r_slices = recv_edges
+    s_slices = send_edges
+    for edge in subDomain.edges:
+        if (edge.n_proc > -1 and edge.n_proc != subDomain.ID):
+            r_s = r_slices[edge.ID,:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = edge_recv[edge.ID]['ID'][edge.opp_info['ID']]
+        elif edge.n_proc == subDomain.ID:
+            r_s = r_slices[edge.ID,:]
+            s_s = s_slices[edge.info['oppIndex'],:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
+
+    #### Corners ####
+    r_slices = recv_corners
+    s_slices = send_corners
+    for corner in subDomain.corners:
+        if (corner.n_proc > -1 and corner.n_proc != subDomain.ID):
+            r_s = r_slices[corner.ID,:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = corner_recv[corner.ID]['ID'][corner.opp_info['ID']]
+        elif corner.n_proc == subDomain.ID:
+            r_s = r_slices[corner.ID,:]
+            s_s = s_slices[corner.info['oppIndex'],:]
+            halo_grid[r_s[0],r_s[1],r_s[2]] = grid[s_s[0],s_s[1],s_s[2]]
+    
+    return halo_grid
+
+def external_nodes_pack(subDomain,face_solids,edge_solids,corner_solids):
+    """
+    Send boundary solids data. Send data is OPPOSITE from ID. 
+    """
+    external_data = {}
+    for n_proc in subDomain.n_procs:
+        if n_proc != subDomain.ID:
+            external_data[n_proc] = {'ID':{}}
+            for feature in subDomain.n_procs[n_proc]:
+                external_data[n_proc]['ID'][feature] = None
+    
+    for face in subDomain.faces:
+        if face.n_proc != subDomain.ID:
+            external_data[face.n_proc]['ID'][face.info['ID']] = face_solids[face.ID]
+
+    for edge in subDomain.edges:
+        if edge.n_proc != subDomain.ID:
+            external_data[edge.n_proc]['ID'][edge.info['ID']] = edge_solids[edge.ID]
+
+    for corner in subDomain.corners:
+        if corner.n_proc != subDomain.ID:
+            external_data[corner.n_proc]['ID'][corner.info['ID']] = corner_solids[corner.ID]
+    
+    return external_data
+
+def external_nodes_unpack(subDomain,face_recv,edge_recv,corner_recv,face_solids,edge_solids,corner_solids):
+    """
+    Recieve boundary solids data.
+    """
+
+    external_solids = {key: None for key in Orientation.features}
 
     #### FACE ####
-    reqs = [None]*Orientation.numFaces
-    reqr = [None]*Orientation.numFaces
-    recvDataFace = [None]*Orientation.numFaces
-    for fIndex in Orientation.faces:
-        neigh = subDomain.neighborF[fIndex]
-        oppIndex = Orientation.faces[fIndex]['oppIndex']
-        oppNeigh = subDomain.neighborF[oppIndex]
-        if (oppNeigh > -1 and neigh != subDomain.ID and oppNeigh in sendData.keys() ):
-            reqs[fIndex] = comm.isend(sendData[oppNeigh],dest=oppNeigh)
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            reqr[fIndex] = comm.recv(source=neigh)
+    for face in subDomain.faces:
+        period_correction = face.periodic_correction*subDomain.Domain.domainLength
+        if (face.n_proc > -1 and face.n_proc != subDomain.ID):
+            opp_ID = Orientation.faces[face.info['oppIndex']]['ID']
+            external_solids[face.info['ID']] = face_recv[face.ID]['ID'][opp_ID] - period_correction
+        elif (face.n_proc == subDomain.ID):
+            external_solids[face.info['ID']] = face_solids[face.info['oppIndex']] - period_correction
+
+    #### EDGE ####
+    for edge in subDomain.edges:
+        period_correction = edge.periodic_correction*subDomain.Domain.domainLength
+        if (edge.n_proc > -1 and edge.n_proc != subDomain.ID):
+            opp_ID = Orientation.edges[edge.info['oppIndex']]['ID']
+            external_solids[edge.info['ID']] = edge_recv[edge.ID]['ID'][opp_ID] - period_correction
+        elif (edge.n_proc == subDomain.ID):
+            external_solids[edge.info['ID']] = edge_solids[edge.info['oppIndex']] - period_correction
+
+    #### Corner ####
+    for corner in subDomain.corners:
+        period_correction = corner.periodic_correction*subDomain.Domain.domainLength
+        if (corner.n_proc > -1 and corner.n_proc != subDomain.ID):
+            opp_ID = Orientation.corners[corner.info['oppIndex']]['ID']
+            external_solids[corner.info['ID']] = corner_recv[corner.ID]['ID'][opp_ID] - period_correction
+        elif (corner.n_proc == subDomain.ID):
+            external_solids[corner.info['ID']] = corner_solids[corner.info['oppIndex']] - period_correction
+
+    return external_solids
+
+def communicate(subDomain,send_data):
+    """
+    Send data between processess
+    """
+
+    #### FACES ####
+    reqs = [None]*Orientation.num_faces
+    reqr = [None]*Orientation.num_faces
+    recv_face = [None]*Orientation.num_faces
+    for face in subDomain.faces:
+        opp_neigh = subDomain.faces[face.info['oppIndex']].n_proc
+        if (opp_neigh > -1 and face.n_proc != subDomain.ID and opp_neigh in send_data.keys() ):
+            reqs[face.ID] = comm.isend(send_data[opp_neigh],dest=opp_neigh)
+        if (face.n_proc > -1 and face.n_proc != subDomain.ID and face.n_proc in send_data.keys() ):
+            reqr[face.ID] = comm.recv(source=face.n_proc)
 
     reqs = [i for i in reqs if i]
     MPI.Request.waitall(reqs)
 
-    for fIndex in Orientation.faces:
-        neigh = subDomain.neighborF[fIndex]
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            recvDataFace[fIndex] = reqr[fIndex]
+    for face in subDomain.faces:
+        if (face.n_proc > -1 and face.n_proc != subDomain.ID and face.n_proc in send_data.keys() ):
+            recv_face[face.ID] = reqr[face.ID]
 
     #### EDGES ####
-    reqs = [None]*Orientation.numEdges
-    reqr = [None]*Orientation.numEdges
-    recvDataEdge = [None]*Orientation.numEdges
-    for eIndex in Orientation.edges:
-        neigh = subDomain.neighborE[eIndex]
-        oppIndex = Orientation.edges[eIndex]['oppIndex']
-        oppNeigh = subDomain.neighborE[oppIndex]
-        if (oppNeigh > -1 and neigh != subDomain.ID and oppNeigh in sendData.keys() ):
-            reqs[eIndex] = comm.isend(sendData[oppNeigh],dest=oppNeigh)
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            reqr[eIndex] = comm.recv(source=neigh)
+    reqs = [None]*Orientation.num_edges
+    reqr = [None]*Orientation.num_edges
+    recv_edge = [None]*Orientation.num_edges
+    for edge in subDomain.edges:
+        opp_neigh = subDomain.edges[edge.info['oppIndex']].n_proc
+        if (opp_neigh > -1 and edge.n_proc != subDomain.ID and opp_neigh in send_data.keys() ):
+            reqs[edge.ID] = comm.isend(send_data[opp_neigh],dest = opp_neigh)
+        if (edge.n_proc  > -1 and edge.n_proc  != subDomain.ID and edge.n_proc in send_data.keys() ):
+            reqr[edge.ID] = comm.recv(source = edge.n_proc )
 
     reqs = [i for i in reqs if i]
     MPI.Request.waitall(reqs)
 
-    for eIndex in Orientation.edges:
-        neigh = subDomain.neighborE[eIndex]
-        oppIndex = Orientation.edges[eIndex]['oppIndex']
-        oppNeigh = subDomain.neighborE[oppIndex]
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            recvDataEdge[eIndex] = reqr[eIndex]
+    for edge in subDomain.edges:
+        if (edge.n_proc > -1 and edge.n_proc != subDomain.ID and edge.n_proc in send_data.keys() ):
+            recv_edge[edge.ID] = reqr[edge.ID]
 
     #### CORNERS ####
-    reqs = [None]*Orientation.numCorners
-    reqr = [None]*Orientation.numCorners
-    recvDataCorner = [None]*Orientation.numCorners
-    for cIndex in Orientation.corners:
-        neigh = subDomain.neighborC[cIndex]
-        oppIndex = Orientation.corners[cIndex]['oppIndex']
-        oppNeigh = subDomain.neighborC[oppIndex]
-        if (oppNeigh > -1 and neigh != subDomain.ID and oppNeigh in sendData.keys() ):
-            reqs[cIndex] = comm.isend(sendData[oppNeigh],dest=oppNeigh)
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            reqr[cIndex] = comm.recv(source=neigh)
+    reqs = [None]*Orientation.num_corners
+    reqr = [None]*Orientation.num_corners
+    recv_corner = [None]*Orientation.num_corners
+    for corner in subDomain.corners:
+        opp_neigh = subDomain.corners[corner.info['oppIndex']].n_proc
+        if (opp_neigh > -1 and corner.n_proc != subDomain.ID and opp_neigh in send_data.keys() ):
+            reqs[corner.ID] = comm.isend(send_data[opp_neigh],dest = opp_neigh)
+        if (corner.n_proc > -1 and corner.n_proc != subDomain.ID and corner.n_proc in send_data.keys() ):
+            reqr[corner.ID] = comm.recv(source=corner.n_proc)
 
     reqs = [i for i in reqs if i]
     MPI.Request.waitall(reqs)
 
-    for cIndex in Orientation.corners:
-        neigh = subDomain.neighborC[cIndex]
-        if (neigh > -1 and neigh != subDomain.ID and neigh in sendData.keys() ):
-            recvDataCorner[cIndex] = reqr[cIndex]
+    for corner in subDomain.corners:
+        if (corner.n_proc > -1 and corner.n_proc != subDomain.ID and corner.n_proc in send_data.keys() ):
+            recv_corner[corner.ID] = reqr[corner.ID]
 
-    return recvDataFace,recvDataEdge,recvDataCorner
+    return recv_face,recv_edge,recv_corner
 
 def set_COMM(subDomain,data):
   """
   Transmit data to Neighboring Processors
   """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = subDomainComm(subDomain,data[subDomain.ID]['nProcID'])
+  dataRecvFace,dataRecvEdge,dataRecvCorner = communicate(subDomain,data[subDomain.ID]['nProcID'])
 
   #############
   ### Faces ###

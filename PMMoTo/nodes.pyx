@@ -14,7 +14,7 @@ cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
-numNeighbors = cOrient.numNeighbors
+numNeighbors = cOrient.num_neighbors
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking
@@ -65,7 +65,7 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orienta
   cdef int _phase = phase
 
   cdef int numFaces,fIndex
-  numFaces = Orientation.numFaces
+  numFaces = Orientation.num_faces
 
   cdef int iStart,jStart,kStart
   iStart = subDomain.indexStart[0]
@@ -411,7 +411,7 @@ def get_boundary_nodes(grid,phaseID):
   cdef int[6][4] face_info
   face_info = cOrient.face_info
 
-  numFaces = cOrient.numFaces 
+  numFaces = cOrient.num_faces 
   count = 0
   for fIndex in range(0,numFaces):
     dir = face_info[fIndex][3]

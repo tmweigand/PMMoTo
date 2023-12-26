@@ -21,7 +21,7 @@ cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
-numNeighbors = cOrient.numNeighbors
+numNeighbors = cOrient.num_neighbors
 
 
 class medSets(object):

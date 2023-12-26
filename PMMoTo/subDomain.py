@@ -31,19 +31,19 @@ class subDomain(object):
         
         self.subID  = np.zeros([3],dtype = np.int64)
         self.lookUpID = np.zeros(subDomains,dtype=np.int64)
-        self.faces = [None]*Orientation.numFaces
-        self.edges = [None]*Orientation.numEdges
-        self.corners = [None]*Orientation.numCorners
+        self.faces = [None]*Orientation.num_faces
+        self.edges = [None]*Orientation.num_edges
+        self.corners = [None]*Orientation.num_corners
 
         ### DELETE
-        self.neighborF  = -np.ones(Orientation.numFaces,dtype = np.int64)
-        self.neighborE = -np.ones(Orientation.numEdges,dtype = np.int64)
-        self.neighborC = -np.ones(Orientation.numCorners,dtype = np.int64)
-        self.externalE = -np.ones(Orientation.numEdges,dtype = np.int64)
-        self.externalC = -np.ones(Orientation.numCorners,dtype = np.int64)
-        self.neighborPerF =  np.zeros([Orientation.numFaces,3],dtype = np.int64)
-        self.neighborPerE =  np.zeros([Orientation.numEdges,3],dtype = np.int64)
-        self.neighborPerC =  np.zeros([Orientation.numCorners,3],dtype = np.int64)
+        self.neighborF  = -np.ones(Orientation.num_faces,dtype = np.int64)
+        self.neighborE = -np.ones(Orientation.num_edges,dtype = np.int64)
+        self.neighborC = -np.ones(Orientation.num_corners,dtype = np.int64)
+        self.externalE = -np.ones(Orientation.num_edges,dtype = np.int64)
+        self.externalC = -np.ones(Orientation.num_corners,dtype = np.int64)
+        self.neighborPerF =  np.zeros([Orientation.num_faces,3],dtype = np.int64)
+        self.neighborPerE =  np.zeros([Orientation.num_edges,3],dtype = np.int64)
+        self.neighborPerC =  np.zeros([Orientation.num_corners,3],dtype = np.int64)
 
     def getInfo(self):
         """
@@ -101,7 +101,7 @@ class subDomain(object):
                     n = n + 1
 
         ### If boundaryID == 0, buffer is not added
-        for f in range(0,Orientation.numFaces):
+        for f in range(0,Orientation.num_faces):
             if self.boundaryID[f] == 0:
                 self.buffer[f] = 0
 
@@ -205,7 +205,7 @@ class subDomain(object):
         """
 
         ### Faces
-        for n in range(0,Orientation.numFaces):
+        for n in range(0,Orientation.num_faces):
             ID = Orientation.faces[n]['ID']
             i = ID[0] + self.subID[0] + 1
             j = ID[1] + self.subID[1] + 1
@@ -226,7 +226,7 @@ class subDomain(object):
             self.faces[n] = Orientation.Face(n,n_proc,boundary,periodic)
 
         ### Edges
-        for n in range(0,Orientation.numEdges):
+        for n in range(0,Orientation.num_edges):
             ID = Orientation.edges[n]['ID']
             i = ID[0] + self.subID[0] + 1
             j = ID[1] + self.subID[1] + 1
@@ -253,7 +253,7 @@ class subDomain(object):
             self.edges[n] = Orientation.Edge(n,n_proc,boundary,periodic,global_boundary,external_faces)
 
         ### Corners
-        for n in range(0,Orientation.numCorners):
+        for n in range(0,Orientation.num_corners):
             ID = Orientation.corners[n]['ID']
             i = ID[0] + self.subID[0] + 1
             j = ID[1] + self.subID[1] + 1
