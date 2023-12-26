@@ -109,9 +109,9 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orienta
         for k in range(kMin,kMax):
           if _ind[i+1,j+1,k+1] == _phase:
 
-            iLoc = iStart+i
-            jLoc = jStart+j
-            kLoc = kStart+k
+            iLoc = iStart + i
+            jLoc = jStart + j
+            kLoc = kStart + k
 
             if iLoc >= dN0:
               iLoc = 0
@@ -374,3 +374,93 @@ def get_connected_sets(subDomain,grid,phaseID,Nodes):
   allSets = sets.Sets(Sets,setCount,subDomain)
 
   return allSets
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+def get_boundary_nodes(grid,phaseID):
+  """
+  Loop through each face of the subDomain to determine the node closes to the boundary. 
+
+  Input: grid and phaseID
+
+  Output: list of nodes nearest boundary 
+  """
+  cdef cnp.uint8_t [:,:,:] _grid
+  _grid = grid
+
+  cdef int _phaseID = phaseID
+
+  grid_shape = np.array([grid.shape[0],grid.shape[1],grid.shape[2]],dtype=np.uint64)
+  cdef cnp.uint64_t [:] _grid_shape
+  _grid_shape = grid_shape
+
+  cdef int area
+  area = 2*_grid_shape[0]*_grid_shape[1] + 2*_grid_shape[0]*_grid_shape[2] + 2*_grid_shape[1]*_grid_shape[2]
+
+  solids = -np.ones([area,4],dtype=np.int32)
+  cdef cnp.int32_t [:,:] _solids
+  _solids = solids
+  
+  order = np.ones((3), dtype=np.int32)
+  cdef cnp.int32_t [:] _order
+  _order = order
+
+  cdef int c,m,n,count,dir,numFaces,fIndex,solid
+  cdef int[3] arg_order
+
+  cdef int[6][4] face_info
+  face_info = cOrient.face_info
+
+  numFaces = cOrient.numFaces 
+  count = 0
+  for fIndex in range(0,numFaces):
+    dir = face_info[fIndex][3]
+    arg_order[0] = face_info[fIndex][0]
+    arg_order[1] = face_info[fIndex][1]
+    arg_order[2] = face_info[fIndex][2]
+
+    if (dir == 1):
+        for m in range(0,_grid_shape[arg_order[1]]):
+            for n in range(0,_grid_shape[arg_order[2]]):
+                solid = False
+                c = 0
+                while not solid and c < _grid_shape[arg_order[0]]:
+                    _order[arg_order[0]] = c
+                    _order[arg_order[1]] = m
+                    _order[arg_order[2]] = n
+                    if _grid[_order[0],_order[1],_order[2]] == _phaseID:
+                        solid = True
+                        _solids[count,0:3] = _order
+                        _solids[count,3] = fIndex
+                        count = count + 1
+                    else:
+                        c = c + 1
+                if (not solid and c == _grid_shape[arg_order[0]]):
+                    _order[arg_order[0]] = -1
+                    _solids[count,0:3] = _order
+                    _solids[count,3] = fIndex
+                    count = count + 1
+
+    elif (dir == -1):
+        for m in range(0,_grid_shape[arg_order[1]]):
+            for n in range(0,_grid_shape[arg_order[2]]):
+                solid = False
+                c = _grid_shape[arg_order[0]] - 1
+                while not solid and c > 0:
+                    _order[arg_order[0]] = c
+                    _order[arg_order[1]] = m
+                    _order[arg_order[2]] = n
+                    if _grid[_order[0],_order[1],_order[2]] == _phaseID:
+                        solid = True
+                        _solids[count,0:3] = _order
+                        _solids[count,3] = fIndex
+                        count = count + 1
+                    else:
+                        c = c - 1
+                if (not solid and c == 0):
+                    _order[arg_order[0]] = -1
+                    _solids[count,0:3] = _order
+                    _solids[count,3] = fIndex
+                    count = count + 1
+  
+  return solids

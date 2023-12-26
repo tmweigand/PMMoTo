@@ -7,7 +7,9 @@ from pykdtree.kdtree import KDTree
 #from scipy.spatial import KDTree
 
 import edt
+from . import Orientation
 from . import communication
+from . import nodes
 cimport cython
 
 comm = MPI.COMM_WORLD
@@ -16,17 +18,16 @@ comm = MPI.COMM_WORLD
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def _fixInterfaceCalc(self,
-                     tree,
-                     int faceID,
-                     int lShape,
-                     int dir,
-                     cnp.ndarray[cnp.int32_t, ndim=2] _faceSolids,
-                     cnp.ndarray[cnp.float32_t, ndim=3] _EDT,
-                     cnp.ndarray[cnp.uint8_t, ndim=3] _visited,
-                     double minD,
-                     list coords,
-                     cnp.ndarray[cnp.uint8_t, ndim=1] argOrder):
+def _fixInterfaceCalc(tree,
+                      int faceID,
+                      int lShape,
+                      int dir,
+                      cnp.ndarray[cnp.int32_t, ndim=2] _faceSolids,
+                      cnp.ndarray[cnp.float32_t, ndim=3] _EDT,
+                      cnp.ndarray[cnp.uint8_t, ndim=3] _visited,
+                      double minD,
+                      list coords,
+                      cnp.ndarray[cnp.uint8_t, ndim=1] argOrder):
     """
     Uses the solids from neighboring subProcessors to determine if distance is less than determined
     """
@@ -114,133 +115,45 @@ def _fixInterfaceCalc(self,
     return _EDT,_visited
 
 
-def _getBoundarySolids(self,
-                       int faceID,
-                       int dir,
-                       cnp.ndarray[cnp.uint8_t, ndim=1] argOrder,
-                       int nS,
-                       cnp.ndarray[cnp.uint8_t, ndim=3] _grid,
-                       cnp.ndarray[cnp.int32_t, ndim=2] _solids):
-    """
-    Determine the nearest solid voxel to the boundary using optimized loops for the faces
-    """
-    cdef int c,m,n
-
-    _order = np.ones((3), dtype=np.uint32)
-    cdef cnp.uint32_t [:] order
-    order = _order
-
-    cdef int a0 = argOrder[0]
-    cdef int a1 = argOrder[1]
-    cdef int a2 = argOrder[2]
-
-    cdef int s0 = _grid.shape[a0]
-    cdef int s1 = _grid.shape[a1]
-    cdef int s2 = _grid.shape[a2]
-
-    if (dir == 1):
-        for m in range(0,s1):
-            for n in range(0,s2):
-                solid = False
-                c = 0
-                while not solid and c < s0:
-                    order[a0] = c
-                    order[a1] = m
-                    order[a2] = n
-                    if _grid[order[0],order[1],order[2]] == 0:
-                        solid = True
-                        _solids[nS,0:3] = order
-                        _solids[nS,3] = faceID
-                        nS = nS + 1
-                    else:
-                        c = c + 1
-                if (not solid and c == s0):
-                    order[a0] = -1
-                    _solids[nS,0:3] = order
-                    _solids[nS,3] = faceID
-                    nS = nS + 1
-
-    elif (dir == -1):
-        for m in range(0,s1):
-            for n in range(0,s2):
-                solid = False
-                c = s0 - 1
-                while not solid and c > 0:
-                    order[a0] = c
-                    order[a1] = m
-                    order[a2] = n
-                    if _grid[order[0],order[1],order[2]] == 0:
-                        solid = True
-                        _solids[nS,0:3] = order
-                        _solids[nS,3] = faceID
-                        nS = nS + 1
-                    else:
-                        c = c - 1
-                if (not solid and c == 0):
-                    order[a0] = -1
-                    _solids[nS,0:3] = order
-                    _solids[nS,3] = faceID
-                    nS = nS + 1
-    return nS
-
-
 class EDT(object):
-
-    def __init__(self,subDomain,Domain,Orientation,grid):
-        bufferSize         = 1
+    def __init__(self,subDomain,Domain,grid):
         self.extendFactor  = 0.7
         self.useIndex      = False
         self.subDomain     = subDomain
         self.Domain        = Domain
-        self.Orientation   = Orientation
         self.EDT = np.zeros_like(grid)
-        self.visited = np.zeros_like(grid,dtype=np.uint8)
         self.solids = None
-        self.nS = 0
         self.faceSolids = []
         self.edgeSolids = []
         self.cornerSolids = []
         self.solidsAll = {self.subDomain.ID: {'orientID':{}}}
+        self.external_solids = {key: None for key in Orientation.features}
         self.grid = grid
-        self.x = self.subDomain.x
-        self.y = self.subDomain.y
-        self.z = self.subDomain.z
-        self.subDomainSize = self.subDomain.subDomainSize
-        self.buffer = self.subDomain.buffer
         self.distVals = None
         self.distCounts  = None
         self.minD = 0
         self.maxD = 0
 
-    def genLocalEDT(self,):
+    def genLocalEDT(self):
         """
-        Determine the Euclidian distance on each subProcessor knowing the values may be too high
+        Determine the Euclidian distance on each process knowing the values may be too high
         """
         self.EDT = edt.edt3d(self.grid, anisotropy=(self.Domain.dX, self.Domain.dY, self.Domain.dZ))
 
-    def getBoundarySolids(self):
-        """
-        Loop through all faces to determine the nearest pore voxels to the boundnary
-        """
-        area = 2*self.grid.shape[0]*self.grid.shape[1] + 2*self.grid.shape[0]*self.grid.shape[2] + 2*self.grid.shape[1]*self.grid.shape[2]
-        self.solids = -np.ones([area,4],dtype='int32')
-        for fIndex in self.Orientation.faces:
-            self.nS = _getBoundarySolids(self,
-                               fIndex,
-                               self.Orientation.faces[fIndex]['dir'],
-                               self.Orientation.faces[fIndex]['argOrder'],
-                               self.nS,
-                               self.grid,
-                               self.solids)
 
-    def getFaceSolids(self):
+    def partition_boundary_solids(self):
         """
-        Trim to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
+        Trim solids to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
+        Keep all face solids, and use extend factor to query which solids to include for edges and corners
         """
-        self.faceSolids = [[] for _ in range(len(self.Orientation.faces))]
+        face_solids = [[] for _ in range(len(Orientation.faces))]
+        edge_solids = [[] for _ in range(len(Orientation.edges))]
+        corner_solids = [[] for _ in range(len(Orientation.corners))]
+        
+        extend = [self.extendFactor*x for x in self.subDomain.subDomainSize]
 
-        extend = [self.extendFactor*x for x in self.subDomainSize]
-        for fIndex in self.Orientation.faces:
+        ### Faces ###
+        for fIndex in Orientation.faces:
             pointsXYZ = []
             points = self.solids[np.where( (self.solids[:,0]>-1)
                                  & (self.solids[:,1]>-1)
@@ -248,135 +161,76 @@ class EDT(object):
                                  & ((self.solids[:,3]==fIndex)) )][:,0:3]
 
             for x,y,z in points:
-                pointsXYZ.append([self.x[x],self.y[y],self.z[z]] )
-            self.faceSolids[fIndex] = np.asarray(pointsXYZ)
-            name = self.Orientation.faces[fIndex]['ID']
-            self.solidsAll[self.subDomain.ID]['orientID'][name] = np.copy(self.faceSolids[fIndex])
+                pointsXYZ.append([self.subDomain.x[x],self.subDomain.y[y],self.subDomain.z[z]] )
+            face_solids[fIndex] = np.asarray(pointsXYZ)
 
-    def getEdgeSolids(self):
-        """
-        Trim to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
-        """
-        self.edgeSolids = [[] for _ in range(len(self.Orientation.edges))]
-        for eIndex in self.Orientation.edges:
-            edgeID = self.Orientation.edges[eIndex]['ID']
-            face1 = self.faceSolids[self.Orientation.edges[eIndex]['faceIndex'][0]]
-            face2 = self.faceSolids[self.Orientation.edges[eIndex]['faceIndex'][1]]
-            arg1  = self.Orientation.edges[eIndex]['dir'][0]
-            arg2  = self.Orientation.edges[eIndex]['dir'][1]
-            coords = [self.x,self.y,self.z]
-            coord1 = coords[arg1]
-            coord2 = coords[arg2]
+        ### Edges ###
+        for edge in self.subDomain.edges:
+            edge.get_extension(extend,self.subDomain.bounds)
+            for f,d in zip(edge.info['faceIndex'],reversed(edge.info['dir'])): # Flip dir for correct nodes
+                f_solids = face_solids[f]
+                values = (edge.extend[d][0] <= f_solids[:,d]) & (f_solids[:,d] <= edge.extend[d][1])
+                if len(edge_solids[edge.ID]) == 0:
+                    edge_solids[edge.ID] = f_solids[np.where(values)]
+                else:
+                    edge_solids[edge.ID] = np.append(edge_solids[edge.ID],f_solids[np.where(values)],axis=0)
+            edge_solids[edge.ID] = np.unique(edge_solids[edge.ID],axis=0)
 
-            extend = [self.extendFactor*x for x in self.subDomainSize]
-            plusArg = 0
-            if edgeID[arg1] == 1:
-                dom11 = coord1[-1] - extend[arg1]
-                dom12 = coord1[-1]
-            elif (edgeID[arg1] == -1):
-                dom11 = coord1[0]
-                dom12 = coord1[0] + extend[arg1]
-            if edgeID[arg2] == 1:
-                dom21 = coord2[-1] - extend[arg2]
-                dom22 = coord2[-1]
-            elif (edgeID[arg2] == -1):
-                dom21 = coord2[0]
-                dom22 = coord2[0] + extend[arg2]
+        ### Corners ###
+        iter = [[1,2],[0,2],[0,1]]
+        for corner in self.subDomain.corners:
+            corner.get_extension(extend,self.subDomain.bounds)
+            values = [None,None]
+            for it,f in zip(iter,corner.info['faceIndex']):
+                f_solids = face_solids[f]
+                for n,i in enumerate(it):
+                    values[n] = (corner.extend[i][0] <= f_solids[:,i]) & (f_solids[:,i] <= corner.extend[i][1])
+                if len(corner_solids[corner.ID]) == 0:
+                    corner_solids[corner.ID] = f_solids[np.where(values[0] & values[1])]
+                else:
+                    corner_solids[corner.ID] = np.append(corner_solids[corner.ID],f_solids[np.where(values[0] & values[1])],axis=0)
+            corner_solids[corner.ID] = np.unique(corner_solids[corner.ID],axis=0)
 
-            truth1 = dom21 <= face1[:,arg2+plusArg]
-            truth2 = face1[:,arg2+plusArg] <= dom22
-            self.edgeSolids[eIndex] = face1[np.where( truth1 & truth2 )]
-            truth1 = dom11 <= face2[:,arg1+plusArg]
-            truth2 = face2[:,arg1+plusArg] <= dom12
-            self.edgeSolids[eIndex] = np.append(self.edgeSolids[eIndex],face2[np.where( truth1 & truth2 )],axis=0)
-            self.edgeSolids[eIndex] = np.unique(np.array(self.edgeSolids[eIndex]),axis=0)
-
-    def getCornerSolids(self):
-        """
-        Trim to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
-        """
-        self.cornerSolids = [[] for _ in range(len(self.Orientation.corners))]
-
-        for cIndex in self.Orientation.corners:
-            cID = self.Orientation.corners[cIndex]['ID']
-            face1 = self.faceSolids[self.Orientation.corners[cIndex]['faceIndex'][0]]
-            face2 = self.faceSolids[self.Orientation.corners[cIndex]['faceIndex'][1]]
-            face3 = self.faceSolids[self.Orientation.corners[cIndex]['faceIndex'][2]]
-
-            plusArg = 0
-            extend = [self.extendFactor*x for x in self.subDomainSize]
-            if (cID[0] == 1):
-                dom11 = self.x[-1] - extend[0]
-                dom12 = self.x[-1]
-            elif (cID[0] == -1):
-                dom11 = self.x[0]
-                dom12 = self.x[0] + extend[0]
-
-            if (cID[1] == 1):
-                dom21 = self.y[-1] - extend[1]
-                dom22 = self.y[-1]
-            elif (cID[1] == -1):
-                dom21 = self.y[0]
-                dom22 = self.y[0] + extend[1]
-            if (cID[2] == 1):
-                dom31 = self.z[-1] - extend[2]
-                dom32 = self.z[-1]
-            elif (cID[2] == -1):
-                dom31 = self.z[0]
-                dom32 = self.z[0] + extend[2]
-
-            truth1 = (dom21 <= face1[:,1+plusArg]) & (face1[:,1+plusArg] <= dom22)
-            truth2 = (dom31 <= face1[:,2+plusArg]) & (face1[:,2+plusArg] <= dom32)
-            self.cornerSolids[cIndex] = face1[np.where(truth1 & truth2)]
-            truth1 = (dom11 <= face2[:,0+plusArg]) & (face2[:,0+plusArg] <= dom12)
-            truth2 = (dom31 <= face2[:,2+plusArg]) & (face2[:,2+plusArg] <= dom32)
-            self.cornerSolids[cIndex] = np.append(self.cornerSolids[cIndex],face2[np.where(truth1 & truth2)],axis=0)
-            truth1 = (dom11 <= face3[:,0+plusArg]) & (face3[:,0+plusArg] <= dom12)
-            truth2 = (dom21 <= face3[:,1+plusArg]) & (face3[:,1+plusArg] <= dom22)
-            self.cornerSolids[cIndex] = np.append(self.cornerSolids[cIndex], face3[np.where(truth1 & truth2)],axis=0)
-
-    def initRecieve(self):
-
-        for neigh in self.subDomain.neighborF:
-            if neigh > -1 and neigh != self.subDomain.ID:
-                self.solidsAll[neigh] = {'orientID':{}}
-
-        for neigh in self.subDomain.neighborE:
-            if neigh > -1 and neigh != self.subDomain.ID:
-                self.solidsAll[neigh] = {'orientID':{}}
-
-        for neigh in self.subDomain.neighborC:
-            if neigh > -1 and neigh != self.subDomain.ID:
-                self.solidsAll[neigh] = {'orientID':{}}
+        return face_solids,edge_solids,corner_solids
 
     def fixInterface(self):
-
+        """
+        Loop through faces and correct distance with external_solids
+        """
+        visited = np.zeros_like(self.grid,dtype=np.uint8)
         minD = min(self.Domain.dX,self.Domain.dY,self.Domain.dZ)
-        coords = [self.x,self.y,self.z]
+        coords = [self.subDomain.x,self.subDomain.y,self.subDomain.z]
 
-        for fIndex in self.Orientation.faces:
-            orientID = self.Orientation.faces[fIndex]['ID']
-            data = np.empty((0,3))
-            for procs in self.solidsAll.keys():
-                for fID in self.solidsAll[procs]['orientID'].keys():
-                    if fID == orientID:
-                        data = np.append(data,self.solidsAll[procs]['orientID'][fID],axis=0)
+        for face in self.subDomain.faces:
+            if face.n_proc > -1:
+                arg = face.info['argOrder']
+                data = np.copy(self.external_solids[face.info['ID']])
 
-            tree = KDTree(data)
+                for edge in self.subDomain.edges:
+                    for f in edge.info['faceIndex']:
+                        if f == face.ID and edge.n_proc > -1: 
+                            data = np.append(data,self.external_solids[edge.info['ID']],axis=0)
 
-            faceSolids = self.solids[np.where(self.solids[:,3]==fIndex)][:,0:3]
+                for corner in self.subDomain.corners:
+                    for f in corner.info['faceIndex']:
+                        if f == face.ID and corner.n_proc > -1: 
+                            data = np.append(data,self.external_solids[corner.info['ID']],axis=0)
 
-            self.EDT,self.visited = _fixInterfaceCalc(self,
-                                                      tree,
-                                                      fIndex,
-                                                      self.grid.shape[self.Orientation.faces[fIndex]['argOrder'][0]],
-                                                      self.Orientation.faces[fIndex]['dir'],
-                                                      faceSolids,
-                                                      self.EDT,
-                                                      self.visited,
-                                                      minD,
-                                                      coords,
-                                                      self.Orientation.faces[fIndex]['argOrder'])
+
+                tree = KDTree(data)
+
+                faceSolids = self.solids[np.where(self.solids[:,3]==face.ID)][:,0:3]
+
+                self.EDT,visited = _fixInterfaceCalc(tree,
+                                                        face.ID,
+                                                        self.grid.shape[arg[0]],
+                                                        face.info['dir'],
+                                                        faceSolids,
+                                                        self.EDT,
+                                                        visited,
+                                                        minD,
+                                                        coords,
+                                                        arg)
 
   
     def genStats(self):
@@ -421,22 +275,20 @@ def calcEDT(subDomain,grid,stats = False,sendClass = False):
     size = subDomain.Domain.numSubDomains
     rank = subDomain.ID
 
-    sDEDT = EDT(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation, grid = grid)
+    sDEDT = EDT(Domain = subDomain.Domain, subDomain = subDomain, grid = grid)
     sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = grid)
 
     sDEDT.genLocalEDT()
-    if size > 1:
-        sDEDT.getBoundarySolids()
-        sDEDT.getFaceSolids()
-        sDEDT.getEdgeSolids()
-        sDEDT.getCornerSolids()
-        sDEDT.initRecieve()
-        sDEDT.solidsAll = sDComm.EDTCommunication(sDEDT.solidsAll,sDEDT.faceSolids,sDEDT.edgeSolids,sDEDT.cornerSolids)
+    if size > 1 or (size == 1 and any(subDomain.boundaryID == 2)):
+        sDEDT.solids = nodes.get_boundary_nodes(grid,0)
+        face_solids,edge_solids,corner_solids = sDEDT.partition_boundary_solids()
+    
+        sDEDT.external_solids = sDComm.EDTCommunication(sDEDT.external_solids,face_solids,edge_solids,corner_solids)
         sDEDT.fixInterface()
 
         ### Update EDT Buffer
         sDComm = communication.Comm(Domain = subDomain.Domain,subDomain = subDomain,grid = sDEDT.EDT)
-        sDEDT.EDT = sDComm.updateBuffer()
+        sDEDT.EDT = sDComm.update_buffer()
 
     if stats:
         sDEDT.genStats()

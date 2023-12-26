@@ -6,19 +6,19 @@ from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
 from .domainGeneration import domainGenVerlet
 from . import communication
+from . import Orientation
 from . import subDomain
 from . import dataOutput
 
 
 class porousMedia(object):
-    def __init__(self,subDomain,Domain,Orientation):
+    def __init__(self,subDomain,Domain):
         self.subDomain   = subDomain
         self.Domain      = Domain
-        self.Orientation = Orientation
         self.grid = None
-        self.inlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
-        self.outlet = np.zeros([self.Orientation.numFaces],dtype = np.uint8)
-        self.loopInfo = np.zeros([self.Orientation.numFaces+1,3,2],dtype = np.int64)
+        self.inlet = np.zeros([Orientation.numFaces],dtype = np.uint8)
+        self.outlet = np.zeros([Orientation.numFaces],dtype = np.uint8)
+        self.loopInfo = np.zeros([Orientation.numFaces+1,3,2],dtype = np.int64)
         self.ownNodesIndex = np.zeros([6],dtype = np.int64)
         self.poreNodes = 0
         self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
@@ -26,24 +26,26 @@ class porousMedia(object):
     def gridCheck(self):
         if (np.sum(self.grid) == np.prod(self.subDomain.nodes)):
             print("This code requires at least 1 solid voxel in each subdomain. Please reorder processors!")
-            communication.raiseError
+            communication.raiseError()
 
     def genDomainSphereData(self,sphereData):
         self.grid = domainGen(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
         sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
-        self.grid = sDComm.updateBuffer()
+        self.grid = sDComm.update_buffer()
 
     def genDomainSphereDataVerlet(self,sphereData):
         verletDomains = [20,20,20]
         self.grid = domainGenVerlet(verletDomains,self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
         self.gridCheck()
         sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
-        self.grid = sDComm.updateBuffer()
+        self.grid = sDComm.update_buffer()
+
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
         self.gridCheck()
+
 
     def setInletOutlet(self,resSize):
         """
@@ -91,7 +93,7 @@ class porousMedia(object):
             outletSize[5]  = resSize  
 
         pad = np.zeros([6],dtype = np.int8)
-        for f in range(0,self.Orientation.numFaces):
+        for f in range(0,Orientation.numFaces):
             pad[f] = inletSize[f] + outletSize[f]      
         
         ### If Inlet/Outlet Res, Pad and Update XYZ
@@ -128,7 +130,7 @@ class porousMedia(object):
 
 def genPorousMedia(subDomain,dataFormat,sphereData = None,resSize = 0):
 
-    pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation)
+    pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain)
 
     if dataFormat == "Sphere":
         pM.genDomainSphereData(sphereData)
@@ -138,7 +140,7 @@ def genPorousMedia(subDomain,dataFormat,sphereData = None,resSize = 0):
         pM.genDomainInkBottle()
     pM.setInletOutlet(resSize)
     pM.setWallBoundaryConditions()
-    pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)
+    pM.loopInfo = Orientation.get_loop_info(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)
     pM.getPorosity()
 
     loadBalancingCheck = False

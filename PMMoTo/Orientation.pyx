@@ -2,10 +2,209 @@ import numpy as np
 cimport numpy as cnp
 cimport cython
 
+class CubeFeature(object):
+    def __init__(self,ID,n_proc,boundary,periodic):
+        self.ID = ID
+        self.n_proc = n_proc
+        self.periodic = periodic
+        self.boundary = boundary
+        self.periodic_correction = [0,0,0]
+
+    def get_periodic_correction(self,feature):
+        """
+        Determin spatial correction factor if periodic
+        """
+        if self.periodic:
+            oppID = self.info['oppIndex']
+            self.periodic_correction = feature[oppID]['ID']
+
+class Face(CubeFeature):
+    def __init__(self,ID,n_proc,boundary,periodic):
+        super().__init__(ID,n_proc,boundary,periodic)
+        self.info = faces[ID]
+        self.opp_info = faces[faces[ID]['oppIndex']]
+        self.get_periodic_correction(faces)
+        
+
+class Edge(CubeFeature):
+    def __init__(self,ID,n_proc,boundary,periodic,global_boundary,external_faces):
+        super().__init__(ID,n_proc,boundary,periodic)
+        self.global_boundary = global_boundary
+        self.external_faces = external_faces
+        self.info = edges[ID]
+        self.opp_info = edges[edges[ID]['oppIndex']]
+        self.get_periodic_correction(edges)
+        self.extend = [[0,0],[0,0],[0,0]]
+
+    def get_extension(self,extend_domain,bounds):
+        """
+        Determine the span of the feature based on extend
+        """
+        faces  = edges[self.ID]['ID']
+        for n,f in enumerate(faces):
+            if f > 0:
+                self.extend[n][0] = bounds[n][-1] - extend_domain[n]
+                self.extend[n][1] = bounds[n][-1]
+            elif f < 0:
+                self.extend[n][0] = bounds[n][0]
+                self.extend[n][1] = bounds[n][0] + extend_domain[n]
+            else:
+                self.extend[n][0] = 0
+                self.extend[n][1] = 0
+
+
+class Corner(CubeFeature):
+    def __init__(self,ID,n_proc,boundary,periodic,global_boundary,external_faces,external_edges):
+        super().__init__(ID,n_proc,boundary,periodic)
+        self.global_boundary = global_boundary
+        self.external_faces = external_faces
+        self.external_edges = external_edges
+        self.info = corners[ID]
+        self.opp_info = corners[corners[ID]['oppIndex']]
+        self.get_periodic_correction(corners)
+        self.extend = [[0,0],[0,0],[0,0]]
+
+    def get_extension(self,extend_domain,bounds):
+        """
+        Determine the span of the feature based on extend
+        """
+        faces  = corners[self.ID]['ID']
+        for n,f in enumerate(faces):
+            if f > 0:
+                self.extend[n][0] = bounds[n][-1] - extend_domain[n]
+                self.extend[n][1] = bounds[n][-1]
+            elif f < 0:
+                self.extend[n][0] = bounds[n][0]
+                self.extend[n][1] = bounds[n][0] + extend_domain[n]
+            else:
+                self.extend[n][0] = 0
+                self.extend[n][1] = 0
+
+
+numFaces = 6
+numEdges = 12
+numCorners = 8
+numNeighbors = 26
+
+faces = {0:{'ID':(-1, 0, 0),'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir': 1},
+         1:{'ID':( 1, 0, 0),'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
+         2:{'ID':( 0,-1, 0),'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir': 1},
+         3:{'ID':( 0, 1, 0),'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
+         4:{'ID':( 0, 0,-1),'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir': 1},
+         5:{'ID':( 0, 0, 1),'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1}
+        }
+        
+edges = {0 :{'ID':(-1, 0,-1), 'oppIndex':5, 'faceIndex':(0,4), 'dir':(0,2)},
+         1 :{'ID':(-1, 0, 1), 'oppIndex':4, 'faceIndex':(0,5), 'dir':(0,2)},
+         2 :{'ID':(-1,-1, 0), 'oppIndex':7, 'faceIndex':(0,2), 'dir':(0,1)},
+         3 :{'ID':(-1, 1, 0), 'oppIndex':6, 'faceIndex':(0,3), 'dir':(0,1)},
+         4 :{'ID':( 1, 0,-1), 'oppIndex':1, 'faceIndex':(1,4), 'dir':(0,2)},
+         5 :{'ID':( 1, 0, 1), 'oppIndex':0, 'faceIndex':(1,5), 'dir':(0,2)},
+         6 :{'ID':( 1,-1, 0), 'oppIndex':3, 'faceIndex':(1,2), 'dir':(0,1)},
+         7 :{'ID':( 1, 1, 0), 'oppIndex':2, 'faceIndex':(1,3), 'dir':(0,1)},
+         8 :{'ID':( 0,-1,-1), 'oppIndex':11,'faceIndex':(2,4), 'dir':(1,2)},
+         9 :{'ID':( 0,-1, 1), 'oppIndex':10,'faceIndex':(2,5), 'dir':(1,2)},
+         10:{'ID':( 0, 1,-1), 'oppIndex':9, 'faceIndex':(3,4), 'dir':(1,2)},
+         11:{'ID':( 0, 1, 1), 'oppIndex':8, 'faceIndex':(3,5), 'dir':(1,2)},
+        }
+
+corners = {0:{'ID':(-1,-1,-1),'oppIndex':7, 'faceIndex':(0,2,4), 'edgeIndex':(0,2,8)},
+           1:{'ID':(-1,-1, 1),'oppIndex':6, 'faceIndex':(0,2,5), 'edgeIndex':(1,2,9)},
+           2:{'ID':(-1, 1,-1),'oppIndex':5, 'faceIndex':(0,3,4), 'edgeIndex':(0,3,10)},
+           3:{'ID':(-1, 1, 1),'oppIndex':4, 'faceIndex':(0,3,5), 'edgeIndex':(1,3,11)},
+           4:{'ID':( 1,-1,-1),'oppIndex':3, 'faceIndex':(1,2,4), 'edgeIndex':(4,6,8)}, 
+           5:{'ID':( 1,-1, 1),'oppIndex':2, 'faceIndex':(1,2,5), 'edgeIndex':(5,6,9)},
+           6:{'ID':( 1, 1,-1),'oppIndex':1, 'faceIndex':(1,3,4), 'edgeIndex':(4,7,10)}, 
+           7:{'ID':( 1, 1, 1),'oppIndex':0, 'faceIndex':(1,3,5), 'edgeIndex':(5,7,11)}
+          }
+
+features = [(-1, 0, 0),
+            ( 1, 0, 0),
+            ( 0,-1, 0),
+            ( 0, 1, 0),
+            ( 0, 0,-1),
+            ( 0, 0, 1),
+            (-1, 0,-1),
+            (-1, 0, 1),
+            (-1,-1, 0),
+            (-1, 1, 0),
+            ( 1, 0,-1),
+            ( 1, 0, 1),
+            ( 1,-1, 0),
+            ( 1, 1, 0),
+            ( 0,-1,-1),
+            ( 0,-1, 1),
+            ( 0, 1,-1),
+            ( 0, 1, 1),
+            (-1,-1,-1),
+            (-1,-1, 1),
+            (-1, 1,-1),
+            (-1, 1, 1),
+            ( 1,-1,-1),
+            ( 1,-1, 1),
+            ( 1, 1,-1),
+            ( 1, 1, 1),
+           ]
+
+directions = {0 :{'ID':[-1,-1,-1],'index': 0 ,'oppIndex': 25},
+              1 :{'ID':[-1,-1,0], 'index': 1 ,'oppIndex': 24},
+              2 :{'ID':[-1,-1,1], 'index': 2 ,'oppIndex': 23},
+              3 :{'ID':[-1,0,-1], 'index': 3 ,'oppIndex': 22},
+              4 :{'ID':[-1,0,0],  'index': 4 ,'oppIndex': 21},
+              5 :{'ID':[-1,0,1],  'index': 5 ,'oppIndex': 20},
+              6 :{'ID':[-1,1,-1], 'index': 6 ,'oppIndex': 19},
+              7 :{'ID':[-1,1,0],  'index': 7 ,'oppIndex': 18},
+              8 :{'ID':[-1,1,1],  'index': 8 ,'oppIndex': 17},
+              9 :{'ID':[0,-1,-1], 'index': 9 ,'oppIndex': 16},
+              10:{'ID':[0,-1,0],  'index': 10 ,'oppIndex': 15},
+              11:{'ID':[0,-1,1],  'index': 11 ,'oppIndex': 14},
+              12:{'ID':[0,0,-1],  'index': 12 ,'oppIndex': 13},
+              13:{'ID':[0,0,1],   'index': 13 ,'oppIndex': 12},
+              14:{'ID':[0,1,-1],  'index': 14 ,'oppIndex': 11},
+              15:{'ID':[0,1,0],   'index': 15 ,'oppIndex': 10},
+              16:{'ID':[0,1,1],   'index': 16 ,'oppIndex': 9},
+              17:{'ID':[1,-1,-1], 'index': 17 ,'oppIndex': 8},
+              18:{'ID':[1,-1,0],  'index': 18 ,'oppIndex': 7},
+              19:{'ID':[1,-1,1],  'index': 19 ,'oppIndex': 6},
+              20:{'ID':[1,0,-1],  'index': 20 ,'oppIndex': 5},
+              21:{'ID':[1,0,0],   'index': 21 ,'oppIndex': 4},
+              22:{'ID':[1,0,1],   'index': 22 ,'oppIndex': 3},
+              23:{'ID':[1,1,-1],  'index': 23 ,'oppIndex': 2},
+              24:{'ID':[1,1,0],   'index': 24 ,'oppIndex': 1},
+              25:{'ID':[1,1,1],   'index': 25 ,'oppIndex': 0},
+             }
+
+allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
+            [1, 2, 7, 8, 19, 20, 25],         # 1
+            [2, 8, 20],                       # 2
+            [3, 5, 6, 8, 21, 23, 24],         # 3
+            [4, 5, 7, 8, 22, 23, 25],         # 4
+            [5, 8, 23],                       # 5
+            [6, 8, 24],                       # 6
+            [7, 8, 25],                       # 7
+            [8],                              # 8
+            [9, 11, 15, 17, 18, 20, 24],      # 9
+            [10, 11, 16, 17, 19, 20, 25],     # 10
+            [11, 17, 20],                     # 11
+            [12, 14, 15, 17, 21, 23, 24],     # 12
+            [13, 14, 16, 17, 22, 23, 25],     # 13
+            [14, 17, 23],                     # 14
+            [15, 17, 24],                     # 15
+            [16, 17, 25],                     # 16
+            [17],                             # 17
+            [18, 20, 24],                     # 18
+            [19, 20, 25],                     # 19
+            [20],                             # 20
+            [21, 23, 24],                     # 21
+            [22, 23, 25],                     # 22
+            [23],                             # 23
+            [24],                             # 24
+            [25]]                             # 25
 
 cdef class cOrientation(object):
     cdef public int numFaces,numEdges,numCorners,numNeighbors
     cdef public int[26][5] directions
+    cdef public int[6][4] face_info
     def __cinit__(self):
         self.numFaces = 6
         self.numEdges = 12
@@ -37,6 +236,12 @@ cdef class cOrientation(object):
                            [ 0, 1, 0, 23, 20],  #23
                            [ 0, 0,-1, 24, 25],  #24
                            [ 0, 0, 1, 25, 24]]  #25
+        self.face_info = [[0, 1, 2, 1],
+                          [0, 1, 2,-1],
+                          [1, 0, 2, 1],
+                          [1, 0, 2,-1],
+                          [2, 0, 1, 1],
+                          [2, 0, 1,-1]]
 
 
 
@@ -76,380 +281,296 @@ cdef class cOrientation(object):
             cK = 2
 
         return cI+cJ+cK
+        
 
-
-class Orientation(object):
+def get_index_ordering(inlet,outlet):
     """
-    Orientation of the voxels broken into face, edge, and corner neighbors
+    This function rearranges the loopInfo ordering so
+    the inlet and outlet faces are first. 
     """
-    def __init__(self):
-        self.numFaces = 6
-        self.numEdges = 12
-        self.numCorners = 8
-        self.numNeighbors = 26
+    order = [0,1,2]
+    for n in range(0,3):
+        if inlet[n*2] or outlet[n*2] or inlet[n*2+1] or outlet[n*2+1]:
+            order.remove(n);
+            order.insert(0,n)
 
-        self.sendFSlices = np.empty([self.numFaces,3],dtype=object)
-        self.recvFSlices = np.empty([self.numFaces,3],dtype=object)
-        self.sendESlices = np.empty([self.numEdges,3],dtype=object)
-        self.recvESlices = np.empty([self.numEdges,3],dtype=object)
-        self.sendCSlices = np.empty([self.numCorners,3],dtype=object)
-        self.recvCSlices = np.empty([self.numCorners,3],dtype=object)
+    return order
 
+def get_loop_info(grid,subDomain,inlet,outlet,res_pad):
+    """
+    Grap loop information to cycle through the boundary Faces and internal nodes
+    Reservoirs are treated as entire face  
+    Order ensures that inlet/outlet edges and corners are included in optimized looping 
+    """
+    order = get_index_ordering(inlet,outlet)
+    loop_info = np.zeros([numFaces+1,3,2],dtype = np.int64)
 
-        self.faces=  {0:{'ID':(-1, 0, 0),'oppIndex':1, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir': 1},
-                      1:{'ID':( 1, 0, 0),'oppIndex':0, 'argOrder':np.array([0,1,2],dtype=np.uint8), 'dir':-1},
-                      2:{'ID':( 0,-1, 0),'oppIndex':3, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir': 1},
-                      3:{'ID':( 0, 1, 0),'oppIndex':2, 'argOrder':np.array([1,0,2],dtype=np.uint8), 'dir':-1},
-                      4:{'ID':( 0, 0,-1),'oppIndex':5, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir': 1},
-                      5:{'ID':( 0, 0, 1),'oppIndex':4, 'argOrder':np.array([2,0,1],dtype=np.uint8), 'dir':-1}
-                      }
-        
-        self.edges = {0 :{'ID':(-1, 0,-1), 'oppIndex':5, 'faceIndex':(0,4), 'dir':(0,2)},
-                      1 :{'ID':(-1, 0, 1), 'oppIndex':4, 'faceIndex':(0,5), 'dir':(0,2)},
-                      2 :{'ID':(-1,-1, 0), 'oppIndex':7, 'faceIndex':(0,2), 'dir':(0,1)},
-                      3 :{'ID':(-1, 1, 0), 'oppIndex':6, 'faceIndex':(0,3), 'dir':(0,1)},
-                      4 :{'ID':( 1, 0,-1), 'oppIndex':1, 'faceIndex':(1,4), 'dir':(0,2)},
-                      5 :{'ID':( 1, 0, 1), 'oppIndex':0, 'faceIndex':(1,5), 'dir':(0,2)},
-                      6 :{'ID':( 1,-1, 0), 'oppIndex':3, 'faceIndex':(1,2), 'dir':(0,1)},
-                      7 :{'ID':( 1, 1, 0), 'oppIndex':2, 'faceIndex':(1,3), 'dir':(0,1)},
-                      8 :{'ID':( 0,-1,-1), 'oppIndex':11,'faceIndex':(2,4), 'dir':(1,2)},
-                      9 :{'ID':( 0,-1, 1), 'oppIndex':10,'faceIndex':(2,5), 'dir':(1,2)},
-                      10:{'ID':( 0, 1,-1), 'oppIndex':9, 'faceIndex':(3,4), 'dir':(1,2)},
-                      11:{'ID':( 0, 1, 1), 'oppIndex':8, 'faceIndex':(3,5), 'dir':(1,2)},
-                    }
+    range_info = 2*np.ones([6],dtype=np.uint8)
+    for f_index in faces:
+        if subDomain.boundaryID[f_index] == 0:
+            range_info[f_index] = range_info[f_index] - 1
+        if inlet[f_index] > 0:
+            range_info[f_index] = range_info[f_index] + res_pad
+        if outlet[f_index] > 0:
+            range_info[f_index] = range_info[f_index] + res_pad
 
-        self.corners = {0:{'ID':(-1,-1,-1),'oppIndex':7, 'faceIndex':(0,2,4), 'edgeIndex':(0,2,8)},
-                        1:{'ID':(-1,-1, 1),'oppIndex':6, 'faceIndex':(0,2,5), 'edgeIndex':(1,2,9)},
-                        2:{'ID':(-1, 1,-1),'oppIndex':5, 'faceIndex':(0,3,4), 'edgeIndex':(0,3,10)},
-                        3:{'ID':(-1, 1, 1),'oppIndex':4, 'faceIndex':(0,3,5), 'edgeIndex':(1,3,11)},
-                        4:{'ID':( 1,-1,-1),'oppIndex':3, 'faceIndex':(1,2,4), 'edgeIndex':(4,6,8)}, 
-                        5:{'ID':( 1,-1, 1),'oppIndex':2, 'faceIndex':(1,2,5), 'edgeIndex':(5,6,9)},
-                        6:{'ID':( 1, 1,-1),'oppIndex':1, 'faceIndex':(1,3,4), 'edgeIndex':(4,7,10)}, 
-                        7:{'ID':( 1, 1, 1),'oppIndex':0, 'faceIndex':(1,3,5), 'edgeIndex':(5,7,11)}
-                        }
-        
+    for f_index in faces:
+        face = faces[f_index]['argOrder'][0]
+        g_s = [grid.shape[order[0]],grid.shape[order[1]],grid.shape[order[2]]]
 
-        self.directions ={0 :{'ID':[-1,-1,-1],'index': 0 ,'oppIndex': 25},
-                          1 :{'ID':[-1,-1,0], 'index': 1 ,'oppIndex': 24},
-                          2 :{'ID':[-1,-1,1], 'index': 2 ,'oppIndex': 23},
-                          3 :{'ID':[-1,0,-1], 'index': 3 ,'oppIndex': 22},
-                          4 :{'ID':[-1,0,0],  'index': 4 ,'oppIndex': 21},
-                          5 :{'ID':[-1,0,1],  'index': 5 ,'oppIndex': 20},
-                          6 :{'ID':[-1,1,-1], 'index': 6 ,'oppIndex': 19},
-                          7 :{'ID':[-1,1,0],  'index': 7 ,'oppIndex': 18},
-                          8 :{'ID':[-1,1,1],  'index': 8 ,'oppIndex': 17},
-                          9 :{'ID':[0,-1,-1], 'index': 9 ,'oppIndex': 16},
-                          10:{'ID':[0,-1,0],  'index': 10 ,'oppIndex': 15},
-                          11:{'ID':[0,-1,1],  'index': 11 ,'oppIndex': 14},
-                          12:{'ID':[0,0,-1],  'index': 12 ,'oppIndex': 13},
-                          13:{'ID':[0,0,1],   'index': 13 ,'oppIndex': 12},
-                          14:{'ID':[0,1,-1],  'index': 14 ,'oppIndex': 11},
-                          15:{'ID':[0,1,0],   'index': 15 ,'oppIndex': 10},
-                          16:{'ID':[0,1,1],   'index': 16 ,'oppIndex': 9},
-                          17:{'ID':[1,-1,-1], 'index': 17 ,'oppIndex': 8},
-                          18:{'ID':[1,-1,0],  'index': 18 ,'oppIndex': 7},
-                          19:{'ID':[1,-1,1],  'index': 19 ,'oppIndex': 6},
-                          20:{'ID':[1,0,-1],  'index': 20 ,'oppIndex': 5},
-                          21:{'ID':[1,0,0],   'index': 21 ,'oppIndex': 4},
-                          22:{'ID':[1,0,1],   'index': 22 ,'oppIndex': 3},
-                          23:{'ID':[1,1,-1],  'index': 23 ,'oppIndex': 2},
-                          24:{'ID':[1,1,0],   'index': 24 ,'oppIndex': 1},
-                          25:{'ID':[1,1,1],   'index': 25 ,'oppIndex': 0},
-                         }
-        ### Faces/Edges for Faces,Edges,Corners ###
-        self.allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
-                         [1, 2, 7, 8, 19, 20, 25],         # 1
-                         [2, 8, 20],                       # 2
-                         [3, 5, 6, 8, 21, 23, 24],         # 3
-                         [4, 5, 7, 8, 22, 23, 25],         # 4
-                         [5, 8, 23],                       # 5
-                         [6, 8, 24],                       # 6
-                         [7, 8, 25],                       # 7
-                         [8],                              # 8
-                          [9, 11, 15, 17, 18, 20, 24],      # 9
-                         [10, 11, 16, 17, 19, 20, 25],     # 10
-                         [11, 17, 20],                     # 11
-                         [12, 14, 15, 17, 21, 23, 24],     # 12
-                         [13, 14, 16, 17, 22, 23, 25],     # 13
-                         [14, 17, 23],                     # 14
-                         [15, 17, 24],                     # 15
-                         [16, 17, 25],                     # 16
-                         [17],                             # 17
-                         [18, 20, 24],                     # 18
-                         [19, 20, 25],                     # 19
-                         [20],                             # 20
-                         [21, 23, 24],                     # 21
-                         [22, 23, 25],                     # 22
-                         [23],                             # 23
-                         [24],                             # 24
-                         [25]]                             # 25
+        if faces[f_index]['dir'] == -1:
+            if face == order[0]:
+                loop_info[f_index,order[0]] = [g_s[0] - range_info[order[0]*2+1], g_s[0]]
+                loop_info[f_index,order[1]] = [0, g_s[1]]
+                loop_info[f_index,order[2]] = [0, g_s[2]]
+            elif face == order[1]:
+                loop_info[f_index,order[0]] = [range_info[order[0]*2], g_s[0] - range_info[order[0]*2+1]]
+                loop_info[f_index,order[1]] = [g_s[1] - range_info[order[1]*2+1], g_s[1]]
+                loop_info[f_index,order[2]] = [0, g_s[2]]
+            elif face == order[2]:
+                loop_info[f_index,order[0]] = [range_info[order[0]*2], g_s[0] - range_info[order[0]*2+1]]
+                loop_info[f_index,order[1]] = [range_info[order[1]*2], g_s[1]-range_info[order[1]*2+1]]
+                loop_info[f_index,order[2]] = [g_s[2] - range_info[order[2]*2+1], g_s[2]]
 
-    def get_index_ordering(self,inlet,outlet):
-        """
-        This function rearranges the loopInfo ordering so
-        the inlet and outlet faces are first. 
-        """
-        order = [0,1,2]
-        for n in range(0,3):
-            if inlet[n*2] or outlet[n*2] or inlet[n*2+1] or outlet[n*2+1]:
-                order.remove(n);
-                order.insert(0,n)
-        
-        return order
+        elif faces[f_index]['dir'] == 1:
+            if face == order[0]:
+                loop_info[f_index,order[0]] = [0, range_info[order[0]*2]]
+                loop_info[f_index,order[1]] = [0, g_s[1]]
+                loop_info[f_index,order[2]] = [0, g_s[2]]
+            elif face == order[1]:
+                loop_info[f_index,order[0]] = [range_info[order[0]*2], g_s[0]-range_info[order[0]*2+1]]
+                loop_info[f_index,order[1]] = [0, range_info[order[1]*2]]
+                loop_info[f_index,order[2]] = [0, g_s[2]]
+            elif face == order[2]:
+                loop_info[f_index,order[0]] = [range_info[order[0]*2],g_s[0]-range_info[order[0]*2+1]]
+                loop_info[f_index,order[1]] = [range_info[order[1]*2],g_s[1]-range_info[order[1]*2+1]]
+                loop_info[f_index,order[2]] = [0,range_info[order[2]*2]]
 
+    loop_info[numFaces][order[0]] = [range_info[order[0]*2],g_s[0]-range_info[order[0]*2+1]]
+    loop_info[numFaces][order[1]] = [range_info[order[1]*2],g_s[1]-range_info[order[1]*2+1]]
+    loop_info[numFaces][order[2]] = [range_info[order[2]*2],g_s[2]-range_info[order[2]*2+1]]
+    
+    return loop_info
 
-    def getLoopInfo(self,grid,subDomain,inlet,outlet,resPad):
-        """
-        Grap  Loop Information to Cycle through the Boundary Faces and Internal Nodes
-        Reservoirs are Treated as Entire Face  
-        Order ensure that inlet/outlet edges and corners are included in optimized looping 
-        """
+def getSendSlices(struct_ratio,buffer,dim):
+    """
+    Determine slices of face, edge, and corner neighbor to send data 
+    structRatio is size of voxel window to send and is [nx,ny,nz]
+    buffer is the subDomain.buffer
+    dim is grid.shape
+    Buffer is always updated on edges and corners due to geometry contraints
+    """
+    send_faces = np.empty([numFaces,3],dtype=object)
+    send_edges = np.empty([numEdges,3],dtype=object)
+    send_corner = np.empty([numCorners,3],dtype=object)
 
-        order = self.get_index_ordering(inlet,outlet)
-
-        loopInfo = np.zeros([self.numFaces+1,3,2],dtype = np.int64)
-
-        rangeInfo = 2*np.ones([6],dtype=np.uint8)
-        for fIndex in self.faces:
-            if subDomain.boundaryID[fIndex] == 0:
-                rangeInfo[fIndex] = rangeInfo[fIndex] - 1
-            if inlet[fIndex] > 0:
-                rangeInfo[fIndex] = rangeInfo[fIndex] + resPad
-            if outlet[fIndex] > 0:
-                rangeInfo[fIndex] = rangeInfo[fIndex] + resPad
-
-        for fIndex in self.faces:
-            face = self.faces[fIndex]['argOrder'][0]
-
-            if self.faces[fIndex]['dir'] == -1:
-                if face == order[0]:
-                    loopInfo[fIndex,order[0]] = [grid.shape[order[0]]-rangeInfo[order[0]*2+1],grid.shape[order[0]]]
-                    loopInfo[fIndex,order[1]] = [0,grid.shape[order[1]]]
-                    loopInfo[fIndex,order[2]] = [0,grid.shape[order[2]]]
-                elif face == order[1]:
-                    loopInfo[fIndex,order[0]] = [rangeInfo[order[0]*2],grid.shape[order[0]]-rangeInfo[order[0]*2+1]]
-                    loopInfo[fIndex,order[1]] = [grid.shape[order[1]]-rangeInfo[order[1]*2+1],grid.shape[order[1]]]
-                    loopInfo[fIndex,order[2]] = [0,grid.shape[order[2]]]
-                elif face == order[2]:
-                    loopInfo[fIndex,order[0]] = [rangeInfo[order[0]*2],grid.shape[order[0]]-rangeInfo[order[0]*2+1]]
-                    loopInfo[fIndex,order[1]] = [rangeInfo[order[1]*2],grid.shape[order[1]]-rangeInfo[order[1]*2+1]]
-                    loopInfo[fIndex,order[2]] = [grid.shape[order[2]]-rangeInfo[order[2]*2+1],grid.shape[order[2]]]
-
-            elif self.faces[fIndex]['dir'] == 1:
-                if face == order[0]:
-                    loopInfo[fIndex,order[0]] = [0,rangeInfo[order[0]*2]]
-                    loopInfo[fIndex,order[1]] = [0,grid.shape[order[1]]]
-                    loopInfo[fIndex,order[2]] = [0,grid.shape[order[2]]]
-                elif face == order[1]:
-                    loopInfo[fIndex,order[0]] = [rangeInfo[order[0]*2],grid.shape[order[0]]-rangeInfo[order[0]*2+1]]
-                    loopInfo[fIndex,order[1]] = [0,rangeInfo[order[1]*2]]
-                    loopInfo[fIndex,order[2]] = [0,grid.shape[order[2]]]
-                elif face == order[2]:
-                    loopInfo[fIndex,order[0]] = [rangeInfo[order[0]*2],grid.shape[order[0]]-rangeInfo[order[0]*2+1]]
-                    loopInfo[fIndex,order[1]] = [rangeInfo[order[1]*2],grid.shape[order[1]]-rangeInfo[order[1]*2+1]]
-                    loopInfo[fIndex,order[2]] = [0,rangeInfo[order[2]*2]]
-
-        loopInfo[self.numFaces][order[0]] = [rangeInfo[order[0]*2],grid.shape[order[0]]-rangeInfo[order[0]*2+1]]
-        loopInfo[self.numFaces][order[1]] = [rangeInfo[order[1]*2],grid.shape[order[1]]-rangeInfo[order[1]*2+1]]
-        loopInfo[self.numFaces][order[2]] = [rangeInfo[order[2]*2],grid.shape[order[2]]-rangeInfo[order[2]*2+1]]
-        
-        return loopInfo
-
-    def getSendSlices(self,structRatio,buffer,dim):
-        """
-        Determine slices of face, edge, and corner neighbor to send data 
-        structRatio is size of voxel window to send and is [nx,ny,nz]
-        buffer is the subDomain.buffer
-        dim is grid.shape
-        Buffer is always updated on edges and corners due to geometry contraints
-        """
-
-        #############
-        ### Faces ###
-        #############
-        for fIndex in self.faces:
-            fID = self.faces[fIndex]['ID']
-            for n in range(len(fID)):
-                if fID[n] != 0:
-                    if fID[n] > 0:
-                        self.sendFSlices[fIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-buffer[n*2+1]-1)
-                    else:
-                        self.sendFSlices[fIndex,n] = slice(buffer[n*2]+1,buffer[n*2]+structRatio[n*2]+1)
+    #############
+    ### Faces ###
+    #############
+    for f_index in faces:
+        f_ID = faces[f_index]['ID']
+        for n in range(len(f_ID)):
+            if f_ID[n] != 0:
+                if f_ID[n] > 0:
+                    send_faces[f_index,n] = slice(dim[n]-struct_ratio[n*2+1]-buffer[n*2+1]-1,dim[n]-buffer[n*2+1]-1)
                 else:
-                    self.sendFSlices[fIndex,n] = slice(None,None)
-        #############
+                    send_faces[f_index,n] = slice(buffer[n*2]+1,buffer[n*2]+struct_ratio[n*2]+1)
+            else:
+                send_faces[f_index,n] = slice(None,None)
+    #############
 
-        #############
-        ### Edges ###
-        #############
-        for eIndex in self.edges:
-            eID = self.edges[eIndex]['ID']
-            for n in range(len(eID)):
-                if eID[n] != 0:
-                    if eID[n] > 0:
-                        self.sendESlices[eIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
-                    else:
-                        self.sendESlices[eIndex,n] = slice(buffer[n*2],buffer[n*2]+structRatio[n*2]+1)
+    #############
+    ### Edges ###
+    #############
+    for e_index in edges:
+        e_ID = edges[e_index]['ID']
+        for n in range(len(e_ID)):
+            if e_ID[n] != 0:
+                if e_ID[n] > 0:
+                    send_edges[e_index,n] = slice(dim[n]-struct_ratio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
                 else:
-                    self.sendESlices[eIndex,n] = slice(None,None)
-        #############
+                    send_edges[e_index,n] = slice(buffer[n*2],buffer[n*2]+struct_ratio[n*2]+1)
+            else:
+                send_edges[e_index,n] = slice(None,None)
+    #############
 
-        ###############
-        ### Corners ###
-        ###############
-        for cIndex in self.corners:
-            cID = self.corners[cIndex]['ID']
-            for n in range(len(cID)):
-                if cID[n] > 0:
-                    self.sendCSlices[cIndex,n] = slice(dim[n]-structRatio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
+    ###############
+    ### Corners ###
+    ###############
+    for c_index in corners:
+        c_ID = corners[c_index]['ID']
+        for n in range(len(c_ID)):
+            if c_ID[n] > 0:
+                send_corner[c_index,n] = slice(dim[n]-struct_ratio[n*2+1]-buffer[n*2+1]-1,dim[n]-1)
+            else:
+                send_corner[c_index,n] = slice(buffer[n*2],buffer[n*2]+struct_ratio[n*2]+1)
+    ###############
+
+    return send_faces,send_edges,send_corner
+
+def getSendBufferSlices(buffer,dim):
+    """
+    Determine slices of face, edge, and corner neighbor to send data 
+    structRatio is size of voxel window to send and is [nx,ny,nz]
+    buffer is the subDomain.buffer
+    dim is grid.shape
+    Buffer is always updated on edges and corners due to geometry contraints
+    """
+
+    send_faces = np.empty([numFaces,3],dtype=object)
+    send_edges = np.empty([numEdges,3],dtype=object)
+    send_corner = np.empty([numCorners,3],dtype=object)
+
+    #############
+    ### Faces ###
+    #############
+    for f_index in faces:
+        f_ID = faces[f_index]['ID']
+        for n in range(len(f_ID)):
+            if f_ID[n] != 0:
+                if f_ID[n] > 0:
+                    send_faces[f_index,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
                 else:
-                    self.sendCSlices[cIndex,n] = slice(buffer[n*2],buffer[n*2]+structRatio[n*2]+1)
-        ###############
+                    send_faces[f_index,n] = slice(buffer[n*2],2*buffer[n*2])
+            else:
+                send_faces[f_index,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+    #############
 
-    def getSendBufferSlices(self,buffer,dim):
-        """
-        Determine slices of face, edge, and corner neighbor to send data 
-        structRatio is size of voxel window to send and is [nx,ny,nz]
-        buffer is the subDomain.buffer
-        dim is grid.shape
-        Buffer is always updated on edges and corners due to geometry contraints
-        """
-
-        #############
-        ### Faces ###
-        #############
-        for fIndex in self.faces:
-            fID = self.faces[fIndex]['ID']
-            for n in range(len(fID)):
-                if fID[n] != 0:
-                    if fID[n] > 0:
-                        self.sendFSlices[fIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
-                    else:
-                        self.sendFSlices[fIndex,n] = slice(buffer[n*2],2*buffer[n*2])
+    #############
+    ### Edges ###
+    #############
+    for e_index in edges:
+        e_ID = edges[e_index]['ID']
+        for n in range(len(e_ID)):
+            if e_ID[n] != 0:
+                if e_ID[n] > 0:
+                    send_edges[e_index,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
                 else:
-                    self.sendFSlices[fIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
-        #############
+                    send_edges[e_index,n] = slice(buffer[n*2],2*buffer[n*2])
+            else:
+                send_edges[e_index,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+    #############
 
-        #############
-        ### Edges ###
-        #############
-        for eIndex in self.edges:
-            eID = self.edges[eIndex]['ID']
-            for n in range(len(eID)):
-                if eID[n] != 0:
-                    if eID[n] > 0:
-                        self.sendESlices[eIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
-                    else:
-                        self.sendESlices[eIndex,n] = slice(buffer[n*2],2*buffer[n*2])
+    ###############
+    ### Corners ###
+    ###############
+    for c_index in corners:
+        c_ID = corners[c_index]['ID']
+        for n in range(len(c_ID)):
+            if c_ID[n] > 0:
+                send_corner[c_index,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
+            else:
+                send_corner[c_index,n] = slice(buffer[n*2],2*buffer[n*2])
+    ###############
+
+    return send_faces,send_edges,send_corner
+
+
+def getRecieveSlices(halo,buffer,dim):
+    """
+    Determine slices of face, edge, and corner neighbor to recieve data 
+    Buffer is always updated on edges and corners due to geometry contraints
+    """
+
+    recv_faces = np.empty([numFaces,3],dtype=object)
+    recv_edges = np.empty([numEdges,3],dtype=object)
+    recv_corners = np.empty([numCorners,3],dtype=object)
+
+    #############
+    ### Faces ###
+    #############
+    for f_index in faces:
+        f_ID = faces[f_index]['ID']
+        for n in range(len(f_ID)):
+            if f_ID[n] != 0:
+                if f_ID[n] > 0:
+                    recv_faces[f_index,n] = slice(dim[n]-halo[n*2+1],dim[n])
                 else:
-                    self.sendESlices[eIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
-        #############
+                    recv_faces[f_index,n] = slice(None,halo[n*2])
+            else:
+                recv_faces[f_index,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
+    #############
 
-        ###############
-        ### Corners ###
-        ###############
-        for cIndex in self.corners:
-            cID = self.corners[cIndex]['ID']
-            for n in range(len(cID)):
-                if cID[n] > 0:
-                    self.sendCSlices[cIndex,n] = slice(dim[n]-2*buffer[n*2+1],dim[n]-buffer[n*2+1])
+    #############
+    ### Edges ###
+    #############
+    for e_index in edges:
+        e_ID = edges[e_index]['ID']
+        for n in range(len(e_ID)):
+            if e_ID[n] != 0:
+                if e_ID[n] > 0:
+                    recv_edges[e_index,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
                 else:
-                    self.sendCSlices[cIndex,n] = slice(buffer[n*2],2*buffer[n*2])
-        ###############
+                    recv_edges[e_index,n] = slice(None,halo[n*2]+buffer[n*2])
+            else:
+                recv_edges[e_index,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
+    #############
+
+    ###############
+    ### Corners ###
+    ###############
+    for c_index in corners:
+        c_ID = corners[c_index]['ID']
+        for n in range(len(c_ID)):
+            if c_ID[n] > 0:
+                recv_corners[c_index,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
+            else:
+                recv_corners[c_index,n] = slice(None,halo[n*2]+buffer[n*2])
+    ###############
+
+    return recv_faces,recv_edges,recv_corners
+
+def getRecieveBufferSlices(buffer,dim):
+    """
+    Determine slices of face, edge, and corner neighbor to recieve data 
+    Buffer is always updated on edges and corners due to geometry contraints
+    """
+
+    recv_faces = np.empty([numFaces,3],dtype=object)
+    recv_edges = np.empty([numEdges,3],dtype=object)
+    recv_corners = np.empty([numCorners,3],dtype=object)
 
 
-    def getRecieveSlices(self,halo,buffer,dim):
-        """
-        Determine slices of face, edge, and corner neighbor to recieve data 
-        Buffer is always updated on edges and corners due to geometry contraints
-        """
-
-        #############
-        ### Faces ###
-        #############
-        for fIndex in self.faces:
-            fID = self.faces[fIndex]['ID']
-            for n in range(len(fID)):
-                if fID[n] != 0:
-                    if fID[n] > 0:
-                        self.recvFSlices[fIndex,n] = slice(dim[n]-halo[n*2+1],dim[n])
-                    else:
-                        self.recvFSlices[fIndex,n] = slice(None,halo[n*2])
+    #############
+    ### Faces ###
+    #############
+    for f_index in faces:
+        f_ID = faces[f_index]['ID']
+        for n in range(len(f_ID)):
+            if f_ID[n] != 0:
+                if f_ID[n] > 0:
+                    recv_faces[f_index,n] = slice(dim[n]-buffer[n*2+1],dim[n])
                 else:
-                    self.recvFSlices[fIndex,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
-        #############
+                    recv_faces[f_index,n] = slice(None,buffer[n*2])
+            else:
+                recv_faces[f_index,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+    #############
 
-        #############
-        ### Edges ###
-        #############
-        for eIndex in self.edges:
-            eID = self.edges[eIndex]['ID']
-            for n in range(len(eID)):
-                if eID[n] != 0:
-                    if eID[n] > 0:
-                        self.recvESlices[eIndex,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
-                    else:
-                        self.recvESlices[eIndex,n] = slice(None,halo[n*2]+buffer[n*2])
+    #############
+    ### Edges ###
+    #############
+    for e_index in edges:
+        e_ID = edges[e_index]['ID']
+        for n in range(len(e_ID)):
+            if e_ID[n] != 0:
+                if e_ID[n] > 0:
+                    recv_edges[e_index,n] = slice(dim[n]-buffer[n*2+1],dim[n])
                 else:
-                    self.recvESlices[eIndex,n] = slice(halo[n*2],dim[n]-halo[n*2+1])
-        #############
+                    recv_edges[e_index,n] = slice(None,buffer[n*2])
+            else:
+                recv_edges[e_index,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
+    #############
 
-        ###############
-        ### Corners ###
-        ###############
-        for cIndex in self.corners:
-            cID = self.corners[cIndex]['ID']
-            for n in range(len(cID)):
-                if cID[n] > 0:
-                    self.recvCSlices[cIndex,n] = slice(dim[n]-halo[n*2+1]-buffer[n*2+1],dim[n])
-                else:
-                    self.recvCSlices[cIndex,n] = slice(None,halo[n*2]+buffer[n*2])
-        ###############
+    ###############
+    ### Corners ###
+    ###############
+    for c_index in corners:
+        c_ID = corners[c_index]['ID']
+        for n in range(len(c_ID)):
+            if c_ID[n] > 0:
+                recv_corners[c_index,n] = slice(dim[n]-buffer[n*2+1],dim[n])
+            else:
+                recv_corners[c_index,n] = slice(None,buffer[n*2])
+    ###############
 
-    def getRecieveBufferSlices(self,buffer,dim):
-        """
-        Determine slices of face, edge, and corner neighbor to recieve data 
-        Buffer is always updated on edges and corners due to geometry contraints
-        """
-
-        #############
-        ### Faces ###
-        #############
-        for fIndex in self.faces:
-            fID = self.faces[fIndex]['ID']
-            for n in range(len(fID)):
-                if fID[n] != 0:
-                    if fID[n] > 0:
-                        self.recvFSlices[fIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
-                    else:
-                        self.recvFSlices[fIndex,n] = slice(None,buffer[n*2])
-                else:
-                    self.recvFSlices[fIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
-        #############
-
-        #############
-        ### Edges ###
-        #############
-        for eIndex in self.edges:
-            eID = self.edges[eIndex]['ID']
-            for n in range(len(eID)):
-                if eID[n] != 0:
-                    if eID[n] > 0:
-                        self.recvESlices[eIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
-                    else:
-                        self.recvESlices[eIndex,n] = slice(None,buffer[n*2])
-                else:
-                    self.recvESlices[eIndex,n] = slice(buffer[n*2],dim[n]-buffer[n*2+1])
-        #############
-
-        ###############
-        ### Corners ###
-        ###############
-        for cIndex in self.corners:
-            cID = self.corners[cIndex]['ID']
-            for n in range(len(cID)):
-                if cID[n] > 0:
-                    self.recvCSlices[cIndex,n] = slice(dim[n]-buffer[n*2+1],dim[n])
-                else:
-                    self.recvCSlices[cIndex,n] = slice(None,buffer[n*2])
-        ###############
+    return recv_faces,recv_edges,recv_corners

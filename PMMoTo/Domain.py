@@ -17,6 +17,7 @@ class Domain(object):
         self.boundaries   = boundaries
         self.subDomains   = subDomains
         self.numSubDomains = np.prod(subDomains)
+        self.global_map = -np.ones([sD+2 for sD in subDomains],dtype=np.int64)
         self.subNodes     = np.zeros([3],dtype=np.uint64)
         self.subNodesRem  = np.zeros([3],dtype=np.uint64)
         self.domainLength = np.zeros([3])
@@ -27,6 +28,7 @@ class Domain(object):
         self.dZ = 0
         self.periodic_check()
         self.input_checks()
+        self.generate_global_map()
 
     def getdXYZ(self):
         """
@@ -111,4 +113,41 @@ class Domain(object):
 
         if error:
           communication.raiseError()
+
+    def generate_global_map(self):
+        """
+        Generate Domain lookup map. 
+        -2: Wall Boundary Condition
+        -1: No Assumption Boundary Condition
+        >=0: proc_ID
+        """
+
+        self.global_map[1:-1,1:-1,1:-1] = np.arange(self.numSubDomains).reshape(self.subDomains)
+        
+        ### Set Boundarys of global SubDomain Map
+
+        if (self.boundaries[0][0] == 1):
+            self.global_map[0,:,:] = -2
+        if (self.boundaries[0][1] == 1):
+            self.global_map[-1,:,:] = -2
+        if (self.boundaries[1][0] == 1):
+            self.global_map[:,0,:] = -2
+        if (self.boundaries[1][1] == 1):
+            self.global_map[:,-1,:] = -2
+        if (self.boundaries[2][0] == 1):
+            self.global_map[:,:,0] = -2
+        if (self.boundaries[2][1] == 1):
+            self.global_map[:,:,-1] = -2
+
+        if (self.boundaries[0][0] == 2):
+            self.global_map[0,:,:]  = self.global_map[-2,:,:]
+            self.global_map[-1,:,:] = self.global_map[1,:,:]
+
+        if (self.boundaries[1][0] == 2):
+            self.global_map[:,0,:]  = self.global_map[:,-2,:]
+            self.global_map[:,-1,:] = self.global_map[:,1,:]
+
+        if (self.boundaries[2][0] == 2):
+            self.global_map[:,:,0]  = self.global_map[:,:,-2]
+            self.global_map[:,:,-1] = self.global_map[:,:,1]
     

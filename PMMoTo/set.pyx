@@ -11,7 +11,6 @@ from . import nodes
 
 from . import Orientation
 cOrient = Orientation.cOrientation()
-Orient = Orientation.Orientation()
 cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
