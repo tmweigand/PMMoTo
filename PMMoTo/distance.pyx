@@ -19,7 +19,6 @@ comm = MPI.COMM_WORLD
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 def _fixInterfaceCalc(tree,
-                      int faceID,
                       int lShape,
                       int dir,
                       cnp.ndarray[cnp.int32_t, ndim=2] _faceSolids,
@@ -35,6 +34,7 @@ def _fixInterfaceCalc(tree,
     cdef float maxD,d
 
     _orderG = np.ones((1,3), dtype=np.double) #Global Order
+    
     _orderL = np.ones((3), dtype=np.uint32)   #Local Order
     cdef cnp.uint32_t [:] orderL
     orderL = _orderL
@@ -214,7 +214,6 @@ class EDT(object):
                 tree = KDTree(data)
                 face_solids = self.solids[np.where(self.solids[:,3]==face.ID)][:,0:3]
                 self.EDT,visited = _fixInterfaceCalc(tree,
-                                                     face.ID,
                                                      self.grid.shape[arg[0]],
                                                      face.info['dir'],
                                                      face_solids,
