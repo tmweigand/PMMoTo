@@ -6,57 +6,52 @@ class Domain(object):
     Determine information for entire Domain
     """
     def __init__(self,
-                 nodes,
-                 domainSize,
-                 subDomains = [1,1,1],
+                 nodes = [1,1,1],
+                 size_domain = [1,1,1],
+                 subdomains = [1,1,1],
                  boundaries = [[0,0],[0,0],[0,0]],
                  inlet = [[0,0],[0,0],[0,0]],
                  outlet =[[0,0],[0,0],[0,0]]):
         self.nodes        = nodes
-        self.domainSize   = domainSize
+        self.size_domain  = size_domain
         self.boundaries   = boundaries
-        self.subDomains   = subDomains
-        self.numSubDomains = np.prod(subDomains)
-        self.global_map = -np.ones([sD+2 for sD in subDomains],dtype=np.int64)
-        self.subNodes     = np.zeros([3],dtype=np.uint64)
-        self.subNodesRem  = np.zeros([3],dtype=np.uint64)
-        self.domainLength = np.zeros([3])
+        self.subdomains   = subdomains
         self.inlet = inlet
         self.outlet = outlet
-        self.dX = 0
-        self.dY = 0
-        self.dZ = 0
+        self.dims = 3
+        self.num_subdomains = np.prod(subdomains)
+        self.global_map = -np.ones([sD+2 for sD in subdomains],dtype=np.int64)
+        self.sub_nodes     = np.zeros([self.dims],dtype=np.uint64)
+        self.rem_sub_nodes = np.zeros([self.dims],dtype=np.uint64)
+        self.length_domain = np.zeros([self.dims])
+        self.voxel = np.zeros([self.dims])
         self.periodic_check()
         self.input_checks()
         self.generate_global_map()
 
-    def getdXYZ(self):
+    def get_voxel_size(self):
         """
         Get domain length and voxel size
         """
-        self.domainLength[0] = (self.domainSize[0,1]-self.domainSize[0,0])
-        self.domainLength[1] = (self.domainSize[1,1]-self.domainSize[1,0])
-        self.domainLength[2] = (self.domainSize[2,1]-self.domainSize[2,0])
-        self.dX = self.domainLength[0]/self.nodes[0]
-        self.dY = self.domainLength[1]/self.nodes[1]
-        self.dZ = self.domainLength[2]/self.nodes[2]
+        for n in range(0,self.dims):
+            self.length_domain[n] = (self.size_domain[n,1]-self.size_domain[n,0])
+            self.voxel[n] = self.length_domain[n]/self.nodes[n]
 
-    def getSubNodes(self):
+    def get_subdomain_nodes(self):
         """
         Calculate number of voxels in each subDomain
         """
-        self.subNodes[0],self.subNodesRem[0] = divmod(self.nodes[0],self.subDomains[0])
-        self.subNodes[1],self.subNodesRem[1] = divmod(self.nodes[1],self.subDomains[1])
-        self.subNodes[2],self.subNodesRem[2] = divmod(self.nodes[2],self.subDomains[2])
+        for n in range(0,self.dims):
+            self.sub_nodes[n],self.rem_sub_nodes[n] = divmod(self.nodes[n],self.subdomains[n])
 
     def periodic_check(self):
         """
         Check if any external boundary is periodic
         """
         self.periodic = False
-        for dirB in self.boundaries:
-            for nB in dirB:
-                if nB == 2:
+        for d_bound in self.boundaries:
+            for n_bound in d_bound:
+                if n_bound == 2:
                     self.periodic = True
 
     def input_checks(self):
@@ -72,42 +67,41 @@ class Domain(object):
                 print("Error: Nodes must be positive integer!")
         
         ### Check subDomain Size
-        for n in self.subDomains:
+        for n in self.subdomains:
             if n <= 0:
                 error = True
                 print("Error: Number of Subdomains must be positive integer!")
 
         ### Check Boundaries and Boundary Pairs
-        for dir in self.boundaries:
-            for n in dir:
+        for d in self.boundaries:
+            for n in d:
                 if n < 0 or n > 2:
                     error = True
-                    print("Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic")    
-                
+                    print("Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic")            
 
         ### Check Inlet Condition
-        sN = 0
-        for dirI,dirB in zip(self.inlet,self.boundaries):
-            for nI,nB in zip(dirI,dirB):
-                if nI !=0:
-                    sN = sN + 1
-                    if nB != 0:
+        n_sum = 0
+        for d_in,d_bound in zip(self.inlet,self.boundaries):
+            for n_in,n_bound in zip(d_in,d_bound):
+                if n_in !=0:
+                    n_sum = n_sum + 1
+                    if n_bound != 0:
                         error = True
                         print("Error: Boundary must be type (0) None at Inlet")
-        if sN > 1:
+        if n_sum > 1:
             error = True
             print("Error: Only 1 Inlet Allowed")
 
         ### Check Outlet Condition
-        sN = 0
-        for dirI,dirB in zip(self.outlet,self.boundaries):
-            for nI,nB in zip(dirI,dirB): 
-                if nI !=0:
-                    sN = sN + 1
-                    if nB != 0:
+        n_sum = 0
+        for d_in,d_bound in zip(self.outlet,self.boundaries):
+            for n_in,n_bound in zip(d_in,d_bound): 
+                if n_in !=0:
+                    n_sum = n_sum + 1
+                    if n_bound != 0:
                         error = True
                         print("Error: Boundary must be type (0) None at Outlet")
-        if sN > 1:
+        if n_sum > 1:
             error = True
             print("Error: Only 1 Outlet Allowed")
 
@@ -122,32 +116,31 @@ class Domain(object):
         >=0: proc_ID
         """
 
-        self.global_map[1:-1,1:-1,1:-1] = np.arange(self.numSubDomains).reshape(self.subDomains)
+        self.global_map[1:-1,1:-1,1:-1] = np.arange(self.num_subdomains).reshape(self.subdomains)
         
         ### Set Boundarys of global SubDomain Map
-
-        if (self.boundaries[0][0] == 1):
+        if self.boundaries[0][0] == 1:
             self.global_map[0,:,:] = -2
-        if (self.boundaries[0][1] == 1):
+        if self.boundaries[0][1] == 1:
             self.global_map[-1,:,:] = -2
-        if (self.boundaries[1][0] == 1):
+        if self.boundaries[1][0] == 1:
             self.global_map[:,0,:] = -2
-        if (self.boundaries[1][1] == 1):
+        if self.boundaries[1][1] == 1:
             self.global_map[:,-1,:] = -2
-        if (self.boundaries[2][0] == 1):
+        if self.boundaries[2][0] == 1:
             self.global_map[:,:,0] = -2
-        if (self.boundaries[2][1] == 1):
+        if self.boundaries[2][1] == 1:
             self.global_map[:,:,-1] = -2
 
-        if (self.boundaries[0][0] == 2):
+        if self.boundaries[0][0] == 2:
             self.global_map[0,:,:]  = self.global_map[-2,:,:]
             self.global_map[-1,:,:] = self.global_map[1,:,:]
 
-        if (self.boundaries[1][0] == 2):
+        if self.boundaries[1][0] == 2:
             self.global_map[:,0,:]  = self.global_map[:,-2,:]
             self.global_map[:,-1,:] = self.global_map[:,1,:]
 
-        if (self.boundaries[2][0] == 2):
+        if self.boundaries[2][0] == 2:
             self.global_map[:,:,0]  = self.global_map[:,:,-2]
             self.global_map[:,:,-1] = self.global_map[:,:,1]
     

@@ -116,8 +116,8 @@ def _fixInterfaceCalc(tree,
 
 
 class EDT(object):
-    def __init__(self,subDomain,grid):
-        self.subDomain = subDomain
+    def __init__(self,subdomain,grid):
+        self.subdomain = subdomain
         self.extendFactor  = 0.7
         self.grid = grid
         self.EDT = np.zeros_like(grid)
@@ -125,7 +125,6 @@ class EDT(object):
         self.faceSolids = []
         self.edgeSolids = []
         self.cornerSolids = []
-        self.solidsAll = {self.subDomain.ID: {'orientID':{}}}
         self.external_solids = {key: None for key in Orientation.features}
         self.distVals = None
         self.distCounts  = None
@@ -136,7 +135,7 @@ class EDT(object):
         """
         Determine the Euclidian distance on each process knowing the values may be too high
         """
-        self.EDT = edt.edt3d(self.grid, anisotropy=(self.subDomain.Domain.dX, self.subDomain.Domain.dY, self.subDomain.Domain.dZ))
+        self.EDT = edt.edt3d(self.grid, anisotropy=self.subdomain.domain.voxel)
 
 
     def partition_boundary_solids(self):
@@ -148,7 +147,8 @@ class EDT(object):
         edge_solids = [[] for _ in range(len(Orientation.edges))]
         corner_solids = [[] for _ in range(len(Orientation.corners))]
         
-        extend = [self.extendFactor*x for x in self.subDomain.subDomainSize]
+        extend = [self.extendFactor*x for x in self.subdomain.size_subdomain]
+        coords = self.subdomain.coords
 
         ### Faces ###
         for fIndex in Orientation.faces:
@@ -157,14 +157,13 @@ class EDT(object):
                                  & (self.solids[:,1]>-1)
                                  & (self.solids[:,2]>-1)
                                  & ((self.solids[:,3]==fIndex)) )][:,0:3]
-
             for x,y,z in points:
-                pointsXYZ.append([self.subDomain.x[x],self.subDomain.y[y],self.subDomain.z[z]] )
+                pointsXYZ.append([coords[0][x],coords[1][y],coords[2][z]] )
             face_solids[fIndex] = np.asarray(pointsXYZ)
 
         ### Edges ###
-        for edge in self.subDomain.edges:
-            edge.get_extension(extend,self.subDomain.bounds)
+        for edge in self.subdomain.edges:
+            edge.get_extension(extend,self.subdomain.bounds)
             for f,d in zip(edge.info['faceIndex'],reversed(edge.info['dir'])): # Flip dir for correct nodes
                 f_solids = face_solids[f]
                 values = (edge.extend[d][0] <= f_solids[:,d]) & (f_solids[:,d] <= edge.extend[d][1])
@@ -176,8 +175,8 @@ class EDT(object):
 
         ### Corners ###
         iter = [[1,2],[0,2],[0,1]]
-        for corner in self.subDomain.corners:
-            corner.get_extension(extend,self.subDomain.bounds)
+        for corner in self.subdomain.corners:
+            corner.get_extension(extend,self.subdomain.bounds)
             values = [None,None]
             for it,f in zip(iter,corner.info['faceIndex']):
                 f_solids = face_solids[f]
@@ -196,53 +195,48 @@ class EDT(object):
         Loop through faces and correct distance with external_solids
         """
         visited = np.zeros_like(self.grid,dtype=np.uint8)
-        minD = min(self.subDomain.Domain.dX,self.subDomain.Domain.dY,self.subDomain.Domain.dZ)
-        coords = [self.subDomain.x,self.subDomain.y,self.subDomain.z]
 
-        for face in self.subDomain.faces:
+        for face in self.subdomain.faces:
             if face.n_proc > -1:
                 arg = face.info['argOrder']
                 data = np.copy(self.external_solids[face.info['ID']])
 
-                for edge in self.subDomain.edges:
+                for edge in self.subdomain.edges:
                     for f in edge.info['faceIndex']:
                         if f == face.ID and edge.n_proc > -1: 
                             data = np.append(data,self.external_solids[edge.info['ID']],axis=0)
 
-                for corner in self.subDomain.corners:
+                for corner in self.subdomain.corners:
                     for f in corner.info['faceIndex']:
                         if f == face.ID and corner.n_proc > -1: 
                             data = np.append(data,self.external_solids[corner.info['ID']],axis=0)
 
-
                 tree = KDTree(data)
-
-                faceSolids = self.solids[np.where(self.solids[:,3]==face.ID)][:,0:3]
-
+                face_solids = self.solids[np.where(self.solids[:,3]==face.ID)][:,0:3]
                 self.EDT,visited = _fixInterfaceCalc(tree,
-                                                        face.ID,
-                                                        self.grid.shape[arg[0]],
-                                                        face.info['dir'],
-                                                        faceSolids,
-                                                        self.EDT,
-                                                        visited,
-                                                        minD,
-                                                        coords,
-                                                        arg)
+                                                     face.ID,
+                                                     self.grid.shape[arg[0]],
+                                                     face.info['dir'],
+                                                     face_solids,
+                                                     self.EDT,
+                                                     visited,
+                                                     min(self.subdomain.domain.voxel),
+                                                     self.subdomain.coords,
+                                                     arg)
 
   
     def genStats(self):
         """
-        Get Inforation (non-zero min/max) of distance tranform
+        Get Information (non-zero min/max) of distance tranform
         """
-        own = self.subDomain.ownNodesIndex
+        own = self.subdomain.index_own_nodes
         ownEDT =  self.EDT[own[0]:own[1],
                            own[2]:own[3],
                            own[4]:own[5]]
         distVals,distCounts  = np.unique(ownEDT,return_counts=True)
-        EDTData = [self.subDomain.ID,distVals,distCounts]
+        EDTData = [self.subdomain.ID,distVals,distCounts]
         EDTData = comm.gather(EDTData, root=0)
-        if self.subDomain.ID == 0:
+        if self.subdomain.ID == 0:
             bins = np.empty([])
             for d in EDTData:
                 if d[0] == 0:
@@ -268,27 +262,18 @@ class EDT(object):
         self.minD = distData[0]
         self.maxD = distData[1]
 
-def calcEDT(subDomain,grid,stats = False,sendClass = False):
-
-    size = subDomain.Domain.numSubDomains
-    rank = subDomain.ID
-
-    sDEDT = EDT(subDomain = subDomain, grid = grid)
-
+def calcEDT(subdomain,grid,stats = False,sendClass = False):
+    size = subdomain.domain.num_subdomains
+    sDEDT = EDT(subdomain = subdomain, grid = grid)
     sDEDT.genLocalEDT()
-    if size > 1 or (size == 1 and any(subDomain.boundaryID == 2)):
+    if size > 1 or (size == 1 and any(subdomain.boundary_ID == 2)):
         sDEDT.solids = nodes.get_boundary_nodes(grid,0)
         face_solids,edge_solids,corner_solids = sDEDT.partition_boundary_solids()
-    
-        sDEDT.external_solids = communication.pass_external_data(subDomain,face_solids,edge_solids,corner_solids)
+        sDEDT.external_solids = communication.pass_external_data(subdomain,face_solids,edge_solids,corner_solids)
         sDEDT.fixInterface()
-
-        ### Update EDT Buffer
-        sDEDT.EDT = communication.update_buffer(subDomain,sDEDT.EDT)
-
+        sDEDT.EDT = communication.update_buffer(subdomain,sDEDT.EDT)
     if stats:
         sDEDT.genStats()
-
     if sendClass:
         return sDEDT
     else:

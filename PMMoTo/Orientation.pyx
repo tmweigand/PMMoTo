@@ -8,7 +8,7 @@ class CubeFeature(object):
         self.n_proc = n_proc
         self.periodic = periodic
         self.boundary = boundary
-        self.periodic_correction = [0,0,0]
+        self.periodic_correction = (0,0,0)
 
     def get_periodic_correction(self,feature):
         """
@@ -16,7 +16,7 @@ class CubeFeature(object):
         """
         if self.periodic:
             oppID = self.info['oppIndex']
-            self.periodic_correction = feature[oppID]['ID']
+            self.periodic_correction = self.periodic#feature[oppID]['ID']
 
 class Face(CubeFeature):
     def __init__(self,ID,n_proc,boundary,periodic):
@@ -247,17 +247,17 @@ cdef class cOrientation(object):
 
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)   # Deactivate negative indexing.
-    cpdef int getBoundaryIDReference(self,cnp.ndarray[cnp.int8_t, ndim=1] boundaryID):
+    cpdef int getBoundaryIDReference(self,cnp.ndarray[cnp.int8_t, ndim=1] boundary_ID):
         """
         Determining boundary ID
-        Input: boundaryID[3] corresponding to [x,y,z] and values range from [-1,0,1]
-        Output: boundaryID
+        Input: boundary_ID[3] corresponding to [x,y,z] and values range from [-1,0,1]
+        Output: boundary_ID
         """
         cdef int cI,cJ,cK
         cdef int i,j,k
-        i = boundaryID[0]
-        j = boundaryID[1]
-        k = boundaryID[2]
+        i = boundary_ID[0]
+        j = boundary_ID[1]
+        k = boundary_ID[2]
 
         if i < 0:
             cI = 0
@@ -307,7 +307,7 @@ def get_loop_info(grid,subDomain,inlet,outlet,res_pad):
 
     range_info = 2*np.ones([6],dtype=np.uint8)
     for f_index in faces:
-        if subDomain.boundaryID[f_index] == 0:
+        if subDomain.boundary_ID[f_index] == 0:
             range_info[f_index] = range_info[f_index] - 1
         if inlet[f_index] > 0:
             range_info[f_index] = range_info[f_index] + res_pad

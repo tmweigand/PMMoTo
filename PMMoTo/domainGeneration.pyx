@@ -6,12 +6,13 @@
 import math
 import numpy as np
 cimport numpy as cnp
-from libc.stdio cimport printf
-cimport cython
 cnp.import_array()
 
 
-cdef double [:,:] verletList(double rCut, double x, double y, double z, double[:,:] atom):
+cdef double [:,:] gen_verlet_list(double rCut, double x, double y, double z, double[:,:] atom):
+  """
+
+  """
   cdef int numObjects = atom.shape[1]
   cdef int c,vListSize,vListC
   cdef double re
@@ -35,15 +36,17 @@ cdef double [:,:] verletList(double rCut, double x, double y, double z, double[:
   while c < numObjects:
     re = (atom[0,c] - x)*(atom[0,c] - x) + (atom[1,c] - y)*(atom[1,c] - y) + (atom[2,c] - z)*(atom[2,c] - z)
     if re <= rCut*rCut:
-      verletAtom[0,vListC] = atom[0,c]
-      verletAtom[1,vListC] = atom[1,c]
-      verletAtom[2,vListC] = atom[2,c]
-      verletAtom[3,vListC] = atom[3,c]
+      verletAtom[:,vListC] = atom[:,c]
+      # verletAtom[1,vListC] = atom[1,c]
+      # verletAtom[2,vListC] = atom[2,c]
+      # verletAtom[3,vListC] = atom[3,c]
       vListC += 1
     c += 1
   return _verletAtom
 
 cdef int inAtom(double cx,double cy,double cz,double x,double y,double z,double r):
+    """
+    """
     cdef double re
     re = (cx - x)*(cx - x) + (cy - y)*(cy - y) + (cz - z)*(cz - z)
     if (re <= r): # already calculated 0.25*r*r
@@ -51,15 +54,15 @@ cdef int inAtom(double cx,double cy,double cz,double x,double y,double z,double 
     else:
         return 1
 
-def domainGen( double[:] x, double[:] y, double[:] z, double[:,:] atom):
-
+def domainGen(double[:] x, double[:] y, double[:] z, double[:,:] atom):
+    """
+    """
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
     cdef int numObjects = atom.shape[1]
 
     cdef int i, j, k, c
-
 
     _grid = np.ones((NX, NY, NZ), dtype=np.uint8)
     cdef cnp.uint8_t [:,:,:] grid
@@ -77,9 +80,11 @@ def domainGen( double[:] x, double[:] y, double[:] z, double[:,:] atom):
     return _grid
 
 def domainGenVerlet(list verletDomains, double[:] x, double[:] y, double[:] z, double[:,:] atom):
-    ## only use with atom array that has format x,y,z,radius
-    ## which for an atom, when evaluating maximum accessibility 
-    ## (i.e. 0 sigma test particle) radius = 2^(1/6)*sigma/2
+    """ 
+    Only use with atom array that has format x,y,z,radius
+    which for an atom, when evaluating maximum accessibility 
+    (i.e. 0 sigma test particle) radius = 2^(1/6)*sigma/2
+    """
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
@@ -101,6 +106,8 @@ def domainGenVerlet(list verletDomains, double[:] x, double[:] y, double[:] z, d
     ### Get the loop Info for the Verlet Domains
     _loopInfo = np.zeros([numDomains,6],dtype=np.int64)
     cdef cnp.int64_t [:,:] loopInfo
+    loopInfo = _loopInfo
+
     n = 0
     for cI,i in enumerate(range(0,verletDomains[0])):
         for cJ,j in enumerate(range(0,verletDomains[1])):
@@ -152,11 +159,9 @@ def domainGenVerlet(list verletDomains, double[:] x, double[:] y, double[:] z, d
       centroid[n,2] = z[_loopInfo[n,4]] + length[n,2]/2. 
       maxDiameter[n] = np.max(length[n])+2*maxAtomRadius
 
-    loopInfo = _loopInfo
-
     cdef double [:,:] verletAtom
     for n in range(numDomains):
-      verletAtom = verletList(maxDiameter[n], centroid[n,0], centroid[n,1], centroid[n,2], atom)
+      verletAtom = gen_verlet_list(maxDiameter[n], centroid[n,0], centroid[n,1], centroid[n,2], atom)
       numObjects = verletAtom.shape[1]
       for i in range(loopInfo[n,0],loopInfo[n,1]):
         for j in range(loopInfo[n,2],loopInfo[n,3]):

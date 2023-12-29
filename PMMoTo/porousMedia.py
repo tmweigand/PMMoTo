@@ -1,148 +1,127 @@
 import numpy as np
 from mpi4py import MPI
-comm = MPI.COMM_WORLD
-
-from .domainGeneration import domainGenINK
-from .domainGeneration import domainGen
-from .domainGeneration import domainGenVerlet
+from . import domainGeneration
 from . import communication
 from . import Orientation
-from . import subDomain
-from . import dataOutput
+comm = MPI.COMM_WORLD
 
-
-class porousMedia(object):
-    def __init__(self,subDomain,Domain):
-        self.subDomain   = subDomain
-        self.Domain      = Domain
+class PorousMedia:
+    """
+    Porous media class 
+    """
+    def __init__(self,subdomain,domain):
+        self.subdomain = subdomain
+        self.domain = domain
         self.grid = None
         self.inlet = np.zeros([Orientation.num_faces],dtype = np.uint8)
         self.outlet = np.zeros([Orientation.num_faces],dtype = np.uint8)
-        self.loopInfo = np.zeros([Orientation.num_faces+1,3,2],dtype = np.int64)
-        self.ownNodesIndex = np.zeros([6],dtype = np.int64)
-        self.poreNodes = 0
-        self.totalPoreNodes = np.zeros(1,dtype=np.uint64)
+        self.loop_info = np.zeros([Orientation.num_faces+1,3,2],dtype = np.int64)
+        self.index_own_nodes = np.zeros([6],dtype = np.int64)
+        self.pore_nodes = 0
+        self.total_pore_nodes = np.zeros(1,dtype=np.uint64)
 
-    def gridCheck(self):
-        if (np.sum(self.grid) == np.prod(self.subDomain.nodes)):
+    def check_grid(self):
+        """
+
+        """
+        if (np.sum(self.grid) == np.prod(self.subdomain.nodes)):
             print("This code requires at least 1 solid voxel in each subdomain. Please reorder processors!")
             communication.raiseError()
 
-    def genDomainSphereData(self,sphereData):
-        self.grid = domainGen(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
-        self.gridCheck()
-        self.grid = communication.update_buffer(self.subDomain,self.grid)
-
-    def genDomainSphereDataVerlet(self,sphereData):
-        verletDomains = [20,20,20]
-        self.grid = domainGenVerlet(verletDomains,self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
-        self.gridCheck()
-        self.grid = communication.update_buffer(self.subDomain,self.grid)
-
-
-    def genDomainInkBottle(self):
-        self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
-        self.gridCheck()
-
-
-    def setInletOutlet(self,resSize):
+    def gen_pm_spheres(self,sphere_data):
         """
-        Determine inlet/outlet Info and Pad Grid
         """
-        inletSize = np.zeros_like(self.inlet)
-        outletSize = np.zeros_like(self.outlet)
+        self.grid = domainGeneration.domainGen(self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2],sphere_data)
+        self.check_grid()
+        self.grid = communication.update_buffer(self.subdomain,self.grid)
 
-        if (self.subDomain.boundaryID[0] == 0 and  self.Domain.inlet[0][0]):
-            self.inlet[0] = True
-            inletSize[0]  = resSize
-        if (self.subDomain.boundaryID[1] == 0 and  self.Domain.inlet[0][1]):
-            self.inlet[1] = True
-            inletSize[1]  = resSize
-        if (self.subDomain.boundaryID[2] == 0 and  self.Domain.inlet[1][0]):
-            self.inlet[2] = True
-            inletSize[2]  = resSize
-        if (self.subDomain.boundaryID[3] == 0 and  self.Domain.inlet[1][1]):
-            self.inlet[3] = True
-            inletSize[3]  = resSize
-        if (self.subDomain.boundaryID[4] == 0 and  self.Domain.inlet[2][0]):
-            self.inlet[4] = True
-            inletSize[4]  = resSize
-        if (self.subDomain.boundaryID[5] == 0 and  self.Domain.inlet[2][1]):
-            self.inlet[5] = True
-            inletSize[5]  = resSize
+    def gen_pm_verlet_spheres(self,sphere_data,verlet=[20,20,20]):
+        """
+        """
+        self.grid = domainGeneration.domainGenVerlet(verlet,self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2],sphere_data)
+        self.check_grid()
+        self.grid = communication.update_buffer(self.subdomain,self.grid)
 
-        if (self.subDomain.boundaryID[0] == 0 and  self.Domain.outlet[0][0]):
-            self.outlet[0] = True
-            outletSize[0]  = resSize
-        if (self.subDomain.boundaryID[1] == 0 and  self.Domain.outlet[0][1]):
-            self.outlet[1] = True
-            outletSize[1]  = resSize
-        if (self.subDomain.boundaryID[2] == 0 and  self.Domain.outlet[1][0]):
-            self.outlet[2] = True
-            outletSize[2]  = resSize
-        if (self.subDomain.boundaryID[3] == 0 and  self.Domain.outlet[1][1]):
-            self.outlet[3] = True
-            outletSize[3]  = resSize
-        if (self.subDomain.boundaryID[4] == 0 and  self.Domain.outlet[2][0]):
-            self.outlet[4] = True
-            outletSize[4]  = resSize
-        if (self.subDomain.boundaryID[5] == 0 and  self.Domain.outlet[2][1]):
-            self.outlet[5] = True
-            outletSize[5]  = resSize  
+    def gen_pm_inkbottle(self):
+        """
+        """
+        self.grid = domainGeneration.domainGenINK(self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2])
+        self.check_grid()
+        self.grid = communication.update_buffer(self.subdomain,self.grid)
 
-        pad = np.zeros([6],dtype = np.int8)
+
+    def set_inlet_outlet(self,res_size):
+        """
+        Determine inlet/outlet info and pad grid
+        """
+        inlet_size = np.zeros_like(self.inlet)
+        outlet_size = np.zeros_like(self.outlet)
+
+        for n in range(0,self.domain.dims):
+            if (self.subdomain.boundary_ID[n*2] == 0):
+                if self.domain.inlet[n][0]:
+                    self.inlet[n*2] = True
+                    inlet_size[n*2]  = res_size
+                if self.domain.inlet[n][1]:
+                    self.inlet[n*2+1] = True
+                    inlet_size[n*2+1]  = res_size
+                if self.domain.outlet[n][0]:
+                    self.outlet[n*2] = True
+                    outlet_size[n*2]  = res_size
+                if self.domain.outlet[n][1]:
+                    self.outlet[n*2+1] = True
+                    outlet_size[n*2+1]  = res_size
+
+        pad = np.zeros([self.domain.dims*2],dtype = np.int8)
         for f in range(0,Orientation.num_faces):
-            pad[f] = inletSize[f] + outletSize[f]      
+            pad[f] = inlet_size[f] + outlet_size[f]
         
         ### If Inlet/Outlet Res, Pad and Update XYZ
         if np.sum(pad) > 0:
             self.grid = np.pad(self.grid, ( (pad[0], pad[1]), (pad[2], pad[3]), (pad[4], pad[5]) ), 'constant', constant_values=1)
-            self.subDomain.getXYZ(pad)
+            self.subdomain.get_coordinates(pad)
 
 
-    def setWallBoundaryConditions(self):
+    def set_wall_bcs(self):
         """
         If wall boundary conditions are specified, force solid on external boundaries
         """
-        if self.subDomain.boundaryID[0] == 1:
+        if self.subdomain.boundary_ID[0] == 1:
             self.grid[0,:,:] = 0
-        if self.subDomain.boundaryID[1] == 1:
+        if self.subdomain.boundary_ID[1] == 1:
             self.grid[-1,:,:] = 0
-        if self.subDomain.boundaryID[2] == 1:
+        if self.subdomain.boundary_ID[2] == 1:
             self.grid[:,0,:] = 0
-        if self.subDomain.boundaryID[3] == 1:
+        if self.subdomain.boundary_ID[3] == 1:
             self.grid[:,-1,:] = 0
-        if self.subDomain.boundaryID[4] == 1:
+        if self.subdomain.boundary_ID[4] == 1:
             self.grid[:,:,0] = 0
-        if self.subDomain.boundaryID[5] == 1:
+        if self.subdomain.boundary_ID[5] == 1:
             self.grid[:,:,-1] = 0
 
-    def getPorosity(self):
-        own = self.subDomain.ownNodesIndex
-        ownGrid =  self.grid[own[0]:own[1],
+    def calc_porosity(self):
+        own = self.subdomain.index_own_nodes
+        own_grid =  self.grid[own[0]:own[1],
                              own[2]:own[3],
                              own[4]:own[5]]
-        self.poreNodes = np.sum(ownGrid)
-        comm.Allreduce( [self.poreNodes, MPI.INT], [self.totalPoreNodes, MPI.INT], op = MPI.SUM )
+        self.pore_nodes = np.sum(own_grid)
+        comm.Allreduce( [self.pore_nodes, MPI.INT], [self.total_pore_nodes, MPI.INT], op = MPI.SUM )
 
 
-def genPorousMedia(subDomain,dataFormat,sphereData = None,resSize = 0):
+def gen_pm(subdomain,data_format,sphere_data = None,res_size = 0):
+    """
+    """
+    pm = PorousMedia(domain = subdomain.domain, subdomain = subdomain)
 
-    pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain)
+    if data_format == "Sphere":
+        pm.gen_pm_spheres(sphere_data)
+    if data_format == "SphereVerlet":
+        pm.gen_pm_verlet_spheres(sphere_data)
+    if data_format == "InkBotle":
+        pm.gen_pm_inkbottle()
+    pm.set_inlet_outlet(res_size)
+    pm.set_wall_bcs()
+    pm.loop_info = Orientation.get_loop_info(pm.grid,subdomain,pm.inlet,pm.outlet,res_size)
+    pm.calc_porosity()
 
-    if dataFormat == "Sphere":
-        pM.genDomainSphereData(sphereData)
-    if dataFormat == "SphereVerlet":
-        pM.genDomainSphereDataVerlet(sphereData)
-    if dataFormat == "InkBotle":
-        pM.genDomainInkBottle()
-    pM.setInletOutlet(resSize)
-    pM.setWallBoundaryConditions()
-    pM.loopInfo = Orientation.get_loop_info(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)
-    pM.getPorosity()
-
-    loadBalancingCheck = False
-    if loadBalancingCheck:
-        pM.loadBalancing()
-
-    return pM
+    return pm

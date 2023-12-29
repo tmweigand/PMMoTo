@@ -1,111 +1,99 @@
+"""Module for PMMoTO  subDomains."""
 import numpy as np
 from mpi4py import MPI
-comm = MPI.COMM_WORLD
-
-from .domainGeneration import domainGenINK
-from .domainGeneration import domainGen
-from .domainGeneration import domainGenVerlet
 from . import communication
 from . import Orientation
 from . import Domain
 from . import porousMedia
 
+comm = MPI.COMM_WORLD
+
 """ Solid = 0, Pore = 1 """
 
-class subDomain(object):
-    def __init__(self,ID,subDomains,Domain):
+class Subdomain(object):
+    def __init__(self,ID,subdomains,domain):
         self.ID          = ID
-        self.size        = np.prod(subDomains)
-        self.subDomains  = subDomains
-        self.Domain      = Domain
+        self.size        = np.prod(subdomains)
+        self.subdomains  = subdomains
+        self.domain      = domain
         self.boundary    = False
-        self.boundaryID  = -np.ones([6],dtype = np.int8)
+        self.boundary_ID  = -np.ones([6],dtype = np.int8)
         self.buffer      = np.ones([6],dtype = np.int8)
         self.nodes       = np.zeros([3],dtype = np.int64)
-        self.ownNodes    = np.zeros([3],dtype = np.int64)
-        self.ownNodesIndex = np.zeros([6],dtype = np.int64)
-        self.indexStart  = np.zeros([3],dtype = np.int64)
-        self.subDomainSize = np.zeros([3])
-        self.subDomainSize = np.zeros([3,2])
+        self.own_nodes    = np.zeros([3],dtype = np.int64)
+        self.index_own_nodes = np.zeros([6],dtype = np.int64)
+        self.index_start  = np.zeros([3],dtype = np.int64)
+        self.size_subdomain = np.zeros([3])
+        self.bounds = np.zeros([3,2])
         self.n_procs = {}
-        
-        self.subID  = np.zeros([3],dtype = np.int64)
-        self.lookUpID = np.zeros(subDomains,dtype=np.int64)
+        self.sub_ID  = np.zeros([3],dtype = np.int64)
         self.faces = [None]*Orientation.num_faces
         self.edges = [None]*Orientation.num_edges
         self.corners = [None]*Orientation.num_corners
+        self.coords = [None]*3
 
-        ### DELETE
-        self.neighborF  = -np.ones(Orientation.num_faces,dtype = np.int64)
-        self.neighborE = -np.ones(Orientation.num_edges,dtype = np.int64)
-        self.neighborC = -np.ones(Orientation.num_corners,dtype = np.int64)
-        self.externalE = -np.ones(Orientation.num_edges,dtype = np.int64)
-        self.externalC = -np.ones(Orientation.num_corners,dtype = np.int64)
-        self.neighborPerF =  np.zeros([Orientation.num_faces,3],dtype = np.int64)
-        self.neighborPerE =  np.zeros([Orientation.num_edges,3],dtype = np.int64)
-        self.neighborPerC =  np.zeros([Orientation.num_corners,3],dtype = np.int64)
 
-    def getInfo(self):
+    def get_info(self):
         """
         Gather information for each subDomain including:
         ID, boundary information, number of nodes, global index start, buffer
         """
         n = 0
-        for i in range(0,self.subDomains[0]):
-            for j in range(0,self.subDomains[1]):
-                for k in range(0,self.subDomains[2]):
-                    self.lookUpID[i,j,k] = n
-
+        for i in range(0,self.subdomains[0]):
+            for j in range(0,self.subdomains[1]):
+                for k in range(0,self.subdomains[2]):
                     if n == self.ID:
+                        for nn,d in enumerate([i,j,k]):
+                            self.sub_ID[nn] = d
+                            self.nodes[nn] = self.domain.sub_nodes[nn]
+                            self.own_nodes[nn] = self.domain.sub_nodes[nn]
+                            self.index_start[nn] = d * self.domain.sub_nodes[nn]
 
-                        if (i == 0):
-                            self.boundary = True
-                            self.boundaryID[0] = self.Domain.boundaries[0][0]
-                        if (i == self.subDomains[0]-1):
-                            self.boundary = True
-                            self.boundaryID[1] = self.Domain.boundaries[0][1]
-                        if (j == 0):
-                            self.boundary = True
-                            self.boundaryID[2] = self.Domain.boundaries[1][0]
-                        if (j == self.subDomains[1]-1):
-                            self.boundary = True
-                            self.boundaryID[3] = self.Domain.boundaries[1][1]
-                        if (k == 0):
-                            self.boundary = True
-                            self.boundaryID[4] = self.Domain.boundaries[2][0]
-                        if (k == self.subDomains[2]-1):
-                            self.boundary = True
-                            self.boundaryID[5] = self.Domain.boundaries[2][1]
+                            if d == 0:
+                                self.boundary = True
+                                self.boundary_ID[nn*2] = self.domain.boundaries[d][0]
 
-                        self.subID[0] = i
-                        self.subID[1] = j
-                        self.subID[2] = k
-                        self.nodes[0] = self.Domain.subNodes[0]
-                        self.nodes[1] = self.Domain.subNodes[1]
-                        self.nodes[2] = self.Domain.subNodes[2]
-                        self.ownNodes[0] = self.Domain.subNodes[0]
-                        self.ownNodes[1] = self.Domain.subNodes[1]
-                        self.ownNodes[2] = self.Domain.subNodes[2]
-                        self.indexStart[0] = i * self.Domain.subNodes[0]
-                        self.indexStart[1] = j * self.Domain.subNodes[1]
-                        self.indexStart[2] = k * self.Domain.subNodes[2]
-                        if (i == self.subDomains[0]-1):
-                            self.nodes[0] += self.Domain.subNodesRem[0]
-                            self.ownNodes[0] += self.Domain.subNodesRem[0]
-                        if (j == self.subDomains[1]-1):
-                            self.nodes[1] += self.Domain.subNodesRem[1]
-                            self.ownNodes[1] += self.Domain.subNodesRem[1]
-                        if (k == self.subDomains[2]-1):
-                            self.nodes[2] += self.Domain.subNodesRem[2]
-                            self.ownNodes[2] += self.Domain.subNodesRem[2]
+                            if d == self.subdomains[nn]-1:
+                                self.boundary = True
+                                self.boundary_ID[nn*2+1] = self.domain.boundaries[d][1]
+                                self.nodes[nn] += self.domain.rem_sub_nodes[d]
+                                self.own_nodes[nn] += self.domain.rem_sub_nodes[d]
+
                     n = n + 1
 
-        ### If boundaryID == 0, buffer is not added
+        ### If boundary_ID == 0, buffer is not added
         for f in range(0,Orientation.num_faces):
-            if self.boundaryID[f] == 0:
+            if self.boundary_ID[f] == 0:
                 self.buffer[f] = 0
 
-    def getXYZ(self,pad):
+    def get_coordinates(self,pad):
+        """
+        Determine actual coordinate information (x,y,z)
+        If boundaryID and Domain.boundary == 0, buffer is not added
+        Everywhere else a buffer is added
+        Pad is also Reservoir Size for mulitPhase 
+        """
+        sd_size = [None,None]
+        for n in range(self.domain.dims):
+    
+            self.nodes[n] += pad[n*2] + pad[n*2+1]
+            self.index_start[n] -= pad[n*2]
+
+            self.index_own_nodes[n*2] += pad[n*2]
+            self.index_own_nodes[n*2+1] = self.index_own_nodes[n*2] +self.own_nodes[n]
+
+            vox = self.domain.voxel[n]
+            d_size = self.domain.size_domain[n]
+            self.coords[n] = np.zeros(self.nodes[n],dtype = np.double)
+            sd_size[0] = vox/2 + d_size[0] + vox*(self.index_start[n])
+            sd_size[1] = vox/2 + d_size[0] + vox*(self.index_start[n] + self.nodes[n] - 1)
+            self.coords[n] = np.linspace(sd_size[0], sd_size[1], self.nodes[n] )
+            
+            self.size_subdomain[n] = sd_size[1] - sd_size[0]
+            self.bounds[n] = [sd_size[0],sd_size[1]]
+
+
+    def get_coordinates_mulitphase(self,pad,inlet,res_size):
         """
         Determine actual coordinate information (x,y,z)
         If boundaryID and Domain.boundary == 0, buffer is not added
@@ -118,86 +106,41 @@ class subDomain(object):
         self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
 
         for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
-            self.x[c] = self.Domain.domainSize[0,0] + (self.indexStart[0] + i)*self.Domain.dX + self.Domain.dX/2
+            self.x[c] = self.domain.voxel[0]/2 + self.domain.size_domain[0,0] + (self.index_start[0] + i)*self.domain.voxel[0]
 
         for c,j in enumerate(range(-pad[2], self.nodes[1] + pad[3])):
-            self.y[c] = self.Domain.domainSize[1,0] + (self.indexStart[1] + j)*self.Domain.dY + self.Domain.dY/2
+            self.y[c] = self.domain.voxel[1]/2 + self.domain.size_domain[1,0] + (self.index_start[1] + j)*self.domain.voxel[1]
 
         for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
-            self.z[c] = self.Domain.domainSize[2,0] + (self.indexStart[2] + k)*self.Domain.dZ + self.Domain.dZ/2
+            self.z[c] = self.domain.voxel[2]/2 + self.domain.size_domain[2,0] + (self.index_start[2] + k)*self.domain.voxel[2]
 
-        self.ownNodesIndex[0] = pad[0] + self.ownNodesIndex[0]
-        self.ownNodesIndex[1] = self.ownNodesIndex[0] +self.ownNodes[0]
-        self.ownNodesIndex[2] = pad[2] + self.ownNodesIndex[2]
-        self.ownNodesIndex[3] = self.ownNodesIndex[2] + self.ownNodes[1]
-        self.ownNodesIndex[4] = pad[4] + self.ownNodesIndex[4]
-        self.ownNodesIndex[5] = self.ownNodesIndex[4] + self.ownNodes[2]
+        self.index_own_nodes[0] = pad[0] + self.index_own_nodes[0]
+        self.index_own_nodes[1] = self.index_own_nodes[0] + self.own_nodes[0]
+        self.index_own_nodes[2] = pad[2] + self.index_own_nodes[2]
+        self.index_own_nodes[3] = self.index_own_nodes[2] + self.own_nodes[1]
+        self.index_own_nodes[4] = pad[4] + self.index_own_nodes[4]
+        self.index_own_nodes[5] = self.index_own_nodes[4] + self.own_nodes[2]
 
         self.nodes[0] = self.nodes[0] + pad[0] + pad[1]
         self.nodes[1] = self.nodes[1] + pad[2] + pad[3]
         self.nodes[2] = self.nodes[2] + pad[4] + pad[5]
 
-        self.indexStart[0] = self.indexStart[0] - pad[0]
-        self.indexStart[1] = self.indexStart[1] - pad[2]
-        self.indexStart[2] = self.indexStart[2] - pad[4]
-
-        self.subDomainSize = [self.x[-1] - self.x[0],
-                              self.y[-1] - self.y[0],
-                              self.z[-1] - self.z[0]]
-        
-        self.bounds = [[self.x[0],self.x[-1]],
-                       [self.y[0],self.y[-1]],
-                       [self.z[0],self.z[-1]]]
-
-
-    def get_XYZ_mulitphase(self,pad,inlet,res_size):
-        """
-        Determine actual coordinate information (x,y,z)
-        If boundaryID and Domain.boundary == 0, buffer is not added
-        Everywhere else a buffer is added
-        Pad is also Reservoir Size for mulitPhase 
-        """
-
-        self.x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
-        self.y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
-        self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
-
-        for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
-            self.x[c] = self.Domain.domainSize[0,0] + (self.indexStart[0] + i)*self.Domain.dX + self.Domain.dX/2
-
-        for c,j in enumerate(range(-pad[2], self.nodes[1] + pad[3])):
-            self.y[c] = self.Domain.domainSize[1,0] + (self.indexStart[1] + j)*self.Domain.dY + self.Domain.dY/2
-
-        for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
-            self.z[c] = self.Domain.domainSize[2,0] + (self.indexStart[2] + k)*self.Domain.dZ + self.Domain.dZ/2
-
-        self.ownNodesIndex[0] = pad[0] + self.ownNodesIndex[0]
-        self.ownNodesIndex[1] = self.ownNodesIndex[0] + self.ownNodes[0]
-        self.ownNodesIndex[2] = pad[2] + self.ownNodesIndex[2]
-        self.ownNodesIndex[3] = self.ownNodesIndex[2] + self.ownNodes[1]
-        self.ownNodesIndex[4] = pad[4] + self.ownNodesIndex[4]
-        self.ownNodesIndex[5] = self.ownNodesIndex[4] + self.ownNodes[2]
-
-        self.nodes[0] = self.nodes[0] + pad[0] + pad[1]
-        self.nodes[1] = self.nodes[1] + pad[2] + pad[3]
-        self.nodes[2] = self.nodes[2] + pad[4] + pad[5]
-
-        for nFace,inFace in enumerate(inlet):
-            if pad[nFace*2] != 0 or pad[nFace*2+1] != 0:
+        for n_face,in_face in enumerate(inlet):
+            if pad[n_face*2] != 0 or pad[n_face*2+1] != 0:
                 pass
-            elif inFace[0] > 0:
-                self.indexStart[nFace] = self.indexStart[nFace] + res_size
+            elif in_face[0] > 0:
+                self.index_start[n_face] = self.index_start[n_face] + res_size
 
-        self.subDomainSize = [self.x[-1] - self.x[0],
+        self.size_subdomain = [self.x[-1] - self.x[0],
                               self.y[-1] - self.y[0],
                               self.z[-1] - self.z[0]]
         
         ### Correct Domain.nodes for multiPhase Reservoir
-        for nFace,inFace in enumerate(inlet):
-            if inFace[0] > 0:
-                self.Domain.nodes[nFace] += res_size
-            if inFace[1] > 0:
-                self.Domain.nodes[nFace] += res_size
+        for n_face,in_face in enumerate(inlet):
+            if in_face[0] > 0:
+                self.domain.nodes[n_face] += res_size
+            if in_face[1] > 0:
+                self.domain.nodes[n_face] += res_size
         
     def gather_cube_info(self):
         """
@@ -206,46 +149,51 @@ class subDomain(object):
 
         ### Faces
         for n in range(0,Orientation.num_faces):
-            ID = Orientation.faces[n]['ID']
-            i = ID[0] + self.subID[0] + 1
-            j = ID[1] + self.subID[1] + 1
-            k = ID[2] + self.subID[2] + 1
-            n_proc = self.Domain.global_map[i,j,k]
-            if n_proc not in self.n_procs.keys():
+            face = Orientation.faces[n]
+            ID = face['ID']
+            i = ID[0] + self.sub_ID[0] + 1
+            j = ID[1] + self.sub_ID[1] + 1
+            k = ID[2] + self.sub_ID[2] + 1
+            n_proc = self.domain.global_map[i,j,k]
+            if n_proc not in self.n_procs:
                 self.n_procs[n_proc] = [ID]
             else:
                 self.n_procs[n_proc].append(ID)
 
             ### Determine if Periodic Face or Periodic
-            periodic = False; boundary = False;
-            if self.boundaryID[n] == 2:
-                periodic = True
-            elif self.boundaryID[n] == 0:
+            periodic = [0,0,0]
+            boundary = False
+            if self.boundary_ID[n] >= 0:
                 boundary = True
+                if self.boundary_ID[n] == 2:
+                    periodic[face['argOrder'][0]] = face['dir']
 
             self.faces[n] = Orientation.Face(n,n_proc,boundary,periodic)
 
         ### Edges
         for n in range(0,Orientation.num_edges):
             ID = Orientation.edges[n]['ID']
-            i = ID[0] + self.subID[0] + 1
-            j = ID[1] + self.subID[1] + 1
-            k = ID[2] + self.subID[2] + 1
-            n_proc = self.Domain.global_map[i,j,k]
-            if n_proc not in self.n_procs.keys():
+            i = ID[0] + self.sub_ID[0] + 1
+            j = ID[1] + self.sub_ID[1] + 1
+            k = ID[2] + self.sub_ID[2] + 1
+            n_proc = self.domain.global_map[i,j,k]
+            if n_proc not in self.n_procs:
                 self.n_procs[n_proc] = [ID]
             else:
                 self.n_procs[n_proc].append(ID)
 
             ### Determine if Periodic Edge or Global Boundary Edge
-            periodic = False; boundary = False; global_boundary =  False
+            periodic = [0,0,0]
+            boundary = False
+            global_boundary =  False
             external_faces = []
             for n_face in Orientation.edges[n]['faceIndex']:
-                if self.boundaryID[n_face] == 2:
-                    periodic = True
-                elif self.boundaryID[n_face] == 0:
+                if self.boundary_ID[n_face] >= 0:
                     boundary = True
-                    external_faces.append(n_face)
+                    if self.boundary_ID[n_face] == 2:
+                        periodic[Orientation.faces[n_face]['argOrder'][0]] = Orientation.faces[n_face]['dir']
+                    elif self.boundary_ID[n_face] == 0:
+                        external_faces.append(n_face)
 
             if len(external_faces) == 2:
                 global_boundary = True
@@ -255,23 +203,25 @@ class subDomain(object):
         ### Corners
         for n in range(0,Orientation.num_corners):
             ID = Orientation.corners[n]['ID']
-            i = ID[0] + self.subID[0] + 1
-            j = ID[1] + self.subID[1] + 1
-            k = ID[2] + self.subID[2] + 1
-            n_proc = self.Domain.global_map[i,j,k]
-            if n_proc not in self.n_procs.keys():
+            i = ID[0] + self.sub_ID[0] + 1
+            j = ID[1] + self.sub_ID[1] + 1
+            k = ID[2] + self.sub_ID[2] + 1
+            n_proc = self.domain.global_map[i,j,k]
+            if n_proc not in self.n_procs:
                 self.n_procs[n_proc] = [ID]
             else:
                 self.n_procs[n_proc].append(ID)
 
             ### Determine if Periodic Corner or Global Boundary Corner
-            periodic = False; boundary = False; global_boundary =  False
-            external_faces = []; external_edges = []
-
+            periodic = [0,0,0]
+            boundary = False
+            global_boundary =  False
+            external_faces = []
+            external_edges = []
             for n_face in Orientation.corners[n]['faceIndex']:
-                if self.boundaryID[n_face] == 2:
-                    periodic = True
-                elif self.boundaryID[n_face] == 0:
+                if self.boundary_ID[n_face] == 2:
+                    periodic[Orientation.faces[n_face]['argOrder'][0]] = Orientation.faces[n_face]['dir']
+                elif self.boundary_ID[n_face] == 0:
                     boundary = True
                     external_faces.append(n_face)
 
@@ -284,164 +234,46 @@ class subDomain(object):
 
             self.corners[n] = Orientation.Corner(n,n_proc,boundary,periodic,global_boundary,external_faces,external_edges)
 
+    # def trim_sphere_data(self,spheres):
+    #     """
+    #     Trim input domain generation data so only objects within subDomain bounds are included. 
+    #     A verlet list of sorts. 
+    #     """
+    #     num_spheres = spheres.shape[1]
+    #     keep = []
+    #     print(self.coords[0][0],self.coords[0][-1])
+    #     for i in range(num_spheres):
+    #         x = spheres[0,i]
+    #         y = spheres[1,i]
+    #         z = spheres[2,i]
+    #         r = spheres[3,i]
+    #         r_sqrt = np.sqrt(spheres[3,i])
+    #         x_check = self.coords[0][0] - self.Domain.voxel[0] - r_sqrt <= x <= self.coords[0][-1] + self.Domain.voxel[0] + r_sqrt
+    #         y_check = self.coords[1][0] - self.Domain.voxel[1] - r_sqrt <= y <= self.coords[1][-1] + self.Domain.voxel[1] + r_sqrt
+    #         z_check = self.coords[2][0] - self.Domain.voxel[2] - r_sqrt <= z <= self.coords[2][-1] + self.Domain.voxel[2] + r_sqrt
+    #         #if x_check and y_check and z_check:
+    #         keep.append([x,y,z,r])
+    #     return np.array(keep)
 
-    def getNeighbors(self):
-        """
-        DELETE!!!! REplace by gather_cube_info
 
+def initialize(rank,subdomains,nodes,boundaries):
+    """
+    Initialize PMMoTo domain and subdomain classes and check for valid inputs. 
+    """
+    #check_inputs()
 
-        Get the Face, Edge, and Corner Neighbors for Each Domain
-        -4 Represents No Assumed Boundary Condition External Edge but subDomain Corner
-        -3 Represents No Assumed Boundary Condition External Face but subDomain Edge
-        -2 Represents No Assumed Boundary Condition Face / Internal Edge / Internal Corner
-        -1 Assumed Wall Boundary Condition
-        >=0 is neighbor Proc ID
-        """
-        lookIDPad = np.pad(self.lookUpID, ( (1, 1), (1, 1), (1, 1)), 'constant', constant_values=-1)
-        lookPerI = np.zeros_like(lookIDPad)
-        lookPerJ = np.zeros_like(lookIDPad)
-        lookPerK = np.zeros_like(lookIDPad)
+    domain = Domain.Domain(nodes = nodes, subdomains = subdomains, boundaries = boundaries)
+    domain.get_subdomain_nodes()
 
-        if (self.boundaryID[0] == 0):
-            lookIDPad[0,:,:] = -2
-        if (self.boundaryID[1] == 0):
-            lookIDPad[-1,:,:] = -2
-        if (self.boundaryID[2] == 0):
-            lookIDPad[:,0,:] = -2
-        if (self.boundaryID[3] == 0):
-            lookIDPad[:,-1,:] = -2
-        if (self.boundaryID[4] == 0):
-            lookIDPad[:,:,0] = -2
-        if (self.boundaryID[5] == 0):
-            lookIDPad[:,:,-1] = -2
+    subdomain = Subdomain(domain = domain, ID = rank, subdomains = subdomains)
+    subdomain.get_info()
+    subdomain.gather_cube_info()
 
-        if (self.Domain.boundaries[0][0] == 2):
-            lookIDPad[0,:,:]  = lookIDPad[-2,:,:]
-            lookIDPad[-1,:,:] = lookIDPad[1,:,:]
-            lookPerI[0,:,:] = 1
-            lookPerI[-1,:,:] = -1
+    return domain,subdomain
 
-        if (self.Domain.boundaries[1][0] == 2):
-            lookIDPad[:,0,:]  = lookIDPad[:,-2,:]
-            lookIDPad[:,-1,:] = lookIDPad[:,1,:]
-            lookPerJ[:,0,:] = 1
-            lookPerJ[:,-1,:] = -1
+def genDomainSubDomain(rank,size,subdomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs = None):
 
-        if (self.Domain.boundaries[2][0] == 2):
-            lookIDPad[:,:,0]  = lookIDPad[:,:,-2]
-            lookIDPad[:,:,-1] = lookIDPad[:,:,1]
-            lookPerK[:,:,0] = 1
-            lookPerK[:,:,-1] = -1
-
-        for cc,f in enumerate(Orientation.faces.values()):
-            cx = f['ID'][0] + self.subID[0] + 1
-            cy = f['ID'][1] + self.subID[1] + 1
-            cz = f['ID'][2] + self.subID[2] + 1
-            self.neighborF[cc]      = lookIDPad[cx,cy,cz]
-            self.neighborPerF[cc,0] = lookPerI[cx,cy,cz]
-            self.neighborPerF[cc,1] = lookPerJ[cx,cy,cz]
-            self.neighborPerF[cc,2] = lookPerK[cx,cy,cz]
-
-        for cc,e in enumerate(Orientation.edges.values()):
-            cx = e['ID'][0] + self.subID[0] + 1
-            cy = e['ID'][1] + self.subID[1] + 1
-            cz = e['ID'][2] + self.subID[2] + 1
-            self.neighborE[cc]      = lookIDPad[cx,cy,cz]
-            self.neighborPerE[cc,0] = lookPerI[cx,cy,cz]
-            self.neighborPerE[cc,1] = lookPerJ[cx,cy,cz]
-            self.neighborPerE[cc,2] = lookPerK[cx,cy,cz]
             
-            ### Determine if External Face or Internal Edge
-            if self.neighborE[cc] == -2:
-                sum = 0
-                for f in e['faceIndex']:
-                    if self.neighborF[f] == -2:
-                        self.externalE[cc] = f ## External Face ID
-                    sum += self.neighborF[f]
-                if sum != -4:
-                    self.neighborE[cc] = -3 ## Internal Edge / External Face
-                else:
-                    self.externalE[cc] = -1 
-
-
-        for cc,c in enumerate(Orientation.corners.values()):
-            cx = c['ID'][0] + self.subID[0] + 1
-            cy = c['ID'][1] + self.subID[1] + 1
-            cz = c['ID'][2] + self.subID[2] + 1
-            self.neighborC[cc]      = lookIDPad[cx,cy,cz]
-            self.neighborPerC[cc,0] = lookPerI[cx,cy,cz]
-            self.neighborPerC[cc,1] = lookPerJ[cx,cy,cz]
-            self.neighborPerC[cc,2] = lookPerK[cx,cy,cz]
-
-            ### Determine if External Edge / Internal Corner or External Face / Internal Corner
-            if self.neighborC[cc] == -2:
-                sum = 0
-                for f in c['faceIndex']:
-                    if self.neighborF[f] < 0:
-                        sum += self.neighborF[f]
-                if sum == -4: ## Internal Corner / External Edge
-                    self.neighborC[cc] = -4 
-                    for e in c['edgeIndex']:
-                        if self.neighborE[e] == -2:
-                            self.externalC[cc] = e ## External Edge ID
-                if sum == -2: ## Internal Corner / External Face
-                    self.neighborC[cc] = -3 
-                    for f in c['faceIndex']:
-                      if self.neighborF[f] == -2:
-                          self.externalC[cc] = f ## External Face ID
-
-
-        self.lookUpID = lookIDPad
-
-    def loadBalancing(self):
-        """
-        Examine number of pores vs solids on subdomain to crudely examine load balancing
-        """
-        loadData = [self.ID,np.prod(self.ownNodes)]
-        loadData = comm.gather(loadData, root=0)
-        if self.ID == 0:
-            sumTotalNodes = 0
-            for ld in loadData:
-                sumTotalNodes = sumTotalNodes + ld[2]
-            print("Total Nodes",sumTotalNodes,"Pore Nodes",self.totalPoreNodes)
-            print("Ideal Load Balancing is %2.1f%%" %(1./self.size*100.))
-            for ld in loadData:
-                p = ld[1]/self.totalPoreNodes*100.
-                t = ld[2]/sumTotalNodes*100.
-                print("Rank: %i has %2.1f%% of the Pore Nodes and %2.1f%% of the total Nodes" %(ld[0],p,t))
-
-    def trimSphereData(self,sphereData):
-        numObj = sphereData.shape[1]
-        xList = []
-        yList = []
-        zList = []
-        rList = []
-        for i in range(numObj):
-            x = sphereData[0,i]
-            y = sphereData[1,i]
-            z = sphereData[2,i]
-            r = sphereData[3,i]
-            r_sqrt = np.sqrt(sphereData[3,i])
-            xCheck = self.x[0] - self.Domain.dX - r_sqrt <= x <= self.x[-1] + self.Domain.dX + r_sqrt
-            yCheck = self.y[0] - self.Domain.dY - r_sqrt <= y <= self.y[-1] + self.Domain.dY + r_sqrt
-            zCheck = self.z[0] - self.Domain.dZ - r_sqrt <= z <= self.z[-1] + self.Domain.dZ + r_sqrt
-            if xCheck and yCheck and zCheck:
-                xList.append(x)
-                yList.append(y)
-                zList.append(z)
-                rList.append(r)
-        return np.array([xList,yList,zList,rList])
-
-
-def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs = None):
-
-    numSubDomains = np.prod(subDomains)
-
-    if (size != numSubDomains):
-        if rank==0: 
-            print("Number of Subdomains Must Equal Number of Processors!...Exiting")
-        communication.raiseError()
-        
     ### Get Domain INFO for All Procs ###
     if file is not None:
         if dataReadkwargs is None:
@@ -450,21 +282,19 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
             domainSize,sphereData = dataRead(file,dataReadkwargs)
     if file is None:
         domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
-    domain = Domain.Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
-    domain.getdXYZ()
-    domain.getSubNodes()
+    domain = Domain.Domain(nodes = nodes, size_domain = domainSize, subdomains = subdomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
+    domain.get_voxel_size()
+    domain.get_subdomain_nodes()
 
-    sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains)
-    sD.getInfo()
-    sD.getNeighbors()
-    sD.getXYZ(sD.buffer)
+    sD = Subdomain(domain = domain, ID = rank, subdomains = subdomains)
+    sD.get_info()
+    sD.get_coordinates(sD.buffer)
     sD.gather_cube_info()
     
     if file is not None:
-        sphereData = sD.trimSphereData(sphereData)
-        pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 0)
+        #sphereData = sD.trim_sphere_data(sphereData)
+        pm = porousMedia.gen_pm(sD,dataFormat,sphereData,res_size = 0)
     else:
-        pM = porousMedia.genPorousMedia(sD,dataFormat)
+        pm = porousMedia.gen_pm(sD,dataFormat)
 
-
-    return domain,sD,pM
+    return domain,sD,pm
