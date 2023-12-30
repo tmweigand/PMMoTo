@@ -6,8 +6,6 @@ cimport numpy as cnp
 cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from . import communication
-from . import nodes
 
 from . import Orientation
 cOrient = Orientation.cOrientation()
@@ -104,8 +102,7 @@ class Set(object):
         self.boundary = True
         self.boundaryNodes = np.sort(boundaryNodes[:,0])
         self.boundaryNodeID = boundaryNodes[:,1:4]
-        Orient = Orientation.Orientation()
-        allFaces = Orient.allFaces
+        allFaces = Orientation.allFaces
         for ID,bF in enumerate(boundaryFaces):
           if bF:
             faces = allFaces[ID]

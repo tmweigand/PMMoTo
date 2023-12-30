@@ -19,7 +19,7 @@ numNeighbors = cOrient.num_neighbors
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orientation):
+def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
@@ -68,9 +68,9 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain,Orienta
   numFaces = Orientation.num_faces
 
   cdef int iStart,jStart,kStart
-  iStart = subDomain.indexStart[0]
-  jStart = subDomain.indexStart[1]
-  kStart = subDomain.indexStart[2]
+  iStart = subDomain.index_start[0]
+  jStart = subDomain.index_start[1]
+  kStart = subDomain.index_start[2]
 
   cdef int iShape,jShape,kShape
   iShape = grid.shape[0]

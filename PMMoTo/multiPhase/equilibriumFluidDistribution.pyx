@@ -6,45 +6,40 @@ from libc.stdlib cimport malloc, free
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from .. import communication
 from .. import distance
 from .. import morphology
-from .. import nodes
-from .. import sets
+from ..core import sets
 from .. import dataOutput
-from .. import dataRead
-import sys
+from ..core import Orientation
 
 
 class equilibriumDistribution(object):
-    def __init__(self,multiPhase):
-        self.multiPhase  = multiPhase
-        self.Domain      = multiPhase.Domain
-        self.Orientation = multiPhase.Orientation
-        self.subDomain   = multiPhase.subDomain
-        self.porousMedia = multiPhase.porousMedia
-        self.gamma       = 1
-        self.probeD = 0
-        self.probeR = 0
-        self.pC = 0
+    def __init__(self,multiphase):
+        self.multiphase  = multiphase
+        self.subdomain   = multiphase.subdomain
+        self.porousmedia = multiphase.porousmedia
+        self.gamma = 1
+        self.d_probe = 0
+        self.r_probe = 0
+        self.pc = 0
 
-    def getDiameter(self,pc):
+    def get_diameter(self,pc):
         if pc == 0:
-            self.probeD = 0
-            self.probeR = 0
+            self.d_probe = 0
+            self.r_probe = 0
         else:
-            self.probeR = 2.*self.gamma/pc
-            self.probeD = 2.*self.probeR
+            self.r_probe = 2.*self.gamma/pc
+            self.d_probe = 2.*self.r_probe
 
-    def getpC(self,radius):
-        self.pC = 2.*self.gamma/radius
+    def get_pc(self,radius):
+        self.pc = 2.*self.gamma/radius
 
-    def getInletConnectedNodes(self,Sets,flag):
+    def get_inlet_connected_nodes(self,Sets,flag):
         """
         Grab from Sets that are on the Inlet Reservoir and create binary grid
         """
         nodes = []
-        gridOut = np.zeros_like(self.multiPhase.mpGrid)
+        _grid_out = np.zeros_like(self.multiphase.mp_grid)
 
         for s in Sets.sets:
             if s.inlet:
@@ -52,16 +47,16 @@ class equilibriumDistribution(object):
                     nodes.append(node)
 
         for n in nodes:
-            gridOut[n[0],n[1],n[2]] = flag
+            _grid_out[n[0],n[1],n[2]] = flag
 
-        return gridOut
+        return _grid_out
 
-    def getDisconnectedNodes(self,sets,flag):
+    def get_disconnected_nodes(self,sets,flag):
         """
         Grab from Sets that are on the Inlet Reservoir and create binary grid
         """
         nodes = []
-        gridOut = np.zeros_like(self.multiPhase.mpGrid)
+        _grid_out = np.zeros_like(self.multiphase.mp_grid)
 
         for s in sets:
             if not s.inlet:
@@ -69,82 +64,84 @@ class equilibriumDistribution(object):
                     nodes.append(node)
 
         for n in nodes:
-            gridOut[n[0],n[1],n[2]] = flag
+            _grid_out[n[0],n[1],n[2]] = flag
 
-        return gridOut
+        return _grid_out
     
-    def removeSmallSets(self,sets,gridIn,nwID,minSetSize):
+    def remove_small_sets(self,sets,grid_in,nw_ID,min_set_size):
         """
         Remove sets smaller than target size
         """
         nodes = []
-        gridOut = np.copy(gridIn)
+        _grid_out = np.copy(grid_in)
 
         for s in sets:
             # print(s.numNodes)
-            if s.numGlobalNodes < minSetSize:
+            if s.numGlobalNodes < min_set_size:
                 for node in s.nodes:
                     nodes.append(node)
                     
         for n in nodes:
-            gridOut[n[0],n[1],n[2]] = nwID
+            _grid_out[n[0],n[1],n[2]] = nw_ID
 
-        return gridOut
+        return _grid_out
     
-    def drainInfo(self,maxEDT,minEDT):
-        self.getpC(maxEDT)
-        print("Minimum pc",self.pC)
-        self.getpC(maxEDT)
-        print("Maximum pc",self.pC)
+    def drain_info(self,max_dist,min_dist):
+        """
+        """
+        self.get_pc(max_dist)
+        print("Minimum pc",self.pc)
+        self.get_pc(min_dist)
+        print("Maximum pc",self.pc)
 
-    def calcSaturation(self,grid,nwID):
-        
-        own = self.subDomain.ownNodesIndex
-        ownGrid =  grid[own[0]:own[1],
-                        own[2]:own[3],
-                        own[4]:own[5]]
-        nwNodes = np.count_nonzero(ownGrid==nwID)
-        allnwNodes = np.zeros(1,dtype=np.uint64)
-        comm.Allreduce( [np.int64(nwNodes), MPI.INT], [allnwNodes, MPI.INT], op = MPI.SUM )
-        sw = 1. - allnwNodes[0]/self.porousMedia.totalPoreNodes[0]
-        
-        # print(allnwNodes[0],self.porousMedia.totalPoreNodes[0])
-        return sw
+    def calc_saturation(self,grid,nw_ID):
+        """
+        """
+        _own = self.subdomain.index_own_nodes
+        _own_grid =  grid[_own[0]:_own[1],
+                          _own[2]:_own[3],
+                          _own[4]:_own[5]]
+        _nw_nodes = np.count_nonzero(_own_grid==nw_ID)
+        _all_nw_nodes = np.zeros(1,dtype=np.uint64)
+        comm.Allreduce( [np.int64(_nw_nodes), MPI.INT], [_all_nw_nodes, MPI.INT], op = MPI.SUM )
+        s_w = 1. - _all_nw_nodes[0]/self.porousmedia.total_pore_nodes[0]
+        return s_w
 
 
-    def checkPoints(self,grid,ID,includeInlet = False):
+    def check_points(self,grid,ID,include_inlet = False):
         """
         Check to make sure nodes of type ID exist in domain
         """
-        if includeInlet:
-            own = self.multiPhase.ownNodesIndex[ID]
+        if include_inlet:
+            _own = self.multiphase.index_own_nodes[ID]
         else:
-            own = self.subDomain.ownNodesIndex
+            _own = self.subdomain.index_own_nodes
 
-        noPoints = False
+        no_points = False
         if ID == 0:
             count = np.size(grid) - np.count_nonzero(grid > 0)
         else:
-            ownGrid =  grid[own[0]:own[1],
-                            own[2]:own[3],
-                            own[4]:own[5]]
-            count = np.count_nonzero(ownGrid==ID)
-        allCount = np.zeros(1,dtype=np.uint64)
-        comm.Allreduce( [np.int64(count), MPI.INT], [allCount, MPI.INT], op = MPI.SUM )
+            _own_grid =  grid[_own[0]:_own[1],
+                            _own[2]:_own[3],
+                            _own[4]:_own[5]]
+            _count = np.count_nonzero(_own_grid==ID)
 
-        if allCount > 0:
-            noPoints =  True
+        _all_count = np.zeros(1,dtype=np.uint64)
+        comm.Allreduce( [np.int64(_count), MPI.INT], [_all_count, MPI.INT], op = MPI.SUM )
 
-        return noPoints
+        if _all_count > 0:
+            no_points =  True
+
+        return no_points
 
 
-def calcDrainage(pc,mP):
+def calc_drainage(pc,mp):
 
     ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
-    poreSpaceDist = distance.calcEDT(mP.subDomain,mP.porousMedia.grid)
+    dist_pm = distance.calcEDT(mp.subdomain,mp.porousmedia.grid)
 
-    eqDist = equilibriumDistribution(mP)
-    sW = eqDist.calcSaturation(mP.mpGrid,2)
+    eq_dist = equilibriumDistribution(mp)
+    sw = eq_dist.calc_saturation(mp.mp_grid,2)
     save = True
 
     ## Make sure pc targets are ordered smallest to largest
@@ -166,29 +163,29 @@ def calcDrainage(pc,mP):
     ### Loop through all Pressures
     for p in pc:
         if p == 0:
-            sW = 1
+            sw = 1
         else:
             ### Get Sphere Radius from Pressure
-            eqDist.getDiameter(p)
+            eq_dist.get_diameter(p)
 
             # Step 1 - Reservoirs are not contained in mpGrid or grid but rather added when needed so this step is unnecessary
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
-            ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
+            ind = np.where( (dist_pm >= eq_dist.r_probe) & (mp.porousmedia.grid == 1),1,0).astype(np.uint8)
             # fileName = "dataOut/test/Step2"
             # dataOutput.saveGrid(fileName,mP.subDomain,ind)
     
             # Step 3 - Check if Points were Marked
-            continueFlag = eqDist.checkPoints(ind,1,True)
+            continue_flag = eq_dist.check_points(ind,1,True)
 
-            if continueFlag:
+            if continue_flag:
 
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
-                nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
+                nwCheck = eq_dist.check_points(mp.mp_grid,mp.nw_ID)
                 if nwCheck:
  
-                    nwSets,nwSetCount = sets.collect_sets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
-                    nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
+                    _nw_sets,nw_set_count = sets.collect_sets(mp.mp_grid,mp.nw_ID,mp.inlet[mp.nw_ID],mp.outlet[mp.nw_ID],mp.loop_info[mp.nw_ID],mp.subsomain)
+                    _nw_grid = eq_dist.get_inlet_connected_nodes(_nw_sets,1)
 
                     # setSaveDict = {'inlet': 'inlet',
                     #                'outlet':'outlet',
@@ -205,12 +202,11 @@ def calcDrainage(pc,mP):
                     # dataOutput.saveGrid(fileName,mP.subDomain,nwGrid)
 
                 # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
-                wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
-                if wCheck:
+                w_check = eq_dist.check_points(mp.mp_grid,mp.w_ID)
+                if w_check:
  
-                    wSets = sets.collect_sets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
-                    wGrid = eqDist.getInletConnectedNodes(wSets,1)
-                    
+                    _w_sets = sets.collect_sets(mp.mp_grid,mp.w_ID,mp.inlet[mp.w_ID],mp.outlet[mp.w_ID],mp.loop_info[mp.w_ID],mp.subdomain)
+                    _w_grid = eq_dist.get_inlet_connected_nodes(_w_sets,1)
                     
                     # setSaveDict = {'inlet': 'inlet',
                     #                'outlet':'outlet',
@@ -226,8 +222,8 @@ def calcDrainage(pc,mP):
                     # dataOutput.saveGrid(fileName,mP.subDomain,wGrid)
 
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
-                indSets = sets.collect_sets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
-                ind2 = eqDist.getInletConnectedNodes(indSets,1)
+                _ind_sets = sets.collect_sets(ind,1,mp.inlet[mp.nw_ID],mp.outlet[mp.nw_ID],mp.loop_info[mp.nw_ID],mp.subdomain)
+                _ind_2 = eq_dist.get_inlet_connected_nodes(_ind_sets,1)
                 # fileName = "dataOut/test/Step3c"
                 # dataOutput.saveGrid(fileName,mP.subDomain,ind2)
             
@@ -235,35 +231,35 @@ def calcDrainage(pc,mP):
 
                 # Step 3f -- Unsure about these checks!
                 if nwCheck:
-                    ind = np.where( (ind2 != 1) & (nwGrid != 1),0,ind).astype(np.uint8)
-                    morph = morphology.morph(ind,mP.subDomain,eqDist.probeR)
+                    ind = np.where( (_ind_2 != 1) & (_nw_grid != 1),0,ind).astype(np.uint8)
+                    morph = morphology.morph_add(mp.subDomain,ind,0,eq_dist.r_probe)
                 else:
-                    morph = morphology.morph(ind2,mP.subDomain,eqDist.probeR)
+                    morph = morphology.morph_add(mp.subdomain,_ind_2,0,eq_dist.r_probe)
 
                 # Step 3g
                 # fileName = "dataOut/test/Step3g"
                 # dataOutput.saveGrid(fileName,mP.subDomain,morph)
             
                 ## Turn wetting films on or off here
-                mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)  ### films off
+                mp.mp_Grid = np.where( (morph == 1) & (_w_grid == 1),mp.nw_ID,mp.mp_grid)  ### films off
                 #mP.mpGrid = np.where( (morph == 1),mP.nwID,mP.mpGrid)                ### films on
 
                 # Step 4
-                sw = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
-                if mP.subDomain.ID == 0:
+                sw = eq_dist.calc_saturation(mp.mp_grid,mp.nw_ID)
+                if mp.subdomain.ID == 0:
                     print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
                     result.append(sw)
 
             if save:
                 fileName = "dataOut/twoPhase/twoPhase_drain_pc_"+str(p)
-                dataOutput.saveGrid(fileName,mP.subDomain,mP.mpGrid)        
+                dataOutput.saveGrid(fileName,mp.subdomain,mp.mp_grid)        
 
-    return eqDist, result
+    return eq_dist, result
 
 def calcDrainageSW(sW,mP,interval):
 
     ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
-    poreSpaceDist = distance.calcEDT(mP.subDomain,mP.porousMedia.grid)
+    poreSpaceDist = distance.calcEDT(mP.subdomain,mP.porousMedia.grid)
     eqDist = equilibriumDistribution(mP)
     save = True
     
@@ -288,7 +284,7 @@ def calcDrainageSW(sW,mP,interval):
                 p = 0
 
             ### Get Sphere Radius from Pressure
-            eqDist.getDiameter(p)
+            eqDist.get_diameter(p)
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
@@ -376,7 +372,7 @@ def calcOpenSW(sW,mP,interval,minSetSize):
                 p = 0
 
             ### Get Sphere Radius from Pressure
-            eqDist.getDiameter(p)
+            eqDist.get_diameter(p)
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
@@ -445,7 +441,7 @@ def calcImbibition(pc,mP):
             sW = 1
         else:
             ### Get Sphere Radius from Pressure
-            eqDist.getDiameter(p)
+            eqDist.get_diameter(p)
             
             gridCopy = np.copy(mP.mpGrid)
             ## A Locate any disconnected nonwetting phase and make it a 4

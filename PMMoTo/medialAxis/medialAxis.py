@@ -1,8 +1,8 @@
 import numpy as np
 from mpi4py import MPI
-from .. import communication
+from ..core import communication
 from . import medialExtraction
-from .. import nodes
+from ..core import nodes
 from. import medialNodes
 from . import medialSets
 comm = MPI.COMM_WORLD

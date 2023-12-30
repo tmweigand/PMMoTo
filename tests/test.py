@@ -4,7 +4,6 @@ from scipy.ndimage import distance_transform_edt
 import edt
 import time
 import PMMoTo
-from skimage.morphology import skeletonize
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -35,33 +34,15 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [400,400,400] # Total Number of Nodes in Domain
+    subDomains = [1,1,1] # Specifies how Domain is broken among rrocs
+    nodes = [100,100,100] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0,0],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[1,0],[0,0],[0,0]]
     outlet = [[0,1],[0,0],[0,0]]
 
-    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    #nodes = [125,125,100] # Total Number of Nodes in Domain
-
-    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    dataReadBoundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    #boundaries = [[1,1],[1,1],[1,1]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[1,0]]
-    outlet = [[0,0],[0,0],[0,1]]
-
-    # rLookupFile = './rLookups/PA.rLookup'
-    # rLookupFile = None
     file = './testDomains/50pack.out'
-    # file = './testDomains/membrane.dump.gz'
-    # file = './testDomains/pack_sub.dump.gz'
-    #domainFile = open('kelseySpherePackTests/pack_res.out', 'r')
 
     numSubDomains = np.prod(subDomains)
 
@@ -95,25 +76,25 @@ def my_function():
     sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
 
     
-    if drain:
-        drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    # if drain:
+    #     drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
 
     #rad = 0.1
     #sDMorphL = PMMoTo.morph(rank,size,domain,sDL,sDL.grid,rad)
 
     #sDMSL = PMMoTo.medialAxis.medialSurfaceEval(rank,size,domain,sDL,sDL.grid)
 
-    sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True, trim  = True)
+    #sDMAL = PMMoTo.medialAxis.medialAxisEval(sDL,pML,pML.grid,sD_EDT.EDT,connect = True, trim  = True)
     #sDMAL = PMMoTo.medialAxis.medialAxisTrim(sDMAL,pML,sDL,sD_EDT.EDT,cutoffs)
 
 
-    endTime = time.time()
-    print("Parallel Time:",endTime-startTime)
+    #endTime = time.time()
+    #print("Parallel Time:",endTime-startTime)
 
-    procID = rank*np.ones_like(pML.grid)
+    #procID = rank*np.ones_like(pML.grid)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT,MA=sDMAL.MA,PROC=procID)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT)#,MA=sDMAL.MA,PROC=procID)#,ind = drainL.ind, nwp=drainL.nwp,nwpFinal=drainL.nwpFinal)
 
     ### Save Set Data from Medial Axis
     ### kwargs include any attribute of Set class (see sets.pyx)

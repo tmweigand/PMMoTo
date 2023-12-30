@@ -3,7 +3,7 @@ from mpi4py import MPI
 from pyevtk.hl import pointsToVTK,gridToVTK, writeParallelVTKGrid,_addDataToParallelFile
 from pyevtk import vtk
 import os
-from . import communication
+from .core import communication
 comm = MPI.COMM_WORLD
 
 
@@ -193,34 +193,34 @@ def saveSetData(fileName,subDomain,setList,**kwargs):
         w.closeGrid()
         w.save()
 
-def saveGrid(fileName,subDomain,grid):
+def saveGrid(fileName,subdomain,grid):
 
-    rank = subDomain.ID
-    Domain = subDomain.Domain
+    rank = subdomain.ID
+    domain = subdomain.domain
 
     if rank == 0:
         checkFilePath(fileName)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.index_start,grid.shape],root=0)
+    allInfo = comm.gather([subdomain.index_start,grid.shape],root=0)
 
     fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
     fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
     pointData = {"Grid" : grid}
     pointDataInfo = {"Grid" : (grid.dtype, 1)}
          
-    gridToVTK(fileProc+str(rank), subDomain.coords[0],subDomain.coords[1],subDomain.coords[2],
-        start = [subDomain.index_start[0],subDomain.index_start[1],subDomain.index_start[2]],
+    gridToVTK(fileProc+str(rank), subdomain.coords[0],subdomain.coords[1],subdomain.coords[2],
+        start = [subdomain.index_start[0],subdomain.index_start[1],subdomain.index_start[2]],
         pointData = pointData)
 
     if rank == 0:
-        name = [fileProcLocal]*Domain.num_subdomains
-        starts = [[0,0,0] for _ in range(Domain.num_subdomains)]
-        ends = [[0,0,0] for _ in range(Domain.num_subdomains)]
+        name = [fileProcLocal]*domain.num_subdomains
+        starts = [[0,0,0] for _ in range(domain.num_subdomains)]
+        ends = [[0,0,0] for _ in range(domain.num_subdomains)]
         nn = 0
-        for i in range(0,Domain.subdomains[0]):
-            for j in range(0,Domain.subdomains[1]):
-                for k in range(0,Domain.subdomains[2]):
+        for i in range(0,domain.subdomains[0]):
+            for j in range(0,domain.subdomains[1]):
+                for k in range(0,domain.subdomains[2]):
                     name[nn] = name[nn]+str(nn)+".vtr"
                     starts[nn][0] = allInfo[nn][0][0]
                     starts[nn][1] = allInfo[nn][0][1]
@@ -232,7 +232,7 @@ def saveGrid(fileName,subDomain,grid):
 
         writeParallelVTKGrid(
             fileName,
-            coordsData=((Domain.nodes[0], Domain.nodes[1], Domain.nodes[2]), subDomain.cooords[0].dtype),
+            coordsData=((domain.nodes[0], domain.nodes[1], domain.nodes[2]), subdomain.coords[0].dtype),
             starts = starts,
             ends = ends,
             sources = name,
@@ -248,16 +248,16 @@ def saveGridOneProc(fileName,x,y,z,grid):
         start = [0,0,0],
         pointData = pointData)
     
-def saveGridcsv(fileName,subDomain,x,y,z,grid,removeHalo = False):
+def saveGridcsv(fileName,subdomain,x,y,z,grid,removeHalo = False):
 
-    rank = subDomain.ID
+    rank = subdomain.ID
 
     if rank == 0:
         checkFilePath(fileName)
     comm.barrier()
 
     if removeHalo:
-        own = subDomain.index_own_Nodes
+        own = subdomain.index_own_Nodes
         size = (own[1]-own[0])*(own[3]-own[2])*(own[5]-own[4])
         printGridOut = np.zeros([size,4])
     else:

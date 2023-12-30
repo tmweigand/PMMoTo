@@ -7,9 +7,9 @@ from pykdtree.kdtree import KDTree
 #from scipy.spatial import KDTree
 
 import edt
-from . import Orientation
-from . import communication
-from . import nodes
+from .core import Orientation
+from .core import communication
+from .core import nodes
 cimport cython
 
 comm = MPI.COMM_WORLD

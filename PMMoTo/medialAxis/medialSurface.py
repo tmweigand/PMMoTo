@@ -1,8 +1,8 @@
 import numpy as np
 from mpi4py import MPI
-from .. import communication
-from .. import nodes
-from .. import sets
+from ..core import communication
+from ..core import nodes
+from ..core import sets
 import math
 comm = MPI.COMM_WORLD
 

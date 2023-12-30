@@ -12,7 +12,7 @@ def my_function():
     if rank==0:
         start_time = time.time()
 
-    subDomains = [2,2,2]
+    subDomains = [1,1,1]
     nodes = [140,30,30]  ##res = 10
     #nodes = [280,60,60]   ##res = 20
     #nodes = [560,120,120] ##res = 40
@@ -26,21 +26,21 @@ def my_function():
     outlet = [[0,0],[0,0],[0,0]]
 
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
-    # print("A")
+
     numFluidPhases = 2
     twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
     wRes  = [[1,0],[0,0],[0,0]]
     nwRes = [[0,1],[0,0],[0,0]]
-    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
+    mpInlets = {twoPhase.w_ID:wRes,twoPhase.nw_ID:nwRes}
 
     wOut  = [[0,0],[0,0],[0,0]]
     nwOut = [[0,0],[0,0],[0,0]]
-    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+    mpOutlets = {twoPhase.w_ID:wOut,twoPhase.nw_ID:nwOut}
     
     #Initialize wetting saturated domain
     ##res size should be 1 for imbibition
-    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) ##drainage
+    twoPhase.initialize_mp_grid(constant_phase = twoPhase.w_ID) ##drainage
     # twoPhase.initializeMPGrid(constantPhase = twoPhase.nwID) ##imbibition
     # twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
     
@@ -54,15 +54,15 @@ def my_function():
     # twoPhase.initializeMPGrid(inputFile = inputFile) 
     
     pC = [2.46250]
-#     pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
-# 1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
-# 2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
-# 4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
-# 7.60403, 7.69393] 
+    pC = [1.58965, 1.59430, 1.60194, 1.61322, 1.62893,
+1.65002, 1.67755, 1.7127, 1.75678, 1.81122, 1.87764, 1.95783, 2.05388,
+2.16814, 2.30332, 2.46250, 2.64914, 2.86704, 3.12024, 3.41274, 3.74806,
+4.12854, 4.55421, 5.02123, 5.52008, 6.03352, 6.53538, 6.99090, 7.36005, 
+7.60403, 7.69393] 
         
     print("Run Drainage")
-    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = res)
-    drainL = PMMoTo.multiPhase.calcDrainage(pC,twoPhase)
+    twoPhase.get_boundary_info(mpInlets,mpOutlets,res_size = res)
+    drainL = PMMoTo.multiPhase.calc_drainage(pC,twoPhase)
     
 #     # # #Initialize from previous fluid distribution
 #     inputFile = 'dataOut/twoPhase/twoPhase_drain_pc_7.69393'

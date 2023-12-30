@@ -3,7 +3,7 @@ import numpy as np
 import gzip 
 import pyvista as pv
 from mpi4py import MPI
-from . import communication
+from .core import communication
 comm = MPI.COMM_WORLD
 
 def readPorousMediaXYZR(file):

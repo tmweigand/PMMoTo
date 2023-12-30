@@ -390,13 +390,13 @@ class Sets(object):
         self.local_set_ID_start += 1
 
 
-def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
+def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subdomain):
 
-  rank = subDomain.ID
-  size = subDomain.size
+  rank = subdomain.ID
+  size = subdomain.size
 
-  Nodes  = nodes.get_node_info(rank,grid,phaseID,inlet,outlet,subDomain.Domain,loopInfo,subDomain,subDomain.Orientation)
-  Sets = nodes.get_connected_sets(subDomain,grid,phaseID,Nodes)
+  Nodes  = nodes.get_node_info(rank,grid,phaseID,inlet,outlet,subdomain.domain,loopInfo,subdomain)
+  Sets = nodes.get_connected_sets(subdomain,grid,phaseID,Nodes)
 
 
   if size > 1:
@@ -404,7 +404,7 @@ def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
     ### Grab boundary sets and send to neighboring procs
     Sets.get_boundary_sets()
     send_boundary_data = Sets.pack_boundary_data()
-    recv_boundary_data = communication.set_COMM(subDomain.Orientation,subDomain,send_boundary_data)
+    recv_boundary_data = communication.set_COMM(subdomain,send_boundary_data)
     n_boundary_data = Sets.unpack_boundary_data(recv_boundary_data)
 
     ### Match boundary sets from neighboring procs and send to root for global ID generation
@@ -414,7 +414,7 @@ def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
     recv_matched_set_data = comm.gather(send_matched_set_data, root=0)
 
    ### Connect sets that are not direct neighbors 
-    if subDomain.ID == 0:
+    if subdomain.ID == 0:
       all_matched_sets,index_convert = Sets.unpack_matched_sets(recv_matched_set_data)
       all_matched_sets,total_boundary_sets = Sets.organize_matched_sets(all_matched_sets,index_convert)
       all_matched_sets = Sets.repack_matched_sets(all_matched_sets)
@@ -424,7 +424,7 @@ def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subDomain):
 
     ### Generate and Update global ID information
     global_ID_data = comm.gather([Sets.setCount,Sets.boundarySetCount], root=0)
-    if subDomain.ID == 0:
+    if subdomain.ID == 0:
         local_set_ID_start = Sets.organize_global_ID(global_ID_data,total_boundary_sets)
     else:
         local_set_ID_start = None

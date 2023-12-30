@@ -4,7 +4,7 @@ import math
 import numpy as np
 cimport numpy as cnp
 cimport cython
-from .. import communication
+from ..core import communication
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 

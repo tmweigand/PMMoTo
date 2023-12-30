@@ -101,18 +101,21 @@ class Subdomain(object):
         Pad is also Reservoir Size for mulitPhase 
         """
 
-        self.x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
-        self.y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
-        self.z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
+        x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
+        y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
+        z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
 
         for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
-            self.x[c] = self.domain.voxel[0]/2 + self.domain.size_domain[0,0] + (self.index_start[0] + i)*self.domain.voxel[0]
+            x[c] = self.domain.voxel[0]/2 + self.domain.size_domain[0,0] + (self.index_start[0] + i)*self.domain.voxel[0]
 
         for c,j in enumerate(range(-pad[2], self.nodes[1] + pad[3])):
-            self.y[c] = self.domain.voxel[1]/2 + self.domain.size_domain[1,0] + (self.index_start[1] + j)*self.domain.voxel[1]
+            y[c] = self.domain.voxel[1]/2 + self.domain.size_domain[1,0] + (self.index_start[1] + j)*self.domain.voxel[1]
 
         for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
-            self.z[c] = self.domain.voxel[2]/2 + self.domain.size_domain[2,0] + (self.index_start[2] + k)*self.domain.voxel[2]
+            z[c] = self.domain.voxel[2]/2 + self.domain.size_domain[2,0] + (self.index_start[2] + k)*self.domain.voxel[2]
+
+
+        self.coords = [x,y,z]
 
         self.index_own_nodes[0] = pad[0] + self.index_own_nodes[0]
         self.index_own_nodes[1] = self.index_own_nodes[0] + self.own_nodes[0]
@@ -131,9 +134,9 @@ class Subdomain(object):
             elif in_face[0] > 0:
                 self.index_start[n_face] = self.index_start[n_face] + res_size
 
-        self.size_subdomain = [self.x[-1] - self.x[0],
-                              self.y[-1] - self.y[0],
-                              self.z[-1] - self.z[0]]
+        self.size_subdomain = [x[-1] - x[0],
+                              y[-1] - y[0],
+                              z[-1] - z[0]]
         
         ### Correct Domain.nodes for multiPhase Reservoir
         for n_face,in_face in enumerate(inlet):

@@ -7,7 +7,7 @@ cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 from . import medialPath
-from .. import communication
+from ..core import communication
 
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
@@ -16,7 +16,7 @@ from libcpp cimport bool
 from libcpp.map cimport map
 from libcpp.unordered_map cimport unordered_map
 
-from .. import Orientation
+from ..core import Orientation
 cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors

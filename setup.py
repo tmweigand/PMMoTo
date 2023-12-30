@@ -88,10 +88,10 @@ cmdclass = {}
 ext_modules = []
 
 ext_modules += [
-    Extension("PMMoTo.domainGeneration", 
+    Extension("PMMoTo.domainGeneration",
               ["PMMoTo/domainGeneration.pyx"],
               include_dirs=['PMMoTo']),
-    Extension("PMMoTo.distance", 
+    Extension("PMMoTo.distance",
               ["PMMoTo/distance.pyx"],
               include_dirs=['PMMoTo']),
     Extension("PMMoTo.core.nodes", 

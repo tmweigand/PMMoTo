@@ -4,7 +4,7 @@
 # distutils: language = c++
 import numpy as np
 from mpi4py import MPI
-from .. import communication
+from ..core import communication
 comm = MPI.COMM_WORLD
 
 from . cimport medialExtractionFunctions as mEFunc

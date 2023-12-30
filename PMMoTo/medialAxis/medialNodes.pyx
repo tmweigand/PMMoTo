@@ -8,7 +8,7 @@ comm = MPI.COMM_WORLD
 from . import medialSet
 from . import medialSets
 
-from .. import Orientation
+from ..core import Orientation
 cOrient = Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors

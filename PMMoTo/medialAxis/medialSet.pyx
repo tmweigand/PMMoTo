@@ -6,7 +6,7 @@ cimport numpy as cnp
 cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from .. import set
+from ..core import set
 
 class medialSet(set.Set):
     def __init__(self, 
