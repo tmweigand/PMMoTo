@@ -1,7 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 from scipy.ndimage import distance_transform_edt
-import edt
+from edt import edt3d
 import time
 import PMMoTo
 
@@ -15,11 +15,11 @@ def my_function():
     nodes = [300,300,300] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[1,1],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
-    file = './testDomains/50pack.out'
+    file = './testDomains/1pack.out'
 
     numSubDomains = np.prod(subDomains)
 
@@ -32,31 +32,27 @@ def my_function():
 
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
-    sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
+    edt = PMMoTo.calcEDT(sDL,pML.grid)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT)
+    PMMoTo.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=edt)
 
 
     if testSerial:
 
         if rank == 0:
             sD = np.empty((numSubDomains), dtype = object)
-            sDEDT = np.empty((numSubDomains), dtype = object)
             pM = np.empty((numSubDomains), dtype = object)
             sD[0] = sDL
-            sDEDT[0] = sD_EDT
             pM[0] = pML
             for neigh in range(1,numSubDomains):
                 sD[neigh] = comm.recv(source=neigh)
-                sDEDT[neigh] = comm.recv(source=neigh)
                 pM[neigh] = comm.recv(source=neigh)
 
         if rank > 0:
             for neigh in range(1,numSubDomains):
                 if rank == neigh:
                     comm.send(sDL,dest=0)
-                    comm.send(sD_EDT,dest=0)
                     comm.send(pML,dest=0)
 
         if rank==0:
@@ -111,7 +107,7 @@ def my_function():
                     gridOut[:,:,-1] = 0
 
 
-                realDT = edt.edt3d(gridOut, anisotropy=domain.voxel)
+                realDT = edt3d(gridOut, anisotropy=domain.voxel)
                 edtV,_ = distance_transform_edt(gridOut,sampling=domain.voxel,return_indices=True)
                 endTime = time.time()
 
@@ -169,7 +165,7 @@ def my_function():
                             checkEDT[sD[n].index_start[0]+sD[n].buffer[0]: sD[n].index_start[0]+sD[n].nodes[0]-sD[n].buffer[1],
                                      sD[n].index_start[1]+sD[n].buffer[2]: sD[n].index_start[1]+sD[n].nodes[1]-sD[n].buffer[3],
                                      sD[n].index_start[2]+sD[n].buffer[4]: sD[n].index_start[2]+sD[n].nodes[2]-sD[n].buffer[5]] \
-                                     = sDEDT[n].EDT[sD[n].buffer[0] : pM[n].grid.shape[0] - sD[n].buffer[1],
+                                     = edt[sD[n].buffer[0] : pM[n].grid.shape[0] - sD[n].buffer[1],
                                                     sD[n].buffer[2] : pM[n].grid.shape[1] - sD[n].buffer[3],
                                                     sD[n].buffer[4] : pM[n].grid.shape[2] - sD[n].buffer[5]]
                             n = n + 1

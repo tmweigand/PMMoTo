@@ -1,7 +1,7 @@
 from .core.subDomain import genDomainSubDomain
 from .distance import calcEDT
 from .dataRead import readPorousMediaXYZR, readPorousMediaLammpsDump
-from .morphology import morph_add
+from .morphology import *
 from .minkowski import minkowskiEval
 from . import medialAxis
 from . import multiPhase

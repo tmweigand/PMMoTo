@@ -419,48 +419,106 @@ def get_boundary_nodes(grid,phaseID):
     arg_order[1] = face_info[fIndex][1]
     arg_order[2] = face_info[fIndex][2]
 
-    if (dir == 1):
-        for m in range(0,_grid_shape[arg_order[1]]):
-            for n in range(0,_grid_shape[arg_order[2]]):
-                solid = False
-                c = 0
-                while not solid and c < _grid_shape[arg_order[0]]:
-                    _order[arg_order[0]] = c
-                    _order[arg_order[1]] = m
-                    _order[arg_order[2]] = n
-                    if _grid[_order[0],_order[1],_order[2]] == _phaseID:
-                        solid = True
-                        _solids[count,0:3] = _order
-                        _solids[count,3] = fIndex
-                        count = count + 1
-                    else:
-                        c = c + 1
-                if (not solid and c == _grid_shape[arg_order[0]]):
-                    _order[arg_order[0]] = -1
-                    _solids[count,0:3] = _order
-                    _solids[count,3] = fIndex
-                    count = count + 1
+    if dir == 1:
+      c_start = 0
+      c_end = _grid_shape[arg_order[0]]
+    else:
+      c_start = _grid_shape[arg_order[0]] - 1
+      c_end = 0
 
-    elif (dir == -1):
-        for m in range(0,_grid_shape[arg_order[1]]):
-            for n in range(0,_grid_shape[arg_order[2]]):
-                solid = False
-                c = _grid_shape[arg_order[0]] - 1
-                while not solid and c > 0:
-                    _order[arg_order[0]] = c
-                    _order[arg_order[1]] = m
-                    _order[arg_order[2]] = n
-                    if _grid[_order[0],_order[1],_order[2]] == _phaseID:
-                        solid = True
-                        _solids[count,0:3] = _order
-                        _solids[count,3] = fIndex
-                        count = count + 1
-                    else:
-                        c = c - 1
-                if (not solid and c == 0):
-                    _order[arg_order[0]] = -1
-                    _solids[count,0:3] = _order
-                    _solids[count,3] = fIndex
-                    count = count + 1
+    for m in range(0,_grid_shape[arg_order[1]]):
+      for n in range(0,_grid_shape[arg_order[2]]):
+        solid = False
+        c = c_start
+        while not solid and c != c_end:
+          _order[arg_order[0]] = c
+          _order[arg_order[1]] = m
+          _order[arg_order[2]] = n
+          if _grid[_order[0],_order[1],_order[2]] == _phaseID:
+            solid = True
+            _solids[count,0:3] = _order
+            _solids[count,3] = fIndex
+            count = count + 1
+          else:
+            c = c + dir
+        if (not solid and c == c_end):
+          _order[arg_order[0]] = -1
+          _solids[count,0:3] = _order
+          _solids[count,3] = fIndex
+          count = count + 1
   
   return solids
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+def fixInterfaceCalc(tree,
+                      int lShape,
+                      int dir,
+                      cnp.ndarray[cnp.int32_t, ndim=2] _faceSolids,
+                      cnp.ndarray[cnp.float32_t, ndim=3] _EDT,
+                      cnp.ndarray[cnp.uint8_t, ndim=3] _visited,
+                      double min_dist,
+                      list coords,
+                      cnp.ndarray[cnp.uint8_t, ndim=1] argOrder):
+    """
+    Uses the solids from neighboring processes to determine if distance is less than determined
+    """
+    cdef int i,l,m,n,l_start,l_end,endL
+    cdef float max_dist,d
+
+    _orderG = np.ones((1,3), dtype=np.double) #Global Order
+    
+    _orderL = np.ones((3), dtype=np.uint32)   #Local Order
+    cdef cnp.uint32_t [:] orderL
+    orderL = _orderL
+
+    cdef cnp.double_t [:] c0 = coords[argOrder[0]]
+    cdef cnp.double_t [:] c1 = coords[argOrder[1]]
+    cdef cnp.double_t [:] c2 = coords[argOrder[2]]
+
+    if dir == 1:
+      l_start = 0
+      l_end = lShape
+    elif dir == -1:
+      l_start = lShape - 1
+      l_end = 0
+
+    for i in range(0,_faceSolids.shape[0]):
+
+        l = l_start
+        if _faceSolids[i,argOrder[0]] < 0:
+            endL = l_end
+        else:
+            endL = _faceSolids[i,argOrder[0]]
+
+        changed = True
+        m = _faceSolids[i,argOrder[1]]
+        n = _faceSolids[i,argOrder[2]]
+
+        _orderG[0,argOrder[1]] = c1[m]
+        _orderG[0,argOrder[2]] = c2[n]
+        orderL[argOrder[1]] = m
+        orderL[argOrder[2]] = n
+
+        while changed and l < endL:
+
+            _orderG[0,argOrder[0]] = c0[l]
+            orderL[argOrder[0]] = l
+            max_dist = _EDT[orderL[0],orderL[1],orderL[2]]
+            
+            if (max_dist > min_dist):
+
+                d,ind = tree.query(_orderG,distance_upper_bound = max_dist)
+
+                if d < max_dist:
+                    _EDT[orderL[0],orderL[1],orderL[2]] = d
+                    changed = True
+                    _visited[orderL[0],orderL[1],orderL[2]] = 1
+
+                elif _visited[orderL[0],orderL[1],orderL[2]] == 0:
+                    changed = False
+
+            l = l + dir
+
+    return _EDT,_visited
