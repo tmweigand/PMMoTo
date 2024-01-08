@@ -7,13 +7,15 @@ from pykdtree.kdtree import KDTree
 #from scipy.spatial import KDTree
 
 from edt import edt3d
-from .core import communication
-from .core import nodes
-from .core import utils
+from ..core import communication
+from ..core import nodes
+from ..core import utils
 
 comm = MPI.COMM_WORLD
 
-
+__all__ = [
+    "calc_edt"
+]
 
 def fixInterface(edt,subdomain,solids,external_solids):
     """
@@ -87,7 +89,7 @@ def fixInterface(edt,subdomain,solids,external_solids):
     #     self.minD = distData[0]
     #     self.maxD = distData[1]
 
-def calcEDT(subdomain,grid):
+def calc_edt(subdomain,grid):
     """
 
     """

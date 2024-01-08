@@ -1,6 +1,6 @@
 import numpy as np
 from mpi4py import MPI
-from .. import domainGeneration
+from ..domain_generation import domainGeneration
 from . import communication
 from . import Orientation
 comm = MPI.COMM_WORLD

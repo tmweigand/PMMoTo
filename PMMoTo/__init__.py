@@ -1,12 +1,5 @@
-from .core.subDomain import genDomainSubDomain
-from .distance import calcEDT
-from .dataRead import readPorousMediaXYZR, readPorousMediaLammpsDump
-from .morphology import *
-from .minkowski import minkowskiEval
-from . import medialAxis
-from . import multiPhase
-from .domainGeneration import domainGen
-from .dataOutput import saveGridData,saveSetData,saveGridOneProc
-from mpi4py import MPI
-import numpy as np
-import edt
+from .core import *
+from . import analysis
+from . import domain_generation
+from . import filters
+from . import io

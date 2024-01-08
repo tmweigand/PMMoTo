@@ -1,11 +1,19 @@
+import os
 import numpy as np
 from mpi4py import MPI
 from pyevtk.hl import pointsToVTK,gridToVTK, writeParallelVTKGrid,_addDataToParallelFile
 from pyevtk import vtk
-import os
-from .core import communication
+from ..core import communication
 comm = MPI.COMM_WORLD
 
+__all__ = [
+    "saveGridData",
+    "saveMultiPhaseData",
+    "saveSetData",
+    "saveGrid",
+    "saveGridOneProc",
+    "saveGridcsv"
+]
 
 def checkFilePath(fileName):
 

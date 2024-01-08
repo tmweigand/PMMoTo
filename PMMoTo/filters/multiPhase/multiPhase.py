@@ -1,9 +1,9 @@
 import numpy as np
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from .. import dataOutput
-from .. import dataRead
-from ..core import Orientation
+from ...io import dataOutput
+from ...io import dataRead
+from ...core import Orientation
 
 #### TO DO: Make phase ID generic
 # 0 is always solid

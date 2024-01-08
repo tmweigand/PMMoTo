@@ -3,8 +3,14 @@ import numpy as np
 import gzip 
 import pyvista as pv
 from mpi4py import MPI
-from .core import communication
+from ..core import communication
 comm = MPI.COMM_WORLD
+
+__all__ = [
+    "readPorousMediaXYZR",
+    "readVTKGrid",
+    "readPorousMediaLammpsDump",
+]
 
 def readPorousMediaXYZR(file):
     

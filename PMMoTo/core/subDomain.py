@@ -1,14 +1,13 @@
 """Module for PMMoTO  subDomains."""
 import numpy as np
 from mpi4py import MPI
-from . import communication
 from . import Orientation
 from . import Domain
 from . import porousMedia
 
 comm = MPI.COMM_WORLD
 
-""" Solid = 0, Pore = 1 """
+__all__ = ["genDomainSubDomain"]
 
 class Subdomain(object):
     def __init__(self,ID,subdomains,domain):

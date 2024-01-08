@@ -1,10 +1,14 @@
 import numpy as np
 from mpi4py import MPI
-from ..core import communication
-from ..core import nodes
-from ..core import sets
+from ...core import communication
+from ...core import nodes
+from ...core import sets
 import math
 comm = MPI.COMM_WORLD
+
+__all__ = [
+    "medialSurfaceEval"
+]
 
 class medialSurface(object):
     """

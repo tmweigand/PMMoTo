@@ -1,12 +1,16 @@
 import numpy as np
 from mpi4py import MPI
-from ..core import communication
+from ...core import communication
+from ...core import nodes
 from . import medialExtraction
-from ..core import nodes
-from. import medialNodes
+from . import medialNodes
 from . import medialSets
 comm = MPI.COMM_WORLD
 
+__all__ = [
+    "medialAxisEval",
+    "medialAxisTrim"
+]
 
 class medialAxis(object):
     """

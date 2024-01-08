@@ -3,8 +3,8 @@ import math
 import edt
 import numpy as np
 from scipy.signal import fftconvolve
-from .core import communication
-from .core import utils
+from ..core import communication
+from ..core import utils
 
 __all__ = [
     "gen_struct_ratio",

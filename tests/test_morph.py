@@ -25,10 +25,10 @@ def my_function():
 
     save_data = True
 
-    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.io.readPorousMediaXYZR)
 
 
-    edt = PMMoTo.calcEDT(sDL,pML.grid)
+    edt = PMMoTo.filters.calc_edt(sDL,pML.grid)
 
     radius = domain.voxel[0]*4 + domain.voxel[0]*1.e-6
 
@@ -45,12 +45,12 @@ def my_function():
     # print(f"Add results equal: {np.array_equal(morph_edt, morph_fft)}")
 
     start_time = time.time()
-    morph_edt = PMMoTo.closing(sDL,pML.grid,radius = radius,fft = False)
+    morph_edt = PMMoTo.filters.closing(sDL,pML.grid,radius = radius,fft = False)
     end_time = time.time()
     print(f"Morph Sub Distance Runtime {end_time-start_time} seconds")
 
     start_time = time.time()
-    morph_fft = PMMoTo.closing(sDL,pML.grid,radius = radius,fft = True)
+    morph_fft = PMMoTo.filters.closing(sDL,pML.grid,radius = radius,fft = True)
     end_time = time.time()
     print(f"Morph Sub FFT Runtime {end_time-start_time} seconds")
 
@@ -58,7 +58,7 @@ def my_function():
 
     if save_data:
         ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-        PMMoTo.saveGridData("dataOut/test_morph",rank,domain,sDL,pML.grid,morph_edt=morph_edt,morph_fft = morph_fft, edt = edt)
+        PMMoTo.io.saveGridData("dataOut/test_morph",rank,domain,sDL,pML.grid,morph_edt=morph_edt,morph_fft = morph_fft, edt = edt)
 
 
 if __name__ == "__main__":

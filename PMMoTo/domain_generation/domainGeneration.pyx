@@ -8,6 +8,11 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 
+__all__ = [
+  "domainGen",
+  "domainGenVerlet",
+  "domainGenINK"
+]
 
 cdef double [:,:] gen_verlet_list(double rCut, double x, double y, double z, double[:,:] atom):
   """
