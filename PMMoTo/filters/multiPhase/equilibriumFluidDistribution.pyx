@@ -6,11 +6,11 @@ from libc.stdlib cimport malloc, free
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from ...filters import distance
-from ...filters import morphology
-from ...core import sets
-from ...io import dataOutput
-from ...core import Orientation
+from pmmoto.filters import distance
+from pmmoto.filters import morphology
+from pmmoto.core import sets
+from pmmoto.io import dataOutput
+from pmmoto.core import Orientation
 
 
 class equilibriumDistribution(object):
