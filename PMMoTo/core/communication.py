@@ -1,12 +1,8 @@
 from . import Orientation
 import numpy as np
 from mpi4py import MPI
-import sys
 comm = MPI.COMM_WORLD
 
-def raiseError():
-    MPI.Finalize()
-    sys.exit()
 
 def update_buffer(subdomain,grid):
     """

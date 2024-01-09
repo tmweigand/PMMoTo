@@ -1,6 +1,16 @@
+### Core Utility Functions ###
+import sys
 import numpy as np
+from mpi4py import MPI
 from . import Orientation
 
+
+
+def raise_error():
+    """Exit gracefuully.
+    """
+    MPI.Finalize()
+    sys.exit()
 
 def unpad(grid,pad):
     """

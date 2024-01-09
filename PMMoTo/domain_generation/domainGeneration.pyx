@@ -9,7 +9,7 @@ cimport numpy as cnp
 cnp.import_array()
 
 __all__ = [
-  "domainGen",
+  "gen_domain_sphere_pack",
   "domainGenVerlet",
   "domainGenINK"
 ]
@@ -42,44 +42,49 @@ cdef double [:,:] gen_verlet_list(double rCut, double x, double y, double z, dou
     re = (atom[0,c] - x)*(atom[0,c] - x) + (atom[1,c] - y)*(atom[1,c] - y) + (atom[2,c] - z)*(atom[2,c] - z)
     if re <= rCut*rCut:
       verletAtom[:,vListC] = atom[:,c]
-      # verletAtom[1,vListC] = atom[1,c]
-      # verletAtom[2,vListC] = atom[2,c]
-      # verletAtom[3,vListC] = atom[3,c]
       vListC += 1
     c += 1
   return _verletAtom
 
-cdef int inAtom(double cx,double cy,double cz,double x,double y,double z,double r):
+cdef int in_sphere(double x, double y, double z, double[:] s_data):
+    """Check if point in sphere. Assumes radius is squared!
     """
-    """
+
     cdef double re
-    re = (cx - x)*(cx - x) + (cy - y)*(cy - y) + (cz - z)*(cz - z)
-    if (re <= r): # already calculated 0.25*r*r
+    re = (s_data[0] - x)*(s_data[0] - x) + (s_data[1] - y)*(s_data[1] - y) + (s_data[2] - z)*(s_data[2] - z)
+    if (re <= s_data[3]): # r is assumed squared!
         return 0
     else:
         return 1
 
-def domainGen(double[:] x, double[:] y, double[:] z, double[:,:] atom):
+def gen_domain_sphere_pack(double[:] x, double[:] y, double[:] z, double[:,:] spheres):
+    """Determine if voxel centroid is located in a sphere
+
+
     """
-    """
+
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
-    cdef int numObjects = atom.shape[1]
+    cdef int num_spheres = spheres.shape[1]
 
     cdef int i, j, k, c
 
     _grid = np.ones((NX, NY, NZ), dtype=np.uint8)
     cdef cnp.uint8_t [:,:,:] grid
-
     grid = _grid
 
+    # Square radius to avoid sqrt in in_sphere
+    for i in range(0,num_spheres): 
+      spheres[3,i] = spheres[3,i]*spheres[3,i]
+
+    # Determine if point in sphere
     for i in range(0,NX):
       for j in range(0,NY):
         for k in range(0,NZ):
           c = 0
-          while (grid[i,j,k] == 1 and c < numObjects):
-              grid[i,j,k] = inAtom(atom[0,c],atom[1,c],atom[2,c],x[i],y[j],z[k],atom[3,c])
+          while (grid[i,j,k] == 1 and c < num_spheres):
+              grid[i,j,k] = in_sphere(x[i],y[j],z[k],spheres[:,c])
               c = c + 1
 
     return _grid
@@ -173,7 +178,7 @@ def domainGenVerlet(list verletDomains, double[:] x, double[:] y, double[:] z, d
           for k in range(loopInfo[n,4],loopInfo[n,5]):
             c = 0
             while (grid[i,j,k] == 1 and c < numObjects):
-                grid[i,j,k] = inAtom(verletAtom[0,c],verletAtom[1,c],verletAtom[2,c],x[i],y[j],z[k],verletAtom[3,c])
+                grid[i,j,k] = in_sphere(x[i],y[j],z[k],verletAtom[:,c])
                 c += 1
     
     return _grid

@@ -31,7 +31,10 @@ class PorousMedia:
     def gen_pm_spheres(self,sphere_data):
         """
         """
-        self.grid = domainGeneration.domainGen(self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2],sphere_data)
+        self.grid = domainGeneration.gen_domain_sphere_pack(self.subdomain.coords[0],
+                                                            self.subdomain.coords[1],
+                                                            self.subdomain.coords[2],
+                                                            sphere_data)
         self.check_grid()
         self.grid = communication.update_buffer(self.subdomain,self.grid)
 

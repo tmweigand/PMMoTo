@@ -30,12 +30,12 @@ def my_function():
     startTime = time.time()
 
 
-    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.io.readPorousMediaXYZR)
+    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.io.read_sphere_pack_xyzr)
 
     edt = pmmoto.filters.calc_edt(sDL,pML.grid)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    pmmoto.io.saveGridData("dataOut/grid",rank,domain,sDL,pML.grid,dist=edt)
+    pmmoto.io.save_grid_data("dataOut/grid",sDL,pML.grid,dist=edt)
 
 
     if testSerial:
@@ -60,14 +60,14 @@ def my_function():
                 
                 startTime = time.time()
 
-                _,sphereData = pmmoto.io.readPorousMediaXYZR(file)
+                _,sphereData = pmmoto.io.read_sphere_pack_xyzr(file)
                 # _,sphereData = pmmoto.readPorousMediaLammpsDump(file,rLookupFile)
                 
                 ##### To GENERATE SINGLE PROC TEST CASE ######
                 x = np.linspace(domain.size_domain[0,0]+domain.voxel[0]/2, domain.size_domain[0,1]-domain.voxel[0]/2, nodes[0])
                 y = np.linspace(domain.size_domain[1,0]+domain.voxel[1]/2, domain.size_domain[1,1]-domain.voxel[1]/2, nodes[1])
                 z = np.linspace(domain.size_domain[2,0]+domain.voxel[2]/2, domain.size_domain[2,1]-domain.voxel[2]/2, nodes[2])
-                gridOut = pmmoto.domain_generation.domainGen(x,y,z,sphereData)
+                gridOut = pmmoto.domain_generation.gen_domain_sphere_pack(x,y,z,sphereData)
                 gridOut = np.asarray(gridOut)
 
                 pG = [0,0,0]
@@ -182,7 +182,7 @@ def my_function():
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
 
 
-                pmmoto.io.saveGridOneProc("dataOut/gridTrueFix",x,y,z,diffEDT)
+                pmmoto.io.save_grid_data_proc("dataOut/gridTrueFix",x,y,z,diffEDT)
 
 
 if __name__ == "__main__":

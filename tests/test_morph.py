@@ -25,7 +25,7 @@ def my_function():
 
     save_data = True
 
-    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.io.readPorousMediaXYZR)
+    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.io.read_sphere_pack_xyzr)
 
 
     edt = pmmoto.filters.calc_edt(sDL,pML.grid)
@@ -58,7 +58,7 @@ def my_function():
 
     if save_data:
         ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-        pmmoto.io.saveGridData("dataOut/test_morph",rank,domain,sDL,pML.grid,morph_edt=morph_edt,morph_fft = morph_fft, edt = edt)
+        pmmoto.io.save_grid_data("dataOut/test_morph",sDL,pML.grid,morph_edt=morph_edt,morph_fft = morph_fft, edt = edt)
 
 
 if __name__ == "__main__":

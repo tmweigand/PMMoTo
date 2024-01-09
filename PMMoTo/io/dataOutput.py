@@ -4,289 +4,189 @@ from mpi4py import MPI
 from pyevtk.hl import pointsToVTK,gridToVTK, writeParallelVTKGrid,_addDataToParallelFile
 from pyevtk import vtk
 from ..core import communication
+from . import utils
+
 comm = MPI.COMM_WORLD
 
 __all__ = [
-    "saveGridData",
-    "saveMultiPhaseData",
-    "saveSetData",
-    "saveGrid",
-    "saveGridOneProc",
-    "saveGridcsv"
+    "save_grid_data",
+    "save_set_data",
+    "save_grid_data_proc",
+    "save_grid_data_csv"
 ]
 
-def checkFilePath(fileName):
 
-    # Check if Directory exists, if not make it
-    paths = fileName.split("/")[0:-1]
-    pathWay = ""
-    for p in paths:
-        pathWay = pathWay+p+"/"
-    if not os.path.isdir(pathWay):
-        os.makedirs(pathWay)
-    
-    # Same for individual procs data
-    if not os.path.isdir(fileName):
-        os.makedirs(fileName)
+def save_grid_data(file_name,subdomain,grid,**kwargs):
+    """Save grid data as vtk 
+    """
 
-
-def saveGridData(fileName,rank,Domain,subDomain,grid,**kwargs):
-
-    if rank == 0:
-        checkFilePath(fileName)
+    if subdomain.ID == 0:
+        utils.check_file_path(file_name)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.index_start,grid.shape],root=0)
+    all_info = comm.gather([subdomain.index_start,grid.shape],root=0)
 
-    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
-    fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointData = {"grid" : grid}
-    pointDataInfo = {"grid" : (grid.dtype, 1)}
+    file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
+    local_file_proc = file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."
+    point_data = {"grid" : grid}
+    point_data_info = {"grid" : (grid.dtype, 1)}
     for key, value in kwargs.items():
-        pointData[key]=value
-        pointDataInfo[key]= (value.dtype,1)
-         
-    gridToVTK(fileProc+str(rank), subDomain.coords[0], subDomain.coords[1], subDomain.coords[2],
-        start = [subDomain.index_start[0],subDomain.index_start[1],subDomain.index_start[2]],
-        pointData = pointData)
+        point_data[key]=value
+        point_data_info[key]= (value.dtype,1)
 
-    if rank == 0:
-        name = [fileProcLocal]*Domain.num_subdomains
-        starts = [[0,0,0] for _ in range(Domain.num_subdomains)]
-        ends = [[0,0,0] for _ in range(Domain.num_subdomains)]
-        nn = 0
-        for i in range(0,Domain.subdomains[0]):
-            for j in range(0,Domain.subdomains[1]):
-                for k in range(0,Domain.subdomains[2]):
-                    name[nn] = name[nn]+str(nn)+".vtr"
-                    starts[nn][0] = allInfo[nn][0][0]
-                    starts[nn][1] = allInfo[nn][0][1]
-                    starts[nn][2] = allInfo[nn][0][2]
-                    ends[nn][0] = starts[nn][0]+allInfo[nn][1][0]-1
-                    ends[nn][1] = starts[nn][1]+allInfo[nn][1][1]-1
-                    ends[nn][2] = starts[nn][2]+allInfo[nn][1][2]-1
-                    nn = nn + 1
+    gridToVTK(file_proc+str(subdomain.ID),
+              subdomain.coords[0],
+              subdomain.coords[1],
+              subdomain.coords[2],
+              start = [subdomain.index_start[0],subdomain.index_start[1],subdomain.index_start[2]],
+        pointData = point_data)
+
+    if subdomain.ID == 0:
+        name = [local_file_proc]*subdomain.domain.num_subdomains
+        starts = [[0,0,0] for _ in range(subdomain.domain.num_subdomains)]
+        ends = [[0,0,0] for _ in range(subdomain.domain.num_subdomains)]
+        for n in range(0,subdomain.domain.num_subdomains):
+            name[n] = name[n]+str(n)+".vtr"
+            starts[n][0] = all_info[n][0][0]
+            starts[n][1] = all_info[n][0][1]
+            starts[n][2] = all_info[n][0][2]
+            ends[n][0] = starts[n][0]+all_info[n][1][0]-1
+            ends[n][1] = starts[n][1]+all_info[n][1][1]-1
+            ends[n][2] = starts[n][2]+all_info[n][1][2]-1
 
         writeParallelVTKGrid(
-            fileName,
-            coordsData=((Domain.nodes[0], Domain.nodes[1], Domain.nodes[2]), subDomain.coords[0].dtype),
+            file_name,
+            coordsData=((subdomain.domain.nodes[0], 
+                         subdomain.domain.nodes[1], 
+                         subdomain.domain.nodes[2]), 
+                         subdomain.coords[0].dtype),
             starts = starts,
             ends = ends,
             sources = name,
-            pointData=pointDataInfo
+            pointData=point_data_info
             )
 
-def saveMultiPhaseData(fileName,rank,Domain,subDomain,multiPhase):
+def save_set_data(file_name,subdomain,set_list,**kwargs):
+    """Save the set data as vtk. 
+    """
+
+    rank = subdomain.ID
+    domain = subdomain.domain
 
     if rank == 0:
-        checkFilePath(fileName)
+        utils.check_file_path(file_name)
     comm.barrier()
 
-    allInfo = comm.gather([subDomain.index_start,multiPhase.mpGrid.shape],root=0)
-
-    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
-    fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointData = {"Phases" : multiPhase.mpGrid}
-    pointDataInfo = {"Phases" : (multiPhase.mpGrid.dtype, 1)}
-         
-    gridToVTK(fileProc+str(rank), subDomain.coords[0], subDomain.coords[1], subDomain.coords[2],
-        start = [subDomain.index_start[0],subDomain.index_start[1],subDomain.index_start[2]],
-        pointData = pointData)
-
-    if rank == 0:
-        name = [fileProcLocal]*Domain.num_subdomains
-        starts = [[0,0,0] for _ in range(Domain.num_subdomains)]
-        ends = [[0,0,0] for _ in range(Domain.num_subdomains)]
-        nn = 0
-        for i in range(0,Domain.subdomains[0]):
-            for j in range(0,Domain.subdomains[1]):
-                for k in range(0,Domain.subdomains[2]):
-                    name[nn] = name[nn]+str(nn)+".vtr"
-                    starts[nn][0] = allInfo[nn][0][0]
-                    starts[nn][1] = allInfo[nn][0][1]
-                    starts[nn][2] = allInfo[nn][0][2]
-                    ends[nn][0] = starts[nn][0]+allInfo[nn][1][0]-1
-                    ends[nn][1] = starts[nn][1]+allInfo[nn][1][1]-1
-                    ends[nn][2] = starts[nn][2]+allInfo[nn][1][2]-1
-                    nn = nn + 1
-
-        writeParallelVTKGrid(
-            fileName,
-            coordsData=((Domain.nodes[0], Domain.nodes[1], Domain.nodes[2]), subDomain.coords[0].dtype),
-            starts = starts,
-            ends = ends,
-            sources = name,
-            pointData=pointDataInfo
-            )
-
-def saveSetData(fileName,subDomain,setList,**kwargs):
-
-    rank = subDomain.ID
-    Domain = subDomain.Domain
-
-    if rank == 0:
-        checkFilePath(fileName)
-    comm.barrier()
-
-    procSetCounts = comm.allgather(setList.setCount)
-    nonZeroProc = np.where(np.asarray(procSetCounts) > 0)[0][0]
+    proc_set_counts = comm.allgather(set_list.setCount)
+    nonzero_proc = np.where(np.asarray(proc_set_counts) > 0)[0][0]
 
     ### Place Set Values in Arrays
-    if setList.setCount > 0:
+    if set_list.setCount > 0:
         dim = 0
-        for ss in setList.sets:
+        for ss in set_list.sets:
             dim = dim + ss.numNodes
         x = np.zeros(dim)
         y = np.zeros(dim)
         z = np.zeros(dim)
-        setRank = rank*np.ones(dim,dtype=np.uint8)
-        globalID = np.zeros(dim,dtype=np.uint64)
-        pointData = {"set" : setRank, "globalID" : globalID}
-        pointDataInfo = {"set" : (setRank.dtype, 1),
-                        "globalID" : (globalID.dtype, 1)
+        set_rank = rank*np.ones(dim,dtype=np.uint8)
+        global_ID = np.zeros(dim,dtype=np.uint64)
+        point_data = {"set" : set_rank, "globalID" : global_ID}
+        point_data_info = {"set" : (set_rank.dtype, 1),
+                        "globalID" : (global_ID.dtype, 1)
                         }
 
         ### Handle kwargs
         for key, value in kwargs.items():
-            if not hasattr(setList.sets[0], value):
+            if not hasattr(set_list.sets[0], value):
                 if rank == 0:
-                    print("Error: Cannot save set data as kwarg %s is not an attribute in Set" %value)
+                    print(f"Error: Cannot save set data as kwarg {value} is not an attribute in Set")
                 communication.raiseError()
 
-            dataType = type(getattr(setList.sets[0],value))
+            dataType = type(getattr(set_list.sets[0],value))
             if dataType == bool: ### pyectk does not support bool?
-               dataType = np.uint8
-            pointData[key] = np.zeros(dim,dtype=dataType)
-            pointDataInfo[key] = (pointData[key].dtype,1)
+                dataType = np.uint8
+            point_data[key] = np.zeros(dim,dtype=dataType)
+            point_data_info[key] = (point_data[key].dtype,1)
 
-    
         c = 0
-        for ss in setList.sets:
+        for ss in set_list.sets:
             for no in ss.nodes:
-                x[c] = subDomain.coords[0][no[0]]
-                y[c] = subDomain.coords[0][no[1]]
-                z[c] = subDomain.coords[0][no[2]]
+                x[c] = subdomain.coords[0][no[0]]
+                y[c] = subdomain.coords[0][no[1]]
+                z[c] = subdomain.coords[0][no[2]]
 
-                globalID[c] = ss.globalID
+                global_ID[c] = ss.globalID
                 for key, value in kwargs.items():
-                    pointData[key][c] = getattr(ss,value)
+                    point_data[key][c] = getattr(ss,value)
                 c = c + 1
 
-        fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
-        fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-        pointsToVTK(fileProc+str(rank), x,y,z,
-            data = pointData 
-            )
+        file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
+        local_file_proc = file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."
+        pointsToVTK(file_proc+str(rank),x,y,z,data = point_data)
 
-
-    if rank == nonZeroProc:
-        w = vtk.VtkParallelFile(fileName, vtk.VtkPUnstructuredGrid)
+    if rank == nonzero_proc:
+        w = vtk.VtkParallelFile(file_name, vtk.VtkPUnstructuredGrid)
         w.openGrid()
-        pointData = pointDataInfo
-        _addDataToParallelFile(w, cellData=None, pointData=pointData)
+        point_data = point_data_info
+        _addDataToParallelFile(w, cellData=None, pointData=point_data)
         w.openElement("PPoints")
         w.addHeader("points", dtype = x.dtype, ncomp=3)
         w.closeElement("PPoints")
 
-        procsWithSets = np.count_nonzero(np.array(procSetCounts)>0)
-        name = [fileProcLocal]*procsWithSets
-        nP = 0
-        for nn in range(Domain.numSubDomains):
-            if procSetCounts[nn] > 0:
-                name[nP] = name[nP]+str(nn)+".vtu"
-                nP += 1
+        procs_with_sets = np.count_nonzero(np.array(proc_set_counts)>0)
+        name = [local_file_proc]*procs_with_sets
+        for n in range(domain.num_subdomains):
+            if proc_set_counts[n] > 0:
+                name[n] = name[n]+str(n)+".vtu"
 
         for s in name:
             w.addPiece(start=None,end=None,source=s)
         w.closeGrid()
         w.save()
 
-def saveGrid(fileName,subdomain,grid):
+def save_grid_data_proc(file_name,x,y,z,grid):
+    """Save grid data for a single process
+    """
 
-    rank = subdomain.ID
-    domain = subdomain.domain
-
-    if rank == 0:
-        checkFilePath(fileName)
-    comm.barrier()
-
-    allInfo = comm.gather([subdomain.index_start,grid.shape],root=0)
-
-    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
-    fileProcLocal = fileName.split("/")[-1]+"/"+fileName.split("/")[-1]+"Proc."
-    pointData = {"Grid" : grid}
-    pointDataInfo = {"Grid" : (grid.dtype, 1)}
-         
-    gridToVTK(fileProc+str(rank), subdomain.coords[0],subdomain.coords[1],subdomain.coords[2],
-        start = [subdomain.index_start[0],subdomain.index_start[1],subdomain.index_start[2]],
-        pointData = pointData)
-
-    if rank == 0:
-        name = [fileProcLocal]*domain.num_subdomains
-        starts = [[0,0,0] for _ in range(domain.num_subdomains)]
-        ends = [[0,0,0] for _ in range(domain.num_subdomains)]
-        nn = 0
-        for i in range(0,domain.subdomains[0]):
-            for j in range(0,domain.subdomains[1]):
-                for k in range(0,domain.subdomains[2]):
-                    name[nn] = name[nn]+str(nn)+".vtr"
-                    starts[nn][0] = allInfo[nn][0][0]
-                    starts[nn][1] = allInfo[nn][0][1]
-                    starts[nn][2] = allInfo[nn][0][2]
-                    ends[nn][0] = starts[nn][0]+allInfo[nn][1][0]-1
-                    ends[nn][1] = starts[nn][1]+allInfo[nn][1][1]-1
-                    ends[nn][2] = starts[nn][2]+allInfo[nn][1][2]-1
-                    nn = nn + 1
-
-        writeParallelVTKGrid(
-            fileName,
-            coordsData=((domain.nodes[0], domain.nodes[1], domain.nodes[2]), subdomain.coords[0].dtype),
-            starts = starts,
-            ends = ends,
-            sources = name,
-            pointData=pointDataInfo
-            )
-
-def saveGridOneProc(fileName,x,y,z,grid):
-
-    checkFilePath(fileName)
-    pointData = {"Grid" : grid}
-         
-    gridToVTK(fileName, x, y, z,
+    utils.check_file_path(file_name)
+    point_data = {"Grid" : grid}
+  
+    gridToVTK(file_name, x, y, z,
         start = [0,0,0],
-        pointData = pointData)
-    
-def saveGridcsv(fileName,subdomain,x,y,z,grid,removeHalo = False):
+        pointData = point_data)
 
+def save_grid_data_csv(file_name,subdomain,x,y,z,grid,remove_halo = False):
+    """Save grid as csv. Warning this is not lightweight. 
+    """
     rank = subdomain.ID
 
     if rank == 0:
-        checkFilePath(fileName)
+        utils.check_file_path(file_name)
     comm.barrier()
 
-    if removeHalo:
+    if remove_halo:
         own = subdomain.index_own_Nodes
         size = (own[1]-own[0])*(own[3]-own[2])*(own[5]-own[4])
-        printGridOut = np.zeros([size,4])
+        grid_out = np.zeros([size,4])
     else:
         own = np.zeros([6],dtype = np.int64)
         own[1] = grid.shape[0]
         own[3] = grid.shape[1]
         own[5] = grid.shape[2]
-        printGridOut = np.zeros([grid.size,4])
-                
-    fileProc = fileName+"/"+fileName.split("/")[-1]+"Proc."
+        grid_out = np.zeros([grid.size,4])
+   
+    file_proc = file_name+"/"+file_name.split("/")[-1]+"Proc."
 
     c = 0
     for i in range(own[0],own[1]):
         for j in range(own[2],own[3]):
             for k in range(own[4],own[5]):
-                printGridOut[c,0] = x[i]
-                printGridOut[c,1] = y[j]
-                printGridOut[c,2] = z[k]
-                printGridOut[c,3] = grid[i,j,k]
+                grid_out[c,0] = x[i]
+                grid_out[c,1] = y[j]
+                grid_out[c,2] = z[k]
+                grid_out[c,3] = grid[i,j,k]
                 c = c + 1
-    
+
     header = "x,y,z,Grid"
-    np.savetxt(fileProc+str(rank)+".csv",printGridOut, delimiter=',',header=header)
+    np.savetxt(file_proc + str(rank) + ".csv",grid_out, delimiter=',',header=header)
     
