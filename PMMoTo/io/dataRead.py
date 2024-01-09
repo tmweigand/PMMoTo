@@ -31,7 +31,7 @@ def read_sphere_pack_xyzr(input_file,add_periodic_spheres = False):
     lines = domain_file.readlines()
     num_spheres = len(lines) - 3
 
-    sphere_data = np.zeros([4,num_spheres])
+    sphere_data = np.zeros([num_spheres,4])
     domain = np.zeros([3,2])
 
     count_sphere = 0
@@ -42,10 +42,10 @@ def read_sphere_pack_xyzr(input_file,add_periodic_spheres = False):
         else: # Grab sphere
             try:
                 for n in range(0,4):
-                    sphere_data[n,count_sphere] = float(line.split(" ")[n])
+                    sphere_data[count_sphere,n] = float(line.split(" ")[n])
             except ValueError:
                 for n in range(0,4):
-                    sphere_data[n,count_sphere] = float(line.split("\t")[n])
+                    sphere_data[count_sphere,n] = float(line.split("\t")[n])
             count_sphere += 1
 
     domain_file.close()

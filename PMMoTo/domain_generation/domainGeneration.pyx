@@ -1,58 +1,53 @@
+#distutils: language = c++
 #cython: cdivision=True
 #cython: boundscheck=False
 #cython: nonecheck=False
 #cython: wraparound=False
 
-import math
 import numpy as np
 cimport numpy as cnp
+from libcpp.vector cimport vector
+from libc.math cimport sin,cos
 cnp.import_array()
 
 __all__ = [
   "gen_domain_sphere_pack",
-  "domainGenVerlet",
+  "gen_domain_verlet_sphere_pack",
   "domainGenINK"
 ]
 
-cdef double [:,:] gen_verlet_list(double rCut, double x, double y, double z, double[:,:] atom):
-  """
+cdef vector[verlet_sphere] gen_verlet_list(double cutoff, double x, double y, double z, double[:,:] spheres):
+  """Determine if sphere is a verlet sphere meaning inside subdomain
 
   """
-  cdef int numObjects = atom.shape[1]
-  cdef int c,vListSize,vListC
+  cdef int c
   cdef double re
+  cdef verlet_sphere c_sphere
+  cdef vector[verlet_sphere] verlet_spheres
+  cdef int numObjects = spheres.shape[0]
 
   # find out how long verletlist is
   c = 0
-  vListSize = 0
   while c < numObjects:
-    re = (atom[0,c] - x)*(atom[0,c] - x) + (atom[1,c] - y)*(atom[1,c] - y) + (atom[2,c] - z)*(atom[2,c] - z)
-    if re <= rCut*rCut:
-      vListSize += 1 
+    re = (spheres[c,0] - x)*(spheres[c,0] - x) + (spheres[c,1] - y)*(spheres[c,1] - y) + (spheres[c,2] - z)*(spheres[c,2] - z)
+    if re <= cutoff*cutoff:
+      c_sphere.x = spheres[c,0]
+      c_sphere.y = spheres[c,1]
+      c_sphere.z = spheres[c,2]
+      c_sphere.r = spheres[c,3]
+      verlet_spheres.push_back(c_sphere)
     c += 1
   
-  _verletAtom = np.ones((4, vListSize), dtype=np.double)
-  cdef double [:,:] verletAtom
-  verletAtom = _verletAtom
+  return verlet_spheres
 
-  #add atoms to verletlist
-  c = 0
-  vListC = 0
-  while c < numObjects:
-    re = (atom[0,c] - x)*(atom[0,c] - x) + (atom[1,c] - y)*(atom[1,c] - y) + (atom[2,c] - z)*(atom[2,c] - z)
-    if re <= rCut*rCut:
-      verletAtom[:,vListC] = atom[:,c]
-      vListC += 1
-    c += 1
-  return _verletAtom
 
-cdef int in_sphere(double x, double y, double z, double[:] s_data):
+cdef int in_sphere(double x, double y, double z, double s_x, double s_y, double s_z, double s_r):
     """Check if point in sphere. Assumes radius is squared!
     """
 
     cdef double re
-    re = (s_data[0] - x)*(s_data[0] - x) + (s_data[1] - y)*(s_data[1] - y) + (s_data[2] - z)*(s_data[2] - z)
-    if (re <= s_data[3]): # r is assumed squared!
+    re = (s_x - x)*(s_x - x) + (s_y - y)*(s_y - y) + (s_z - z)*(s_z - z)
+    if (re <= s_r): # s_r is assumed squared!
         return 0
     else:
         return 1
@@ -60,148 +55,125 @@ cdef int in_sphere(double x, double y, double z, double[:] s_data):
 def gen_domain_sphere_pack(double[:] x, double[:] y, double[:] z, double[:,:] spheres):
     """Determine if voxel centroid is located in a sphere
 
-
     """
-
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
-    cdef int num_spheres = spheres.shape[1]
+    cdef int num_spheres = spheres.shape[0]
 
     cdef int i, j, k, c
 
-    _grid = np.ones((NX, NY, NZ), dtype=np.uint8)
-    cdef cnp.uint8_t [:,:,:] grid
-    grid = _grid
+    grid = np.ones((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] _grid
+    _grid = grid
 
     # Square radius to avoid sqrt in in_sphere
     for i in range(0,num_spheres): 
-      spheres[3,i] = spheres[3,i]*spheres[3,i]
+      spheres[i,3] = spheres[i,3]*spheres[i,3]
 
     # Determine if point in sphere
     for i in range(0,NX):
       for j in range(0,NY):
         for k in range(0,NZ):
           c = 0
-          while (grid[i,j,k] == 1 and c < num_spheres):
-              grid[i,j,k] = in_sphere(x[i],y[j],z[k],spheres[:,c])
-              c = c + 1
+          while (_grid[i,j,k] == 1 and c < num_spheres):
+            _grid[i,j,k] = in_sphere(x[i],y[j],z[k],spheres[c,0],spheres[c,1],spheres[c,2],spheres[c,3])
+            c = c + 1
 
-    return _grid
+    return grid
 
-def domainGenVerlet(list verletDomains, double[:] x, double[:] y, double[:] z, double[:,:] atom):
+def gen_domain_verlet_sphere_pack(list verlet_domains, double[:] x, double[:] y, double[:] z, double[:,:] spheres):
     """ 
-    Only use with atom array that has format x,y,z,radius
-    which for an atom, when evaluating maximum accessibility 
-    (i.e. 0 sigma test particle) radius = 2^(1/6)*sigma/2
     """
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
 
-    cdef int i, j, k, n, c, numObjects, numDomains
+    cdef int i, j, k, n, c, num_spheres, num_domains
+    cdef vector[verlet_sphere] verlet_spheres
+
+    grid = np.ones((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] _grid
+    _grid = grid
     
-    _grid = np.ones((NX, NY, NZ), dtype=np.uint8)
-    cdef cnp.uint8_t [:,:,:] grid
-    grid = _grid
+    # Square radius to avoid sqrt in in_sphere
+    num_spheres = spheres.shape[0]
+    for i in range(0,num_spheres): 
+      spheres[i,3] = spheres[i,3]*spheres[i,3]
 
-    ### Generate subsubDomains 
-    subNodes     = np.zeros([3],dtype=np.uint64)
-    subNodesRem  = np.zeros([3],dtype=np.uint64)
-    numDomains = np.prod(verletDomains)
-    subNodes[0],subNodesRem[0] = divmod(NX,verletDomains[0])
-    subNodes[1],subNodesRem[1] = divmod(NY,verletDomains[1])
-    subNodes[2],subNodesRem[2] = divmod(NZ,verletDomains[2])
+    # Divide domain into smaler cubes based on verlet_domains
+    num_domains = np.prod(verlet_domains)
+    nodes  = np.zeros([3],dtype=np.uint64)
+    rem_nodes = np.zeros([3],dtype=np.uint64)
 
-    ### Get the loop Info for the Verlet Domains
-    _loopInfo = np.zeros([numDomains,6],dtype=np.int64)
-    cdef cnp.int64_t [:,:] loopInfo
-    loopInfo = _loopInfo
+    for n,d in enumerate([NX,NY,NZ]):
+      nodes[n],rem_nodes[n] = divmod(d,verlet_domains[n])
+
+    # Get the loop Info (nodes) for the verlet domains
+    loop_info = np.zeros([num_domains,6],dtype=np.int64)
+    cdef cnp.int64_t [:,:] _loop_info
+    _loop_info = loop_info
 
     n = 0
-    for cI,i in enumerate(range(0,verletDomains[0])):
-        for cJ,j in enumerate(range(0,verletDomains[1])):
-            for cK,k in enumerate(range(0,verletDomains[2])):
-
-              if i == 0:
-                _loopInfo[n,0] = 0
-                _loopInfo[n,1] = subNodes[0]
-              elif i == verletDomains[0] - 1:
-                _loopInfo[n,0] = cI*subNodes[0]
-                _loopInfo[n,1] = (cI+1)*subNodes[0] + subNodesRem[0]
-              else:
-                _loopInfo[n,0] = cI*subNodes[0]
-                _loopInfo[n,1] = (cI+1)*subNodes[0]
-
-              if j == 0:
-                _loopInfo[n,2] = 0
-                _loopInfo[n,3] = subNodes[1]
-              elif j == verletDomains[1] - 1:
-                _loopInfo[n,2] = cJ*subNodes[1]
-                _loopInfo[n,3] = (cJ+1)*subNodes[1] + subNodesRem[1]
-              else:
-                _loopInfo[n,2] = cJ*subNodes[1]
-                _loopInfo[n,3] = (cJ+1)*subNodes[1]
-
-              if k == 0:
-                _loopInfo[n,4] = 0
-                _loopInfo[n,5] = subNodes[2]
-              elif k == verletDomains[2] - 1:
-                _loopInfo[n,4] = cK*subNodes[2]
-                _loopInfo[n,5] = (cK+1)*subNodes[2] + subNodesRem[2]
-              else:
-                _loopInfo[n,4] = cK*subNodes[2]
-                _loopInfo[n,5] = (cK+1)*subNodes[2]
-              
+    for i in range(0,verlet_domains[0]):
+        for j in range(0,verlet_domains[1]):
+            for k in range(0,verlet_domains[2]):
+              for nn,d in enumerate([i,j,k]):
+                if d == 0:
+                  _loop_info[n,nn*2] = 0
+                  _loop_info[n,nn*2+1] = nodes[nn]
+                elif d == verlet_domains[nn] - 1:
+                  _loop_info[n,nn*2] = d*nodes[nn]
+                  _loop_info[n,nn*2+1] = (d+1)*nodes[nn] + rem_nodes[nn]
+                else:
+                  _loop_info[n,nn*2] = d*nodes[nn]
+                  _loop_info[n,nn*2+1] = (d+1)*nodes[nn]
               n += 1
 
-    ### Get Centroid of Verlet Domains
-    length = np.zeros([numDomains,3],dtype=np.double)
-    centroid = np.zeros([numDomains,3],dtype=np.double)
-    maxDiameter = np.zeros([numDomains],dtype=np.double)
-    maxAtomRadius = np.sqrt(np.max(atom[3,:]))
-    for n in range(numDomains):
-      length[n,0] = x[_loopInfo[n,1]-1] - x[_loopInfo[n,0]]
-      length[n,1] = y[_loopInfo[n,3]-1] - y[_loopInfo[n,2]]
-      length[n,2] = z[_loopInfo[n,5]-1] - z[_loopInfo[n,4]]
-      centroid[n,0] = x[_loopInfo[n,0]] + length[n,0]/2. 
-      centroid[n,1] = y[_loopInfo[n,2]] + length[n,1]/2.
-      centroid[n,2] = z[_loopInfo[n,4]] + length[n,2]/2. 
-      maxDiameter[n] = np.max(length[n])+2*maxAtomRadius
 
-    cdef double [:,:] verletAtom
-    for n in range(numDomains):
-      verletAtom = gen_verlet_list(maxDiameter[n], centroid[n,0], centroid[n,1], centroid[n,2], atom)
-      numObjects = verletAtom.shape[1]
-      for i in range(loopInfo[n,0],loopInfo[n,1]):
-        for j in range(loopInfo[n,2],loopInfo[n,3]):
-          for k in range(loopInfo[n,4],loopInfo[n,5]):
+    # Get Centroid of Verlet Domains
+    max_sphere_radius = np.sqrt(np.max(spheres[:,3]))
+    centroid = np.zeros([num_domains,3],dtype=np.double)
+    max_diameter = np.zeros([num_domains],dtype=np.double)
+    for n in range(num_domains):
+      for nn,coord in enumerate([x,y,z]):
+        length = coord[_loop_info[n,nn*2+1]-1] - coord[_loop_info[n,nn*2]]
+        centroid[n,nn] = coord[_loop_info[n,nn*2]] + length/2
+        max_diameter[n] = np.max(length) + 2.*max_sphere_radius
+
+    # Loop through verlet domains, generating domain
+    for n in range(num_domains):
+      verlet_spheres = gen_verlet_list(max_diameter[n], centroid[n,0], centroid[n,1], centroid[n,2], spheres)
+      num_spheres = len(verlet_spheres)
+      for i in range(_loop_info[n,0],_loop_info[n,1]):
+        for j in range(_loop_info[n,2],_loop_info[n,3]):
+          for k in range(_loop_info[n,4],_loop_info[n,5]):
             c = 0
-            while (grid[i,j,k] == 1 and c < numObjects):
-                grid[i,j,k] = in_sphere(x[i],y[j],z[k],verletAtom[:,c])
+            while (_grid[i,j,k] == 1 and c < num_spheres):
+                _grid[i,j,k] = in_sphere(x[i],y[j],z[k],verlet_spheres[c].x,verlet_spheres[c].y,verlet_spheres[c].z,verlet_spheres[c].r)
                 c += 1
     
-    return _grid
+    return grid
 
 
-def domainGenINK(double[:] x, double[:] y, double[:] z):
-
+def gen_domain_inkbottle(double[:] x, double[:] y, double[:] z):
+  """
+  """
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
     cdef int i, j, k
     cdef double r
 
-    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
-    cdef cnp.uint8_t [:,:,:] grid
-
-    grid = _grid
+    grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] _grid
+    _grid = grid
 
     for i in range(0,NX):
       for j in range(0,NY):
         for k in range(0,NZ):
-          r = (0.01*math.cos(0.01*x[i]) + 0.5*math.sin(x[i]) + 0.75)
+          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
           if y[j]*y[j] + z[k]*z[k] <= r*r:
-            grid[i,j,k] = 1
+            _grid[i,j,k] = 1
 
-    return _grid
+    return grid

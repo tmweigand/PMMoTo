@@ -3,6 +3,8 @@ from mpi4py import MPI
 from ..domain_generation import domainGeneration
 from . import communication
 from . import Orientation
+from . import utils
+
 comm = MPI.COMM_WORLD
 
 class PorousMedia:
@@ -26,7 +28,7 @@ class PorousMedia:
         """
         if (np.sum(self.grid) == np.prod(self.subdomain.nodes)):
             print("This code requires at least 1 solid voxel in each subdomain. Please reorder processors!")
-            communication.raiseError()
+            utils.raise_error()
 
     def gen_pm_spheres(self,sphere_data):
         """
@@ -38,17 +40,22 @@ class PorousMedia:
         self.check_grid()
         self.grid = communication.update_buffer(self.subdomain,self.grid)
 
-    def gen_pm_verlet_spheres(self,sphere_data,verlet=[20,20,20]):
+    def gen_pm_verlet_spheres(self,sphere_data,verlet=[2,2,2]):
         """
         """
-        self.grid = domainGeneration.domainGenVerlet(verlet,self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2],sphere_data)
+        self.grid = domainGeneration.gen_domain_verlet_sphere_pack(verlet,self.subdomain.coords[0],
+                                                                   self.subdomain.coords[1],
+                                                                   self.subdomain.coords[2],
+                                                                   sphere_data)
         self.check_grid()
         self.grid = communication.update_buffer(self.subdomain,self.grid)
 
     def gen_pm_inkbottle(self):
         """
         """
-        self.grid = domainGeneration.domainGenINK(self.subdomain.coords[0],self.subdomain.coords[1],self.subdomain.coords[2])
+        self.grid = domainGeneration.gen_domain_inkbottle(self.subdomain.coords[0],
+                                                          self.subdomain.coords[1],
+                                                          self.subdomain.coords[2])
         self.check_grid()
         self.grid = communication.update_buffer(self.subdomain,self.grid)
 

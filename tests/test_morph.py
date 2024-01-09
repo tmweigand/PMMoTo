@@ -25,7 +25,7 @@ def my_function():
 
     save_data = True
 
-    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.io.read_sphere_pack_xyzr)
+    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"SphereVerlet",file,pmmoto.io.read_sphere_pack_xyzr)
 
 
     edt = pmmoto.filters.calc_edt(sDL,pML.grid)
