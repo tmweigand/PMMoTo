@@ -3,6 +3,8 @@ import sys
 import numpy as np
 from mpi4py import MPI
 from . import Orientation
+from . import Domain
+from . import Subdomain
 
 comm = MPI.COMM_WORLD
 
@@ -129,6 +131,11 @@ def own_grid(grid,own):
     
     return np.ascontiguousarray(grid_out)
 
+def global_grid(grid,index,local_grid):
+    """Take local grid from eachj process and combine into global grid
+    """
+    grid[index[0]:index[1],index[2]:index[3],index[4]:index[5]] = local_grid
+    return grid
 
 def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
     """
@@ -183,9 +190,7 @@ def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
     return face_solids,edge_solids,corner_solids
 
 
-
-
-def reconstruct_grid(subdomain,grid):
+def reconstruct_grid_to_root(subdomain,grid):
     """This function (re)constructs a grid from all proccesses to root
     """
 
@@ -206,15 +211,39 @@ def reconstruct_grid(subdomain,grid):
         grid_out = np.zeros(subdomain.domain.nodes)
         for n in range(0,subdomain.domain.num_subdomains):
             _own_grid = own_grid(grid_all[n],sd_all[n].index_own_nodes)
-            grid_out[sd_all[n].index_start[0] + sd_all[n].buffer[0]:
-                     sd_all[n].index_start[0] + sd_all[n].nodes[0] - sd_all[n].buffer[1],
-                     sd_all[n].index_start[1] + sd_all[n].buffer[2]:
-                     sd_all[n].index_start[1] + sd_all[n].nodes[1] - sd_all[n].buffer[3],
-                     sd_all[n].index_start[2] + sd_all[n].buffer[4]:
-                     sd_all[n].index_start[2] + sd_all[n].nodes[2] - sd_all[n].buffer[5]] \
-                   = _own_grid
+            grid_out = global_grid(grid_out,sd_all[n].index_global,_own_grid)
 
         return grid_out
 
-    return True
+    return 0
     
+def deconstruct_grid(subdomain,grid,procs):
+    """Deconstruct the grid from a single process to multiple grids
+    """
+
+    num_procs = np.prod(procs)
+    _domain = Domain.Domain(nodes = subdomain.domain.nodes,
+                            subdomains = procs,
+                            size_domain = subdomain.domain.size_domain,
+                            boundaries = subdomain.domain.boundaries,
+                            inlet = subdomain.domain.inlet,
+                            outlet = subdomain.domain.outlet)
+
+    _domain.get_subdomain_nodes()
+    _domain.get_voxel_size()
+
+    sd_all = np.empty((num_procs), dtype = object)
+    local_grid = np.empty((num_procs), dtype = object)
+    for n in range(0,num_procs):
+        sd_all[n] = Subdomain.Subdomain(domain = _domain, ID = n, subdomains = procs)
+        sd_all[n].get_info()
+        sd_all[n].gather_cube_info()
+        sd_all[n].get_coordinates()
+
+        local_grid[n] = grid[sd_all[n].index_start[0]:sd_all[n].index_start[0]+sd_all[n].nodes[0],
+                             sd_all[n].index_start[1]:sd_all[n].index_start[1]+sd_all[n].nodes[1],
+                             sd_all[n].index_start[2]:sd_all[n].index_start[2]+sd_all[n].nodes[2]]
+        
+        local_grid[n] = np.ascontiguousarray(local_grid[n])
+        
+    return sd_all,local_grid

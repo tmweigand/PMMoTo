@@ -144,14 +144,14 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
         w.closeGrid()
         w.save()
 
-def save_grid_data_proc(file_name,x,y,z,grid):
+def save_grid_data_proc(file_name,coords,grid):
     """Save grid data for a single process
     """
 
     utils.check_file_path(file_name)
     point_data = {"Grid" : grid}
   
-    gridToVTK(file_name, x, y, z,
+    gridToVTK(file_name, coords[0], coords[1], coords[2],
         start = [0,0,0],
         pointData = point_data)
 

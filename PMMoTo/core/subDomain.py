@@ -1,19 +1,13 @@
 """Module for PMMoTO  subDomains."""
 import numpy as np
 from mpi4py import MPI
-from . import utils
 from . import Orientation
-from . import Domain
-from . import porousMedia
-from pmmoto.io import dataRead
 
 comm = MPI.COMM_WORLD
 
-__all__ = [
-    "initialize",
-    ]
-
 class Subdomain(object):
+    """Base class for PMMoTo
+    """
     def __init__(self,ID,subdomains,domain):
         self.ID          = ID
         self.size        = np.prod(subdomains)
@@ -25,6 +19,7 @@ class Subdomain(object):
         self.nodes       = np.zeros([3],dtype = np.int64)
         self.own_nodes    = np.zeros([3],dtype = np.int64)
         self.index_own_nodes = np.zeros([6],dtype = np.int64)
+        self.index_global = np.zeros([6],dtype = np.int64)
         self.index_start  = np.zeros([3],dtype = np.int64)
         self.size_subdomain = np.zeros([3])
         self.bounds = np.zeros([3,2])
@@ -56,7 +51,7 @@ class Subdomain(object):
                                 self.boundary = True
                                 self.boundary_ID[nn*2] = self.domain.boundaries[nn][0]
 
-                            if d == self.subdomains[nn]-1:
+                            if d == self.subdomains[nn] - 1:
                                 self.boundary = True
                                 self.boundary_ID[nn*2+1] = self.domain.boundaries[nn][1]
                                 self.nodes[nn] += self.domain.rem_sub_nodes[d]
@@ -64,12 +59,12 @@ class Subdomain(object):
 
                     n = n + 1
 
-        ### If boundary_ID == 0, buffer is not added
+        # If boundary_ID == 0, buffer is not added
         for f in range(0,Orientation.num_faces):
             if self.boundary_ID[f] == 0:
                 self.buffer[f] = 0
 
-    def get_coordinates(self,pad = None):
+    def get_coordinates(self, pad = None, get_coords = True):
         """
         Determine actual coordinate information (x,y,z)
         If boundaryID and Domain.boundary == 0, buffer is not added
@@ -89,16 +84,19 @@ class Subdomain(object):
             self.index_own_nodes[n*2] += pad[n*2]
             self.index_own_nodes[n*2+1] = self.index_own_nodes[n*2] +self.own_nodes[n]
 
-            vox = self.domain.voxel[n]
-            d_size = self.domain.size_domain[n]
-            self.coords[n] = np.zeros(self.nodes[n],dtype = np.double)
-            sd_size[0] = vox/2 + d_size[0] + vox*(self.index_start[n])
-            sd_size[1] = vox/2 + d_size[0] + vox*(self.index_start[n] + self.nodes[n] - 1)
-            self.coords[n] = np.linspace(sd_size[0], sd_size[1], self.nodes[n] )
-            
-            self.size_subdomain[n] = sd_size[1] - sd_size[0]
-            self.bounds[n] = [sd_size[0],sd_size[1]]
+            self.index_global[n*2] = self.index_start[n] + pad[n*2]
+            self.index_global[n*2+1] = self.index_start[n] + self.nodes[n] - pad[n*2+1]
 
+            if get_coords:
+                vox = self.domain.voxel[n]
+                d_size = self.domain.size_domain[n]
+                self.coords[n] = np.zeros(self.nodes[n],dtype = np.double)
+                sd_size[0] = vox/2 + d_size[0] + vox*(self.index_start[n])
+                sd_size[1] = vox/2 + d_size[0] + vox*(self.index_start[n] + self.nodes[n] - 1)
+                self.coords[n] = np.linspace(sd_size[0], sd_size[1], self.nodes[n] )
+                
+                self.size_subdomain[n] = sd_size[1] - sd_size[0]
+                self.bounds[n] = [sd_size[0],sd_size[1]]
 
     def get_coordinates_mulitphase(self,pad,inlet,res_size):
         """
@@ -251,25 +249,3 @@ class Subdomain(object):
                 global_boundary = True
 
             self.corners[n] = Orientation.Corner(n,n_proc,boundary,periodic,global_boundary,external_faces,external_edges)
-
-
-def initialize(rank,mpi_size,subdomains,nodes,boundaries,inlet = None,outlet = None):
-    """
-    Initialize PMMoTo domain and subdomain classes and check for valid inputs. 
-    """
-
-    utils.check_inputs(mpi_size,subdomains,nodes,boundaries,inlet,outlet)
-
-    domain = Domain.Domain(nodes = nodes,
-                           subdomains = subdomains,
-                           boundaries = boundaries,
-                           inlet = inlet,
-                           outlet = outlet)
-    
-    domain.get_subdomain_nodes()
-
-    subdomain = Subdomain(domain = domain, ID = rank, subdomains = subdomains)
-    subdomain.get_info()
-    subdomain.gather_cube_info()
-
-    return subdomain

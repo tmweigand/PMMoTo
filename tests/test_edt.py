@@ -11,7 +11,7 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomains = [3,3,3] # Specifies how domain is broken among processes
+    subdomains = [1,1,1] # Specifies how domain is broken among processes
     nodes = [300,300,300] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
@@ -35,26 +35,20 @@ def my_function():
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
     pmmoto.io.save_grid_data("dataOut/grid",sd,pm.grid,dist=edt)
 
-    edt_all = pmmoto.utils.reconstruct_grid(sd,edt)
+    refactor_procs = [2,2,2]
+    sd_all,local_grid = pmmoto.utils.deconstruct_grid(sd,pm.grid,refactor_procs)
+
+    num_procs = np.prod(refactor_procs)
+    for n in range(0,num_procs):
+        file_out = "dataOut/decomposed_grid"+str(n)
+        pmmoto.io.save_grid_data_proc(file_out,sd_all[n].coords,local_grid[n])
+
+
 
     if testSerial:
 
-        num_subdomains = np.prod(subdomains)
-
-        if rank == 0:
-            sd_all = np.empty((num_subdomains), dtype = object)
-            pm_all = np.empty((num_subdomains), dtype = object)
-            sd_all[0] = sd
-            pm_all[0] = pm
-            for neigh in range(1,num_subdomains):
-                sd_all[neigh] = comm.recv(source=neigh)
-                pm_all[neigh] = comm.recv(source=neigh)
-
-        if rank > 0:
-            for neigh in range(1,num_subdomains):
-                if rank == neigh:
-                    comm.send(sd,dest=0)
-                    comm.send(pm,dest=0)
+        edt_all = pmmoto.utils.reconstruct_grid_to_root(sd,edt)
+        pm_grid_all = pmmoto.utils.reconstruct_grid_to_root(sd,pm.grid)
 
         if rank==0:
             if testAlgo:
@@ -64,14 +58,14 @@ def my_function():
                 sphere_data,_ = pmmoto.io.read_sphere_pack_xyzr_domain(file)
                 
                 ##### To GENERATE SINGLE PROC TEST CASE ######
-                x = np.linspace(sd_all[0].domain.size_domain[0,0] + sd_all[0].domain.voxel[0]/2,
-                                sd_all[0].domain.size_domain[0,1] - sd_all[0].domain.voxel[0]/2,
+                x = np.linspace(sd.domain.size_domain[0,0] + sd.domain.voxel[0]/2,
+                                sd.domain.size_domain[0,1] - sd.domain.voxel[0]/2,
                                 nodes[0])
-                y = np.linspace(sd_all[0].domain.size_domain[1,0] + sd_all[0].domain.voxel[1]/2,
-                                sd_all[0].domain.size_domain[1,1] - sd_all[0].domain.voxel[1]/2,
+                y = np.linspace(sd.domain.size_domain[1,0] + sd.domain.voxel[1]/2,
+                                sd.domain.size_domain[1,1] - sd.domain.voxel[1]/2,
                                 nodes[1])
-                z = np.linspace(sd_all[0].domain.size_domain[2,0] + sd_all[0].domain.voxel[2]/2,
-                                sd_all[0].domain.size_domain[2,1] - sd_all[0].domain.voxel[2]/2,
+                z = np.linspace(sd.domain.size_domain[2,0] + sd.domain.voxel[2]/2,
+                                sd.domain.size_domain[2,1] - sd.domain.voxel[2]/2,
                                 nodes[2])
 
                 grid_out = pmmoto.domain_generation._domainGeneration.gen_domain_sphere_pack(x,y,z,sphere_data)
@@ -115,8 +109,8 @@ def my_function():
                     grid_out[:,:,-1] = 0
 
 
-                realDT = edt3d(grid_out, anisotropy=sd_all[0].domain.voxel)
-                edtV,_ = distance_transform_edt(grid_out,sampling=sd_all[0].domain.voxel,return_indices=True)
+                realDT = edt3d(grid_out, anisotropy=sd.domain.voxel)
+                edtV,_ = distance_transform_edt(grid_out,sampling=sd.domain.voxel,return_indices=True)
                 endTime = time.time()
 
                 print("Serial Time:",endTime-startTime)
@@ -144,49 +138,7 @@ def my_function():
                 realDT = arrayList[1]
                 edtV = arrayList[2]
 
-                ### Reconstruct SubDomains to Check EDT ####
-                checkGrid = np.zeros_like(realDT)
-                n = 0
-                for i in range(0,subdomains[0]):
-                    for _ in range(0,subdomains[1]):
-                        for _ in range(0,subdomains[2]):
-                            checkGrid[sd_all[n].index_start[0]+sd_all[n].buffer[0]:
-                                      sd_all[n].index_start[0]+sd_all[n].nodes[0]-sd_all[n].buffer[1],
-                                      sd_all[n].index_start[1]+sd_all[n].buffer[2]:
-                                      sd_all[n].index_start[1]+sd_all[n].nodes[1]-sd_all[n].buffer[3],
-                                      sd_all[n].index_start[2]+sd_all[n].buffer[4]:
-                                      sd_all[n].index_start[2]+sd_all[n].nodes[2]-sd_all[n].buffer[5]] \
-                                      = pm_all[n].grid[sd_all[n].buffer[0]:
-                                        pm_all[n].grid.shape[0] - sd_all[n].buffer[1],
-                                        sd_all[n].buffer[2]:
-                                        pm_all[n].grid.shape[1] - sd_all[n].buffer[3],
-                                        sd_all[n].buffer[4]:
-                                        pm_all[n].grid.shape[2] - sd_all[n].buffer[5]]
-
-                            n = n + 1
-
-                diffGrid = grid_out-checkGrid
-                print("L2 Grid Error Norm",np.linalg.norm(diffGrid) )
-
-
-                # checkEDT = np.zeros_like(realDT)
-                # n = 0
-                # for i in range(0,subdomains[0]):
-                #     for _ in range(0,subdomains[1]):
-                #         for _ in range(0,subdomains[2]):
-                #             checkEDT[sd_all[n].index_start[0]+sd_all[n].buffer[0]:
-                #                      sd_all[n].index_start[0]+sd_all[n].nodes[0]-sd_all[n].buffer[1],
-                #                      sd_all[n].index_start[1]+sd_all[n].buffer[2]: 
-                #                      sd_all[n].index_start[1]+sd_all[n].nodes[1]-sd_all[n].buffer[3],
-                #                      sd_all[n].index_start[2]+sd_all[n].buffer[4]: 
-                #                      sd_all[n].index_start[2]+sd_all[n].nodes[2]-sd_all[n].buffer[5]] \
-                #                      = edt[sd_all[n].buffer[0]:
-                #                        pm_all[n].grid.shape[0] - sd_all[n].buffer[1],
-                #                        sd_all[n].buffer[2]:
-                #                        pm_all[n].grid.shape[1] - sd_all[n].buffer[3],
-                #                        sd_all[n].buffer[4]:
-                #                        pm_all[n].grid.shape[2] - sd_all[n].buffer[5]]
-                #             n = n + 1
+                print("L2 Grid Error Norm",np.linalg.norm(grid_out-pm_grid_all) )
 
                 diffEDT = np.abs(realDT-edt_all)
                 diffEDT2 = np.abs(edtV-edt_all)
@@ -198,10 +150,6 @@ def my_function():
                 print("LI EDT Error Norm",np.max(diffEDT) )
                 print("LI EDT Error Norm 2",np.max(diffEDT2) )
                 print("LI EDT Error Norm 2",np.max(realDT-edtV) )
-
-
-                pmmoto.io.save_grid_data_proc("dataOut/gridTrueFix",x,y,z,diffEDT)
-                pmmoto.io.save_grid_data_proc("dataOut/gridAllEDT",x,y,z,edt_all)
 
 
 if __name__ == "__main__":
