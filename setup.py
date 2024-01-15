@@ -88,12 +88,9 @@ cmdclass = {}
 ext_modules = []
 
 ext_modules += [
-    Extension("pmmoto.domain_generation.domainGeneration",
-              ["pmmoto/domain_generation/domainGeneration.pyx"],
-              include_dirs=['pmmotodomain_generation/'],language='c++'),
-    Extension("pmmoto.filters.distance",
-              ["pmmoto/filters/distance.pyx"],
-              include_dirs=['pmmoto/filters']),
+    Extension("pmmoto.domain_generation._domainGeneration",
+              ["pmmoto/domain_generation/_domainGeneration.pyx"],
+              include_dirs=['pmmoto/domain_generation/'],language='c++'),
     Extension("pmmoto.core.nodes",
               ["pmmoto/core/nodes.pyx"],
               include_dirs=['pmmoto/core']),

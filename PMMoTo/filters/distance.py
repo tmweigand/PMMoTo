@@ -1,6 +1,4 @@
 import numpy as np
-cimport numpy as cnp
-cnp.import_array()
 from mpi4py import MPI
 from pykdtree.kdtree import KDTree
 ### if using WSL, uncomment line below. 
@@ -23,7 +21,6 @@ def fixInterface(edt,subdomain,solids,external_solids):
     Loop through faces and correct distance with external_solids
     """
     visited = np.zeros_like(edt,dtype=np.uint8)
-
     for face in subdomain.faces:
         if face.n_proc > -1:
             arg = face.info['argOrder']
@@ -42,20 +39,19 @@ def fixInterface(edt,subdomain,solids,external_solids):
             tree = KDTree(data)
             face_solids = solids[np.where(solids[:,3]==face.ID)][:,0:3]
             edt,visited = nodes.fixInterfaceCalc(tree,
-                                                    edt.shape[arg[0]],
-                                                    face.info['dir'],
-                                                    face_solids,
-                                                    edt,
-                                                    visited,
-                                                    min(subdomain.domain.voxel),
-                                                    subdomain.coords,
-                                                    arg)
+                                                 edt.shape[arg[0]],
+                                                 face.info['dir'],
+                                                 face_solids,
+                                                 edt,
+                                                 visited,
+                                                 min(subdomain.domain.voxel),
+                                                 subdomain.coords,
+                                                 arg)
     return edt
 
 
 def calc_edt(subdomain,grid):
-    """
-
+    """Calculate the Euclidean Distance Transform from 0 voxels.
     """
     size = subdomain.domain.num_subdomains
     edt = edt3d(grid, anisotropy = subdomain.domain.voxel)

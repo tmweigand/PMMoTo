@@ -464,7 +464,7 @@ def fixInterfaceCalc(tree,
     """
     Uses the solids from neighboring processes to determine if distance is less than determined
     """
-    cdef int i,l,m,n,l_start,l_end,endL
+    cdef int i,l,m,n,l_start,l_end,count,end_count
     cdef float max_dist,d
 
     _orderG = np.ones((1,3), dtype=np.double) #Global Order
@@ -488,29 +488,27 @@ def fixInterfaceCalc(tree,
 
         l = l_start
         if _faceSolids[i,argOrder[0]] < 0:
-            endL = l_end
+            end_count = np.abs(l_end-l)
         else:
-            endL = _faceSolids[i,argOrder[0]]
+            end_count = np.abs(_faceSolids[i,argOrder[0]]-l)
 
-        changed = True
         m = _faceSolids[i,argOrder[1]]
         n = _faceSolids[i,argOrder[2]]
-
         _orderG[0,argOrder[1]] = c1[m]
         _orderG[0,argOrder[2]] = c2[n]
         orderL[argOrder[1]] = m
         orderL[argOrder[2]] = n
 
-        while changed and l < endL:
+        changed = True
+        count = 0
+        while changed and count < end_count:
 
             _orderG[0,argOrder[0]] = c0[l]
             orderL[argOrder[0]] = l
             max_dist = _EDT[orderL[0],orderL[1],orderL[2]]
             
             if (max_dist > min_dist):
-
                 d,ind = tree.query(_orderG,distance_upper_bound = max_dist)
-
                 if d < max_dist:
                     _EDT[orderL[0],orderL[1],orderL[2]] = d
                     changed = True
@@ -519,6 +517,7 @@ def fixInterfaceCalc(tree,
                 elif _visited[orderL[0],orderL[1],orderL[2]] == 0:
                     changed = False
 
-            l = l + dir
+            l += dir
+            count += 1
 
     return _EDT,_visited

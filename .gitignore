@@ -9,7 +9,7 @@
 profile_out.*
 *.csv
 *.out
-
+*.pyc
 manuscript/
 logo/
 ICOM/

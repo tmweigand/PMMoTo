@@ -13,7 +13,7 @@ cnp.import_array()
 __all__ = [
   "gen_domain_sphere_pack",
   "gen_domain_verlet_sphere_pack",
-  "domainGenINK"
+  "gen_domain_inkbottle"
 ]
 
 cdef vector[verlet_sphere] gen_verlet_list(double cutoff, double x, double y, double z, double[:,:] spheres):
@@ -159,21 +159,21 @@ def gen_domain_verlet_sphere_pack(list verlet_domains, double[:] x, double[:] y,
 def gen_domain_inkbottle(double[:] x, double[:] y, double[:] z):
   """
   """
-    cdef int NX = x.shape[0]
-    cdef int NY = y.shape[0]
-    cdef int NZ = z.shape[0]
-    cdef int i, j, k
-    cdef double r
+  cdef int NX = x.shape[0]
+  cdef int NY = y.shape[0]
+  cdef int NZ = z.shape[0]
+  cdef int i, j, k
+  cdef double r
 
-    grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
-    cdef cnp.uint8_t [:,:,:] _grid
-    _grid = grid
+  grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+  cdef cnp.uint8_t [:,:,:] _grid
+  _grid = grid
 
-    for i in range(0,NX):
-      for j in range(0,NY):
-        for k in range(0,NZ):
-          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-          if y[j]*y[j] + z[k]*z[k] <= r*r:
-            _grid[i,j,k] = 1
+  for i in range(0,NX):
+    for j in range(0,NY):
+      for k in range(0,NZ):
+        r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+        if y[j]*y[j] + z[k]*z[k] <= r*r:
+          _grid[i,j,k] = 1
 
-    return grid
+  return grid

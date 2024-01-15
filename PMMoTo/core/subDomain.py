@@ -1,13 +1,17 @@
 """Module for PMMoTO  subDomains."""
 import numpy as np
 from mpi4py import MPI
+from . import utils
 from . import Orientation
 from . import Domain
 from . import porousMedia
+from pmmoto.io import dataRead
 
 comm = MPI.COMM_WORLD
 
-__all__ = ["genDomainSubDomain"]
+__all__ = [
+    "initialize",
+    ]
 
 class Subdomain(object):
     def __init__(self,ID,subdomains,domain):
@@ -65,13 +69,17 @@ class Subdomain(object):
             if self.boundary_ID[f] == 0:
                 self.buffer[f] = 0
 
-    def get_coordinates(self,pad):
+    def get_coordinates(self,pad = None):
         """
         Determine actual coordinate information (x,y,z)
         If boundaryID and Domain.boundary == 0, buffer is not added
         Everywhere else a buffer is added
         Pad is also Reservoir Size for mulitPhase 
         """
+
+        if pad is None:
+            pad = self.buffer
+
         sd_size = [None,None]
         for n in range(self.domain.dims):
     
@@ -134,8 +142,8 @@ class Subdomain(object):
                 self.index_start[n_face] = self.index_start[n_face] + res_size
 
         self.size_subdomain = [x[-1] - x[0],
-                              y[-1] - y[0],
-                              z[-1] - z[0]]
+                               y[-1] - y[0],
+                               z[-1] - z[0]]
         
         ### Correct Domain.nodes for multiPhase Reservoir
         for n_face,in_face in enumerate(inlet):
@@ -143,7 +151,15 @@ class Subdomain(object):
                 self.domain.nodes[n_face] += res_size
             if in_face[1] > 0:
                 self.domain.nodes[n_face] += res_size
-        
+
+    def update_domain_size(self,domain_data):
+        """Use data from io to set domain size and determine voxel size and coordinates
+        """
+        self.domain.size_domain = domain_data
+        self.domain.get_voxel_size()
+        self.get_coordinates()
+
+
     def gather_cube_info(self):
         """
         Collect all necessary infromation for faces, edges, and corners as well as all neighbors
@@ -236,67 +252,24 @@ class Subdomain(object):
 
             self.corners[n] = Orientation.Corner(n,n_proc,boundary,periodic,global_boundary,external_faces,external_edges)
 
-    # def trim_sphere_data(self,spheres):
-    #     """
-    #     Trim input domain generation data so only objects within subDomain bounds are included. 
-    #     A verlet list of sorts. 
-    #     """
-    #     num_spheres = spheres.shape[1]
-    #     keep = []
-    #     print(self.coords[0][0],self.coords[0][-1])
-    #     for i in range(num_spheres):
-    #         x = spheres[0,i]
-    #         y = spheres[1,i]
-    #         z = spheres[2,i]
-    #         r = spheres[3,i]
-    #         r_sqrt = np.sqrt(spheres[3,i])
-    #         x_check = self.coords[0][0] - self.Domain.voxel[0] - r_sqrt <= x <= self.coords[0][-1] + self.Domain.voxel[0] + r_sqrt
-    #         y_check = self.coords[1][0] - self.Domain.voxel[1] - r_sqrt <= y <= self.coords[1][-1] + self.Domain.voxel[1] + r_sqrt
-    #         z_check = self.coords[2][0] - self.Domain.voxel[2] - r_sqrt <= z <= self.coords[2][-1] + self.Domain.voxel[2] + r_sqrt
-    #         #if x_check and y_check and z_check:
-    #         keep.append([x,y,z,r])
-    #     return np.array(keep)
 
-
-def initialize(rank,subdomains,nodes,boundaries):
+def initialize(rank,mpi_size,subdomains,nodes,boundaries,inlet = None,outlet = None):
     """
     Initialize PMMoTo domain and subdomain classes and check for valid inputs. 
     """
-    #check_inputs()
 
-    domain = Domain.Domain(nodes = nodes, subdomains = subdomains, boundaries = boundaries)
+    utils.check_inputs(mpi_size,subdomains,nodes,boundaries,inlet,outlet)
+
+    domain = Domain.Domain(nodes = nodes,
+                           subdomains = subdomains,
+                           boundaries = boundaries,
+                           inlet = inlet,
+                           outlet = outlet)
+    
     domain.get_subdomain_nodes()
 
     subdomain = Subdomain(domain = domain, ID = rank, subdomains = subdomains)
     subdomain.get_info()
     subdomain.gather_cube_info()
 
-    return domain,subdomain
-
-def genDomainSubDomain(rank,size,subdomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead,dataReadkwargs = None):
-
-            
-    ### Get Domain INFO for All Procs ###
-    if file is not None:
-        if dataReadkwargs is None:
-            domainSize,sphereData = dataRead(file)
-        else:
-            domainSize,sphereData = dataRead(file,dataReadkwargs)
-    if file is None:
-        domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
-    domain = Domain.Domain(nodes = nodes, size_domain = domainSize, subdomains = subdomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
-    domain.get_voxel_size()
-    domain.get_subdomain_nodes()
-
-    sD = Subdomain(domain = domain, ID = rank, subdomains = subdomains)
-    sD.get_info()
-    sD.get_coordinates(sD.buffer)
-    sD.gather_cube_info()
-    
-    if file is not None:
-        #sphereData = sD.trim_sphere_data(sphereData)
-        pm = porousMedia.gen_pm(sD,dataFormat,sphereData,res_size = 0)
-    else:
-        pm = porousMedia.gen_pm(sD,dataFormat)
-
-    return domain,sD,pm
+    return subdomain
