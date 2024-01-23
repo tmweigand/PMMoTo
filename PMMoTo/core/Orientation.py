@@ -1,6 +1,24 @@
 import numpy as np
-cimport numpy as cnp
-cimport cython
+
+def get_boundary_ID(boundary_ID):
+    """
+    Determine boundary ID
+    Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
+    Output: boundary_ID
+    """
+    params = [[0, 9, 18],[0, 3, 6],[0, 1, 2]]
+
+    ID = 0
+    for n in range(0,3):
+        if boundary_ID[n] < 0:
+            ID += params[n][0]
+        elif boundary_ID[n] > 0:
+            ID += params[n][1]
+        else:
+            ID += params[n][2]
+
+    return ID
+
 
 class CubeFeature(object):
     def __init__(self,ID,n_proc,boundary,periodic):
@@ -10,20 +28,20 @@ class CubeFeature(object):
         self.boundary = boundary
         self.periodic_correction = (0,0,0)
 
-    def get_periodic_correction(self,feature):
+    def get_periodic_correction(self):
         """
         Determin spatial correction factor if periodic
         """
         if self.periodic:
-            oppID = self.info['oppIndex']
-            self.periodic_correction = self.periodic#feature[oppID]['ID']
+            self.periodic_correction = self.periodic
 
 class Face(CubeFeature):
     def __init__(self,ID,n_proc,boundary,periodic):
         super().__init__(ID,n_proc,boundary,periodic)
         self.info = faces[ID]
+        self.feature_ID = get_boundary_ID(self.info['ID'])
         self.opp_info = faces[faces[ID]['oppIndex']]
-        self.get_periodic_correction(faces)
+        self.get_periodic_correction()
         
 
 class Edge(CubeFeature):
@@ -32,16 +50,17 @@ class Edge(CubeFeature):
         self.global_boundary = global_boundary
         self.external_faces = external_faces
         self.info = edges[ID]
+        self.feature_ID = get_boundary_ID(self.info['ID'])
         self.opp_info = edges[edges[ID]['oppIndex']]
-        self.get_periodic_correction(edges)
+        self.get_periodic_correction()
         self.extend = [[0,0],[0,0],[0,0]]
 
     def get_extension(self,extend_domain,bounds):
         """
         Determine the span of the feature based on extend
         """
-        faces  = edges[self.ID]['ID']
-        for n,f in enumerate(faces):
+        _faces = edges[self.ID]['ID']
+        for n,f in enumerate(_faces):
             if f > 0:
                 self.extend[n][0] = bounds[n][-1] - extend_domain[n]
                 self.extend[n][1] = bounds[n][-1]
@@ -60,8 +79,9 @@ class Corner(CubeFeature):
         self.external_faces = external_faces
         self.external_edges = external_edges
         self.info = corners[ID]
+        self.feature_ID = get_boundary_ID(self.info['ID'])
         self.opp_info = corners[corners[ID]['oppIndex']]
-        self.get_periodic_correction(corners)
+        self.get_periodic_correction()
         self.extend = [[0,0],[0,0],[0,0]]
 
     def get_extension(self,extend_domain,bounds):
@@ -201,91 +221,10 @@ allFaces = [[0, 2, 6, 8, 18, 20, 24],         # 0
             [24],                             # 24
             [25]]                             # 25
 
-cdef class cOrientation(object):
-    cdef public int num_faces,num_edges,num_corners,num_neighbors
-    cdef public int[26][5] directions
-    cdef public int[6][4] face_info
-    def __cinit__(self):
-        self.num_faces = 6
-        self.num_edges = 12
-        self.num_corners = 8
-        self.num_neighbors = 26
-        self.directions = [[-1,-1,-1,  0, 13],  #0
-                           [-1,-1, 1,  1, 12],  #1
-                           [-1,-1, 0,  2, 14],  #2
-                           [-1, 1,-1,  3, 10],  #3
-                           [-1, 1, 1,  4,  9],  #4
-                           [-1, 1, 0,  5, 11],  #5
-                           [-1, 0,-1,  6, 16],  #6
-                           [-1, 0, 1,  7, 15],  #7
-                           [-1, 0, 0,  8, 17],  #8
-                           [ 1,-1,-1,  9,  4],  #9
-                           [ 1,-1, 1, 10,  3],  #10
-                           [ 1,-1, 0, 11,  5],  #11
-                           [ 1, 1,-1, 12,  1],  #12
-                           [ 1, 1, 1, 13,  0],  #13
-                           [ 1, 1, 0, 14,  2],  #14
-                           [ 1, 0,-1, 15,  7],  #15
-                           [ 1, 0, 1, 16,  6],  #16
-                           [ 1, 0, 0, 17,  8],  #17
-                           [ 0,-1,-1, 18, 22],  #18
-                           [ 0,-1, 1, 19, 21],  #19
-                           [ 0,-1, 0, 20, 23],  #20
-                           [ 0, 1,-1, 21, 19],  #21
-                           [ 0, 1, 1, 22, 18],  #22
-                           [ 0, 1, 0, 23, 20],  #23
-                           [ 0, 0,-1, 24, 25],  #24
-                           [ 0, 0, 1, 25, 24]]  #25
-        self.face_info = [[0, 1, 2, 1],
-                          [0, 1, 2,-1],
-                          [1, 0, 2, 1],
-                          [1, 0, 2,-1],
-                          [2, 0, 1, 1],
-                          [2, 0, 1,-1]]
-
-
-
-    @cython.boundscheck(False)  # Deactivate bounds checking
-    @cython.wraparound(False)   # Deactivate negative indexing.
-    cpdef int getBoundaryIDReference(self,cnp.ndarray[cnp.int8_t, ndim=1] boundary_ID):
-        """
-        Determining boundary ID
-        Input: boundary_ID[3] corresponding to [x,y,z] and values range from [-1,0,1]
-        Output: boundary_ID
-        """
-        cdef int cI,cJ,cK
-        cdef int i,j,k
-        i = boundary_ID[0]
-        j = boundary_ID[1]
-        k = boundary_ID[2]
-
-        if i < 0:
-            cI = 0
-        elif i > 0:
-            cI = 9
-        else:
-            cI = 18
-
-        if j < 0:
-            cJ = 0
-        elif j > 0:
-            cJ = 3
-        else:
-            cJ = 6
-
-        if k < 0:
-            cK = 0
-        elif k > 0:
-            cK = 1
-        else:
-            cK = 2
-
-        return cI+cJ+cK
-        
 
 def get_index_ordering(inlet,outlet):
     """
-    This function rearranges the loopInfo ordering so
+    This function rearranges the loop_info ordering so
     the inlet and outlet faces are first. 
     """
     order = [0,1,2]

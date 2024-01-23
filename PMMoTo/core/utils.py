@@ -121,6 +121,15 @@ def unpad(grid,pad):
                     pad[4]:_dim[2]-pad[5]]
     return np.ascontiguousarray(grid_out)
 
+
+def constant_pad(grid,pad,pad_value):
+    """
+    Pad a grid with a constant value 
+    """
+    grid = np.pad(grid,((pad[0], pad[1]),(pad[2], pad[3]),(pad[4], pad[5])),
+                  'constant', constant_values = pad_value)
+    return grid
+
 def own_grid(grid,own):
     """
     Pass array with only nodes owned py that process
@@ -130,6 +139,22 @@ def own_grid(grid,own):
                      own[4]:own[5]]
     
     return np.ascontiguousarray(grid_out)
+
+def phases_exists(grid,phase,own_nodes):
+    """
+    Determine if phase exists in grid
+    """
+    phase_exists = False
+    _own_grid = own_grid(grid,own_nodes)
+    local_count = np.count_nonzero( _own_grid == phase)
+    global_count = comm.allreduce(local_count,op = MPI.SUM )
+
+    if global_count > 0:
+        phase_exists =  True
+
+    return phase_exists
+
+
 
 def global_grid(grid,index,local_grid):
     """Take local grid from eachj process and combine into global grid

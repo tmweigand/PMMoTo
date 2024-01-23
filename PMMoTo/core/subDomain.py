@@ -64,7 +64,7 @@ class Subdomain(object):
             if self.boundary_ID[f] == 0:
                 self.buffer[f] = 0
 
-    def get_coordinates(self, pad = None, get_coords = True):
+    def get_coordinates(self, pad = None, get_coords = True, multiphase = False):
         """
         Determine actual coordinate information (x,y,z)
         If boundaryID and Domain.boundary == 0, buffer is not added
@@ -98,57 +98,12 @@ class Subdomain(object):
                 self.size_subdomain[n] = sd_size[1] - sd_size[0]
                 self.bounds[n] = [sd_size[0],sd_size[1]]
 
-    def get_coordinates_mulitphase(self,pad,inlet,res_size):
-        """
-        Determine actual coordinate information (x,y,z)
-        If boundaryID and Domain.boundary == 0, buffer is not added
-        Everywhere else a buffer is added
-        Pad is also Reservoir Size for mulitPhase 
-        """
-
-        x = np.zeros([self.nodes[0] + pad[0] + pad[1]],dtype = np.double)
-        y = np.zeros([self.nodes[1] + pad[2] + pad[3]],dtype = np.double)
-        z = np.zeros([self.nodes[2] + pad[4] + pad[5]],dtype = np.double)
-
-        for c,i in enumerate(range(-pad[0], self.nodes[0] + pad[1])):
-            x[c] = self.domain.voxel[0]/2 + self.domain.size_domain[0,0] + (self.index_start[0] + i)*self.domain.voxel[0]
-
-        for c,j in enumerate(range(-pad[2], self.nodes[1] + pad[3])):
-            y[c] = self.domain.voxel[1]/2 + self.domain.size_domain[1,0] + (self.index_start[1] + j)*self.domain.voxel[1]
-
-        for c,k in enumerate(range(-pad[4], self.nodes[2] + pad[5])):
-            z[c] = self.domain.voxel[2]/2 + self.domain.size_domain[2,0] + (self.index_start[2] + k)*self.domain.voxel[2]
-
-
-        self.coords = [x,y,z]
-
-        self.index_own_nodes[0] = pad[0] + self.index_own_nodes[0]
-        self.index_own_nodes[1] = self.index_own_nodes[0] + self.own_nodes[0]
-        self.index_own_nodes[2] = pad[2] + self.index_own_nodes[2]
-        self.index_own_nodes[3] = self.index_own_nodes[2] + self.own_nodes[1]
-        self.index_own_nodes[4] = pad[4] + self.index_own_nodes[4]
-        self.index_own_nodes[5] = self.index_own_nodes[4] + self.own_nodes[2]
-
-        self.nodes[0] = self.nodes[0] + pad[0] + pad[1]
-        self.nodes[1] = self.nodes[1] + pad[2] + pad[3]
-        self.nodes[2] = self.nodes[2] + pad[4] + pad[5]
-
-        for n_face,in_face in enumerate(inlet):
-            if pad[n_face*2] != 0 or pad[n_face*2+1] != 0:
-                pass
-            elif in_face[0] > 0:
-                self.index_start[n_face] = self.index_start[n_face] + res_size
-
-        self.size_subdomain = [x[-1] - x[0],
-                               y[-1] - y[0],
-                               z[-1] - z[0]]
-        
-        ### Correct Domain.nodes for multiPhase Reservoir
-        for n_face,in_face in enumerate(inlet):
-            if in_face[0] > 0:
-                self.domain.nodes[n_face] += res_size
-            if in_face[1] > 0:
-                self.domain.nodes[n_face] += res_size
+            ### Not Sure why I have this. Commenting out in case useful
+            if multiphase:
+                if pad[n*2] > 0:
+                    self.domain.nodes[n] += pad[n*2]
+                if pad[n*2+1] > 0:
+                    self.domain.nodes[n] += pad[n*2+1]
 
     def update_domain_size(self,domain_data):
         """Use data from io to set domain size and determine voxel size and coordinates

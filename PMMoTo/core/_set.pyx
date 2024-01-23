@@ -7,8 +7,9 @@ cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
+from . import _Orientation
 from . import Orientation
-cOrient = Orientation.cOrientation()
+cOrient = _Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
@@ -16,7 +17,8 @@ numNeighbors = cOrient.num_neighbors
 
 class Set(object):
     def __init__(self, 
-                localID = 0, 
+                localID = 0,
+                phase = 0, 
                 proc_ID = 0,
                 inlet = False, 
                 outlet = False, 
@@ -24,6 +26,7 @@ class Set(object):
                 numNodes = 0, 
                 numBoundaryNodes = 0):    
       self.localID = localID   
+      self.phase = phase
       self.proc_ID = proc_ID
       self.inlet = inlet
       self.outlet = outlet
@@ -33,7 +36,7 @@ class Set(object):
       self.numBoundaries  = 0
       self.numGlobalNodes = numNodes
       self.globalID = 0
-      self.nodes = np.zeros([numNodes,3],dtype=np.int64) #i,j,k
+      self.nodes = np.zeros([numNodes,3],dtype=np.int64) #[i,j,k]
       self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
       self.boundaryFaces = np.zeros(26,dtype=np.uint8)
       self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)

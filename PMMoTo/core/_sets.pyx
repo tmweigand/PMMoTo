@@ -18,60 +18,83 @@ from libcpp cimport bool
 from libcpp.map cimport map
 from libcpp.unordered_map cimport unordered_map
 
-from . import Orientation
-cOrient = Orientation.cOrientation()
+from . import _Orientation
+cOrient = _Orientation.cOrientation()
 cdef int[26][5] directions
-cdef int numNeighbors
+cdef int num_neighbors
 directions = cOrient.directions
-numNeighbors = cOrient.num_neighbors
+num_neighbors = cOrient.num_neighbors
 
 class Sets(object):
   def __init__(self,
                  sets = None,
-                 setCount = 0,
-                 subDomain = None):
+                 set_count = 0,
+                 subdomain = None):
     self.sets = sets
-    self.setCount = setCount
-    self.subDomain = subDomain
+    self.set_count = set_count
+    self.subdomain = subdomain
     self.boundary_sets = []
-    self.boundarySetCount = 0
-    self.numConnections = 0
-    self.localToGlobal = {}
-    self.globalToLocal = {}
+    self.boundary_set_count = 0
+    self.num_connections = 0
+    self.local_to_global = {}
+    self.global_to_local = {}
 
   def get_boundary_sets(self):
     """
-    Get the Sets the are on a valid subDomain Boundary.
+    Get the Sets the are on a valid subdomain boundary.
     Organize data so sending procID, boundary nodes.
     """
 
-    nI = self.subDomain.subID[0] + 1  # PLUS 1 because lookUpID is Padded
-    nJ = self.subDomain.subID[1] + 1  # PLUS 1 because lookUpID is Padded
-    nK = self.subDomain.subID[2] + 1  # PLUS 1 because lookUpID is Padded
-
     for set in self.sets:
-      procList = []
-      if set.boundary:
+      set.get_set_neighbors()
+      print(set.subdomain_data)
 
-        for face in range(0,numNeighbors):
-          if set.boundaryFaces[face] > 0:
-            i = directions[face][0]
-            j = directions[face][1]
-            k = directions[face][2]
 
-            neighborProc = self.subDomain.lookUpID[i+nI,j+nJ,k+nK]
-            if neighborProc < 0:
-              set.boundaryFaces[face] = 0
-            else:
-              if neighborProc not in procList:
-                procList.append(neighborProc)
 
-        if (np.sum(set.boundaryFaces) == 0):
-          set.boundary = False
-        else:
-          self.boundarySetCount += 1
-          set.neighborProcID = procList
-          self.boundary_sets.append( c_convert_boundary_set(set) )
+    #   proc_list = []
+    #   for face in self.subdomain.faces:
+    #     if set.subdomain_data.index[face.feature_ID]:
+    #       if face.n_proc < 0:
+    #         set.subdomain_data.index[face.feature_ID] = False
+    #       elif face.n_proc != self.subdomain.ID:
+    #         if face.n_proc not in proc_list:
+    #           proc_list.append(face.n_proc)
+    
+    # print(proc_list)
+
+
+
+
+
+
+
+    # nI = self.subDomain.sub_ID[0] + 1  # PLUS 1 because lookUpID is Padded
+    # nJ = self.subDomain.sub_ID[1] + 1  # PLUS 1 because lookUpID is Padded
+    # nK = self.subDomain.sub_ID[2] + 1  # PLUS 1 because lookUpID is Padded
+
+    # for set in self.sets:
+    #   proc_list = []
+    #   if set.subdomain_data.boundary:
+
+    #     for face in range(0,num_neighbors):
+    #       if set.subdomain_data.index[face]:
+    #         i = directions[face][0]
+    #         j = directions[face][1]
+    #         k = directions[face][2]
+
+    #         neighborProc = self.subDomain.lookUpID[i+nI,j+nJ,k+nK]
+    #         if neighborProc < 0:
+    #           set.boundaryFaces[face] = 0
+    #         else:
+    #           if neighborProc not in proc_list:
+    #             proc_list.append(neighborProc)
+
+    #     if (np.sum(set.boundaryFaces) == 0):
+    #       set.boundary = False
+    #     else:
+    #       self.boundary_set_count += 1
+    #       set.neighborProcID = proc_list
+    #       self.boundary_sets.append( c_convert_boundary_set(set) )
 
   def pack_boundary_data(self):
     """
@@ -388,49 +411,3 @@ class Sets(object):
         self.localToGlobal[s.localID] = self.local_set_ID_start
         self.globalToLocal[self.local_set_ID_start] = [s.localID]
         self.local_set_ID_start += 1
-
-
-def collect_sets(grid,phaseID,inlet,outlet,loopInfo,subdomain):
-
-  rank = subdomain.ID
-  size = subdomain.size
-
-  Nodes  = nodes.get_node_info(rank,grid,phaseID,inlet,outlet,subdomain.domain,loopInfo,subdomain)
-  Sets = nodes.get_connected_sets(subdomain,grid,phaseID,Nodes)
-
-
-  if size > 1:
-
-    ### Grab boundary sets and send to neighboring procs
-    Sets.get_boundary_sets()
-    send_boundary_data = Sets.pack_boundary_data()
-    recv_boundary_data = communication.set_COMM(subdomain,send_boundary_data)
-    n_boundary_data = Sets.unpack_boundary_data(recv_boundary_data)
-
-    ### Match boundary sets from neighboring procs and send to root for global ID generation
-    all_matches = Sets.match_boundary_sets(n_boundary_data)
-    Sets.get_num_global_nodes(all_matches,n_boundary_data)
-    send_matched_set_data = Sets.pack_matched_sets(all_matches,n_boundary_data)
-    recv_matched_set_data = comm.gather(send_matched_set_data, root=0)
-
-   ### Connect sets that are not direct neighbors 
-    if subdomain.ID == 0:
-      all_matched_sets,index_convert = Sets.unpack_matched_sets(recv_matched_set_data)
-      all_matched_sets,total_boundary_sets = Sets.organize_matched_sets(all_matched_sets,index_convert)
-      all_matched_sets = Sets.repack_matched_sets(all_matched_sets)
-    else:
-      all_matched_sets = None
-    global_matched_sets = comm.scatter(all_matched_sets, root=0)
-
-    ### Generate and Update global ID information
-    global_ID_data = comm.gather([Sets.setCount,Sets.boundarySetCount], root=0)
-    if subdomain.ID == 0:
-        local_set_ID_start = Sets.organize_global_ID(global_ID_data,total_boundary_sets)
-    else:
-        local_set_ID_start = None
-    Sets.local_set_ID_start = comm.scatter(local_set_ID_start, root=0)
-
-    ### Update IDs
-    Sets.update_globalSetID(global_matched_sets)
-
-  return Sets

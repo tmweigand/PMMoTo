@@ -37,11 +37,8 @@ def my_function():
 
     refactor_procs = [2,2,2]
     sd_all,local_grid = pmmoto.utils.deconstruct_grid(sd,pm.grid,refactor_procs)
-
-    num_procs = np.prod(refactor_procs)
-    for n in range(0,num_procs):
-        file_out = "dataOut/decomposed_grid"+str(n)
-        pmmoto.io.save_grid_data_proc(file_out,sd_all[n].coords,local_grid[n])
+    file_out = "dataOut/decomposed_grid"
+    pmmoto.io.save_grid_data_proc(file_out,sd_all,local_grid)
 
 
 

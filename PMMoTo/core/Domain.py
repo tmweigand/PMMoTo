@@ -6,7 +6,7 @@ class Domain(object):
     """
     def __init__(self,
                  nodes = [1,1,1],
-                 size_domain = [[0,1],[0,1],[0,1]],
+                 size_domain = np.array([[0,1],[0,1],[0,1]]),
                  subdomains = [1,1,1],
                  boundaries = [[0,0],[0,0],[0,0]],
                  inlet = [[0,0],[0,0],[0,0]],

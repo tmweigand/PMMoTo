@@ -7,26 +7,28 @@ cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
-from . import set
-from . import sets
+from . import _set
+from . import _sets
 from . import Orientation
-cOrient = Orientation.cOrientation()
+from . import _Orientation
+cOrient = _Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors
 directions = cOrient.directions
 numNeighbors = cOrient.num_neighbors
 
 
+
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
+def get_node_info(grid,phase,inlet,outlet,domain,loop_info,subDomain):
   """
   Gather information for the nodes. Loop through internal nodes first and
   then go through boundaries.
 
   Input: Binary grid and Domain,Subdomain,Orientation information,indexOrder
 
-  IndexOrder arranges the ordering of loopInfo so inlet and outlet faces 
+  IndexOrder arranges the ordering of loop_info so inlet and outlet faces 
   are first to ensure optimal looping and correct boundary values
 
   Output:
@@ -36,7 +38,7 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
   nodeDirectionsIndex: index of availble directions[26]
   """
 
-  numNodes = np.sum(grid)
+  numNodes = np.count_nonzero(grid ==  phase)
   nodeInfo = np.zeros([numNodes,7],dtype=np.int8)
   nodeInfo[:,3] = -1 #Initialize BoundaryID
   nodeInfo[:,5] = 25 #Initialize lastDirection
@@ -84,23 +86,23 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
   cdef cnp.uint8_t [:,:,:] _ind
   _ind = gridP
 
-  cdef cnp.int64_t [:,:,:] _loopInfo
-  _loopInfo = loopInfo
+  cdef cnp.int64_t [:,:,:] _loop_info
+  _loop_info = loop_info
 
   cdef int dN0,dN1,dN2
-  dN0 = Domain.nodes[0]
-  dN1 = Domain.nodes[1]
-  dN2 = Domain.nodes[2]
+  dN0 = domain.nodes[0]
+  dN1 = domain.nodes[1]
+  dN2 = domain.nodes[2]
 
   # Loop through Boundary Faces to get nodeInfo and nodeIndex
   c = 0
   for fIndex in range(0,numFaces):
-    iMin = _loopInfo[fIndex][0][0]
-    iMax = _loopInfo[fIndex][0][1]
-    jMin = _loopInfo[fIndex][1][0]
-    jMax = _loopInfo[fIndex][1][1]
-    kMin = _loopInfo[fIndex][2][0]
-    kMax = _loopInfo[fIndex][2][1]
+    iMin = _loop_info[fIndex][0][0]
+    iMax = _loop_info[fIndex][0][1]
+    jMin = _loop_info[fIndex][1][0]
+    jMax = _loop_info[fIndex][1][1]
+    kMin = _loop_info[fIndex][2][0]
+    kMax = _loop_info[fIndex][2][1]
     bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
     sInlet = inlet[fIndex]
     sOutlet = outlet[fIndex]
@@ -158,12 +160,12 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
             c = c + 1
 
   # Loop through internal nodes to get nodeInfo and nodeIndex
-  iMin = _loopInfo[numFaces][0][0]
-  iMax = _loopInfo[numFaces][0][1]
-  jMin = _loopInfo[numFaces][1][0]
-  jMax = _loopInfo[numFaces][1][1]
-  kMin = _loopInfo[numFaces][2][0]
-  kMax = _loopInfo[numFaces][2][1]
+  iMin = _loop_info[numFaces][0][0]
+  iMax = _loop_info[numFaces][0][1]
+  jMin = _loop_info[numFaces][1][0]
+  jMax = _loop_info[numFaces][1][1]
+  kMin = _loop_info[numFaces][2][0]
+  kMax = _loop_info[numFaces][2][1]
   for i in range(iMin,iMax):
     for j in range(jMin,jMax):
       for k in range(kMin,kMax):
@@ -182,12 +184,12 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
   # Loop through boundary faces to get nodeDirections and _nodeDirectionsIndex
   c = 0
   for fIndex in range(numFaces):
-    iMin = _loopInfo[fIndex][0][0]
-    iMax = _loopInfo[fIndex][0][1]
-    jMin = _loopInfo[fIndex][1][0]
-    jMax = _loopInfo[fIndex][1][1]
-    kMin = _loopInfo[fIndex][2][0]
-    kMax = _loopInfo[fIndex][2][1]
+    iMin = _loop_info[fIndex][0][0]
+    iMax = _loop_info[fIndex][0][1]
+    jMin = _loop_info[fIndex][1][0]
+    jMax = _loop_info[fIndex][1][1]
+    kMin = _loop_info[fIndex][2][0]
+    kMax = _loop_info[fIndex][2][1]
     for i in range(iMin,iMax):
       for j in range(jMin,jMax):
         for k in range(kMin,kMax):
@@ -207,12 +209,12 @@ def get_node_info(rank,grid,phase,inlet,outlet,Domain,loopInfo,subDomain):
             c = c + 1
 
   # Loop through internal nodes to get nodeDirections and _nodeDirectionsIndex
-  iMin = _loopInfo[numFaces][0][0]
-  iMax = _loopInfo[numFaces][0][1]
-  jMin = _loopInfo[numFaces][1][0]
-  jMax = _loopInfo[numFaces][1][1]
-  kMin = _loopInfo[numFaces][2][0]
-  kMax = _loopInfo[numFaces][2][1]
+  iMin = _loop_info[numFaces][0][0]
+  iMax = _loop_info[numFaces][0][1]
+  jMin = _loop_info[numFaces][1][0]
+  jMax = _loop_info[numFaces][1][1]
+  kMin = _loop_info[numFaces][2][0]
+  kMax = _loop_info[numFaces][2][1]
   for i in range(iMin,iMax):
    for j in range(jMin,jMax):
      for k in range(kMin,kMax):
@@ -357,7 +359,7 @@ def get_connected_sets(subDomain,grid,phaseID,Nodes):
           ### Add Nodes to Set ###
           ############################
       if numSetNodes > 0:
-        Sets.append(set.Set(localID = setCount,
+        Sets.append(_set.Set(localID = setCount,
                                   proc_ID = rank,
                                   inlet = sInlet,
                                   outlet = sOutlet,
@@ -371,13 +373,13 @@ def get_connected_sets(subDomain,grid,phaseID,Nodes):
       numSetNodes = 0
       numBNodes = 0
 
-  allSets = sets.Sets(Sets,setCount,subDomain)
+  allSets = _sets.Sets(Sets,setCount,subDomain)
 
   return allSets
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-def get_boundary_nodes(grid,phaseID):
+def get_phase_boundary_nodes(grid,phaseID):
   """
   Loop through each face of the subDomain to determine the node closes to the boundary. 
 
