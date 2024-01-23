@@ -31,7 +31,7 @@ def get_set_info(subdomain,
     if it is an subdomain boundary/inlet/outlet set
     and all subdomain boundary IDs whether set is on boundary
 
-    TODO: Clean up0 periodic case, get boundary_ID in one call
+    TODO: Clean up periodic case, get boundary_ID in one call
     """
 
     cdef: 
@@ -92,7 +92,7 @@ def get_set_info(subdomain,
                     for k in range(loop[2][0],loop[2][1]):
                         face_check = True
                         label = grid[i,j,k]
-                        g_index = get_global_index([i,j,k],[ix,iy,iz])
+                        g_index = get_global_index([i,j,k],[dx,dy,dz],[ix,iy,iz])
                         boundary_index = _Orientation.get_boundary_index(g_index,[sx,sy,sz],
                                                                         face_index[0],face_index[1],face_index[2])
                         boundary_ID = _Orientation.get_boundary_ID(boundary_index)
