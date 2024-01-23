@@ -5,46 +5,6 @@ from libcpp.vector cimport vector
 from numpy cimport npy_intp, npy_int8, npy_uint8, uint64_t
 
 
-cdef inline npy_uint8 get_boundary_ID(vector[npy_int8] boundary_ID):
-    """
-    Determine boundary ID
-    Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
-    Output: boundary_ID
-    """
-    cdef int n
-    cdef int[3] b_ID
-    cdef int[3][3] params = [[0, 9, 18],[0, 3, 6],[0, 1, 2]]
-
-    for n in range(0,3):
-        if boundary_ID[n] < 0:
-            b_ID[n] = params[n][0]
-        elif boundary_ID[n] > 0:
-            b_ID[n] = params[n][1]
-        else:
-            b_ID[n] = params[n][2]
-
-    return b_ID[0] + b_ID[1] + b_ID[2]
-
-cdef inline vector[npy_int8] get_boundary_index(vector[uint64_t] index,
-                                         uint64_t[3] shape,
-                                         npy_int8 b_x, npy_int8 b_y, npy_int8 b_z):
-    """
-    Determine the boundary index [i,j,k] -> [-1,0,1]
-    Needed as only looping through faces but want edges and corners
-    """
-    cdef int n
-    cdef npy_int8[3] boundary_index = [b_x,b_y,b_z]
-    cdef vector[npy_int8] index_out
-    for n in range(0,3):
-        index_out.push_back(boundary_index[n])
-        if index[n] < 2:
-            index_out[n] = -1
-        elif index[n] >= shape[n] - 1:
-            index_out[n] = 1
-    return index_out
-
-
-
 cdef class cOrientation(object):
     cdef public int num_faces,num_edges,num_corners,num_neighbors
     cdef public int[26][5] directions

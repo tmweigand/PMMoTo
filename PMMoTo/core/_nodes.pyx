@@ -31,7 +31,7 @@ def get_set_info(subdomain,
     if it is an subdomain boundary/inlet/outlet set
     and all subdomain boundary IDs whether set is on boundary
 
-    TODO: Clean up periodic case, get boundary_ID in one call
+    TODO: get boundary_ID in one call
     """
 
     cdef: 
@@ -46,9 +46,9 @@ def get_set_info(subdomain,
         uint64_t sy = grid.shape[1]
         uint64_t sz = grid.shape[2]
 
-        uint64_t dx = subdomain.domain.nodes[0]
-        uint64_t dy = subdomain.domain.nodes[1]
-        uint64_t dz = subdomain.domain.nodes[2]
+        int64_t dx = subdomain.domain.nodes[0]
+        int64_t dy = subdomain.domain.nodes[1]
+        int64_t dz = subdomain.domain.nodes[2]
 
         int64_t ix = subdomain.index_start[0]
         int64_t iy = subdomain.index_start[1]
@@ -57,7 +57,7 @@ def get_set_info(subdomain,
         int num_faces = Orientation.num_faces
         uint8_t[:,:] boundary_features = np.zeros([n_labels,Orientation.num_neighbors],dtype=np.uint8)
         npy_int8[3] face_index
-        vector[uint64_t] g_index
+        vector[int64_t] g_index
         uint64_t g_ID,l_ID
 
     for n in range(0,n_labels):
@@ -70,37 +70,18 @@ def get_set_info(subdomain,
         loop = loop_info[n_face]
         face_index = _Orientation.face_index[n_face]
         face_check = False
-        if subdomain.boundary_ID[n_face] == 2: #Periodic Face
-            for i in range(loop[0][0],loop[0][1]):
-                for j in range(loop[1][0],loop[1][1]):
-                    for k in range(loop[2][0],loop[2][1]):
-                        face_check = True
-                        label = grid[i,j,k]
-                        g_index = get_global_index_periodic([i,j,k],[dx,dy,dz],[ix,iy,iz])
-                        boundary_index = _Orientation.get_boundary_index(g_index,[sx,sy,sz],
-                                                                        face_index[0],face_index[1],face_index[2])
-                        boundary_ID = _Orientation.get_boundary_ID(boundary_index)
-                        boundary_features[label][boundary_ID] = True
-                        g_ID = get_global_ID([i,j,k],[dx,dy,dz])
-                        b_nodes[label].push_back(g_ID)
-                        l_ID = get_local_ID([i,j,k],[sx,sy,sz])
-                        nodes[label].push_back(l_ID)
-
-        else:
-            for i in range(loop[0][0],loop[0][1]):
-                for j in range(loop[1][0],loop[1][1]):
-                    for k in range(loop[2][0],loop[2][1]):
-                        face_check = True
-                        label = grid[i,j,k]
-                        g_index = get_global_index([i,j,k],[dx,dy,dz],[ix,iy,iz])
-                        boundary_index = _Orientation.get_boundary_index(g_index,[sx,sy,sz],
-                                                                        face_index[0],face_index[1],face_index[2])
-                        boundary_ID = _Orientation.get_boundary_ID(boundary_index)
-                        boundary_features[label][boundary_ID] = True
-                        g_ID = get_global_ID([i,j,k],[dx,dy,dz])
-                        b_nodes[label].push_back(g_ID)
-                        l_ID = get_local_ID([i,j,k],[sx,sy,sz])
-                        nodes[label].push_back(l_ID)
+        for i in range(loop[0][0],loop[0][1]):
+            for j in range(loop[1][0],loop[1][1]):
+                for k in range(loop[2][0],loop[2][1]):
+                    face_check = True
+                    label = grid[i,j,k]
+                    boundary_index = _Orientation.get_boundary_index([i,j,k],[sx,sy,sz])
+                    boundary_ID = _Orientation.get_boundary_ID(boundary_index)
+                    boundary_features[label][boundary_ID] = True
+                    g_ID = get_global_ID([i,j,k],[dx,dy,dz])
+                    b_nodes[label].push_back(g_ID)
+                    l_ID = get_local_ID([i,j,k],[sx,sy,sz])
+                    nodes[label].push_back(l_ID)
 
         if face_check:
             boundary[label] = True

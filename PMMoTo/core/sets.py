@@ -44,6 +44,7 @@ def connect_all_phases(img,inlet,outlet):
     
     label_grid,n_labels =  cc3d.connected_components(grid,return_N = True,out_dtype=np.uint64)
     n_labels += 1
+    
     # Initialize Sets
     Sets = initialize_sets(subdomain,n_labels)
         

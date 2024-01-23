@@ -141,11 +141,11 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
         utils.check_file_path(file_name)
     comm.barrier()
 
-    proc_set_counts = comm.allgather(set_list.setCount)
+    proc_set_counts = comm.allgather(set_list.set_count)
     nonzero_proc = np.where(np.asarray(proc_set_counts) > 0)[0][0]
 
     ### Place Set Values in Arrays
-    if set_list.setCount > 0:
+    if set_list.set_count > 0:
         dim = 0
         for ss in set_list.sets:
             dim = dim + ss.node_data.num_nodes
@@ -181,15 +181,10 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
         c = 0
         for ss in set_list.sets:
             indexs = np.unravel_index(ss.node_data.nodes,ss.node_data.index_map)
-            #for no in ss.node_data.nodes:
-            #    index = np.unravel_index(no,ss.node_data.index_map)
             for index in zip(indexs[0],indexs[1],indexs[2]):
                 x[c] = subdomain.coords[0][index[0]]
-                y[c] = subdomain.coords[0][index[1]]
-                z[c] = subdomain.coords[0][index[2]]
-                # x[c] = subdomain.coords[0][no[0]]
-                # y[c] = subdomain.coords[0][no[1]]
-                # z[c] = subdomain.coords[0][no[2]]
+                y[c] = subdomain.coords[1][index[1]]
+                z[c] = subdomain.coords[2][index[2]]
 
                 global_ID[c] = ss.global_ID
                 local_ID[c] = ss.local_ID

@@ -33,26 +33,28 @@ def my_function():
     nodes = [100,100,100] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
     file = './testDomains/50pack.out'
 
-    save_data = False
+    save_data = True
 
     sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
     sphere_data,domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)
 
+    print(sd.ID,sd.coords[0][0],sd.coords[1][0],sd.coords[2][0])
+
     start = time.time()
     # pmmoto_sets = pmmoto.core.collect_sets(pm.grid,1,pm.inlet,pm.outlet,pm.loop_info,sd)
     # pmmoto_sets = pmmoto.core.collect_sets(pm.grid,0,pm.inlet,pm.outlet,pm.loop_info,sd)
-    print("PM Time:",time.time()-start)
+    #print("PM Time:",time.time()-start)
 
     start = time.time()
     connected_sets = pmmoto.core.connect_all_phases(pm,pm.inlet,pm.outlet)
-    print("CC Time:",time.time()-start)
+    #print("CC Time:",time.time()-start)
 
     if save_data:
         pmmoto.io.save_grid_data("dataOut/test_morph",sd,pm.grid)

@@ -47,7 +47,7 @@ class Sets(object):
 
     for set in self.sets:
       set.get_set_neighbors()
-      print(set.subdomain_data)
+      #print(set.local_ID,set.subdomain_data)
 
 
 
