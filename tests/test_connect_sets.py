@@ -34,6 +34,7 @@ def my_function():
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
@@ -44,8 +45,6 @@ def my_function():
     sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
     sphere_data,domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)
-
-    print(sd.ID,sd.coords[0][0],sd.coords[1][0],sd.coords[2][0])
 
     start = time.time()
     # pmmoto_sets = pmmoto.core.collect_sets(pm.grid,1,pm.inlet,pm.outlet,pm.loop_info,sd)

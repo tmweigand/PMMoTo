@@ -28,6 +28,13 @@ def pass_external_data(subdomain,face_solids,edge_solids,corner_solids):
     external_solids = external_nodes_unpack(subdomain,f,e,c,face_solids,edge_solids,corner_solids)
     return external_solids
 
+def pass_boundary_sets(subdomain,sets):
+    """
+    """
+    send_boundary_sets = boundary_set_pack(subdomain,sets)
+    f,e,c = communicate(subdomain,send_boundary_sets)
+    recv_boundary_sets = boundary_set_unpack(subdomain,sets,f,e,c)
+    return recv_boundary_sets
 
 def buffer_pack(subdomain,grid):
     """
@@ -260,6 +267,64 @@ def external_nodes_unpack(subdomain,face_recv,edge_recv,corner_recv,face_solids,
             external_solids[corner.info['ID']] = corner_solids[corner.info['oppIndex']] - period_correction
 
     return external_solids
+
+
+def boundary_set_pack(subdomain,sets):
+    """
+    """
+    send_boundary_data = {}
+    for n_proc in subdomain.n_procs:
+        if n_proc != subdomain.ID:
+            send_boundary_data[n_proc] = {'ID':{}}
+            for feature in subdomain.n_procs[n_proc]:
+                send_boundary_data[n_proc]['ID'][feature] = []
+
+    for face in subdomain.faces:
+        if face.n_proc > -1 and face.n_proc != subdomain.ID:
+            for s in sets.set_boundary_map[face.feature_ID]:
+                send_boundary_data[face.n_proc]['ID'][face.info['ID']].append(sets.sets[s].boundary_data)
+
+    for edge in subdomain.edges:
+        if edge.n_proc > -1 and edge.n_proc != subdomain.ID:
+            for s in sets.set_boundary_map[edge.feature_ID]:
+                send_boundary_data[edge.n_proc]['ID'][edge.info['ID']].append(sets.sets[s].boundary_data)
+
+    for corner in subdomain.corners:
+        if corner.n_proc > -1 and corner.n_proc != subdomain.ID:
+            for s in sets.set_boundary_map[corner.feature_ID]:
+                send_boundary_data[corner.n_proc]['ID'][corner.info['ID']].append(sets.sets[s].boundary_data)
+
+    return send_boundary_data
+
+def boundary_set_unpack(subdomain,sets,face_recv,edge_recv,corner_recv):
+    """
+    Unpack the neibghboring boundary set data
+    """
+
+    external_sets = {key: None for key in Orientation.features}
+
+    for face in subdomain.faces:
+        if (face.n_proc > -1 and face.n_proc != subdomain.ID):
+            opp_ID = face.opp_info['ID']
+            external_sets[face.info['ID']] = face_recv[face.ID]['ID'][opp_ID]
+        elif (face.n_proc == subdomain.ID):
+            pass ### Periodic Sets on 1 proc
+
+    for edge in subdomain.edges:
+        if (edge.n_proc > -1 and edge.n_proc != subdomain.ID):
+            opp_ID = edge.opp_info['ID']
+            external_sets[edge.info['ID']] = edge_recv[edge.ID]['ID'][opp_ID]
+        elif (edge.n_proc == subdomain.ID):
+            pass ### Periodic Sets on 1 proc
+
+    for corner in subdomain.corners:
+        if (corner.n_proc > -1 and corner.n_proc != subdomain.ID):
+            opp_ID = corner.opp_info['ID']
+            external_sets[corner.info['ID']] = corner_recv[corner.ID]['ID'][opp_ID]
+        elif (corner.n_proc == subdomain.ID):
+            pass ### Periodic Sets on 1 proc
+
+    return external_sets
 
 def communicate(subdomain,send_data):
     """

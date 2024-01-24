@@ -1,11 +1,11 @@
 import numpy as np
 from mpi4py import MPI
 import cc3d
-from . import communication
-from . import nodes
-from . import _nodes
-from . import set
-from . import _sets
+from pmmoto.core import communication
+from pmmoto.core import nodes
+from pmmoto.core import _nodes
+from pmmoto.core import set
+from pmmoto.core import _sets
 
 comm = MPI.COMM_WORLD
 
@@ -44,7 +44,7 @@ def connect_all_phases(img,inlet,outlet):
     
     label_grid,n_labels =  cc3d.connected_components(grid,return_N = True,out_dtype=np.uint64)
     n_labels += 1
-    
+
     # Initialize Sets
     Sets = initialize_sets(subdomain,n_labels)
         
@@ -70,6 +70,10 @@ def connect_all_phases(img,inlet,outlet):
 
 
     Sets.get_boundary_sets()
+    n_Sets = communication.pass_boundary_sets(subdomain,Sets)
+
+    if subdomain.ID == 0:
+        print(n_Sets)
 
     return Sets
 

@@ -38,13 +38,13 @@ cdef inline boundary_set c_convert_boundary_set(set):
     """
     cdef boundary_set b_set
 
-    b_set.ID = set.localID
+    b_set.ID = set.local_ID
     b_set.proc_ID = set.proc_ID
-    b_set.nProcID = set.neighborProcID
-    b_set.num_nodes = set.numNodes
-    b_set.inlet = set.inlet
-    b_set.outlet = set.outlet
-    b_set.boundary_nodes = set.boundaryNodes
+    b_set.nProcID = set.subdomain_data.n_procs
+    b_set.num_nodes = set.node_data.num_nodes
+    b_set.inlet = set.subdomain_data.inlet
+    b_set.outlet = set.subdomain_data.outlet
+    b_set.boundary_nodes = set.node_data.boundary_nodes
 
     return b_set
 

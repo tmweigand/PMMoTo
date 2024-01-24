@@ -7,9 +7,10 @@ cimport numpy as cnp
 cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from . import communication
-from . import nodes
-from . import set
+from pmmoto.core import communication
+from pmmoto.core import nodes
+from pmmoto.core import set
+from pmmoto.core import Orientation
 
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
@@ -35,6 +36,7 @@ class Sets(object):
     self.subdomain = subdomain
     self.boundary_sets = []
     self.boundary_set_count = 0
+    self.set_boundary_map = [[] for _ in Orientation.features]
     self.num_connections = 0
     self.local_to_global = {}
     self.global_to_local = {}
@@ -44,90 +46,55 @@ class Sets(object):
     Get the Sets the are on a valid subdomain boundary.
     Organize data so sending procID, boundary nodes.
     """
-
     for set in self.sets:
       set.get_set_neighbors()
-      #print(set.local_ID,set.subdomain_data)
-
-
-
-    #   proc_list = []
-    #   for face in self.subdomain.faces:
-    #     if set.subdomain_data.index[face.feature_ID]:
-    #       if face.n_proc < 0:
-    #         set.subdomain_data.index[face.feature_ID] = False
-    #       elif face.n_proc != self.subdomain.ID:
-    #         if face.n_proc not in proc_list:
-    #           proc_list.append(face.n_proc)
+      if set.subdomain_data.boundary:
+        set.collect_boundary_data()
+        self.boundary_set_count += 1
     
-    # print(proc_list)
+    self.get_set_boundary_map()
 
-
-
-
-
-
-
-    # nI = self.subDomain.sub_ID[0] + 1  # PLUS 1 because lookUpID is Padded
-    # nJ = self.subDomain.sub_ID[1] + 1  # PLUS 1 because lookUpID is Padded
-    # nK = self.subDomain.sub_ID[2] + 1  # PLUS 1 because lookUpID is Padded
-
-    # for set in self.sets:
-    #   proc_list = []
-    #   if set.subdomain_data.boundary:
-
-    #     for face in range(0,num_neighbors):
-    #       if set.subdomain_data.index[face]:
-    #         i = directions[face][0]
-    #         j = directions[face][1]
-    #         k = directions[face][2]
-
-    #         neighborProc = self.subDomain.lookUpID[i+nI,j+nJ,k+nK]
-    #         if neighborProc < 0:
-    #           set.boundaryFaces[face] = 0
-    #         else:
-    #           if neighborProc not in proc_list:
-    #             proc_list.append(neighborProc)
-
-    #     if (np.sum(set.boundaryFaces) == 0):
-    #       set.boundary = False
-    #     else:
-    #       self.boundary_set_count += 1
-    #       set.neighborProcID = proc_list
-    #       self.boundary_sets.append( c_convert_boundary_set(set) )
-
-  def pack_boundary_data(self):
+  def get_set_boundary_map(self):
     """
-    Collect the Boundary Set Information to Send to neighbor procs
+    Populate the list that contains the subdomain features and the set on that feature 
     """
-    send_boundary_data = {self.subDomain.ID: {'nProcID':{}}}
-    cdef boundary_set b_set
-    cdef int nP,ID
+    for set in self.sets:
+      for n_feature,feature in enumerate(set.subdomain_data.index):
+        if feature:
+          self.set_boundary_map[n_feature].append(set.local_ID)
 
-    ID = self.subDomain.ID
+  # def pack_boundary_data(self):
+  #   """
+  #   Collect the Boundary Set Information to Send to neighbor procs
+  #   """
+  #   send_boundary_data = {self.subDomain.ID: {'nProcID':{}}}
+  #   cdef boundary_set b_set
+  #   cdef int nP,ID
 
-    for set in self.boundary_sets:
-        for nP in set['nProcID']:
-            if nP not in send_boundary_data[ID]['nProcID'].keys():
-                send_boundary_data[ID]['nProcID'][nP] = {'setID':{}}
-            bD = send_boundary_data[ID]['nProcID'][nP]
-            bD['setID'][set['ID']] = set
+  #   ID = self.subDomain.ID
 
-    return send_boundary_data
+  #   for set in self.boundary_sets:
+  #       for nP in set['nProcID']:
+  #           if nP not in send_boundary_data[ID]['nProcID'].keys():
+  #               send_boundary_data[ID]['nProcID'][nP] = {'setID':{}}
+  #           bD = send_boundary_data[ID]['nProcID'][nP]
+  #           bD['setID'][set['ID']] = set
 
-  def unpack_boundary_data(self,boundary_data):
-    """
-    Unpack the boundary data into neighborBoundarySets
-    """
-    n_boundary_sets = []
-    for n_proc_ID in boundary_data[self.subDomain.ID]['nProcID'].keys():
-      if n_proc_ID == self.subDomain.ID:
-        pass
-      else:
-        for set in boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'].keys():
-          n_boundary_sets.append(boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'][set])
+  #   return send_boundary_data
 
-    return n_boundary_sets
+  # def unpack_boundary_data(self,boundary_data):
+  #   """
+  #   Unpack the boundary data into neighborBoundarySets
+  #   """
+  #   n_boundary_sets = []
+  #   for n_proc_ID in boundary_data[self.subDomain.ID]['nProcID'].keys():
+  #     if n_proc_ID == self.subDomain.ID:
+  #       pass
+  #     else:
+  #       for set in boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'].keys():
+  #         n_boundary_sets.append(boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'][set])
+
+  #   return n_boundary_sets
 
   def match_boundary_sets(self,n_boundary_data):
     """
