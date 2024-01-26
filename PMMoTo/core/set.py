@@ -1,5 +1,6 @@
 import numpy as np
 import dataclasses
+from pmmoto.core import _set
 
 @dataclasses.dataclass
 class SetSubdomain:
@@ -24,18 +25,18 @@ class SetNodes:
     index_map: tuple
 
 
-@dataclasses.dataclass
-class SetDataSend:
-    """
-    Data to send to neighboring procs
-    """
-    local_ID: int
-    proc_ID: int
-    phase: int
-    num_nodes: int
-    inlet: bool
-    outlet: bool
-    boundary_nodes: np.array
+# @dataclasses.dataclass
+# class SetDataSend:
+#     """
+#     Data to send to neighboring procs
+#     """
+#     local_ID: int
+#     proc_ID: int
+#     phase: int
+#     num_nodes: int
+#     inlet: bool
+#     outlet: bool
+#     boundary_nodes: np.array
 
 class Set:
     """
@@ -44,7 +45,7 @@ class Set:
     def __init__(self,
                  subdomain,
                  local_ID = 0,
-                 proc_ID = 0): 
+                 proc_ID = 0):
         self.subdomain = subdomain
         self.local_ID = local_ID
         self.proc_ID = proc_ID
@@ -80,7 +81,7 @@ class Set:
         Collect all the data to send to neighboring procs
         """
         self.node_data.boundary_nodes = np.sort(self.node_data.boundary_nodes)
-        self.boundary_data = SetDataSend(self.local_ID,
+        self.boundary_data = _set.SetDataSend(self.local_ID,
                                          self.proc_ID,
                                          self.phase,
                                          self.node_data.num_nodes,
@@ -128,3 +129,19 @@ class Set:
         """
         if np.sum(self.subdomain_data.index) == 0:
             self.subdomain_data.boundary = False
+
+    def match_boundary_sets(self,n_sets):
+        """
+        Determine which neigboring sets match by comnpairing boundary nodes global ID
+        n_sets are based on feature
+        """
+        all_matches = []
+        for face in self.subdomain.faces:
+            if self.subdomain_data.index[face.feature_ID]:
+                matches = _set._match_boundary_sets(self.boundary_data,n_sets,face)
+                for m in matches:
+                    if m not in all_matches:
+                        all_matches.append(m)
+        
+        
+        print(all_matches)

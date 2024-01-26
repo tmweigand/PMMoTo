@@ -102,7 +102,7 @@ ext_modules += [
               include_dirs=['pmmoto/core'],language='c++'),
     Extension("pmmoto.core._set",
               ["pmmoto/core/_set.pyx"],
-              include_dirs=['pmmoto/core']),
+              include_dirs=['pmmoto/core'],language='c++'),
     Extension("pmmoto.core._sets",
               ["pmmoto/core/_sets.pyx"],
               include_dirs=['pmmoto/core'],language='c++'),

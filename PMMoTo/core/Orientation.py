@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_boundary_ID(boundary_ID):
+def get_boundary_ID(boundary_index):
     """
     Determine boundary ID
     Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
@@ -10,9 +10,9 @@ def get_boundary_ID(boundary_ID):
 
     ID = 0
     for n in range(0,3):
-        if boundary_ID[n] < 0:
+        if boundary_index[n] < 0:
             ID += params[n][0]
-        elif boundary_ID[n] > 0:
+        elif boundary_index[n] > 0:
             ID += params[n][1]
         else:
             ID += params[n][2]

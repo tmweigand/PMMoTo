@@ -54,7 +54,6 @@ def connect_all_phases(img,inlet,outlet):
                                    loop_info,
                                    inlet,
                                    outlet)
-
     for label in range(0,n_labels):
         index = np.unravel_index(set_nodes[label][0],grid.shape)
         phase = _get_phase_index(grid,index)
@@ -70,12 +69,14 @@ def connect_all_phases(img,inlet,outlet):
 
 
     Sets.get_boundary_sets()
-    n_Sets = communication.pass_boundary_sets(subdomain,Sets)
-
-    if subdomain.ID == 0:
-        print(n_Sets)
+    n_sets = communication.pass_boundary_sets(subdomain,Sets)
+    Sets.match_boundary_sets(n_sets)
+    Set.get_num_global_nodes(all_matches,n_boundary_data)
 
     return Sets
+
+
+
 
 
 def collect_sets(grid,phase,inlet,outlet,loopInfo,subdomain):

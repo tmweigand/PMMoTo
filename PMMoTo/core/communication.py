@@ -301,28 +301,37 @@ def boundary_set_unpack(subdomain,sets,face_recv,edge_recv,corner_recv):
     Unpack the neibghboring boundary set data
     """
 
-    external_sets = {key: None for key in Orientation.features}
+    external_sets = {key: [] for key in Orientation.features}
 
     for face in subdomain.faces:
         if (face.n_proc > -1 and face.n_proc != subdomain.ID):
-            opp_ID = face.opp_info['ID']
-            external_sets[face.info['ID']] = face_recv[face.ID]['ID'][opp_ID]
+            opp_index = face.opp_info['ID']
+            external_sets[face.info['ID']].append(face_recv[face.ID]['ID'][opp_index])
         elif (face.n_proc == subdomain.ID):
-            pass ### Periodic Sets on 1 proc
+            opp_index = face.opp_info['ID']
+            opp_ID = Orientation.get_boundary_ID(opp_index)
+            for s in sets.set_boundary_map[opp_ID]:
+                external_sets[face.info['ID']].append(sets.sets[s].boundary_data)
 
     for edge in subdomain.edges:
         if (edge.n_proc > -1 and edge.n_proc != subdomain.ID):
-            opp_ID = edge.opp_info['ID']
-            external_sets[edge.info['ID']] = edge_recv[edge.ID]['ID'][opp_ID]
+            opp_index = edge.opp_info['ID']
+            external_sets[edge.info['ID']].append(edge_recv[edge.ID]['ID'][opp_index])
         elif (edge.n_proc == subdomain.ID):
-            pass ### Periodic Sets on 1 proc
+            opp_index = edge.opp_info['ID']
+            opp_ID = Orientation.get_boundary_ID(opp_index)
+            for s in sets.set_boundary_map[opp_ID]:
+                external_sets[edge.info['ID']].append(sets.sets[s].boundary_data)
 
     for corner in subdomain.corners:
         if (corner.n_proc > -1 and corner.n_proc != subdomain.ID):
-            opp_ID = corner.opp_info['ID']
-            external_sets[corner.info['ID']] = corner_recv[corner.ID]['ID'][opp_ID]
+            opp_index = corner.opp_info['ID']
+            external_sets[corner.info['ID']].append(corner_recv[corner.ID]['ID'][opp_index])
         elif (corner.n_proc == subdomain.ID):
-            pass ### Periodic Sets on 1 proc
+            opp_index = corner.opp_info['ID']
+            opp_ID = Orientation.get_boundary_ID(opp_index)
+            for s in sets.set_boundary_map[opp_ID]:
+                external_sets[corner.info['ID']].append(sets.sets[s].boundary_data)
 
     return external_sets
 
@@ -387,43 +396,43 @@ def communicate(subdomain,send_data):
 
     return recv_face,recv_edge,recv_corner
 
-def set_COMM(subDomain,data):
-  """
-  Transmit data to Neighboring Processors
-  """
-  dataRecvFace,dataRecvEdge,dataRecvCorner = communicate(subDomain,data[subDomain.ID]['nProcID'])
+# def set_COMM(subDomain,data):
+#   """
+#   Transmit data to Neighboring Processors
+#   """
+#   dataRecvFace,dataRecvEdge,dataRecvCorner = communicate(subDomain,data[subDomain.ID]['nProcID'])
 
-  #############
-  ### Faces ###
-  #############
-  for fIndex in Orientation.faces:
-    neigh = subDomain.neighborF[fIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvFace[fIndex]
+#   #############
+#   ### Faces ###
+#   #############
+#   for fIndex in Orientation.faces:
+#     neigh = subDomain.neighborF[fIndex]
+#     if (neigh > -1 and neigh != subDomain.ID):
+#       if neigh in data[subDomain.ID]['nProcID'].keys():
+#         if neigh not in data:
+#           data[neigh] = {'nProcID':{}}
+#         data[neigh]['nProcID'][neigh] = dataRecvFace[fIndex]
 
-  #############
-  ### Edges ###
-  #############
-  for eIndex in Orientation.edges:
-    neigh = subDomain.neighborE[eIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvEdge[eIndex]
+#   #############
+#   ### Edges ###
+#   #############
+#   for eIndex in Orientation.edges:
+#     neigh = subDomain.neighborE[eIndex]
+#     if (neigh > -1 and neigh != subDomain.ID):
+#       if neigh in data[subDomain.ID]['nProcID'].keys():
+#         if neigh not in data:
+#           data[neigh] = {'nProcID':{}}
+#         data[neigh]['nProcID'][neigh] = dataRecvEdge[eIndex]
 
-  ###############
-  ### Corners ###
-  ###############
-  for cIndex in Orientation.corners:
-    neigh = subDomain.neighborC[cIndex]
-    if (neigh > -1 and neigh != subDomain.ID):
-      if neigh in data[subDomain.ID]['nProcID'].keys():
-        if neigh not in data:
-          data[neigh] = {'nProcID':{}}
-        data[neigh]['nProcID'][neigh] = dataRecvCorner[cIndex]
+#   ###############
+#   ### Corners ###
+#   ###############
+#   for cIndex in Orientation.corners:
+#     neigh = subDomain.neighborC[cIndex]
+#     if (neigh > -1 and neigh != subDomain.ID):
+#       if neigh in data[subDomain.ID]['nProcID'].keys():
+#         if neigh not in data:
+#           data[neigh] = {'nProcID':{}}
+#         data[neigh]['nProcID'][neigh] = dataRecvCorner[cIndex]
 
-  return data
+#   return data

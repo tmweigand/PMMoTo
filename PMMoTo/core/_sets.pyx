@@ -63,40 +63,15 @@ class Sets(object):
         if feature:
           self.set_boundary_map[n_feature].append(set.local_ID)
 
-  # def pack_boundary_data(self):
-  #   """
-  #   Collect the Boundary Set Information to Send to neighbor procs
-  #   """
-  #   send_boundary_data = {self.subDomain.ID: {'nProcID':{}}}
-  #   cdef boundary_set b_set
-  #   cdef int nP,ID
+  def match_boundary_sets(self,n_sets):
+    """
+    Loop through own boundary and neighbor boundary procs and match by boundary nodes
+    """
+    for set in self.sets:
+        set.match_boundary_sets(n_sets)
 
-  #   ID = self.subDomain.ID
 
-  #   for set in self.boundary_sets:
-  #       for nP in set['nProcID']:
-  #           if nP not in send_boundary_data[ID]['nProcID'].keys():
-  #               send_boundary_data[ID]['nProcID'][nP] = {'setID':{}}
-  #           bD = send_boundary_data[ID]['nProcID'][nP]
-  #           bD['setID'][set['ID']] = set
-
-  #   return send_boundary_data
-
-  # def unpack_boundary_data(self,boundary_data):
-  #   """
-  #   Unpack the boundary data into neighborBoundarySets
-  #   """
-  #   n_boundary_sets = []
-  #   for n_proc_ID in boundary_data[self.subDomain.ID]['nProcID'].keys():
-  #     if n_proc_ID == self.subDomain.ID:
-  #       pass
-  #     else:
-  #       for set in boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'].keys():
-  #         n_boundary_sets.append(boundary_data[n_proc_ID]['nProcID'][n_proc_ID]['setID'][set])
-
-  #   return n_boundary_sets
-
-  def match_boundary_sets(self,n_boundary_data):
+  def match_boundary_sets_old(self,n_boundary_data):
     """
     Loop through own boundary and neighbor boundary procs and match by boundary nodes
     IDEA: Create a ledger of n_boundary_sets.boundary_nodes and setID to speed this up
