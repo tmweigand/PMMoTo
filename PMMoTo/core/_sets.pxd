@@ -62,23 +62,3 @@ cdef inline vertex c_convert_vertex(set):
     n_set.proc_ID.push_back(set.proc_ID)
 
     return n_set
-
-cdef inline int count_matched_nodes(vector[npy_intp] list1, vector[npy_intp] list2):
-    cdef int count = 0
-    for l in list1:
-        if (binary_search(list2.begin(), list2.end(), l)):
-            count += 1
-    return count
-
-
-cdef inline bool match_boundary_nodes(vector[npy_intp] list1, vector[npy_intp] list2):
-    """
-    Input: Two Sorted Lists
-    Output: Bool of at least one shared element
-    """
-    cdef bool match =  False
-    for l in list1:
-        if (binary_search(list2.begin(), list2.end(), l)):
-            match = True
-            break
-    return match

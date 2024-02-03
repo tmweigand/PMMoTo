@@ -141,14 +141,14 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
         utils.check_file_path(file_name)
     comm.barrier()
 
-    proc_set_counts = comm.allgather(set_list.set_count)
+    proc_set_counts = comm.allgather(set_list.count.all)
     nonzero_proc = np.where(np.asarray(proc_set_counts) > 0)[0][0]
 
     ### Place Set Values in Arrays
-    if set_list.set_count > 0:
+    if set_list.count.all > 0:
         dim = 0
-        for ss in set_list.sets:
-            dim = dim + ss.node_data.num_nodes
+        for local_ID,ss in set_list.sets.items():
+            dim = dim + len(ss.node_data.nodes)
         x = np.zeros(dim)
         y = np.zeros(dim)
         z = np.zeros(dim)
@@ -179,7 +179,7 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
             point_data_info[key] = (point_data[key].dtype,1)
 
         c = 0
-        for ss in set_list.sets:
+        for ss in set_list.sets.values():
             indexs = np.unravel_index(ss.node_data.nodes,ss.node_data.index_map)
             for index in zip(indexs[0],indexs[1],indexs[2]):
                 x[c] = subdomain.coords[0][index[0]]

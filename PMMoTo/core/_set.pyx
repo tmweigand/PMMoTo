@@ -9,129 +9,60 @@ from numpy cimport npy_intp
 from libcpp cimport bool
 
 @dataclasses.dataclass
+cdef class SetMatch:
+    """
+    SetMatch Data Class:
+        ID: (set proc ID, set local ID)
+        n_ID: (matched set proc ID, matched set local ID)
+        inlet: determine if set or matched set are inlet sets
+        outlet: determine if set or matched set are outlet sets
+        global_ID: global Set ID
+        visited: bool True, if merged
+    """
+    ID: tuple(npy_intp,npy_intp) 
+    n_ID: list[(int,int)] = dataclasses.field(default_factory=list)
+    inlet: bool = False
+    outlet: bool = False
+    global_ID: npy_intp = 0
+    visited: bool = False
+
+@dataclasses.dataclass
 cdef class SetDataSend:
     local_ID: npy_intp
     proc_ID: npy_intp
     phase: npy_intp
-    num_nodes: npy_intp
     inlet: bool
     outlet: bool
     boundary_nodes: vector[npy_intp]
 
 
-def _match_boundary_sets(set,n_sets,face):
+def _initialize_matches(set):
+    """
+    Initialize the SetMatch Class
+    """
+    match = SetMatch((set.proc_ID,set.local_ID))
+    return match
+
+def _match_boundary_sets(match,set,n_sets,face):
     """
     Match boundary sets based on boundary node global ID
     """
-    matches = []
     for n_set in n_sets[face.info['ID']]:
         if n_set.phase == set.phase:
             if match_boundary_nodes(n_set.boundary_nodes,set.boundary_nodes):
-                matches.append([(n_set.proc_ID,n_set.local_ID,set.proc_ID,set.local_ID)])
-    return matches
 
-# from . import _Orientation
-# from . import Orientation
-# cOrient = _Orientation.cOrientation()
-# cdef int[26][5] directions
-# cdef int numNeighbors
-# directions = cOrient.directions
-# numNeighbors = cOrient.num_neighbors
+                n_ID = (n_set.proc_ID,n_set.local_ID)
+                if n_ID not in match.n_ID:
+                    match.n_ID.append((n_set.proc_ID,n_set.local_ID))
+                if n_set.inlet:
+                    match.inlet = True
+                if n_set.outlet:
+                    match.outlet = True
+                
+    return match
 
-# class Set(object):
-#     def __init__(self, 
-#                 localID = 0,
-#                 phase = 0, 
-#                 proc_ID = 0,
-#                 inlet = False, 
-#                 outlet = False, 
-#                 boundary = False, 
-#                 numNodes = 0, 
-#                 numBoundaryNodes = 0):    
-#       self.localID = localID   
-#       self.phase = phase
-#       self.proc_ID = proc_ID
-#       self.inlet = inlet
-#       self.outlet = outlet
-#       self.boundary = boundary
-#       self.numNodes = numNodes
-#       self.numBoundaryNodes = numBoundaryNodes
-#       self.numBoundaries  = 0
-#       self.numGlobalNodes = numNodes
-#       self.globalID = 0
-#       self.nodes = np.zeros([numNodes,3],dtype=np.int64) #[i,j,k]
-#       self.boundaryNodes = np.zeros(numBoundaryNodes,dtype=np.int64)
-#       self.boundaryFaces = np.zeros(26,dtype=np.uint8)
-#       self.boundaryNodeID = np.zeros([numBoundaryNodes,3],dtype=np.int64)
-      
-#     def setNodes(self,nodes):
-#       self.nodes = nodes
-
-#     @cython.boundscheck(False)  # Deactivate bounds checking
-#     @cython.wraparound(False)   # Deactivate negative indexing.
-#     def get_set_nodes(self,nNodes,indexMatch,nodeInfo,nodeInfoIndex,subDomain):
-#       """
-#         Add all the nodes and boundaryNodes to the Set class.
-#         Match the index from MA extraction to nodeIndex
-#         If interior:
-#             i,j,k
-#         If boundaryID add to boundary nodes
-#             globalIndex,boundaryID,globalI,globalJ,globalK
-#       """
-#       cdef cnp.uint64_t [:] _indexMatch
-#       _indexMatch = indexMatch
-
-#       cdef cnp.int8_t [:,:] _nodeInfo
-#       _nodeInfo = nodeInfo
-
-#       cdef cnp.uint64_t [:,:] _nodeInfoIndex
-#       _nodeInfoIndex = nodeInfoIndex
-
-#       cdef int bN,n,ind,cIndex,inNodes,setNodes
-
-#       nodes = np.zeros([self.numNodes,3],dtype=np.uint64)
-#       cdef cnp.uint64_t [:,::1] _nodes
-#       _nodes = nodes
-
-#       bNodes = np.zeros([self.numBoundaryNodes,4],dtype=np.uint64)
-#       cdef cnp.uint64_t [:,::1] _bNodes
-#       _bNodes = bNodes
-
-#       boundaryFaces = np.zeros(26,dtype=np.uint8)
-#       cdef cnp.uint8_t [:] _boundaryFaces
-#       _boundaryFaces = boundaryFaces
-
-#       setNodes = self.numNodes
-#       inNodes = nNodes
-#       bN =  0
-#       for n in range(0,setNodes):
-#         ind = inNodes - setNodes + n
-#         cIndex = _indexMatch[ind]
-#         _nodes[n,0] = _nodeInfoIndex[cIndex,0]  #i
-#         _nodes[n,1] = _nodeInfoIndex[cIndex,1]  #j
-#         _nodes[n,2] = _nodeInfoIndex[cIndex,2]  #k
-
-#         if _nodeInfo[cIndex,0]:
-#             _bNodes[bN,0] = _nodeInfoIndex[cIndex,3] #globalIndex
-#             _bNodes[bN,1] = _nodeInfoIndex[cIndex,4] #globalI
-#             _bNodes[bN,2] = _nodeInfoIndex[cIndex,5] #globalJ
-#             _bNodes[bN,3] = _nodeInfoIndex[cIndex,6] #globalK
-#             _boundaryFaces[ _nodeInfo[cIndex,3] ] = 1
-#             bN = bN + 1
-
-#       self.setNodes(nodes)
-#       if bN > 0:
-#         self.setBoundaryNodes(bNodes,boundaryFaces)
-
-
-#     def setBoundaryNodes(self,boundaryNodes,boundaryFaces):
-#         self.boundary = True
-#         self.boundaryNodes = np.sort(boundaryNodes[:,0])
-#         self.boundaryNodeID = boundaryNodes[:,1:4]
-#         allFaces = Orientation.allFaces
-#         for ID,bF in enumerate(boundaryFaces):
-#           if bF:
-#             faces = allFaces[ID]
-#             for f in faces:
-#               self.boundaryFaces[f] = 1
-#         self.numBoundaries = np.sum(self.boundaryFaces)
+def _get_num_global_nodes(set_boundary_nodes,n_set_boundary_nodes):
+    """
+    Count the number of shared boundary nodes between two sets
+    """
+    return count_matched_nodes(set_boundary_nodes,n_set_boundary_nodes)

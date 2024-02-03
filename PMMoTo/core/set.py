@@ -19,24 +19,16 @@ class SetNodes:
     Node info for set class
     """
     nodes: np.array
-    boundary_nodes: np.array
-    num_nodes: int
-    num_boundary_nodes: int
     index_map: tuple
+    num_nodes: int = -1
 
-
-# @dataclasses.dataclass
-# class SetDataSend:
-#     """
-#     Data to send to neighboring procs
-#     """
-#     local_ID: int
-#     proc_ID: int
-#     phase: int
-#     num_nodes: int
-#     inlet: bool
-#     outlet: bool
-#     boundary_nodes: np.array
+@dataclasses.dataclass
+class SetMatches:
+    """
+    Subdomain info for set class
+    """
+    match_lookup: dict
+    matches: list[tuple] = dataclasses.field(default_factory=list)
 
 class Set:
     """
@@ -55,39 +47,24 @@ class Set:
         self.node_data = None
         self.boundary_data = None
 
-    def set_phase(self,phase):
+    def set_phase(self,grid,index):
         """
         Assign the grid phase to the set
         """
-        self.phase = phase
+        self.phase = grid[index[0],index[1],index[2]]
 
-    def set_nodes(self,shape,nodes,boundary_nodes = None):
+    def set_nodes(self,nodes,grid_shape):
         """
         Assign the nodes to set
         """
-        if boundary_nodes is not None:
-            self.node_data = SetNodes(nodes,boundary_nodes,len(nodes),len(boundary_nodes),shape)
-        else:
-            self.node_data = SetNodes(nodes,None,len(nodes),0,shape)
+        self.node_data = SetNodes(nodes,grid_shape)
 
     def set_subdomain_info(self,boundary,boundary_index,inlet = False,outlet = False):
         """
         Set subdomain information
         """
         self.subdomain_data = SetSubdomain(boundary,np.asarray(boundary_index),inlet,outlet)
-
-    def collect_boundary_data(self):
-        """
-        Collect all the data to send to neighboring procs
-        """
-        self.node_data.boundary_nodes = np.sort(self.node_data.boundary_nodes)
-        self.boundary_data = _set.SetDataSend(self.local_ID,
-                                         self.proc_ID,
-                                         self.phase,
-                                         self.node_data.num_nodes,
-                                         self.subdomain_data.inlet,
-                                         self.subdomain_data.outlet,
-                                         self.node_data.boundary_nodes)
+        self.get_set_neighbors()
 
     def get_set_neighbors(self):
         """
@@ -130,18 +107,82 @@ class Set:
         if np.sum(self.subdomain_data.index) == 0:
             self.subdomain_data.boundary = False
 
+    def set_global_ID(self,global_ID):
+        """
+        Set the global_ID
+        """
+        self.global_ID = global_ID
+
+
+class BoundarySet(Set):
+    """
+    Boundary Set Class
+    """
+    def __init__(self,
+                 subdomain,
+                 local_ID = 0,
+                 proc_ID = 0,
+                 boundary_nodes = None):
+        super().__init__(subdomain,local_ID,proc_ID)
+        self.boundary_data = None
+        self.match_data = None
+        self.boundary_nodes = boundary_nodes
+        self.sort_boundary_nodes()
+
+    def set_boundary_data(self):
+        """
+        Set the boundary data that is to be sent to neighboring processes
+        """
+        self.boundary_data = _set.SetDataSend(self.local_ID,
+                                         self.proc_ID,
+                                         self.phase,
+                                         self.subdomain_data.inlet,
+                                         self.subdomain_data.outlet,
+                                         self.boundary_nodes)
+
+    def add_internal_nodes(self,nodes):
+        """
+        Add intenral nodes to SetNodes data class
+        """
+        self.node_data.nodes = np.append(self.node_data.nodes,nodes)
+
+    def sort_boundary_nodes(self):
+        """
+        Sort boundary nodes to searing is more efficient
+        """
+        self.boundary_nodes = np.sort(self.boundary_nodes)
+
     def match_boundary_sets(self,n_sets):
         """
-        Determine which neigboring sets match by comnpairing boundary nodes global ID
+        Determine which neigboring sets match by comparing boundary nodes global ID
         n_sets are based on feature
         """
-        all_matches = []
+        match_lookup = {}
+        for feature_index in n_sets:
+            for num_set,sset in enumerate(n_sets[feature_index]):
+                if not sset:
+                    continue
+                match_lookup[(sset.proc_ID,sset.local_ID)] = (feature_index,num_set)
+
+        matches = _set._initialize_matches(self.boundary_data)
+
         for face in self.subdomain.faces:
             if self.subdomain_data.index[face.feature_ID]:
-                matches = _set._match_boundary_sets(self.boundary_data,n_sets,face)
-                for m in matches:
-                    if m not in all_matches:
-                        all_matches.append(m)
-        
-        
-        print(all_matches)
+                _set._match_boundary_sets(matches,self.boundary_data,n_sets,face)
+
+        self.match_data = SetMatches(match_lookup,matches)
+
+    def get_num_global_nodes(self):
+        """
+        Determine the total number of nodes for a set. Subdomains are padded so need to remove. 
+        """
+
+
+    def update_boundary_set(self,boundary_data):
+        """
+        Update boundary set information after matching from neighboring procs
+        """
+        self.boundary_data = boundary_data
+        self.global_ID = boundary_data.global_ID
+        self.subdomain_data.inlet = boundary_data.inlet
+        self.subdomain_data.outlet = boundary_data.outlet

@@ -45,3 +45,4 @@ cdef inline vector[npy_int8] get_boundary_index(vector[uint64_t] index,
         elif index[n] >= shape[n] - 2:
             index_out[n] = 1
     return index_out
+

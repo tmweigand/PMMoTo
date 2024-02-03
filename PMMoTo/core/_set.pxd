@@ -15,3 +15,10 @@ cdef inline bool match_boundary_nodes(vector[npy_intp] list1, vector[npy_intp] l
             match = True
             break
     return match
+
+cdef inline int count_matched_nodes(vector[npy_intp] list1, vector[npy_intp] list2):
+    cdef int count = 0
+    for l in list1:
+        if (binary_search(list2.begin(), list2.end(), l)):
+            count += 1
+    return count

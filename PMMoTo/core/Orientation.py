@@ -20,6 +20,17 @@ def get_boundary_ID(boundary_index):
     return ID
 
 
+def add_faces(boundary_features):
+    """
+    Since loop_info are by face, need to add face index for edges and corners in case
+    edge and corner n_procs are < 0 but face is valid. 
+    """
+    for n in range(0,num_neighbors):
+        if boundary_features[n]:
+            for nn in allFaces[n]:
+                boundary_features[nn] = True
+
+
 class CubeFeature(object):
     def __init__(self,ID,n_proc,boundary,periodic):
         self.ID = ID
@@ -88,7 +99,7 @@ class Corner(CubeFeature):
         """
         Determine the span of the feature based on extend
         """
-        faces  = corners[self.ID]['ID']
+        faces = corners[self.ID]['ID']
         for n,f in enumerate(faces):
             if f > 0:
                 self.extend[n][0] = bounds[n][-1] - extend_domain[n]

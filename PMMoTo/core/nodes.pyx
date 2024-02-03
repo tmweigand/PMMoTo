@@ -7,10 +7,10 @@ cimport cython
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
-from . import _set
-from . import _sets
-from . import Orientation
-from . import _Orientation
+from pmmoto.core import _set
+from pmmoto.core import _sets
+from pmmoto.core import Orientation
+from pmmoto.core import _Orientation
 cOrient = _Orientation.cOrientation()
 cdef int[26][5] directions
 cdef int numNeighbors

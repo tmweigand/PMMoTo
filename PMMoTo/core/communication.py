@@ -281,18 +281,18 @@ def boundary_set_pack(subdomain,sets):
 
     for face in subdomain.faces:
         if face.n_proc > -1 and face.n_proc != subdomain.ID:
-            for s in sets.set_boundary_map[face.feature_ID]:
-                send_boundary_data[face.n_proc]['ID'][face.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[face.feature_ID]:
+                send_boundary_data[face.n_proc]['ID'][face.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     for edge in subdomain.edges:
         if edge.n_proc > -1 and edge.n_proc != subdomain.ID:
-            for s in sets.set_boundary_map[edge.feature_ID]:
-                send_boundary_data[edge.n_proc]['ID'][edge.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[edge.feature_ID]:
+                send_boundary_data[edge.n_proc]['ID'][edge.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     for corner in subdomain.corners:
         if corner.n_proc > -1 and corner.n_proc != subdomain.ID:
-            for s in sets.set_boundary_map[corner.feature_ID]:
-                send_boundary_data[corner.n_proc]['ID'][corner.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[corner.feature_ID]:
+                send_boundary_data[corner.n_proc]['ID'][corner.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     return send_boundary_data
 
@@ -306,32 +306,32 @@ def boundary_set_unpack(subdomain,sets,face_recv,edge_recv,corner_recv):
     for face in subdomain.faces:
         if (face.n_proc > -1 and face.n_proc != subdomain.ID):
             opp_index = face.opp_info['ID']
-            external_sets[face.info['ID']].append(face_recv[face.ID]['ID'][opp_index])
+            external_sets[face.info['ID']].extend(face_recv[face.ID]['ID'][opp_index])
         elif (face.n_proc == subdomain.ID):
             opp_index = face.opp_info['ID']
             opp_ID = Orientation.get_boundary_ID(opp_index)
-            for s in sets.set_boundary_map[opp_ID]:
-                external_sets[face.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[opp_ID]:
+                external_sets[face.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     for edge in subdomain.edges:
         if (edge.n_proc > -1 and edge.n_proc != subdomain.ID):
             opp_index = edge.opp_info['ID']
-            external_sets[edge.info['ID']].append(edge_recv[edge.ID]['ID'][opp_index])
+            external_sets[edge.info['ID']].extend(edge_recv[edge.ID]['ID'][opp_index])
         elif (edge.n_proc == subdomain.ID):
             opp_index = edge.opp_info['ID']
             opp_ID = Orientation.get_boundary_ID(opp_index)
-            for s in sets.set_boundary_map[opp_ID]:
-                external_sets[edge.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[opp_ID]:
+                external_sets[edge.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     for corner in subdomain.corners:
         if (corner.n_proc > -1 and corner.n_proc != subdomain.ID):
             opp_index = corner.opp_info['ID']
-            external_sets[corner.info['ID']].append(corner_recv[corner.ID]['ID'][opp_index])
+            external_sets[corner.info['ID']].extend(corner_recv[corner.ID]['ID'][opp_index])
         elif (corner.n_proc == subdomain.ID):
             opp_index = corner.opp_info['ID']
             opp_ID = Orientation.get_boundary_ID(opp_index)
-            for s in sets.set_boundary_map[opp_ID]:
-                external_sets[corner.info['ID']].append(sets.sets[s].boundary_data)
+            for s in sets.boundary_set_map[opp_ID]:
+                external_sets[corner.info['ID']].append(sets.boundary_sets[s].boundary_data)
 
     return external_sets
 
@@ -395,44 +395,3 @@ def communicate(subdomain,send_data):
             recv_corner[corner.ID] = reqr[corner.ID]
 
     return recv_face,recv_edge,recv_corner
-
-# def set_COMM(subDomain,data):
-#   """
-#   Transmit data to Neighboring Processors
-#   """
-#   dataRecvFace,dataRecvEdge,dataRecvCorner = communicate(subDomain,data[subDomain.ID]['nProcID'])
-
-#   #############
-#   ### Faces ###
-#   #############
-#   for fIndex in Orientation.faces:
-#     neigh = subDomain.neighborF[fIndex]
-#     if (neigh > -1 and neigh != subDomain.ID):
-#       if neigh in data[subDomain.ID]['nProcID'].keys():
-#         if neigh not in data:
-#           data[neigh] = {'nProcID':{}}
-#         data[neigh]['nProcID'][neigh] = dataRecvFace[fIndex]
-
-#   #############
-#   ### Edges ###
-#   #############
-#   for eIndex in Orientation.edges:
-#     neigh = subDomain.neighborE[eIndex]
-#     if (neigh > -1 and neigh != subDomain.ID):
-#       if neigh in data[subDomain.ID]['nProcID'].keys():
-#         if neigh not in data:
-#           data[neigh] = {'nProcID':{}}
-#         data[neigh]['nProcID'][neigh] = dataRecvEdge[eIndex]
-
-#   ###############
-#   ### Corners ###
-#   ###############
-#   for cIndex in Orientation.corners:
-#     neigh = subDomain.neighborC[cIndex]
-#     if (neigh > -1 and neigh != subDomain.ID):
-#       if neigh in data[subDomain.ID]['nProcID'].keys():
-#         if neigh not in data:
-#           data[neigh] = {'nProcID':{}}
-#         data[neigh]['nProcID'][neigh] = dataRecvCorner[cIndex]
-
-#   return data
