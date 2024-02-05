@@ -4,7 +4,7 @@ from mpi4py import MPI
 from pyevtk.hl import pointsToVTK,gridToVTK, writeParallelVTKGrid,_addDataToParallelFile
 from pyevtk import vtk
 from pmmoto.core import communication
-from . import utils
+from . import io_utils
 
 comm = MPI.COMM_WORLD
 
@@ -16,13 +16,12 @@ __all__ = [
     "save_set_data"
 ]
 
-
 def save_grid_data(file_name,subdomain,grid,**kwargs):
     """Save grid data as vtk 
     """
 
     if subdomain.ID == 0:
-        utils.check_file_path(file_name)
+        io_utils.check_file_path(file_name)
     comm.barrier()
 
     all_info = comm.gather([subdomain.index_start,grid.shape],root=0)
@@ -71,7 +70,7 @@ def save_grid_data_proc(file_name,subdomains,grids):
     """Save grid data for a single process
     """
 
-    utils.check_file_path(file_name)
+    io_utils.check_file_path(file_name)
     file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
     num_procs = len(subdomains)
     for n in range(0,num_procs):
@@ -88,7 +87,7 @@ def save_grid_data_deconstructed(file_name,coords,grid):
     """Save grid data for a decomposed grid
     """
 
-    utils.check_file_path(file_name)
+    io_utils.check_file_path(file_name)
     point_data = {"Grid" : grid}
   
     gridToVTK(file_name, coords[0], coords[1], coords[2],
@@ -101,7 +100,7 @@ def save_grid_data_csv(file_name,subdomain,x,y,z,grid,remove_halo = False):
     rank = subdomain.ID
 
     if rank == 0:
-        utils.check_file_path(file_name)
+        io_utils.check_file_path(file_name)
     comm.barrier()
 
     if remove_halo:
@@ -138,7 +137,7 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
     domain = subdomain.domain
 
     if rank == 0:
-        utils.check_file_path(file_name)
+        io_utils.check_file_path(file_name)
     comm.barrier()
 
     proc_set_counts = comm.allgather(set_list.count.all)

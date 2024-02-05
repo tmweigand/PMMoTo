@@ -24,7 +24,7 @@ class PorousMedia:
         inlet_size = np.zeros_like(self.inlet)
 
         for n in range(0,self.subdomain.domain.dims):
-            if (self.subdomain.boundary_ID[n*2] == 0):
+            if (self.subdomain.boundary_type[n*2] == 0):
                 if self.subdomain.domain.inlet[n][0]:
                     self.inlet[n*2] = True
                     inlet_size[n*2]  = res_size
@@ -49,17 +49,17 @@ class PorousMedia:
         """
         If wall boundary conditions are specified, force solid on external boundaries
         """
-        if self.subdomain.boundary_ID[0] == 1:
+        if self.subdomain.boundary_type[0] == 1:
             self.grid[0,:,:] = 0
-        if self.subdomain.boundary_ID[1] == 1:
+        if self.subdomain.boundary_type[1] == 1:
             self.grid[-1,:,:] = 0
-        if self.subdomain.boundary_ID[2] == 1:
+        if self.subdomain.boundary_type[2] == 1:
             self.grid[:,0,:] = 0
-        if self.subdomain.boundary_ID[3] == 1:
+        if self.subdomain.boundary_type[3] == 1:
             self.grid[:,-1,:] = 0
-        if self.subdomain.boundary_ID[4] == 1:
+        if self.subdomain.boundary_type[4] == 1:
             self.grid[:,:,0] = 0
-        if self.subdomain.boundary_ID[5] == 1:
+        if self.subdomain.boundary_type[5] == 1:
             self.grid[:,:,-1] = 0
 
     def get_porosity(self):

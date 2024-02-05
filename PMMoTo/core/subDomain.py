@@ -14,7 +14,7 @@ class Subdomain(object):
         self.subdomains  = subdomains
         self.domain      = domain
         self.boundary    = False
-        self.boundary_ID  = -np.ones([6],dtype = np.int8)
+        self.boundary_type  = -np.ones([6],dtype = np.int8)
         self.buffer      = np.ones([6],dtype = np.int8)
         self.nodes       = np.zeros([3],dtype = np.int64)
         self.own_nodes    = np.zeros([3],dtype = np.int64)
@@ -49,19 +49,19 @@ class Subdomain(object):
 
                             if d == 0:
                                 self.boundary = True
-                                self.boundary_ID[nn*2] = self.domain.boundaries[nn][0]
+                                self.boundary_type[nn*2] = self.domain.boundaries[nn][0]
 
                             if d == self.subdomains[nn] - 1:
                                 self.boundary = True
-                                self.boundary_ID[nn*2+1] = self.domain.boundaries[nn][1]
+                                self.boundary_type[nn*2+1] = self.domain.boundaries[nn][1]
                                 self.nodes[nn] += self.domain.rem_sub_nodes[d]
                                 self.own_nodes[nn] += self.domain.rem_sub_nodes[d]
 
                     n = n + 1
 
-        # If boundary_ID == 0, buffer is not added
+        # If boundary_type == 0, buffer is not added
         for f in range(0,Orientation.num_faces):
-            if self.boundary_ID[f] == 0:
+            if self.boundary_type[f] == 0:
                 self.buffer[f] = 0
 
     def get_coordinates(self, pad = None, get_coords = True, multiphase = False):
@@ -134,9 +134,9 @@ class Subdomain(object):
             ### Determine if Periodic Face or Periodic
             periodic = [0,0,0]
             boundary = False
-            if self.boundary_ID[n] >= 0:
+            if self.boundary_type[n] >= 0:
                 boundary = True
-                if self.boundary_ID[n] == 2:
+                if self.boundary_type[n] == 2:
                     periodic[face['argOrder'][0]] = face['dir']
 
             self.faces[n] = Orientation.Face(n,n_proc,boundary,periodic)
@@ -159,11 +159,11 @@ class Subdomain(object):
             global_boundary =  False
             external_faces = []
             for n_face in Orientation.edges[n]['faceIndex']:
-                if self.boundary_ID[n_face] >= 0:
+                if self.boundary_type[n_face] >= 0:
                     boundary = True
-                    if self.boundary_ID[n_face] == 2:
+                    if self.boundary_type[n_face] == 2:
                         periodic[Orientation.faces[n_face]['argOrder'][0]] = Orientation.faces[n_face]['dir']
-                    elif self.boundary_ID[n_face] == 0:
+                    elif self.boundary_type[n_face] == 0:
                         external_faces.append(n_face)
 
             if len(external_faces) == 2:
@@ -190,9 +190,9 @@ class Subdomain(object):
             external_faces = []
             external_edges = []
             for n_face in Orientation.corners[n]['faceIndex']:
-                if self.boundary_ID[n_face] == 2:
+                if self.boundary_type[n_face] == 2:
                     periodic[Orientation.faces[n_face]['argOrder'][0]] = Orientation.faces[n_face]['dir']
-                elif self.boundary_ID[n_face] == 0:
+                elif self.boundary_type[n_face] == 0:
                     boundary = True
                     external_faces.append(n_face)
 

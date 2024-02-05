@@ -55,7 +55,7 @@ def calc_edt(subdomain,grid):
     """
     size = subdomain.domain.num_subdomains
     edt = edt3d(grid, anisotropy = subdomain.domain.voxel)
-    if size > 1 or (size == 1 and any(subdomain.boundary_ID == 2)):
+    if size > 1 or (size == 1 and any(subdomain.boundary_type == 2)):
         solids = nodes.get_phase_boundary_nodes(grid,0)
         face_solids,edge_solids,corner_solids = utils.partition_boundary_solids(subdomain,solids)
         external_solids = communication.pass_external_data(subdomain,face_solids,edge_solids,corner_solids)

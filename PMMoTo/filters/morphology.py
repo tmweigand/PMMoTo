@@ -81,7 +81,7 @@ def morph_subtract(subdomain,grid,radius,fft = False):
     if fft:
         ### Boundary condtion fix for erosion
         _pad = 1
-        if any(subdomain.boundary_ID == 0):
+        if any(subdomain.boundary_type == 0):
            _pad = np.max(struct_ratio)
         _grid = np.pad(array=halo_grid, pad_width = _pad, mode = 'constant', constant_values = 1)
         _grid = fftconvolve(_grid, struct_element, mode='same') > (struct_element.sum() - 0.1)

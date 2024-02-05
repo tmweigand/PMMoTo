@@ -257,7 +257,7 @@ def get_loop_info(grid,subDomain,inlet,outlet,res_pad):
 
     range_info = 2*np.ones([6],dtype=np.uint8)
     for f_index in faces:
-        if subDomain.boundary_ID[f_index] == 0:
+        if subDomain.boundary_type[f_index] == 0:
             range_info[f_index] = range_info[f_index] - 1
         if inlet[f_index] > 0:
             range_info[f_index] = range_info[f_index] + res_pad

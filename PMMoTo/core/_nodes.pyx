@@ -59,7 +59,7 @@ def get_boundary_set_info(subdomain,
         int iy = subdomain.index_start[1]
         int iz = subdomain.index_start[2]
 
-        int[6] boundary_cond = subdomain.boundary_ID
+        int[6] boundary_type = subdomain.boundary_type
 
         int num_faces = Orientation.num_faces
         uint8_t[:,:] boundary_features = np.zeros([n_labels,Orientation.num_neighbors],dtype=np.uint8)
@@ -77,7 +77,7 @@ def get_boundary_set_info(subdomain,
     for n_face in range(0,num_faces):
         loop = loop_info[n_face]
 
-        if boundary_cond[n_face] == 2:
+        if boundary_type[n_face] == 2:
             global_ID_func = functor_global_ID(True)
         else:
             global_ID_func = functor_global_ID(False)

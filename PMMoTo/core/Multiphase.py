@@ -48,13 +48,13 @@ class Multiphase:
             self.inlet[fluid] = np.zeros([Orientation.num_faces],dtype = np.int8)
             self.outlet[fluid] = np.zeros([Orientation.num_faces],dtype = np.int8)
             for n in range(0,self.subdomain.domain.dims):
-                if (self.subdomain.boundary_ID[n*2] == 0 and inlets[fluid][n][0]):
+                if (self.subdomain.boundary_type[n*2] == 0 and inlets[fluid][n][0]):
                     self.inlet[fluid][n*2] = True
-                if (self.subdomain.boundary_ID[n*2+1] == 0 and inlets[fluid][n][1]):
+                if (self.subdomain.boundary_type[n*2+1] == 0 and inlets[fluid][n][1]):
                     self.inlet[fluid][n*2+1] = True
-                if (self.subdomain.boundary_ID[n*2] == 0 and outlets[fluid][n][0]):
+                if (self.subdomain.boundary_type[n*2] == 0 and outlets[fluid][n][0]):
                     self.outlet[fluid][n*2] = True
-                if (self.subdomain.boundary_ID[n*2+1] == 0 and outlets[fluid][n][1]):
+                if (self.subdomain.boundary_type[n*2+1] == 0 and outlets[fluid][n][1]):
                     self.outlet[fluid][n*2+1] = True
 
     def create_reservoir(self):
