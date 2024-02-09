@@ -74,24 +74,33 @@ def read_r_lookup_file(input_file,water = False):
     """
     Read in the radius lookup file for lammps simulations
 
+    Actually reading in sigma
+
     RV: What are these inputs and parameters???????
+    Converts accoring to LJ equation, sigma 
+
+    File is:
+    Atom_ID epsilon sigma
+
 
     """
     io_utils.check_file(input_file)
 
     r_lookup_file = open(input_file,'r',encoding="utf-8")
 
+    power = 1.12246204830937 # 2^(1/6)
+
     if water:
-        param = 3.178
+        sigma_w = 3.178
     else:
-        param = 0.0
+        sigma_w = 0.0
 
     sigma = {}  # Lennard-Jones
     lookup_lines = r_lookup_file.readlines()
   
     for n_line,line in enumerate(lookup_lines):
-        r = float(line.split(" ")[2])
-        combined_sigma = 1.12246204830937/2.*(r + param)
+        sigma_i = float(line.split(" ")[2])
+        combined_sigma = power/2.*(sigma_i + sigma_w)
         sigma[n_line+1] = combined_sigma/2.
 
     r_lookup_file.close()
