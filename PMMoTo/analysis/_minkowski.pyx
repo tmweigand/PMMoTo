@@ -14,6 +14,8 @@ Mücklich [2]_.
 import cython
 import numpy as np
 cimport numpy as np
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
 
 np.import_array()
 
@@ -21,7 +23,7 @@ np.import_array()
 # {{{ functionals
 
 @cython.binding(True)
-cpdef functionals(np.ndarray image, res = None, norm=False):
+cpdef functionals(np.ndarray image, nodes, res = None, norm=False):
     r"""Compute the Minkowski functionals in 2D or 3D.
 
     This function computes the Minkowski functionals for the Numpy array `image`. Both
@@ -165,6 +167,7 @@ cpdef functionals(np.ndarray image, res = None, norm=False):
         else:
             raise ValueError('Input image and resolution need to be the same dimension')
 
+
         return _functionals_2d(image, res0, res1, factor, norm)
     elif (image.ndim == 3):
     # Set default resolution (length/voxel)
@@ -180,7 +183,7 @@ cpdef functionals(np.ndarray image, res = None, norm=False):
         else:
             raise ValueError('Input image and resolution need to be the same dimension')
 
-        return _functionals_3d(image, res0, res1, res2, factor, norm)
+        return _functionals_3d(image, res0, res1, res2, nodes, factor, norm)
     else:
         raise ValueError('Can only handle 2D or 3D images')
 
@@ -235,47 +238,70 @@ cdef extern from "minkowskic.h":
         double res0, 
         double res1, 
         double res2, 
+        long int* h,
         double* volume, 
         double* surface, 
         double* curvature, 
         double* euler6, 
         double* euler26)
 
+cdef extern from "minkowskic.h":
+    long int* c_distributions_3d(
+        unsigned short* image, 
+        int dim0, 
+        int dim1, 
+        int dim2,
+        double res0, 
+        double res1, 
+        double res2)
 
 def _functionals_3d(
         np.ndarray[np.uint16_t, ndim=3, mode="c"] image, 
         double res0, 
         double res1, 
         double res2,
+        np.ndarray[long, ndim=1, mode="c"] nodes,
         double factor,
         bint norm):
 
     cdef double volume 
     cdef double surface 
-    cdef double curvature 
+    cdef double curvature
     cdef double euler6
     cdef double euler26
    
     image = np.ascontiguousarray(image)
 
-    cdef np.ndarray[np.uint16_t, ndim=3, mode="c"] erosion = np.empty_like(
-        image,dtype=np.uint16)
-    
-    status = c_functionals_3d(
-        &image[0,0,0],
+    cdef long int[256] h
+
+    h = c_distributions_3d(&image[0,0,0],
         image.shape[0], 
         image.shape[1], 
         image.shape[2],
         res0, 
         res1, 
+        res2)
+
+    #print(np.asarray(h))
+
+    h = comm.allreduce(np.asarray(h),op = MPI.SUM)
+
+    #print(np.asarray(h))
+
+    status = c_functionals_3d(
+        &image[0,0,0],
+        nodes[0], 
+        nodes[1], 
+        nodes[2],
+        res0, 
+        res1, 
         res2,
+        h,
         &volume, 
         &surface, 
         &curvature, 
         &euler6, 
         &euler26)
-
-    print("VOL",volume)
 
     assert status == 0
     if norm:

@@ -3,7 +3,7 @@ from mpi4py import MPI
 from scipy.ndimage import distance_transform_edt
 import edt
 import time
-import PMMoTo
+import pmmoto
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 import matplotlib.pyplot as plt
@@ -56,15 +56,15 @@ def my_function():
     startTime = time.time()
 
 
-    domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subdomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    domain,sDL,pML = pmmoto.genDomainSubDomain(rank,size,subdomains,nodes,boundaries,inlet,outlet,"Sphere",file,pmmoto.readPorousMediaXYZR)
 
-    sD_EDT = PMMoTo.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
+    sD_EDT = pmmoto.calcEDT(sDL,pML.grid,stats = True,sendClass=True)
 
     endTime = time.time()
     print("PMMoTo run time:",endTime-startTime)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    PMMoTo.saveGridData("dataOut/grid_correct",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT)
+    pmmoto.saveGridData("dataOut/grid_correct",rank,domain,sDL,pML.grid,dist=sD_EDT.EDT)
 
 
     if testSerial:

@@ -17,20 +17,20 @@ int c_functionals_2d(unsigned short* image, int dim0, int dim1, double res0, dou
     *euler4 = norm * eul4_dens_2d(h,res0,res1);
     *euler8 = norm * eul8_dens_2d(h,res0,res1);
 
-    free(h);
+    //free(h);
 
     return 0;
 }
 
 /******************************************************************************/
 
-int c_functionals_3d(unsigned short* image, int dim0, int dim1, int dim2, double res0, double res1, double res2, double* volume, double* surface, double* curvature, double* euler6, double* euler26) {
+int c_functionals_3d(unsigned short* image, int dim0, int dim1, int dim2, double res0, double res1, double res2, long int* h, double* volume, double* surface, double* curvature, double* euler6, double* euler26) {
     double norm;
-    long int* h;
+    //long int* h;
 
-    norm = (double)(dim0-1) * (dim1-1) * (dim2-1) * res0 * res1 * res2;
+    norm = (double) dim0 * dim1 * dim2 * res0 * res1 * res2;
 	
-    h = quant_3d(image, dim0, dim1, dim2);
+    //h = quant_3d(image, dim0, dim1, dim2);
 
     *volume    = norm * volu_dens_3d(h);
     *surface   = norm * surf_dens_3d(h, res0, res1, res2);
@@ -38,9 +38,20 @@ int c_functionals_3d(unsigned short* image, int dim0, int dim1, int dim2, double
     *euler6    = norm * eul6_dens_3d(h, res0, res1, res2);
     *euler26   = norm * eu26_dens_3d(h, res0, res1, res2);
 
-    free(h);
+    //free(h);
 
     return 0;
+}
+
+// }}}
+/******************************************************************************/
+// {{{ c_distribtuions_3d
+long int* c_distributions_3d(unsigned short* image, int dim0, int dim1, int dim2, double res0, double res1, double res2) {
+	
+    long int* h;
+    h = quant_3d(image, dim0, dim1, dim2);
+
+    return h;
 }
 
 // }}}
@@ -274,7 +285,7 @@ long int* quant_3d(unsigned short* image, int dim0, int dim1, int dim2) {
                  + ((r_pixel_3d(x+1,y  ,0,image,dim1,dim2) == USHRT_MAX) << 1) 
                  + ((r_pixel_3d(x  ,y+1,0,image,dim1,dim2) == USHRT_MAX) << 2)
                  + ((r_pixel_3d(x+1,y+1,0,image,dim1,dim2) == USHRT_MAX) << 3); 
-    		for (z = 1; z < dim2; z++) {
+    		for (z = 1; z < dim2; z++) { 
                 mask += ((r_pixel_3d(x  ,y  ,z,image,dim1,dim2) == USHRT_MAX) << 4)
                       + ((r_pixel_3d(x+1,y  ,z,image,dim1,dim2) == USHRT_MAX) << 5)
                       + ((r_pixel_3d(x  ,y+1,z,image,dim1,dim2) == USHRT_MAX) << 6)

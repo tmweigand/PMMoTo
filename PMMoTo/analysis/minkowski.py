@@ -1,27 +1,33 @@
 """minkowski.py"""
-
 import numpy as np
+from mpi4py import MPI
 from pmmoto.analysis import _minkowski
-
+from pmmoto.core import utils
+comm = MPI.COMM_WORLD
 
 __all__ = [
-    "test"
+    "functionals"
     ]    
 
 
-def test(subdomain,grid):
+def functionals(subdomain,grid):
     """
-    
+    Calculate the minkowki functionals.
+
+    Only want values for own_nodes, however, 
+    algorithm skips last index for bcs. 
+    So if not +1 external boundary, keep the padding
     """
-    t = _minkowski.functionals(grid.astype(bool),subdomain.domain.voxel)
-    return t
+    if subdomain.size == 1:
+        functionals = _minkowski.functionals(grid.astype(bool),subdomain.domain.nodes,subdomain.domain.voxel)
+        print(grid.size)
+    else:
+        _index_own_nodes = np.copy(subdomain.index_own_nodes)
+        for face in [1,3,5]: # +1 external faces
+            if subdomain.boundary_type[face] == -1: # Internal boundary
+                _index_own_nodes[face] += 1
 
+        _own_grid = utils.own_grid(grid,_index_own_nodes)
+        functionals = _minkowski.functionals(_own_grid.astype(bool),subdomain.domain.nodes,subdomain.domain.voxel)
 
-# def minkowskiEval(EDT,res=None):      
-#     # evaluate grid minus last buffer entry to prevent double counting
-#     # this may result in bad behavior for boundaries = 0...  
-#     if (res[0] != res[1]) or (res[0] != res[2]):
-#         print('In order to perform MF evaluation, isotropy is expected.')
-#         return [None]
-#     dist,volume,surface,curvature,euler = mk.functions_open(EDT[:-1,:-1,:-1]/res[0])
-#     return [dist,volume,surface,curvature,euler]
+    return functionals

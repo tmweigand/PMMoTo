@@ -15,7 +15,6 @@ def my_function():
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    dataReadBoundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[1,0]]
     outlet = [[0,0],[0,0],[0,1]]
 
@@ -25,6 +24,8 @@ def my_function():
 
     lammps_file = './testDomains/lammps/lammps_single_atom.out'
     sphere_data,domain_data = pmmoto.io.read_lammps_atoms(lammps_file,r_lookup)
+
+    print(r_lookup,sphere_data,domain_data)
 
     sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)

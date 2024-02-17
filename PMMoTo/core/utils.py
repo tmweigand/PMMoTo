@@ -137,7 +137,7 @@ def own_grid(grid,own):
     grid_out =  grid[own[0]:own[1],
                      own[2]:own[3],
                      own[4]:own[5]]
-    
+
     return np.ascontiguousarray(grid_out)
 
 def phases_exists(grid,phase,own_nodes):

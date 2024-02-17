@@ -3,7 +3,6 @@
 .DS_Store
 *.so
 *.workspace
-*.c
 *.cpp
 *.html
 profile_out.*

@@ -11,7 +11,7 @@ class Domain(object):
                  boundaries = [[0,0],[0,0],[0,0]],
                  inlet = [[0,0],[0,0],[0,0]],
                  outlet =[[0,0],[0,0],[0,0]]):
-        self.nodes        = nodes
+        self.nodes        = np.asarray(nodes)
         self.size_domain  = size_domain
         self.boundaries   = boundaries
         self.subdomains   = subdomains
