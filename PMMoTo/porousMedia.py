@@ -3,7 +3,9 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
+from .domainGeneration import domainGenINKCA
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenCA
 from . import communication
 from . import subDomain
 from . import dataOutput
@@ -32,9 +34,19 @@ class porousMedia(object):
         self.gridCheck()
         sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
         self.grid = sDComm.updateBuffer()
+        
+    def genDomainSphereDataCA(self,sphereData):
+        self.grid = domainGenCA(self.subDomain.x,self.subDomain.y,self.subDomain.z,sphereData)
+        self.gridCheck()
+        sDComm = communication.Comm(Domain = self.Domain,subDomain = self.subDomain,grid = self.grid)
+        self.grid = sDComm.updateBuffer()
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
+        self.gridCheck()
+        
+    def genDomainInkBottleCA(self):
+        self.grid = domainGenINKCA(self.subDomain.x,self.subDomain.y,self.subDomain.z)
         self.gridCheck()
 
     def setInletOutlet(self,resSize):
@@ -112,6 +124,26 @@ def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
         pM.genDomainSphereData(sphereData)
     if dataFormat == "InkBotle":
         pM.genDomainInkBottle()
+    pM.setInletOutlet(resSize)
+    pM.setWallBoundaryConditions()
+    pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)
+    pM.getPorosity()
+
+    loadBalancingCheck = False
+    if loadBalancingCheck:
+        pM.loadBalancing()
+
+    return pM
+
+def genPorousMediaCA(subDomain,dataFormat,sphereData=None, resSize = 0):
+
+    pM = porousMedia(Domain = subDomain.Domain, subDomain = subDomain, Orientation = subDomain.Orientation)
+
+    if dataFormat == "Sphere":
+        pM.genDomainSphereDataCA(sphereData)
+    if dataFormat == "InkBotle":
+        pM.genDomainInkBottleCA()
+        
     pM.setInletOutlet(resSize)
     pM.setWallBoundaryConditions()
     pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)

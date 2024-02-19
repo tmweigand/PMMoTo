@@ -18,7 +18,9 @@ class Morphology(object):
         self.gridOut = np.copy(grid)
 
     def genStructElem(self):
-
+        
+        #print(math.ceil(self.radius/self.Domain.dX),math.ceil(self.radius/self.Domain.dY),math.ceil(self.radius/self.Domain.dZ))
+        
         self.structRatio = np.array([math.ceil(self.radius/self.Domain.dX),math.ceil(self.radius/self.Domain.dX),
                                      math.ceil(self.radius/self.Domain.dY),math.ceil(self.radius/self.Domain.dY),
                                      math.ceil(self.radius/self.Domain.dZ),math.ceil(self.radius/self.Domain.dZ)],

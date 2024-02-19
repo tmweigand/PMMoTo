@@ -11,7 +11,7 @@ def my_function():
     rank = comm.Get_rank()
 
     subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [400,400,400] # Total Number of Nodes in Domain
+    nodes = [150,150,150] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
@@ -23,6 +23,30 @@ def my_function():
 
 
     startTime = time.time()
+    
+    
+    ############################################################################################################################################
+    ### get CAgrid
+    
+    domain,sDL,pML = PMMoTo.genDomainSubDomainCA(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
+    numFluidPhases = 2
+    twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
+
+    wRes  = [[0,0],[0,0],[0,0]]
+    nwRes = [[0,0],[0,0],[0,0]]
+    mpInlets = {twoPhase.wID:wRes,twoPhase.nwID:nwRes}
+
+    wOut  = [[0,0],[0,0],[0,0]]
+    nwOut = [[0,0],[0,0],[0,0]]
+    mpOutlets = {twoPhase.wID:wOut,twoPhase.nwID:nwOut}
+    
+    #Initialize wetting saturated somain
+    twoPhase.initializeMPGrid(constantPhase = twoPhase.wID) 
+    twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 0)
+    
+    CAgrid = np.copy(twoPhase.porousMedia.grid)
+    ###############################################################################################################################################
+    
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"Sphere",file,PMMoTo.readPorousMediaXYZR)
 
     numFluidPhases = 2
@@ -43,11 +67,13 @@ def my_function():
 
 
     #### SET THESE PARAMETERS
-    interval = 0.9  ##rate at which to change radius (each loop: radius = interval * radius)
-    minSetSize = 10  ##in voxels, remove all smaller w phase, set to 0 for no removal 
-    sW = [0.30] ## saturation target list
-
-    drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+    interval = 0.95  ##rate at which to change radius (each loop: radius = interval * radius)
+    minSetSize = 0  ##in voxels, remove all smaller w phase, set to 0 for no removal 
+    sW = [0.85,0.50,0.15] ## saturation target list
+    CA = 25
+    
+    #drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+    drainL = PMMoTo.multiPhase.calcOpenSWCA(sW,twoPhase,CAgrid,interval,minSetSize,CA)
 
     # twoPhase.getBoundaryInfo(mpInlets,mpOutlets,resSize = 1)
     # #Initialize from previous fluid distribution

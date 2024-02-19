@@ -4,6 +4,7 @@ comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGen
+from .domainGeneration import domainGenCA
 from . import communication
 from . import Orientation
 from . import Domain
@@ -293,6 +294,40 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
         pM = porousMedia.genPorousMedia(sD,dataFormat,sphereData,resSize = 1)
     else:
         pM = porousMedia.genPorousMedia(sD,dataFormat,resSize = 1)
+
+
+    return domain,sD,pM
+
+def genDomainSubDomainCA(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFormat,file,dataRead):
+
+    numSubDomains = np.prod(subDomains)
+
+    if (size != numSubDomains):
+        if rank==0: 
+            print("Number of Subdomains Must Equal Number of Processors!...Exiting")
+        communication.raiseError()
+        
+    ### Get Domain INFO for All Procs ###
+    if file is not None:
+        domainSize,sphereData = dataRead(file)
+    if file is None:
+        domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
+        
+    domain = Domain.Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
+    domain.getdXYZ()
+    domain.getSubNodes()
+
+    orient = Orientation.Orientation()
+
+    sD = subDomain(Domain = domain, ID = rank, subDomains = subDomains, Orientation = orient)
+    sD.getInfo()
+    sD.getNeighbors()
+    sD.getXYZ(sD.buffer)
+
+    if file is not None:
+        pM = porousMedia.genPorousMediaCA(sD,dataFormat,sphereData,resSize = 1)
+    else:
+        pM = porousMedia.genPorousMediaCA(sD,dataFormat,resSize = 1)
 
 
     return domain,sD,pM
