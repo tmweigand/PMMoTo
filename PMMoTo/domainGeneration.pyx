@@ -136,3 +136,61 @@ def domainGenINKCA(double[:] x, double[:] y, double[:] z):
               grid[i, j, k] = R
 
     return _grid
+
+def domainGenCapTube(double[:] x, double[:] y, double[:] z):
+
+    cdef int NX = x.shape[0]
+    cdef int NY = y.shape[0]
+    cdef int NZ = z.shape[0]
+    cdef int i, j, k
+    cdef double r
+
+    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] grid
+
+    grid = _grid
+
+    #sloped with circular cross section
+    #start_r = 0.1
+    ##max_x = x[NX-1] ##parallel code, this needs to be a global maximum
+    #max_x = 14.0
+    #
+    #for i in range(0,NX):
+    #  r = start_r + ((x[i])/max_x)
+    #  for j in range(0,NY):
+    #    for k in range(0,NZ):
+    #      if y[j]*y[j] + z[k]*z[k] <= r*r:
+    #        grid[i,j,k] = 1
+
+    # sloped with ellipse cross section
+    #start_r = 0.1
+    ##max_x = x[NX-1] ##parallel code, this needs to be a global maximum
+    #max_x = 14.0
+    #
+    #start_a = 0.25
+    #start_b = 0.1
+
+    #for i in range(0,NX):
+    #  a = start_a + ((x[i])/max_x)
+    #  b = start_b + ((x[i])/max_x)
+    #  for j in range(0,NY):
+    #    for k in range(0,NZ):
+    #      if y[j]*y[j]/(a*a) + z[k]*z[k]/(b*b) <= 1:
+    #        grid[i,j,k] = 1
+
+
+    # sloped square cross section
+    start_r = 0.1
+    ##max_x = x[NX-1] ##parallel code, this needs to be a global maximum
+    max_x = 14.0
+
+    for i in range(0,NX):
+      r = start_r + ((x[i])/max_x)
+      for j in range(0,NY):
+        for k in range(0,NZ):
+          if abs(y[j]) <= r and abs(z[k]) <= r:
+            grid[i,j,k] = 1
+
+
+
+    return _grid

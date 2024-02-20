@@ -307,7 +307,7 @@ def calcDrainage(pc,mP):
 def calcDrainageCA(pc,mP,CAgrid,CA):
 
     if mP.subDomain.ID == 0:
-        print("Running drainage with CA control and capillary pressure targets")
+        print("Running drainage with Liu CA control and capillary pressure targets")
         
     ###add error and do not run (or switch to sw targets) if radius target (determined from pc) would not fit in the domain
     
@@ -455,6 +455,146 @@ def calcDrainageCA(pc,mP,CAgrid,CA):
                 dataOutput.saveGrid(fileName,mP.subDomain,mP.mpGrid)  
 
            
+    return eqDist, result
+
+def calcDrainageSchulzCA(pc,mP,CA):
+
+    if mP.subDomain.ID == 0:
+        print("Running drainage with Schulz CA control and with capillary pressure targets")
+    
+    ###add error and do not run (or switch to sw targets) if radius target (determined from pc) would not fit in the domain
+    fileName = "dataOut/test/inputgrid"
+    dataOutput.saveGrid(fileName,mP.subDomain,mP.porousMedia.grid)
+    
+    ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
+    poreSpaceDist = distance.calcEDT(mP.subDomain,mP.porousMedia.grid)
+
+    eqDist = equilibriumDistribution(mP)
+    sW = eqDist.calcSaturation(mP.mpGrid,2)
+    save = True
+
+    if mP.subDomain.ID == 0:
+        print("Saturation starting point: ",1.0-sW)
+        if (1.0-sW) == 0.0:
+            print("Did you initialize correctly?")
+            
+    ## Make sure pc targets are ordered smallest to largest
+    pc.sort(reverse=False)
+
+    # fileName = "dataOut/test/distCSV"
+    # dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
+
+    fileName = "dataOut/test/dist"
+    dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
+
+    # setSaveDict = {'inlet': 'inlet',
+    #                'outlet':'outlet',
+    #                 'boundary': 'boundary',
+    #                 'localID': 'localID'}
+
+    result = []
+    
+    ### Loop through all Pressures
+    for p in pc:
+        if p == 0:
+            sW = 1
+        else:
+            ### Get Sphere Radius from Pressure
+            eqDist.getDiameter(p)
+
+
+
+            # Step 1 - Reservoirs are not contained in mdGrid or grid but rather added when needed so this step is unnecessary
+            
+            # Step 2 - Dilate Solid Phase with CA scaled radius and Flag Allowable Fluid Voxes as 1 
+            rad = eqDist.probeR
+   
+            dilateRad = (rad * math.cos(np.deg2rad(CA)))/2
+            ind = np.where( (poreSpaceDist >= dilateRad) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
+            fileName = "dataOut/test/Step2"
+            dataOutput.saveGrid(fileName,mP.subDomain,ind)
+    
+            # Step 3 - Check if Points were Marked
+            continueFlag = eqDist.checkPoints(ind,1,True)
+            if  mP.subDomain.ID == 0:
+                print(p,rad,continueFlag)
+            if continueFlag:
+
+                # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
+                nwCheck = eqDist.checkPoints(mP.mpGrid,mP.nwID)
+                if nwCheck:
+ 
+                    nwSets,nwSetCount = sets.collectSets(mP.mpGrid,mP.nwID,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                    nwGrid = eqDist.getInletConnectedNodes(nwSets,1)
+
+                    # setSaveDict = {'inlet': 'inlet',
+                    #                'outlet':'outlet',
+                    #                'boundary': 'boundary',
+                    #                'localID': 'localID'}
+
+                    # eqDist.Sets = nwSets
+                    # eqDist.setCount = nwSetCount
+                    
+                    # fileName = "dataOut/drain/NWset"+str(p)
+                    # dataOutput.saveSetData(fileName,mP.subDomain,eqDist,**setSaveDict)
+                    
+                    # fileName = "dataOut/test/nwGrid"+str(p)
+                    # dataOutput.saveGrid(fileName,mP.subDomain,nwGrid)
+
+                # Step 3b and 3d- Check if W Phases Exists then Collect W Sets
+                wCheck = eqDist.checkPoints(mP.mpGrid,mP.wID)
+                if wCheck:
+ 
+                    wSets,wSetCount = sets.collectSets(mP.mpGrid,mP.wID,mP.inlet[mP.wID],mP.outlet[mP.wID],mP.loopInfo[mP.wID],mP.subDomain)
+                    wGrid = eqDist.getInletConnectedNodes(wSets,1)
+                    
+                    
+                    # setSaveDict = {'inlet': 'inlet',
+                    #                'outlet':'outlet',
+                    #                'boundary': 'boundary',
+                    #                'localID': 'localID'}
+
+                    # eqDist.Sets = wSets
+                    # eqDist.setCount = wSetCount
+
+                    # dataOutput.saveSetData("dataOut/Wset",mP.subDomain,eqDist,**setSaveDict)
+
+                    # fileName = "dataOut/test/wGrid"+str(p)
+                    # dataOutput.saveGrid(fileName,mP.subDomain,wGrid)
+
+                # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
+                indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
+                ind2 = eqDist.getInletConnectedNodes(indSets,1)
+                fileName = "dataOut/test/Step3c"
+                dataOutput.saveGrid(fileName,mP.subDomain,ind2)
+            
+                # Step 3e - no Step 3e ha. 
+
+                # Step 3f -- Unsure about these checks!
+                if nwCheck:
+                    ind = np.where( (ind2 != 1) & (nwGrid != 1),0,ind).astype(np.uint8)
+                    morph = morphology.morph(ind,mP.subDomain,eqDist.probeR)
+                else:
+                    morph = morphology.morph(ind2,mP.subDomain,eqDist.probeR)
+
+                # Step 3g
+                fileName = "dataOut/test/Step3g"
+                dataOutput.saveGrid(fileName,mP.subDomain,morph)
+            
+                ## Turn wetting films on or off here
+                mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)  ### films off
+                #mP.mpGrid = np.where( (morph == 1),mP.nwID,mP.mpGrid)                ### films on
+
+                # Step 4
+                sw = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
+                if mP.subDomain.ID == 0:
+                    print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
+                    result.append(sw)
+
+            if save:
+                fileName = "dataOut/twoPhase/twoPhase_drain_pc_"+str(p)
+                dataOutput.saveGrid(fileName,mP.subDomain,mP.mpGrid)        
+
     return eqDist, result
 
 def calcDrainageSW(sW,mP,interval):

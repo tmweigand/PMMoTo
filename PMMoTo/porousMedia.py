@@ -4,6 +4,7 @@ comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
 from .domainGeneration import domainGenINKCA
+from .domainGeneration import domainGenCapTube
 from .domainGeneration import domainGen
 from .domainGeneration import domainGenCA
 from . import communication
@@ -49,6 +50,10 @@ class porousMedia(object):
         self.grid = domainGenINKCA(self.subDomain.x,self.subDomain.y,self.subDomain.z)
         self.gridCheck()
 
+    def genDomainCapTube(self):
+        self.grid = domainGenCapTube(self.subDomain.x,self.subDomain.y,self.subDomain.z)
+        self.gridCheck()
+        
     def setInletOutlet(self,resSize):
         """
         Determine inlet/outlet Info and Pad Grid
@@ -124,6 +129,8 @@ def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
         pM.genDomainSphereData(sphereData)
     if dataFormat == "InkBotle":
         pM.genDomainInkBottle()
+    if dataFormat == "CapTube":
+        pM.genDomainCapTube()
     pM.setInletOutlet(resSize)
     pM.setWallBoundaryConditions()
     pM.loopInfo = pM.Orientation.getLoopInfo(pM.grid,subDomain,pM.inlet,pM.outlet,resSize)

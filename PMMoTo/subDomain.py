@@ -3,6 +3,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
+from .domainGeneration import domainGenCapTube
 from .domainGeneration import domainGen
 from .domainGeneration import domainGenCA
 from . import communication

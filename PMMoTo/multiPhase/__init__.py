@@ -1,5 +1,6 @@
 from .equilibriumFluidDistribution import calcDrainage
 from .equilibriumFluidDistribution import calcDrainageCA
+from .equilibriumFluidDistribution import calcDrainageSchulzCA
 from .equilibriumFluidDistribution import calcDrainageSW
 from .equilibriumFluidDistribution import calcOpenSW
 from .equilibriumFluidDistribution import calcOpenSWCA
