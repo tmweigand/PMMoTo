@@ -1,6 +1,6 @@
 import numpy as np
 from mpi4py import MPI
-from . import Orientation
+from pmmoto.core import Orientation
 from pmmoto.analysis import stats
 
 comm = MPI.COMM_WORLD
