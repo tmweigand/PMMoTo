@@ -100,8 +100,7 @@ def read_r_lookup_file(input_file,water = False):
   
     for n_line,line in enumerate(lookup_lines):
         sigma_i = float(line.split(" ")[2])
-        combined_sigma = power/2.*(sigma_i + sigma_w)
-        sigma[n_line+1] = combined_sigma/2.
+        sigma[n_line+1] = power/2.*(sigma_i + sigma_w)
 
     r_lookup_file.close()
 
