@@ -18,7 +18,7 @@ def functionals(subdomain,grid):
     algorithm skips last index for bcs. 
     So if not +1 external boundary, keep the padding
     """
-    if subdomain.size == 1:
+    if subdomain.size == 1 and all(subdomain.boundary_type != 2):
         functionals = _minkowski.functionals(grid.astype(bool),subdomain.domain.nodes,subdomain.domain.voxel)
         print(grid.size)
     else:

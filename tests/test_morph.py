@@ -29,9 +29,6 @@ def my_function():
     sphere_data,domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)
 
-
-
-
     edt = pmmoto.filters.calc_edt(sd,pm.grid)
 
     radius = sd.domain.voxel[0]*4 + sd.domain.voxel[0]*1.e-6

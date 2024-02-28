@@ -8,11 +8,11 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomains = [3,3,3] # Specifies how domain is broken among processes
+    subdomains = [2,2,2] # Specifies how domain is broken among processes
     nodes = [200,200,200] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-xpip,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 

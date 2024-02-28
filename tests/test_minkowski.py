@@ -12,7 +12,7 @@ def my_function():
     nodes = [200,200,200] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
