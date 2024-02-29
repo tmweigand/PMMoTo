@@ -446,7 +446,7 @@ double surf_dens_3d(long int *h, double res0, double res1, double res2) {
 	free(weight);
 
 	if(!Lv) return 0;
-	else return 0.25 * Sv/Lv;
+	else return 2. * Sv/Lv; //TMW: 0.25 * Sv/Lv;
 }
 
 // }}}
@@ -538,7 +538,7 @@ double curv_dens_3d(long int *h, double res0, double res1, double res2) {
 	free(Delta);
 	free(weight);
 
-    return (double)Mc/(double)(le) * 2.0/M_PI;
+    return (double)Mc/(double)(le) * 8.0*M_PI; //TMW: (double)Mc/(double)(le) * 2.0/M_PI;
 }
 
 // }}}
@@ -610,7 +610,7 @@ double eu26_dens_3d(long int *h, double res0, double res1, double res2) {
 	}
 
 	if(!iVol) return 0;
- 	else return 1.0/(32.0*M_PI)*(double)iChi/((double)iVol*res0*res1*res2);
+ 	else return 1.0/24.0*(double)iChi/((double)iVol*res0*res1*res2); //TMW: 1.0/(32.0*M_PI)*(double)iChi/((double)iVol*res0*res1*res2);
 }
 
 // }}}

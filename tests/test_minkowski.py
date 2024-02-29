@@ -9,14 +9,14 @@ def my_function():
     rank = comm.Get_rank()
 
     subdomains = [1,1,1] # Specifies how domain is broken among processes
-    nodes = [200,200,200] # Total Number of Nodes in Domain
+    nodes = [400,400,400] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet  = [[0,0],[0,0],[0,0]]
     outlet = [[0,0],[0,0],[0,0]]
 
-    file = './testDomains/50pack.out'
+    file = './testDomains/1pack.out'
     #file = './testDomains/bcc.out'
 
 
@@ -28,21 +28,16 @@ def my_function():
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
     pmmoto.io.save_grid_data("dataOut/test_minkowski",sd,pm.grid,dist=edt)
 
-    # pm.grid = np.where(pm.grid == 0,0,0)
 
     fun = pmmoto.analysis.minkowski.functionals(sd,np.logical_not(pm.grid))
-    print(fun[0])
-    m_vol = fun[0]
-    m_sa = 8*fun[1]
-    m_curv = 4*np.pi*np.pi*fun[2]
-    m_euler = 4*np.pi/3*fun[3]
+    print(fun)
 
-    print(m_vol,m_sa,m_curv,m_euler)
+    radius = 0.25
 
-    vol = 4/3*np.pi*0.25*0.25*0.25
-    sa = 4*np.pi*0.25*0.25
-    curv = sa*((1./0.25) + (1./0.25))
-    euler = sa/(0.25*0.25)/(4*np.pi)
+    vol = 4/3*np.pi*radius**3
+    sa = 4*np.pi*radius*radius
+    curv = sa*((1./radius) + (1./radius))
+    euler = sa/(radius*radius)/(4*np.pi)
 
     print(vol,sa,curv,euler)
 
