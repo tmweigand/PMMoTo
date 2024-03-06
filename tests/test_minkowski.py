@@ -23,11 +23,6 @@ def my_function():
     sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
     sphere_data,domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)
-    edt = pmmoto.filters.calc_edt(sd,pm.grid)
-
-    ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    pmmoto.io.save_grid_data("dataOut/test_minkowski",sd,pm.grid,dist=edt)
-
 
     fun = pmmoto.analysis.minkowski.functionals(sd,np.logical_not(pm.grid))
     print(fun)
