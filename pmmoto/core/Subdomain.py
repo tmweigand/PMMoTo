@@ -54,8 +54,8 @@ class Subdomain(object):
                             if d == self.subdomains[nn] - 1:
                                 self.boundary = True
                                 self.boundary_type[nn*2+1] = self.domain.boundaries[nn][1]
-                                self.nodes[nn] += self.domain.rem_sub_nodes[d]
-                                self.own_nodes[nn] += self.domain.rem_sub_nodes[d]
+                                self.nodes[nn] += self.domain.rem_sub_nodes[nn]
+                                self.own_nodes[nn] += self.domain.rem_sub_nodes[nn]
 
                     n = n + 1
 
