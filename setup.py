@@ -73,7 +73,7 @@ def process_tempita_pyx(fromfile):
         f.write(pyxcontent)
 
 
-medialFunctions = 'PMMoTo/medialAxis/medialExtractionFunctions.pyx.in'
+medialFunctions = 'pmmoto/filters/medialAxis/medialExtractionFunctions.pyx.in'
 medialPYX = os.path.splitext(medialFunctions)[0]
 if os.path.isfile(medialPYX):
     if os.path.getmtime(medialPYX) < os.path.getmtime(medialFunctions):
@@ -88,58 +88,58 @@ cmdclass = {}
 ext_modules = []
 
 ext_modules += [
-    Extension("PMMoTo.domainGeneration", 
-              ["PMMoTo/domainGeneration.pyx"],
-              include_dirs=['PMMoTo']),
-    Extension("PMMoTo.distance", 
-              ["PMMoTo/distance.pyx"],
-              include_dirs=['PMMoTo']),
-    Extension("PMMoTo.nodes", 
-              ["PMMoTo/nodes.pyx"],
-              include_dirs=['PMMoTo']),
-    Extension("PMMoTo.Orientation",
-              ["PMMoTo/Orientation.pyx"],
-              include_dirs=['PMMoTo']),
-    Extension("PMMoTo.set", 
-              ["PMMoTo/set.pyx"],
-              include_dirs=['PMMoTo']),
-    Extension("PMMoTo.sets", 
-              ["PMMoTo/sets.pyx"],
-              include_dirs=['PMMoTo'],language='c++'),
-    Extension("PMMoTo.multiPhase.equilibriumFluidDistribution", 
-              ["PMMoTo/multiPhase/equilibriumFluidDistribution.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/multiPhase']),
-    Extension("PMMoTo.medialAxis.medialExtraction", 
-              ["PMMoTo/medialAxis/medialExtraction.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
-    Extension("PMMoTo.medialAxis.medialNodes", 
-              ["PMMoTo/medialAxis/medialNodes.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis']),
-    Extension("PMMoTo.medialAxis.medialSet", 
-              ["PMMoTo/medialAxis/medialSet.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis']),
-    Extension("PMMoTo.medialAxis.medialSets", 
-              ["PMMoTo/medialAxis/medialSets.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
-    Extension("PMMoTo.medialAxis.medialPath", 
-              ["PMMoTo/medialAxis/medialPath.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis']),
-    Extension("PMMoTo.medialAxis.medialExtractionFunctions", 
-              ["PMMoTo/medialAxis/medialExtractionFunctions.pyx"],
-              include_dirs=['PMMoTo','PMMoTo/medialAxis'],language='c++'),
+    Extension("pmmoto.domain_generation._domainGeneration",
+              ["pmmoto/domain_generation/_domainGeneration.pyx"],
+              include_dirs=['pmmoto/domain_generation/'],language='c++'),
+    Extension("pmmoto.core.nodes",
+              ["pmmoto/core/nodes.pyx"],
+              include_dirs=['pmmoto/core']),
+    Extension("pmmoto.core._nodes",
+              ["pmmoto/core/_nodes.pyx"],
+              include_dirs=['pmmoto/core'],language='c++'),
+    Extension("pmmoto.core._Orientation",
+              ["pmmoto/core/_Orientation.pyx"],
+              include_dirs=['pmmoto/core'],language='c++'),
+    Extension("pmmoto.core._set",
+              ["pmmoto/core/_set.pyx"],
+              include_dirs=['pmmoto/core'],language='c++'),
+    Extension("pmmoto.core._sets",
+              ["pmmoto/core/_sets.pyx"],
+              include_dirs=['pmmoto/core'],language='c++'),
+    Extension("pmmoto.analysis._minkowski",
+              ["pmmoto/analysis/_minkowski.pyx", "pmmoto/analysis/quantimpyc.c", "pmmoto/analysis/minkowskic.c"],
+              include_dirs=['pmmoto/analysis']),
+    Extension("pmmoto.filters.medialAxis.medialExtraction",
+              ["pmmoto/filters/medialAxis/medialExtraction.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis'],language='c++'),
+    Extension("pmmoto.filters.medialAxis.medialNodes",
+              ["pmmoto/filters/medialAxis/medialNodes.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis']),
+    Extension("pmmoto.filters.medialAxis.medialSet",
+              ["pmmoto/filters/medialAxis/medialSet.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis']),
+    Extension("pmmoto.filters.medialAxis.medialSets",
+              ["pmmoto/filters/medialAxis/medialSets.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis'],language='c++'),
+    Extension("pmmoto.filters.medialAxis.medialPath",
+              ["pmmoto/filters/medialAxis/medialPath.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis']),
+    Extension("pmmoto.filters.medialAxis.medialExtractionFunctions", 
+              ["pmmoto/filters/medialAxis/medialExtractionFunctions.pyx"],
+              include_dirs=['pmmoto','pmmoto/filters/medialAxis'],language='c++'),
 ]
 cmdclass.update({'build_ext': build_ext})
 
 
 setup(
-    name="PMMoTo",
+    name="pmmoto",
     version="0.0.1",
-    packages=['PMMoTo','PMMoTo.medialAxis','PMMoTo.multiPhase'],
+    packages=['pmmoto','pmmoto.filters.medialAxis','pmmoto.filters.multiPhase'],
     author="Timothy M Weigand",
     description="Porous Media Morphological and Topological Analysis Toolkit",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://github.com/tmweigand/PMMoTo",
+    url="https://github.com/tmweigand/pmmoto",
     cmdclass=cmdclass,
     ext_modules=cythonize(ext_modules,annotate=True,compiler_directives={'language_level' : "3"}),
     include_dirs=numpy.get_include(),
@@ -152,6 +152,6 @@ setup(
         'scipy>=1.9.3',
         'pyevtk>=1.5.0',
         'pyvista>=0.39.1',
-        'quantimpy>=0.2.6'
+        'connected_components_3d>=3.12.4'
     ]
 )
