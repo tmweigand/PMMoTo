@@ -25,6 +25,7 @@ class Domain(object):
         self.rem_sub_nodes = np.zeros([self.dims],dtype=np.uint64)
         self.length_domain = np.zeros([self.dims])
         self.voxel = np.zeros([self.dims])
+        self.coords = [None]*self.dims
         self.generate_global_map()
 
     def get_voxel_size(self):
@@ -34,6 +35,8 @@ class Domain(object):
         for n in range(0,self.dims):
             self.length_domain[n] = (self.size_domain[n,1]-self.size_domain[n,0])
             self.voxel[n] = self.length_domain[n]/self.nodes[n]
+
+        self.get_coords()
 
     def get_subdomain_nodes(self):
         """
@@ -87,3 +90,10 @@ class Domain(object):
             self.global_map[:,:,0]  = self.global_map[:,:,-2]
             self.global_map[:,:,-1] = self.global_map[:,:,1]
     
+
+    def get_coords(self):
+        """
+        Calculate the Physical coordinaties of the voxels for entire domain
+        """
+        for n in range(self.dims):
+            self.coords[n] = np.linspace(self.size_domain[n][0]+self.voxel[n]/2., self.size_domain[n][1]-self.voxel[n]/2., self.nodes[n] )
