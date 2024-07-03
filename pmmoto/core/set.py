@@ -7,10 +7,10 @@ class SetSubdomain:
     """
     Subdomain info for set class
     """
-    boundary: bool
-    index: np.array
-    inlet: bool
-    outlet: bool
+    boundary: bool = False
+    index: np.array = -1
+    inlet: bool = False
+    outlet: bool = False
     n_procs: list[int] = dataclasses.field(default_factory=list)
 
 @dataclasses.dataclass
@@ -43,7 +43,7 @@ class Set:
         self.proc_ID = proc_ID
         self.global_ID = -1
         self.phase = None
-        self.subdomain_data = None
+        self.subdomain_data = SetSubdomain()
         self.node_data = None
         self.boundary_data = None
 
@@ -176,7 +176,6 @@ class BoundarySet(Set):
         """
         Determine the total number of nodes for a set. Subdomains are padded so need to remove. 
         """
-
 
     def update_boundary_set(self,boundary_data):
         """

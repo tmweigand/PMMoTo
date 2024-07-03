@@ -42,7 +42,7 @@ def get_boundary_set_info(subdomain,
     cdef: 
         Py_ssize_t i,j,k
         int n_face,label
-        vector[bool] inlets,outlets,boundary
+        vector[bool] inlets,outlets,boundary,boundary_face
         vector[Py_ssize_t] phase
         unordered_map[int, vector[Py_ssize_t]] b_nodes
         unordered_map[int, vector[Py_ssize_t]] nodes
@@ -75,6 +75,10 @@ def get_boundary_set_info(subdomain,
 
     # Loop through faces
     for n_face in range(0,num_faces):
+        
+        for _ in range(0,n_labels):
+            boundary_face.push_back(False)
+        
         loop = loop_info[n_face]
 
         if boundary_type[n_face] == 2:
@@ -87,6 +91,7 @@ def get_boundary_set_info(subdomain,
                 for k in range(loop[2][0],loop[2][1]):
                     label = grid[i,j,k]
                     boundary[label] = True
+                    boundary_face[label] = True
                     boundary_index = _Orientation.get_boundary_index([i,j,k],[sx,sy,sz])
                     boundary_ID = _Orientation.get_boundary_ID(boundary_index)
                     boundary_features[label][boundary_ID] = True
@@ -96,11 +101,14 @@ def get_boundary_set_info(subdomain,
                     phase[label] = l_ID
                     nodes[label].push_back(l_ID)
         
-        if inlet[n_face] and boundary[label]:
-            inlets[label] = True
-        if outlet[n_face] and boundary[label]:
-            outlets[label] = True
+        for n in range(0,n_labels):
+            if inlet[n_face] and boundary_face[n]:
+                inlets[n] = True
+            if outlet[n_face] and boundary_face[n]:
+                outlets[n] = True
 
+
+        boundary_face.clear()
 
     # Modify boundary_feature to add faces for edges, corners
     for n in range(0,n_labels):

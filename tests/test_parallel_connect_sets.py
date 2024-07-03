@@ -8,39 +8,20 @@ np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(precision=50)
 
 
-def profile(filename=None, comm=MPI.COMM_WORLD):
-  def prof_decorator(f):
-    def wrap_f(*args, **kwargs):
-      pr = cProfile.Profile()
-      pr.enable()
-      result = f(*args, **kwargs)
-      pr.disable()
-
-      if filename is None:
-        pr.print_stats()
-      else:
-        filename_r = filename + ".{}".format(comm.rank)
-        pr.dump_stats(filename_r)
-
-      return result
-    return wrap_f
-  return prof_decorator
-
-@profile(filename="profile_out")
-def my_function():
+def test_parallel_connected_sets():
 
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomains = [2,2,2] # Specifies how Domain is broken among procs
+    subdomains = [3,3,3] # Specifies how Domain is broken among procs
     nodes = [100,100,100] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     #boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[0,0]]
-    outlet = [[0,0],[0,0],[0,0]]
+    boundaries = [[2,2],[2,2],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
+    inlet  = [[0,0],[0,0],[1,0]]
+    outlet = [[0,0],[0,0],[0,1]]
 
     file = './testDomains/50pack.out'
 
@@ -50,27 +31,26 @@ def my_function():
     sphere_data,domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd,sphere_data,domain_data)
 
-    # pm.grid[0:20,0:20,0:20] = 2
-    # pm.grid[-10:,-10:,-10:] = 2
 
-    start = time.time()
-    # pmmoto_sets = pmmoto.core.collect_sets(pm.grid,1,pm.inlet,pm.outlet,pm.loop_info,sd)
-    # pmmoto_sets = pmmoto.core.collect_sets(pm.grid,0,pm.inlet,pm.outlet,pm.loop_info,sd)
-    #print("PM Time:",time.time()-start)
+    pm.grid[0:20,0:20,0:20] = 2
+    pm.grid[-10:,-10:,-10:] = 2
 
-    start = time.time()
-    phases = pmmoto.core.connect_all_phases(pm,pm.inlet,pm.outlet,return_grid = True,return_set = True)
-    connected_sets = phases['sets']
-    label_grid = phases['grid']
-    #print("CC Time:",time.time()-start)
+    connected_sets = pmmoto.core.connect_all_phases(pm,pm.inlet,pm.outlet,return_grid = True,return_set = True)
+
+    for set in connected_sets['sets'].sets:
+          _set = connected_sets['sets'].sets[set]
+          print(_set.subdomain_data.inlet,_set.subdomain_data.outlet)
 
     if save_data:
-        pmmoto.io.save_grid_data("dataOut/test_label_grid",sd,label_grid)
+        kwargs = {'sets':connected_sets['grid']}
+        pmmoto.io.save_grid_data("dataOut/test_sets",sd,pm.grid,**kwargs)
 
-        #pmmoto.io.save_set_data("dataOut/test_connect_sets",sd,pmmoto_sets)
-        pmmoto.io.save_set_data("dataOut/test_new_connect_sets",sd,connected_sets)
-
+        kwargs = {'inlet':'subdomain_data.inlet',
+                  'outlet':'subdomain_data.outlet',
+                  'proc':'proc_ID'}
+        
+        pmmoto.io.save_set_data("dataOut/test_new_connect_sets",sd,connected_sets['sets'],**kwargs)
 
 if __name__ == "__main__":
-    my_function()
+    test_parallel_connected_sets()
     MPI.Finalize()

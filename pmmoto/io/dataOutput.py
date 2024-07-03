@@ -130,7 +130,8 @@ def save_grid_data_csv(file_name,subdomain,x,y,z,grid,remove_halo = False):
     np.savetxt(file_proc + str(rank) + ".csv",grid_out, delimiter=',',header=header)
     
 def save_set_data(file_name,subdomain,set_list,**kwargs):
-    """Save the set data as vtk. 
+    """
+    Save the set data as vtk. 
     """
 
     rank = subdomain.ID
@@ -164,14 +165,27 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
                            "localID" : (local_ID.dtype, 1),
                            "phase" : (phase.dtype, 1)}
 
-        ### Handle kwargs
+        ### Handle kwargs - need to fix for values that are subclasses!
         for key, value in kwargs.items():
-            if not hasattr(set_list.sets[0], value):
+            
+            sub_classes = value.count('.')
+            val_split = value.split('.')
+
+            valid_data = True
+            next = set_list.sets[0]
+            for n,child in enumerate(val_split):
+                if hasattr(next, child):
+                    next = getattr(next,child)
+                else:
+                    valid_data = False
+
+            if not valid_data:
                 if rank == 0:
                     print(f"Error: Cannot save set data as kwarg {value} is not an attribute in Set")
                 communication.raiseError()
 
-            dataType = type(getattr(set_list.sets[0],value))
+
+            dataType = type(next)
             if dataType == bool: ### pyectk does not support bool?
                 dataType = np.uint8
             point_data[key] = np.zeros(dim,dtype=dataType)
@@ -189,7 +203,12 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
                 local_ID[c] = ss.local_ID
                 phase[c] = ss.phase
                 for key, value in kwargs.items():
-                    point_data[key][c] = getattr(ss,value)
+                    
+                    val_split = value.split('.')
+                    next = ss
+                    for n,child in enumerate(val_split):
+                        next = getattr(next,child)
+                    point_data[key][c] = next
                 c = c + 1
 
         file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."

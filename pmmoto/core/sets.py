@@ -15,7 +15,7 @@ __all__ = [
         "connect_all_phases"
     ]
 
-def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,save_node_data = True):
+def connect_all_phases(img,inlet,outlet,return_grid = True, return_set = False,save_node_data = True):
     """
     Create sets for all phases in grid
     """
@@ -23,7 +23,7 @@ def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,sa
     loop_info = img.loop_info
     subdomain = img.subdomain
 
-    label_grid,label_count =  cc3d.connected_components(grid,return_N = True,out_dtype=np.uint64)
+    label_grid,label_count =  cc3d.connected_components(grid, return_N = True, out_dtype=np.uint64)
     label_count += 1
 
     boundary_node_data = _nodes.get_boundary_set_info(
@@ -34,7 +34,7 @@ def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,sa
                     inlet,
                     outlet
                     )
-    
+            
     if save_node_data:
         internal_node_data = _nodes.get_internal_set_info(
                                     label_grid,
@@ -45,12 +45,13 @@ def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,sa
     # Initialize Sets
     all_sets = Sets(label_count,subdomain)
 
-    # Collect info
+    # Collect node info and put in sets
     all_sets.collect_boundary_set_info(boundary_node_data,grid,label_grid,label_count)
 
-    # Match across processes
+    # Match sets across process boundaries 
     n_sets = communication.pass_boundary_sets(subdomain,all_sets)
     all_sets.match_boundary_sets(n_sets)
+
 
     # Merge matched sets
     all_set_data = comm.gather(
@@ -58,9 +59,17 @@ def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,sa
                             'internal_set_count':all_sets.count.internal}, 
                             root=0)
 
+
     single_matched_sets = all_sets.single_merge_matched_sets(all_set_data)
+
+    # Send matched sets
     matched_sets = comm.scatter(single_matched_sets, root=0)
+
+    # Update Local/Global Label Mapping
     local_global_map = all_sets.gen_global_ID_mapping(matched_sets)
+    
+    # Update Matched Sets
+    all_sets.update_boundary_sets(matched_sets)
 
     output = {}
     if return_grid:
@@ -68,14 +77,12 @@ def connect_all_phases(img,inlet,outlet,return_grid = True,return_set = False,sa
         output['grid'] = label_grid
 
     if return_set:
+
+        # Update Set Info
         all_sets.collect_internal_set_info(internal_node_data,grid,label_count)
         all_sets.update_global_ID(local_global_map)
         output['sets'] = all_sets
     
-    print(subdomain.ID,all_sets.sets.keys(),label_count)
-    # for local_ID,sset in all_sets.sets.items():
-    #     print(subdomain.ID,local_ID,sset.global_ID,local_global_map)
-
     return output
 
 
@@ -237,3 +244,12 @@ class Sets(object):
         """
         for local_ID,sset in self.sets.items():
             sset.set_global_ID(local_global_map[local_ID])
+
+
+    def update_boundary_sets(self,boundary_data):
+        """
+        Update the infor on the matched boundary sets
+        """
+        for key,value in boundary_data['matches'].items():
+            self.sets[key[1]].update_boundary_set(value)
+            
