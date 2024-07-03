@@ -69,7 +69,9 @@ def dilate(subdomain,grid,radius,fft = False):
     """
     Wrapper to morph_add
     """
-    morph_add(subdomain,grid,radius,fft)
+    grid_out = morph_add(subdomain,grid,radius,fft)
+
+    return grid_out
 
 def morph_subtract(subdomain,grid,radius,fft = False):
     """
@@ -98,7 +100,9 @@ def erode(subdomain,grid,radius,fft = False):
     """
     Wrapper to morph_subtract
     """
-    morph_subtract(subdomain,grid,radius,fft)
+    grid_out = morph_subtract(subdomain,grid,radius,fft)
+
+    return grid_out
 
 
 def opening(subdomain,grid,radius,fft = False):
