@@ -23,8 +23,6 @@ class PorousMedia:
         """
         inlet_size = np.zeros_like(self.inlet)
 
-        print(self.subdomain.ID,self.subdomain.boundary_type,self.subdomain.domain.inlet)
-
         for n in range(0,self.subdomain.domain.dims):
             if (self.subdomain.boundary_type[n*2] == 0): # Make sure boundary type is zero
                 
