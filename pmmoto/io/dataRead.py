@@ -10,7 +10,8 @@ __all__ = [
     "read_sphere_pack_xyzr_domain",
     "read_vtk_grid",
     "read_r_lookup_file",
-    "read_lammps_atoms"
+    "read_lammps_atoms",
+    "read_atom_map"
     ]
 
 def read_sphere_pack_xyzr_domain(input_file):
@@ -143,3 +144,23 @@ def read_lammps_atoms(input_file,r_lookup):
     domain_file.close()
 
     return sphere_data,domain_data
+
+def read_atom_map(input_file):
+    """
+    Read in the atom mapping file which has the following format:
+        Atom_ID Atom_Name
+    """
+    # Check input file and proceed of exists
+    io_utils.check_file(input_file)
+    
+    atom_file = open(input_file,'r',encoding="utf-8")
+    atom_data= {}
+    
+    lines = atom_file.readlines()
+    for line in lines:
+        split = line.split(" ")
+        label = split[1].split("\n")[0]
+        ID = split[0]
+        atom_data[ID] = label
+    
+    return atom_data
