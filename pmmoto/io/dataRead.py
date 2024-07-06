@@ -11,7 +11,8 @@ __all__ = [
     "read_vtk_grid",
     "read_r_lookup_file",
     "read_lammps_atoms",
-    "read_atom_map"
+    "read_atom_map",
+    "read_rdf"
     ]
 
 def read_sphere_pack_xyzr_domain(input_file):
@@ -145,6 +146,32 @@ def read_lammps_atoms(input_file,r_lookup):
 
     return sphere_data,domain_data
 
+def read_rdf(input_folder):
+    """
+    Read input folder containing Radial Distribtuin Function Data 
+    Folder must contain file called `atom_map.txt` and files for all 
+    listed atoms of name 'atom_name'.rdf
+    """
+
+    # Check folder exists
+    io_utils.check_folder(input_folder)
+
+    # Check for atom_map.txt
+    atom_map_file = input_folder + 'atom_map.txt'
+    io_utils.check_file(atom_map_file)
+
+    atom_map = read_atom_map(atom_map_file)
+
+    # Check rdf files found for all atoms
+    atom_files = []
+    for atom in atom_map:
+        atom_file = input_folder + atom + '.rdf'
+        io_utils.check_file(atom_file)
+        atom_files.append(atom_file)
+
+    return atom_map,atom_files
+        
+
 def read_atom_map(input_file):
     """
     Read in the atom mapping file which has the following format:
@@ -161,6 +188,6 @@ def read_atom_map(input_file):
         split = line.split(" ")
         label = split[1].split("\n")[0]
         ID = split[0]
-        atom_data[ID] = label
+        atom_data[label] = ID
     
     return atom_data
