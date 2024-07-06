@@ -70,38 +70,27 @@ def read_vtk_grid(rank,size,file):
 
     return np.ascontiguousarray(grid_data)
 
-def read_r_lookup_file(input_file,water = False):
+def read_r_lookup_file(input_file,power = 1):
     """
     Read in the radius lookup file for lammps simulations
 
     Actually reading in sigma
 
-    RV: What are these inputs and parameters???????
-    Converts accoring to LJ equation, sigma 
-
     File is:
     Atom_ID epsilon sigma
-
 
     """
     io_utils.check_file(input_file)
 
     r_lookup_file = open(input_file,'r',encoding="utf-8")
 
-    power = 1.12246204830937 # 2^(1/6)
-
-    if water:
-        sigma_w = 3.178
-    else:
-        sigma_w = 0.0
-
     sigma = {}  # Lennard-Jones
     lookup_lines = r_lookup_file.readlines()
   
     for n_line,line in enumerate(lookup_lines):
         sigma_i = float(line.split(" ")[2])
-        sigma[n_line+1] = power/2.*(sigma_i + sigma_w)
-
+        sigma[n_line+1] = power*sigma_i
+        
     r_lookup_file.close()
 
     return sigma
