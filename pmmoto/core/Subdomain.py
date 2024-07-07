@@ -29,6 +29,7 @@ class Subdomain(object):
         self.edges = [None]*Orientation.num_edges
         self.corners = [None]*Orientation.num_corners
         self.coords = [None]*3
+        self.set_coords = False
 
 
     def get_info(self):
@@ -110,7 +111,9 @@ class Subdomain(object):
         """
         self.domain.size_domain = domain_data
         self.domain.get_voxel_size()
-        self.get_coordinates()
+        if not self.set_coords:
+            self.get_coordinates()
+            self.set_coords = True
 
 
     def gather_cube_info(self):
