@@ -164,7 +164,32 @@ def get_internal_set_info(
 
     return output
 
-def renumber_grid(cnp.uint64_t [:,:,:] grid,cnp.int64_t [:] map):
+def get_label_phase_info(
+                cnp.uint8_t [:,:,:] grid,
+                cnp.uint64_t [:,:,:] label_grid):
+    """
+    Loop through the internal voxels of labeled image to map 
+    the labe_grid to the grid
+    """
+
+    cdef: 
+        Py_ssize_t i,j,k
+        int label
+        unordered_map[int,Py_ssize_t] phase_label
+        Py_ssize_t sx = grid.shape[0]
+        Py_ssize_t sy = grid.shape[1]
+        Py_ssize_t sz = grid.shape[2]
+    # Loop through faces
+    for i in range(0,sx):
+        for j in range(0,sy):
+            for k in range(0,sz):
+                label = label_grid[i,j,k]
+                phase_label[label] = grid[i,j,k]
+
+    return phase_label
+
+
+def renumber_grid(cnp.uint64_t [:,:,:] grid, unordered_map[int, int] map):
     """
     Renumber a grid in-place based on map.
     """

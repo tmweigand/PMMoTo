@@ -36,22 +36,17 @@ class Set:
     """
     def __init__(self,
                  subdomain,
-                 local_ID = 0,
-                 proc_ID = 0):
+                 local_ID,
+                 phase,
+                 proc_ID):
         self.subdomain = subdomain
         self.local_ID = local_ID
         self.proc_ID = proc_ID
+        self.phase = phase
         self.global_ID = -1
-        self.phase = None
         self.subdomain_data = SetSubdomain()
         self.node_data = None
         self.boundary_data = None
-
-    def set_phase(self,grid,index):
-        """
-        Assign the grid phase to the set
-        """
-        self.phase = grid[index[0],index[1],index[2]]
 
     def set_nodes(self,nodes,grid_shape):
         """
@@ -121,9 +116,10 @@ class BoundarySet(Set):
     def __init__(self,
                  subdomain,
                  local_ID = 0,
+                 phase = -1,
                  proc_ID = 0,
                  boundary_nodes = None):
-        super().__init__(subdomain,local_ID,proc_ID)
+        super().__init__(subdomain,local_ID,phase,proc_ID)
         self.boundary_data = None
         self.match_data = None
         self.boundary_nodes = boundary_nodes

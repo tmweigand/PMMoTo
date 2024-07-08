@@ -172,7 +172,7 @@ def save_set_data(file_name,subdomain,set_list,**kwargs):
             val_split = value.split('.')
 
             valid_data = True
-            next = set_list.sets[0]
+            next = list(set_list.sets.values())[0]
             for n,child in enumerate(val_split):
                 if hasattr(next, child):
                     next = getattr(next,child)

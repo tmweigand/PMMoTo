@@ -154,8 +154,6 @@ def phases_exists(grid,phase,own_nodes):
 
     return phase_exists
 
-
-
 def global_grid(grid,index,local_grid):
     """Take local grid from eachj process and combine into global grid
     """
@@ -272,3 +270,4 @@ def deconstruct_grid(subdomain,grid,procs):
         local_grid[n] = np.ascontiguousarray(local_grid[n])
         
     return sd_all,local_grid
+

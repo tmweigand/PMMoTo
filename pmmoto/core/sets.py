@@ -1,89 +1,16 @@
 import numpy as np
-from mpi4py import MPI
-import cc3d
 import dataclasses
-from pmmoto.core import communication
 from pmmoto.core import Orientation
-from pmmoto.core import _nodes
 from pmmoto.core import set
 from pmmoto.core import _sets
-from pmmoto.core import utils
-
+from pmmoto.core import communication
+from pmmoto.core import _nodes
+from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
-__all__ = [
-        "connect_all_phases"
+__all_ = [
+    "create_sets_and_merge"
     ]
-
-def connect_all_phases(img,inlet,outlet,return_grid = True, return_set = False,save_node_data = True):
-    """
-    Create sets for all phases in grid
-    """
-    grid = img.grid
-    loop_info = img.loop_info
-    subdomain = img.subdomain
-
-    label_grid,label_count =  cc3d.connected_components(grid, return_N = True, out_dtype=np.uint64)
-    label_count += 1
-
-    boundary_node_data = _nodes.get_boundary_set_info(
-                    subdomain,
-                    label_grid,
-                    label_count,
-                    loop_info,
-                    inlet,
-                    outlet
-                    )
-            
-    if save_node_data:
-        internal_node_data = _nodes.get_internal_set_info(
-                                    label_grid,
-                                    label_count,
-                                    loop_info
-                                    )
-
-    # Initialize Sets
-    all_sets = Sets(label_count,subdomain)
-
-    # Collect node info and put in sets
-    all_sets.collect_boundary_set_info(boundary_node_data,grid,label_grid,label_count)
-
-    # Match sets across process boundaries 
-    n_sets = communication.pass_boundary_sets(subdomain,all_sets)
-    all_sets.match_boundary_sets(n_sets)
-
-
-    # Merge matched sets
-    all_set_data = comm.gather(
-                            {'matched_sets':all_sets.matched_sets,
-                            'internal_set_count':all_sets.count.internal}, 
-                            root=0)
-
-
-    single_matched_sets = all_sets.single_merge_matched_sets(all_set_data)
-
-    # Send matched sets
-    matched_sets = comm.scatter(single_matched_sets, root=0)
-
-    # Update Local/Global Label Mapping
-    local_global_map = all_sets.gen_global_ID_mapping(matched_sets)
-    
-    # Update Matched Sets
-    all_sets.update_boundary_sets(matched_sets)
-
-    output = {}
-    if return_grid:
-        _nodes.renumber_grid(label_grid,local_global_map)
-        output['grid'] = label_grid
-
-    if return_set:
-
-        # Update Set Info
-        all_sets.collect_internal_set_info(internal_node_data,grid,label_count)
-        all_sets.update_global_ID(local_global_map)
-        output['sets'] = all_sets
-    
-    return output
 
 
 @dataclasses.dataclass
@@ -109,21 +36,22 @@ class Sets(object):
         self.boundary_sets = {}
         self.boundary_set_map = [[] for _ in Orientation.features]
 
-    def collect_boundary_set_info(self,node_data,grid,label_grid,label_count):
+    def collect_boundary_set_info(self,node_data,grid,label_grid,phase_map):
         """
-        Loop through faces of each subdomain and collect information to merge connected sets
+        Loop through faces of each subdomain and collect information 
+        to merge connected sets
         """
-
-        for label in range(0,label_count):
+        
+        for label in phase_map:
+            phase = phase_map[label]
             if node_data['boundary'][label]:
                 boundary_set = set.BoundarySet(
                                     self.subdomain,
                                     label,
+                                    phase,
                                     self.subdomain.ID,
                                     node_data['boundary_nodes'][label])
                 
-                index = np.unravel_index(node_data['phase'][label],label_grid.shape)
-                boundary_set.set_phase(grid,index)
                 boundary_set.set_subdomain_info(
                                 node_data['boundary'][label],
                                 node_data['boundary_features'][label],
@@ -225,14 +153,15 @@ class Sets(object):
         """
         Generate the local to global ID mapping for all sets
         """
-        local_global_map = -np.ones(self.count.all,dtype=np.int64)
+        # local_global_map = -np.ones(self.count.all,dtype=np.int64)
+        local_global_map = {}
         ID_start = matched_sets['count_ID']
         for local_ID,sset in self.boundary_sets.items():
             key = (self.subdomain.ID,local_ID)
             local_global_map[local_ID] = matched_sets['matches'][key].global_ID
         
         for n in range(0,self.count.all):
-            if local_global_map[n] == -1:
+            if n not in local_global_map:
                 local_global_map[n] = ID_start
                 ID_start += 1
 
@@ -253,3 +182,49 @@ class Sets(object):
         for key,value in boundary_data['matches'].items():
             self.sets[key[1]].update_boundary_set(value)
             
+
+
+def create_sets_and_merge(img,set_count,label_count,label_grid,phase_map,inlet,outlet):
+    """
+    """
+    grid = img.grid
+    subdomain = img.subdomain
+    loop_info = img.loop_info
+
+    boundary_node_data = _nodes.get_boundary_set_info(
+                subdomain,
+                label_grid,
+                label_count,
+                loop_info,
+                inlet,
+                outlet
+                )
+
+    # Initialize Sets
+    all_sets = Sets(set_count,subdomain)
+
+    # Collect node info and put in sets
+    all_sets.collect_boundary_set_info(boundary_node_data,grid,label_grid,phase_map)
+
+    # Match sets across process boundaries 
+    n_sets = communication.pass_boundary_sets(subdomain,all_sets)
+    all_sets.match_boundary_sets(n_sets)
+
+    # Merge matched sets
+    all_set_data = comm.gather(
+                            {'matched_sets':all_sets.matched_sets,
+                            'internal_set_count':all_sets.count.internal}, 
+                            root=0)
+
+    single_matched_sets = all_sets.single_merge_matched_sets(all_set_data)
+
+    # Send matched sets
+    matched_sets = comm.scatter(single_matched_sets, root=0)
+
+    # Update Local/Global Label Mapping
+    local_global_map = all_sets.gen_global_ID_mapping(matched_sets)
+    
+    # Update Matched Sets
+    all_sets.update_boundary_sets(matched_sets)
+
+    return all_sets,local_global_map
