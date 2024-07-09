@@ -97,7 +97,7 @@ def read_r_lookup_file(input_file,power = 1):
 
     return sigma
 
-def read_lammps_atoms(input_file,r_lookup):
+def read_lammps_atoms(input_file):
     """
         For the purposes of being able to specify arbitrarily
         sized particles, this definition of cutoff location
@@ -129,22 +129,26 @@ def read_lammps_atoms(input_file,r_lookup):
             time_step = float(line)
         elif n_line == 3:
             num_objects = int(line)
-            sphere_data = np.zeros([num_objects, 4],dtype = np.double)
+            atom_data = np.zeros([num_objects, 3],dtype = np.double)
+            atom_type = np.zeros(num_objects,dtype = int)
         elif 5 <= n_line <= 7:
             domain_data[n_line - 5,0] =  float(line.split(" ")[0])
             domain_data[n_line - 5,1] =  float(line.split(" ")[1])
         elif n_line >= 9:
-            for count,n in enumerate([5,6,7,2]):
-                sphere_data[count_atom,count] = float(line.split(" ")[n]) # x,y,z,atom_id
+            split = line.split(" ")
+            atom_type[count_atom] = int(split[2])
+            for count,n in enumerate([5,6,7]):
+                atom_data[count_atom,count] = float(split[n]) # x,y,z,atom_id
+            
             count_atom += 1
 
-    for n in range(0,num_objects):
-        atom_ID = int(sphere_data[n,3])
-        sphere_data[n,3] = r_lookup[atom_ID]
+    # for n in range(0,num_objects):
+    #     atom_ID = int(sphere_data[n,3])
+    #     sphere_data[n,3] = r_lookup[atom_ID]
 
     domain_file.close()
 
-    return sphere_data,domain_data
+    return atom_data,atom_type,domain_data
 
 def read_rdf(input_folder):
     """

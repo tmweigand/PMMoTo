@@ -9,24 +9,26 @@ from pmmoto.core import Orientation
 
 __all__ = [
     "gen_pm_spheres_domain",
-    "gen_pm_verlet_spheres",
+    "gen_pm_atom_domain",
+    "gen_pm_verlet_spheres_domain",
+    "gen_pm_verlet_atom_domain",
     "gen_pm_inkbottle",
     "gen_mp_constant",
-    "gen_mp_from_grid"
+    "gen_mp_from_grid",
+    "gen_periodic_spheres",
+    "gen_periodic_atoms"
 ]
 
-def gen_pm_spheres_domain(subdomain,spheres,domain_data,res_size = 0,add_periodic = False):
+def gen_pm_spheres_domain(subdomain,spheres,res_size = 0):
     """
-    """
-    subdomain.update_domain_size(domain_data)
-    if add_periodic:
-        periodic_spheres = get_periodic_spheres(subdomain,spheres)
-        spheres = np.concatenate( (periodic_spheres,spheres) )
-        
-    _grid = _domainGeneration.gen_domain_sphere_pack(subdomain.coords[0],
-                                                     subdomain.coords[1],
-                                                     subdomain.coords[2],
-                                                     spheres)
+    Generate binary domain (pm) from sphere data that contains radii
+    """        
+    _grid = _domainGeneration.gen_pm_sphere(
+        subdomain.coords[0],
+        subdomain.coords[1],
+        subdomain.coords[2],
+        spheres
+        )
     pm = porousMedia.gen_pm(subdomain,_grid,res_size)
     pm.grid = communication.update_buffer(subdomain,pm.grid)
 
@@ -34,19 +36,62 @@ def gen_pm_spheres_domain(subdomain,spheres,domain_data,res_size = 0,add_periodi
 
     return pm
 
-def gen_pm_verlet_spheres(subdomain,spheres,domain_data,verlet=[1,1,1],res_size = 0,add_periodic = False):
+def gen_pm_atom_domain(subdomain,atom_locations,atom_types,atom_cutoff,res_size = 0):
     """
+       Generate binary domain (pm) from atom data, types and cutoff
     """
-    subdomain.update_domain_size(domain_data)
-    if add_periodic:
-        periodic_spheres = get_periodic_spheres(subdomain,spheres)
-        spheres = np.concatenate( (periodic_spheres,spheres) )
+    _grid = _domainGeneration.gen_pm_atom(
+        subdomain.coords[0],
+        subdomain.coords[1],
+        subdomain.coords[2],
+        atom_locations,
+        atom_types,
+        atom_cutoff
+        )
+    
+    print(f'Grid sum {np.sum(_grid)}')   
 
-    _grid = _domainGeneration.gen_domain_verlet_sphere_pack(verlet,
-                                                           subdomain.coords[0],
-                                                           subdomain.coords[1],
-                                                           subdomain.coords[2],
-                                                           spheres)
+    pm = porousMedia.gen_pm(subdomain,_grid,res_size)
+    pm.grid = communication.update_buffer(subdomain,pm.grid)
+
+    utils.check_grid(subdomain,pm.grid)
+
+    return pm
+
+def gen_pm_verlet_spheres_domain(subdomain,spheres,verlet=[1,1,1],res_size = 0):
+    """
+     Generate binary domain (pm) from sphere data that contains radii
+        using verlet domains
+    """
+    _grid = _domainGeneration.gen_pm_verlet_sphere(
+        verlet,
+        subdomain.coords[0],
+        subdomain.coords[1],
+        subdomain.coords[2],
+        spheres
+        )
+    pm = porousMedia.gen_pm(subdomain,_grid,res_size)
+    pm.grid = communication.update_buffer(subdomain,pm.grid)
+
+    utils.check_grid(subdomain,pm.grid)
+
+    return pm
+
+def gen_pm_verlet_atom_domain(subdomain,atom_locations,atom_types,atom_cutoff,verlet=[1,1,1],res_size = 0):
+    """
+     Generate binary domain (pm) from atom data, types and cutoff
+        using verlet domains
+    """
+    _grid = _domainGeneration.gen_pm_verlet_atom(
+        verlet,
+        subdomain.coords[0],
+        subdomain.coords[1],
+        subdomain.coords[2],
+        atom_locations,
+        atom_types,
+        atom_cutoff
+        )
+    
     pm = porousMedia.gen_pm(subdomain,_grid,res_size)
     pm.grid = communication.update_buffer(subdomain,pm.grid)
 
@@ -58,7 +103,7 @@ def gen_pm_inkbottle(subdomain,domain_data,res_size = 0):
     """
     """
     subdomain.update_domain_size(domain_data)
-    _grid = _domainGeneration.gen_domain_inkbottle(subdomain.coords[0],
+    _grid = _domainGeneration.gen_pm_inkbottle(subdomain.coords[0],
                                                    subdomain.coords[1],
                                                    subdomain.coords[2])
     pm = porousMedia.gen_pm(subdomain,_grid,res_size)
@@ -157,18 +202,16 @@ def reflect_boundary_sphere(sphere_data,crosses_boundary,domain_length,boundarie
 
     return periodic_spheres
 
-def get_periodic_spheres(subdomain,sphere_data):
+def gen_periodic_spheres(subdomain,sphere_data):
     """
     Add spheres that extend pass boundary and are periodic
     """
     domain = subdomain.domain.size_domain
     res = subdomain.domain.voxel
+    domain_length = subdomain.domain.length_domain
     boundaries = np.array(subdomain.domain.boundaries).flatten()
-    num_spheres = sphere_data.shape[0]
 
-    domain_length = [domain[0,1]-domain[0,0],
-                     domain[1,1]-domain[1,0],
-                     domain[2,1]-domain[2,0]]
+    num_spheres = sphere_data.shape[0]
 
     all_periodic_spheres = []
     for n_sphere in range(num_spheres):
@@ -186,4 +229,46 @@ def get_periodic_spheres(subdomain,sphere_data):
                                                         
             all_periodic_spheres.extend(periodic_spheres)
 
-    return np.array(all_periodic_spheres)
+    sphere_data = np.concatenate( (np.array(all_periodic_spheres),sphere_data) )
+    return sphere_data
+
+
+def gen_periodic_atoms(subdomain,atom_locations,atom_types,atom_cutoff):
+    """
+    Add atoms that extend pass boundary and are periodic
+    """
+    domain = subdomain.domain.size_domain
+    res = subdomain.domain.voxel
+    domain_length = subdomain.domain.length_domain
+    boundaries = np.array(subdomain.domain.boundaries).flatten()
+
+    num_atom = atom_locations.shape[0]
+
+    sphere = np.zeros(4)
+    periodic_atom_locations = []
+    periodic_atom_types = []
+    for n_atom in range(num_atom):
+
+        sphere[0:3] = atom_locations[n_atom]
+        sphere[3] = atom_cutoff[atom_types[n_atom]]
+
+        inside_domain = is_inside_domain(sphere,domain)
+        if inside_domain:
+            crosses_boundary = is_boundary_sphere(sphere,res,domain)
+
+            # Pass internal spheres
+            if np.sum(crosses_boundary) == 0:
+                continue
+            add_periodic_atoms = reflect_boundary_sphere(sphere,
+                                                    crosses_boundary,
+                                                    domain_length,
+                                                    boundaries)
+            
+            for atom in add_periodic_atoms:
+                periodic_atom_locations.extend([atom[0:3]])
+                periodic_atom_types.extend([atom_types[n_atom]])
+
+    if periodic_atom_locations:
+        atom_locations = np.concatenate( (np.array(periodic_atom_locations),atom_locations) )
+        atom_types = np.concatenate( (np.array(periodic_atom_types,dtype=int),atom_types) )
+    return atom_locations,atom_types    

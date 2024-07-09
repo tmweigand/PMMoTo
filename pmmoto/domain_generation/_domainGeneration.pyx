@@ -8,12 +8,15 @@ import numpy as np
 cimport numpy as cnp
 from libcpp.vector cimport vector
 from libc.math cimport sin,cos
+from libcpp.unordered_map cimport unordered_map
 cnp.import_array()
 
 __all__ = [
-    "gen_domain_sphere_pack",
-    "gen_domain_verlet_sphere_pack",
-    "gen_domain_inkbottle"
+    "gen_pm_sphere",
+    "gen_pm_atom",
+    "gen_pm_verlet_sphere",
+    "gen_pm_verlet_atom",
+    "gen_pm_inkbottle"
 ]
 
 cdef vector[verlet_sphere] gen_verlet_list(
@@ -73,12 +76,12 @@ cdef cnp.uint8_t in_sphere(
     else:
         return 1
 
-def gen_domain_sphere_pack(
-                        double[:] x, 
-                        double[:] y, 
-                        double[:] z, 
-                        double[:,:] spheres
-                        ):
+def gen_pm_sphere(
+        double[:] x, 
+        double[:] y, 
+        double[:] z, 
+        double[:,:] spheres
+        ):
     """
     Determine if voxel centroid is located in a sphere
     """
@@ -112,12 +115,39 @@ def gen_domain_sphere_pack(
 
     return grid
 
+def gen_pm_atom(
+        double[:] x, 
+        double[:] y, 
+        double[:] z, 
+        double[:,:] atom_locations,
+        long[:] atom_types,
+        unordered_map[int,double]  atom_cutoff
+        ):
+    """
+    Determine if voxel centroid is located in atom
+    """
+    spheres = convert_atoms_spheres(
+        atom_locations,
+        atom_types,
+        atom_cutoff
+        ) 
+
+    grid = gen_pm_sphere(
+        x,
+        y,
+        x,
+        spheres
+    )
+   
+    return grid
+
+
 
 def get_verlet_loop_info(
-                        list verlet_domains, 
-                        nodes,
-                        rem_nodes
-                        ):
+        list verlet_domains, 
+        nodes,
+        rem_nodes
+    ):
     """
     Collect the loop information for each verlet domain 
     """
@@ -145,15 +175,16 @@ def get_verlet_loop_info(
     
     return loop_info,loop_nodes
 
+
 def get_verlet_domain_info(
-                        list verlet_domains, 
-                        int sx,
-                        int sy,
-                        int sz,
-                        double[:] x, 
-                        double[:] y, 
-                        double[:] z 
-                        ):
+        list verlet_domains, 
+        int sx,
+        int sy,
+        int sz,
+        double[:] x, 
+        double[:] y, 
+        double[:] z 
+    ):
     """
     Divide domain into smaller cubes based on verlet_domains
     """
@@ -185,13 +216,13 @@ def get_verlet_domain_info(
 
     return centroid,max_diameter,loop_info
 
-def gen_domain_verlet_sphere_pack(
-                                list verlet_domains, 
-                                double[:] x, 
-                                double[:] y, 
-                                double[:] z, 
-                                double[:,:] spheres
-                                ):
+def gen_pm_verlet_sphere(
+        list verlet_domains, 
+        double[:] x, 
+        double[:] y, 
+        double[:] z, 
+        double[:,:] spheres
+    ):
     """ 
     """
     cdef:
@@ -208,13 +239,14 @@ def gen_domain_verlet_sphere_pack(
     _grid = grid
     
     centroid,max_diameter,_loop_info = get_verlet_domain_info(
-                                                            verlet_domains,
-                                                            sx,
-                                                            sy,
-                                                            sz,
-                                                            x,
-                                                            y,
-                                                            z)
+        verlet_domains,
+        sx,
+        sy,
+        sz,
+        x,
+        y,
+        z
+    )
 
     num_domains = np.prod(verlet_domains)
  
@@ -246,10 +278,61 @@ def gen_domain_verlet_sphere_pack(
     
     return grid
 
-
-def gen_domain_inkbottle(double[:] x, double[:] y, double[:] z):
+def gen_pm_verlet_atom(
+        list verlet_domains, 
+        double[:] x, 
+        double[:] y, 
+        double[:] z, 
+        double[:,:] atom_locations,
+        long[:] atom_types,
+        unordered_map[int,double]  atom_cutoff
+    ):
+    """ 
+    Calculate the radii for atoms and use spheres routines
     """
-    Generate domain for inkbottle test case. See Miller_Bruning_etal_2019
+
+    spheres = convert_atoms_spheres(
+        atom_locations,
+        atom_types,
+        atom_cutoff)
+
+    grid = gen_pm_verlet_sphere(
+        verlet_domains, 
+        x, 
+        y, 
+        z, 
+        spheres
+    )
+
+    return grid
+
+
+def convert_atoms_spheres(
+    double[:,:] atom_locations,
+    long[:] atom_types,
+    unordered_map[int,double]  atom_cutoff 
+    ):
+    """
+    Convert atom locations, index, and cutoff to spheres of given radius
+    """
+    cdef:
+        int n
+        int num_atoms = atom_locations.shape[0]
+        double [:,:] _spheres
+
+    spheres = np.zeros((num_atoms, 4), dtype=np.double)
+    _spheres = spheres
+    _spheres[:,0:3] = atom_locations
+
+    for n in range(0,num_atoms):
+        _spheres[n,3] = atom_cutoff[atom_types[n]]
+
+    return spheres
+
+
+def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
+    """
+    Generate pm for inkbottle test case. See Miller_Bruning_etal_2019
     """
     cdef: 
         int i, j, k
