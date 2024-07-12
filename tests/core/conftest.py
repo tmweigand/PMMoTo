@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 @pytest.fixture
-def domain_data():
+def domain():
     """
     Domain data to pass into tests
     """
@@ -37,6 +37,28 @@ def domain_data():
             1,
             1
             ]),
+    }
+
+    return data
+
+@pytest.fixture
+def decomposed_domain():
+    """
+    Subdomain data to pass into tests
+    """
+    data = {
+        'subdomain_map': (2,2,2)
+    }
+
+    return data
+
+@pytest.fixture
+def domain_discretization():
+    """
+    Domain discretization data to pass into tests.
+    """
+    data = {
+        'nodes':(100,100,100)
     }
 
     return data

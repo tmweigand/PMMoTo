@@ -2,20 +2,20 @@
 import numpy as np
 import pmmoto
 
-def test_init(domain_data):
+def test_domain(domain):
     """
     Test for checking initialization of domain values
     """
-    domain = pmmoto.core.Domain(
-        domain_data['size_domain'],
-        domain_data['boundaries'],
-        domain_data['inlet'],
-        domain_data['outlet']
+    pmmoto_domain = pmmoto.core.Domain(
+        domain['size_domain'],
+        domain['boundaries'],
+        domain['inlet'],
+        domain['outlet']
     )
 
-    np.testing.assert_array_equal(domain.size_domain, domain_data['size_domain'])
-    assert(domain.boundaries == domain_data['boundaries'])
-    assert(domain.inlet == domain_data['inlet'])
-    assert(domain.outlet == domain_data['outlet'])
-    assert all(domain.length_domain == domain_data['length_domain'])
-    assert (domain.periodic)
+    np.testing.assert_array_equal(pmmoto_domain.size_domain, domain['size_domain'])
+    assert(pmmoto_domain.boundaries == domain['boundaries'])
+    assert(pmmoto_domain.inlet == domain['inlet'])
+    assert(pmmoto_domain.outlet == domain['outlet'])
+    assert all(pmmoto_domain.length_domain == domain['length_domain'])
+    assert (pmmoto_domain.periodic)
