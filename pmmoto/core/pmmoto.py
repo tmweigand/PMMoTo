@@ -1,6 +1,6 @@
 from . import utils
 from . import domain
-from . import Subdomain
+from . import subdomain
 
 __all__ = [
     "initialize",
@@ -21,8 +21,8 @@ def initialize(rank,mpi_size,subdomains,nodes,boundaries,inlet = None,outlet = N
     
     pmmoto_domain.get_subdomain_nodes()
 
-    subdomain = Subdomain.Subdomain(domain = domain, ID = rank, subdomains = subdomains)
-    subdomain.get_info()
-    subdomain.gather_cube_info()
+    pmmoto_subdomain = subdomain.Subdomain(ID = rank, subdomains = subdomains)
+    pmmoto_subdomain.get_info()
+    pmmoto_subdomain.gather_cube_info()
 
-    return subdomain
+    return pmmoto_subdomain

@@ -4,7 +4,7 @@ import numpy as np
 from mpi4py import MPI
 from . import Orientation
 from . import domain
-from . import Subdomain
+from . import subdomain
 
 comm = MPI.COMM_WORLD
 
