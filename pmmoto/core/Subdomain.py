@@ -106,16 +106,6 @@ class Subdomain(object):
                 if pad[n*2+1] > 0:
                     self.domain.nodes[n] += pad[n*2+1]
 
-    def update_domain_size(self,domain_data):
-        """Use data from io to set domain size and determine voxel size and coordinates
-        """
-        self.domain.size_domain = domain_data
-        self.domain.get_voxel_size()
-        if not self.set_coords:
-            self.get_coordinates()
-            self.set_coords = True
-
-
     def gather_cube_info(self):
         """
         Collect all necessary infromation for faces, edges, and corners as well as all neighbors

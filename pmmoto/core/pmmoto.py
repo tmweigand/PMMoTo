@@ -1,5 +1,5 @@
 from . import utils
-from . import Domain
+from . import domain
 from . import Subdomain
 
 __all__ = [
@@ -13,13 +13,13 @@ def initialize(rank,mpi_size,subdomains,nodes,boundaries,inlet = None,outlet = N
 
     utils.check_inputs(mpi_size,subdomains,nodes,boundaries,inlet,outlet)
 
-    domain = Domain.Domain(nodes = nodes,
+    pmmoto_domain = domain.Domain(nodes = nodes,
                            subdomains = subdomains,
                            boundaries = boundaries,
                            inlet = inlet,
                            outlet = outlet)
     
-    domain.get_subdomain_nodes()
+    pmmoto_domain.get_subdomain_nodes()
 
     subdomain = Subdomain.Subdomain(domain = domain, ID = rank, subdomains = subdomains)
     subdomain.get_info()
