@@ -1,9 +1,9 @@
 """subdomains.py"""
 import numpy as np
-from . import domain
+from . import domain_discretization
 
 
-class Subdomain(domain.Domain):
+class Subdomain(domain_discretization.DiscretizedDomain):
     """
     Parallelization is via decomposition of domain into subdomains
     """
@@ -11,17 +11,9 @@ class Subdomain(domain.Domain):
             self,
             rank = 0,
             index = np.array((0,0,0)),
-            size_domain = np.array([(0,1),(0,1),(0,1)]),
-            boundaries = ((-1,-1),(-1,-1),(-1,-1)),
-            inlet = ((0,0),(0,0),(0,0)),
-            outlet =((0,0),(0,0),(0,0))
+            **kwargs
             ):
-        super().__init__(
-            size_domain,
-            boundaries,
-            inlet,
-            outlet,
-        )
+        super().__init__(**kwargs)
         self.rank = rank
         self.index = index
         self.periodic = self.periodic_check()

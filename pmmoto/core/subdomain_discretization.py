@@ -1,8 +1,8 @@
 """subdomain_discretization.py"""
 import numpy as np
-import subdomain 
+from . import subdomain
 
-class Discretized(subdomain.Domain):
+class Discretized(subdomain.Subdomain):
     """
     Class for discretizing the subdomain 
     """

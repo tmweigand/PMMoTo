@@ -8,19 +8,13 @@ def test_discretized_domain(domain,
     """
     Test for checking initialization of domain values
     """
-    domain = pmmoto.core.Domain(
-        domain['size_domain'],
-        domain['boundaries'],
-        domain['inlet'],
-        domain['outlet']
-    )
 
     discretized_domain = pmmoto.core.DiscretizedDomain(
-        domain,
-        decomposed_domain['subdomain_map'],
-        domain_discretization['nodes']
+        nodes = domain_discretization['nodes'],
+        size_domain = domain['size_domain'],
+        boundaries = domain['boundaries'],
+        inlet = domain['inlet'],
+        outlet = domain['outlet']
     )
 
     assert all(discretized_domain.voxel == 1)
-    assert all(discretized_domain.sd_nodes == 50)
-    assert all(discretized_domain.rem_nodes == 0)

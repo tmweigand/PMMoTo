@@ -4,6 +4,7 @@ import pmmoto
 
 def test_subdomain(
         domain,
+        domain_discretization,
         subdomain
         ):
     """
@@ -15,7 +16,8 @@ def test_subdomain(
         size_domain = domain['size_domain'],
         boundaries = domain['boundaries'],
         inlet = domain['inlet'],
-        outlet = domain['outlet']
+        outlet = domain['outlet'],
+        nodes = domain_discretization['nodes']
     )
 
     assert(pmmoto_subdomain.boundary)
