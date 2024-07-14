@@ -1,6 +1,6 @@
 import numpy as np
 
-class Domain(object):
+class Domain:
     """
     Information for domain including:
         size_domain: Size of the domain in physical units
@@ -18,8 +18,8 @@ class Domain(object):
                  inlet = ((0,0),(0,0),(0,0)),
                  outlet =((0,0),(0,0),(0,0))
                  ):
-        self.size_domain  = size_domain
-        self.boundaries   = boundaries
+        self.size_domain = size_domain
+        self.boundaries = boundaries
         self.inlet = inlet
         self.outlet = outlet
         self.dims = 3

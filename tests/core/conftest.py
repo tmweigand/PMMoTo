@@ -62,3 +62,16 @@ def domain_discretization():
     }
 
     return data
+
+
+@pytest.fixture
+def subdomain():
+    """
+    Subdomain data to pass into tests.
+    """
+    data = {
+        'rank':0,
+        'index':(0,0,0)
+    }
+
+    return data

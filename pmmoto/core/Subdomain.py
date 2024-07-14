@@ -1,26 +1,41 @@
 """subdomains.py"""
 import numpy as np
+from . import domain
 
-class Subdomain:
+
+class Subdomain(domain.Domain):
     """
     Parallelization is via decomposition of domain into subdomains
     """
-    def __init__(self,rank,index):
+    def __init__(
+            self,
+            rank = 0,
+            index = np.array((0,0,0)),
+            size_domain = np.array([(0,1),(0,1),(0,1)]),
+            boundaries = ((-1,-1),(-1,-1),(-1,-1)),
+            inlet = ((0,0),(0,0),(0,0)),
+            outlet =((0,0),(0,0),(0,0))
+            ):
+        super().__init__(
+            size_domain,
+            boundaries,
+            inlet,
+            outlet,
+        )
         self.rank = rank
         self.index = index
-        self.boundary = False
-        self.boundary_type = -np.ones([6],dtype = np.int8)
+        self.periodic = self.periodic_check()
+        self.boundary = self.boundary_check()
+    
 
-    def get_boundary_types(self,boundaries,subdomain_map):
+    def boundary_check(self):
         """
-        Determine the boundary type. Internal boundaries are -1 
+        Determine if subdomain is on a boundary
         """
-        for n,_ in enumerate(self.index):
-            
-            if n == 0:
-                self.boundary = True
-                self.boundary_type = boundaries[n][0]
+        boundary = False
+        for (m,p) in self.boundaries:
+            if m != -1 or p != -1:
+                boundary = True
 
-            if n == subdomain_map[n] - 1:
-                self.boundary = True
-                self.boundary_type = boundaries[n][1]
+        return boundary
+
