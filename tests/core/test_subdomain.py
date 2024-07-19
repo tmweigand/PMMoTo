@@ -17,7 +17,7 @@ def test_subdomain(
         boundaries = domain['boundaries'],
         inlet = domain['inlet'],
         outlet = domain['outlet'],
-        nodes = domain_discretization['nodes']
+        voxels = domain_discretization['voxels']
     )
 
     assert(pmmoto_subdomain.boundary)

@@ -9,8 +9,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
     """
     def __init__(
             self,
-            rank = 0,
-            index = np.array((0,0,0)),
+            rank: int= 0,
+            index: tuple[int,int,int] = (0,0,0),
             **kwargs
             ):
         super().__init__(**kwargs)
@@ -20,7 +20,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.boundary = self.boundary_check()
     
 
-    def boundary_check(self):
+    def boundary_check(self) -> bool:
         """
         Determine if subdomain is on a boundary
         """

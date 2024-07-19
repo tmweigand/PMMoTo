@@ -19,6 +19,7 @@ references/
 PMMoTo.egg-info/
 PMMoTo/__pycache__/
 PMMoTo/tmp/
+env/*
 
 PMMoTo/tests/
 
@@ -44,3 +45,4 @@ tests/~$inkBottleDrainageSweepGridRefinement.xlsx
 tests/testDomains/trimdump.ipynb
 tests/testDomains/pa_ng_05.gz
 tests/testDomains/pa_ng_10.gz
+

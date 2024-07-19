@@ -58,7 +58,7 @@ def domain_discretization():
     Domain discretization data to pass into tests.
     """
     data = {
-        'nodes':(100,100,100)
+        'voxels':(100,100,100)
     }
 
     return data

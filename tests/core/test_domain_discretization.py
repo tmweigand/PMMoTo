@@ -10,7 +10,7 @@ def test_discretized_domain(domain,
     """
 
     discretized_domain = pmmoto.core.DiscretizedDomain(
-        nodes = domain_discretization['nodes'],
+        voxels = domain_discretization['voxels'],
         size_domain = domain['size_domain'],
         boundaries = domain['boundaries'],
         inlet = domain['inlet'],
