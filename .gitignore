@@ -1,6 +1,16 @@
 #Ignore files
-
+.vscode
 .DS_Store
+*.so
+*.workspace
+*.cpp
+*.html
+profile_out.*
+*.csv
+*.out
+*.pyc
+manuscript/
+logo/
 ICOM/
 build/
 dist/
@@ -9,14 +19,10 @@ references/
 PMMoTo.egg-info/
 PMMoTo/__pycache__/
 PMMoTo/tmp/
-PMMoTo/*.c
+env/*
 
-PMMoTo/*.cpp
-PMMoTo/*.html
 PMMoTo/tests/
-PMMoTo/*/*.c
-PMMoTo/*/*.html
-PMMoTo/*/*.cpp
+
 PMMoTo/distanceSAVE.pyx
 PMMoTo/medialAxis/_skeletonize_3d_cy.pyx
 PMMoTo/medialAxis/_skeletonize_3d_ORDER_cy.pyx.in
@@ -32,19 +38,11 @@ tests/dataOut/
 tests/inkBottle/
 tests/kelseySpherePackTests/
 tests/porousMediaGenerate/
-tests/profile_out.0
-tests/profile_out.1
-tests/profile_out.2
-tests/profile_out.3
-tests/profile_out.4
-tests/profile_out.5
-tests/profile_out.6
-tests/profile_out.7
-tests/*.csv
-tests/*.out
+
 tests/testDomains/10pack.out
 tests/testDomains/50pack.out
 tests/~$inkBottleDrainageSweepGridRefinement.xlsx
 tests/testDomains/trimdump.ipynb
 tests/testDomains/pa_ng_05.gz
 tests/testDomains/pa_ng_10.gz
+
