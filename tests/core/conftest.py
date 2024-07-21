@@ -7,7 +7,7 @@ def domain():
     Domain data to pass into tests
     """
     data = {
-        'size_domain':np.array([
+        'box':np.array([
             (0,100),
             (0,100),
             (0,100)
@@ -27,12 +27,12 @@ def domain():
             (0,0),
             (0,0)
         ),
-        'length_domain':np.array([
+        'length':np.array([
             100,
             100,
             100
             ]),
-        'voxel':np.array([
+        'num_voxel':np.array([
             1,
             1,
             1
@@ -58,7 +58,7 @@ def domain_discretization():
     Domain discretization data to pass into tests.
     """
     data = {
-        'voxels':(100,100,100)
+        'num_voxels':(100,100,100)
     }
 
     return data
