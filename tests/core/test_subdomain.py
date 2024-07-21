@@ -13,11 +13,11 @@ def test_subdomain(
     pmmoto_subdomain = pmmoto.core.Subdomain(
         rank = subdomain['rank'],
         index = subdomain['index'],
-        size_domain = domain['size_domain'],
+        box = domain['box'],
         boundaries = domain['boundaries'],
         inlet = domain['inlet'],
         outlet = domain['outlet'],
-        voxels = domain_discretization['voxels']
+        num_voxels = domain_discretization['num_voxels']
     )
 
     assert(pmmoto_subdomain.boundary)

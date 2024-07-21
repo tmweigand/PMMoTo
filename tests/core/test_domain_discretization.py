@@ -10,11 +10,11 @@ def test_discretized_domain(domain,
     """
 
     discretized_domain = pmmoto.core.DiscretizedDomain(
-        voxels = domain_discretization['voxels'],
-        size_domain = domain['size_domain'],
+        num_voxels = domain_discretization['num_voxels'],
+        box = domain['box'],
         boundaries = domain['boundaries'],
         inlet = domain['inlet'],
         outlet = domain['outlet']
     )
 
-    assert all(discretized_domain.voxel == 1)
+    assert all(discretized_domain.num_voxels) == 1
