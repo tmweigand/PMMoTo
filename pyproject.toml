@@ -1,0 +1,39 @@
+[project]
+name = "pmmoto"
+version = "0.1.0"
+description = "Porous Media Topology and Morphology Toolkit"
+
+authors = [
+    {name = "Timothy M. Weigand", email = "timothy.weigand@unc.edu"},
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3.10"
+    ]
+dependencies = [
+    "numpy<2.0",
+    "cython ==3.0",
+    "mpi4py==3.1.6",
+    "pykdtree>=0.1",
+    "edt>=2.3.1",
+    "scipy>=1.9.3",
+    "pyevtk>=1.5.0",
+    "connected_components_3d>=3.12.4"
+    ]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools","numpy","cython"]
+build-backend = "setuptools.build_meta"
+
+[tools.setuptools.packages.find]
+where = ["src"]
+
+
+[project.optional-dependencies]
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "mypy>=1.0",
+    "tox>=3.24"
+    ]

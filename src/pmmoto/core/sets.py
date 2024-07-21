@@ -2,7 +2,7 @@ import numpy as np
 import dataclasses
 from pmmoto.core import Orientation
 from pmmoto.core import set
-from pmmoto.core import _sets
+# from pmmoto.core import _sets
 from pmmoto.core import communication
 from pmmoto.core import _nodes
 from mpi4py import MPI

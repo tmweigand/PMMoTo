@@ -1,12 +1,12 @@
 ### Core Utility Functions ###
 import sys
 import numpy as np
-from mpi4py import MPI
+# from mpi4py import MPI
 from . import Orientation
 from . import domain
 from . import subdomain
 
-comm = MPI.COMM_WORLD
+# comm = MPI.COMM_WORLD
 
 def raise_error():
     """Exit gracefuully.
@@ -140,19 +140,19 @@ def own_grid(grid,own):
 
     return np.ascontiguousarray(grid_out)
 
-def phases_exists(grid,phase,own_nodes):
-    """
-    Determine if phase exists in grid
-    """
-    phase_exists = False
-    _own_grid = own_grid(grid,own_nodes)
-    local_count = np.count_nonzero( _own_grid == phase)
-    global_count = comm.allreduce(local_count,op = MPI.SUM )
+# def phases_exists(grid,phase,own_nodes):
+#     """
+#     Determine if phase exists in grid
+#     """
+#     phase_exists = False
+#     _own_grid = own_grid(grid,own_nodes)
+#     local_count = np.count_nonzero( _own_grid == phase)
+#     global_count = comm.allreduce(local_count,op = MPI.SUM )
 
-    if global_count > 0:
-        phase_exists =  True
+#     if global_count > 0:
+#         phase_exists =  True
 
-    return phase_exists
+#     return phase_exists
 
 def global_grid(grid,index,local_grid):
     """Take local grid from eachj process and combine into global grid
@@ -213,32 +213,32 @@ def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
     return face_solids,edge_solids,corner_solids
 
 
-def reconstruct_grid_to_root(subdomain,grid):
-    """This function (re)constructs a grid from all proccesses to root
-    """
+# def reconstruct_grid_to_root(subdomain,grid):
+#     """This function (re)constructs a grid from all proccesses to root
+#     """
 
-    if subdomain.ID == 0:
-        sd_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
-        grid_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
-        sd_all[0] = subdomain
-        grid_all[0] = grid
-        for neigh in range(1,subdomain.domain.num_subdomains):
-            sd_all[neigh] = comm.recv(source=neigh)
-            grid_all[neigh] = comm.recv(source=neigh)
+#     if subdomain.ID == 0:
+#         sd_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
+#         grid_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
+#         sd_all[0] = subdomain
+#         grid_all[0] = grid
+#         for neigh in range(1,subdomain.domain.num_subdomains):
+#             sd_all[neigh] = comm.recv(source=neigh)
+#             grid_all[neigh] = comm.recv(source=neigh)
 
-    if subdomain.ID > 0:
-        comm.send(subdomain,dest=0)
-        comm.send(grid,dest=0)
+#     if subdomain.ID > 0:
+#         comm.send(subdomain,dest=0)
+#         comm.send(grid,dest=0)
 
-    if subdomain.ID == 0:
-        grid_out = np.zeros(subdomain.domain.nodes)
-        for n in range(0,subdomain.domain.num_subdomains):
-            _own_grid = own_grid(grid_all[n],sd_all[n].index_own_nodes)
-            grid_out = global_grid(grid_out,sd_all[n].index_global,_own_grid)
+#     if subdomain.ID == 0:
+#         grid_out = np.zeros(subdomain.domain.nodes)
+#         for n in range(0,subdomain.domain.num_subdomains):
+#             _own_grid = own_grid(grid_all[n],sd_all[n].index_own_nodes)
+#             grid_out = global_grid(grid_out,sd_all[n].index_global,_own_grid)
 
-        return grid_out
+#         return grid_out
 
-    return 0
+#     return 0
     
 def deconstruct_grid(subdomain,grid,procs):
     """Deconstruct the grid from a single process to multiple grids

@@ -28,17 +28,17 @@ class Domain:
         self.outlet = outlet
         self.dims = 3
         self.periodic = self.periodic_check()
-        self.length_domain = self.get_domain_length()
+        self.length = self.get_length()
 
-    def get_domain_length(self) -> tuple[float, ...]:
+    def get_length(self) -> tuple[float, ...]:
         """
         Calculate the length of the domain
         """
-        length_domain = np.zeros([self.dims], dtype=np.float64)
+        length = np.zeros([self.dims], dtype=np.float64)
         for n in range(0, self.dims):
-            length_domain[n] = self.box[n, 1] - self.box[n, 0]
+            length[n] = self.box[n, 1] - self.box[n, 0]
 
-        return tuple(length_domain)
+        return tuple(length)
 
     def periodic_check(self) -> bool:
         """

@@ -1,0 +1,14 @@
+numpy<2.0
+cython==3.0
+mpi4py==3.1.6
+pykdtree>=0.1
+edt>=2.3.1
+scipy>=1.9.3
+pyevtk>=1.5.0
+connected_components_3d>=3.12.4
+
+[test]
+pytest>=6.0
+pytest-cov>=2.0
+mypy>=1.0
+tox>=3.24

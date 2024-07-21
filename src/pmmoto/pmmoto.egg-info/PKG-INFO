@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: pmmoto
+Version: 0.0.0
+Summary: Porous Media Topology and Morphology Toolkit
+Author: Timothy M. Weigand
+Author-email: timothy.weigand@unc.edu
+Platform: osx
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.11
+Requires-Dist: numpy>=1.22.3
+Requires-Dist: mpi4py>=3.1.3

@@ -1,6 +1,6 @@
 import numpy as np
 import dataclasses
-from pmmoto.core import _set
+from . import _set
 
 @dataclasses.dataclass
 class SetSubdomain:

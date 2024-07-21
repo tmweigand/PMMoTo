@@ -2,13 +2,13 @@
 import os
 import gzip
 import numpy as np
-import pyvista as pv
+# import pyvista as pv
 from pmmoto.io import io_utils
 
 
 __all__ = [
     "read_sphere_pack_xyzr_domain",
-    "read_vtk_grid",
+    # "read_vtk_grid",
     "read_r_lookup_file",
     "read_lammps_atoms",
     "read_atom_map",
@@ -59,18 +59,18 @@ def read_vtk_grid(rank,size,file):
     """
     Read in parallel vtk file. Size must equal size when file written
     """
-    proc_files = os.listdir(file)
-    proc_files.sort()
+    # proc_files = os.listdir(file)
+    # proc_files.sort()
 
-    # Check num_files is equal to mpi.size
-    io_utils.check_num_files(len(proc_files),size)
+    # # Check num_files is equal to mpi.size
+    # io_utils.check_num_files(len(proc_files),size)
 
-    p_file = file + '/' + proc_files[rank]
-    data = pv.read(p_file)
-    array_name = data.array_names
-    grid_data = np.reshape(data[array_name[0]],data.dimensions,'F')
+    # p_file = file + '/' + proc_files[rank]
+    # data = pv.read(p_file)
+    # array_name = data.array_names
+    # grid_data = np.reshape(data[array_name[0]],data.dimensions,'F')
 
-    return np.ascontiguousarray(grid_data)
+    # return np.ascontiguousarray(grid_data)
 
 def read_r_lookup_file(input_file,power = 1):
     """

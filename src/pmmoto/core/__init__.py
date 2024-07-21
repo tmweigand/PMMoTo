@@ -6,4 +6,3 @@ from .subdomain import *
 from .subdomain_discretization import *
 from .Multiphase import *
 from .sets import *
-
