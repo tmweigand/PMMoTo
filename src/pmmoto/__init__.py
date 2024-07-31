@@ -3,3 +3,4 @@ from . import analysis
 from . import domain_generation
 from . import filters
 from . import io
+from .core.pmmoto import initialize

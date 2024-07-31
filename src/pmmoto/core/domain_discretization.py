@@ -12,9 +12,9 @@ class DiscretizedDomain(pmmoto_domain.Domain):
     def __init__(self, num_voxels: tuple[int, ...] = (1, 1, 1), **kwargs):
         super().__init__(**kwargs)
         self.num_voxels = num_voxels
-        self.res = self.get_voxel_size()
+        self.resolution = self.get_voxel_size()
 
-    def get_voxel_size(self) -> tuple[float,...]:
+    def get_voxel_size(self) -> tuple[float, ...]:
         """
         Get domain length and voxel size
         """

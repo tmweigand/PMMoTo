@@ -1,6 +1,7 @@
 ### Core Utility Functions ###
 import sys
 import numpy as np
+
 # from mpi4py import MPI
 from . import Orientation
 from . import domain
@@ -8,32 +9,34 @@ from . import subdomain
 
 # comm = MPI.COMM_WORLD
 
+
 def raise_error():
-    """Exit gracefuully.
-    """
+    """Exit gracefuully."""
     MPI.Finalize()
     sys.exit()
 
-def check_grid(subdomain,grid):
-    """Esure solid voxel on each subprocess
 
-    """
+def check_grid(subdomain, grid):
+    """Esure solid voxel on each subprocess"""
     if np.sum(grid) == np.prod(subdomain.nodes):
-        print("This code requires at least 1 solid voxel in each subdomain. Please reorder processors!")
+        print(
+            "This code requires at least 1 solid voxel in each subdomain. Please reorder processors!"
+        )
         raise_error()
 
-def check_inputs(mpi_size,subdomains,nodes,boundaries,inlet,outlet):
+
+def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
     """
     Ensure Input Parameters are Valid
     """
     check_input_nodes(nodes)
-    check_subdomain_size(mpi_size,subdomains)
+    check_subdomain_size(mpi_size, subdomains)
     check_boundaries(boundaries)
-    check_inlet_outlet(boundaries,inlet,outlet)
-       
+    check_inlet_outlet(boundaries, inlet, outlet)
+
+
 def check_input_nodes(nodes):
-    """Check Nodes are Positive
-    """
+    """Check Nodes are Positive"""
     error = False
 
     for n in nodes:
@@ -44,7 +47,8 @@ def check_input_nodes(nodes):
     if error:
         raise_error()
 
-def check_subdomain_size(mpi_size,subdomains):
+
+def check_subdomain_size(mpi_size, subdomains):
     """
     Check subdomain size and ensure mpi size is equal to num_subdomains
     """
@@ -63,6 +67,7 @@ def check_subdomain_size(mpi_size,subdomains):
     if error:
         raise_error()
 
+
 def check_boundaries(boundaries):
     """
     Check boundaries and boundary pairs
@@ -72,11 +77,14 @@ def check_boundaries(boundaries):
         for n in d:
             if n < 0 or n > 2:
                 error = True
-                print("Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic")
+                print(
+                    "Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic"
+                )
     if error:
         raise_error()
 
-def check_inlet_outlet(boundaries,inlet,outlet):
+
+def check_inlet_outlet(boundaries, inlet, outlet):
     """
     Check inlet and outlet conditions
     """
@@ -84,9 +92,9 @@ def check_inlet_outlet(boundaries,inlet,outlet):
 
     # Inlet
     n_sum = 0
-    for d_in,d_bound in zip(inlet,boundaries):
-        for n_in,n_bound in zip(d_in,d_bound):
-            if n_in !=0:
+    for d_in, d_bound in zip(inlet, boundaries):
+        for n_in, n_bound in zip(d_in, d_bound):
+            if n_in != 0:
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
@@ -97,9 +105,9 @@ def check_inlet_outlet(boundaries,inlet,outlet):
 
     # Outlet
     n_sum = 0
-    for d_in,d_bound in zip(outlet,boundaries):
-        for n_in,n_bound in zip(d_in,d_bound): 
-            if n_in !=0:
+    for d_in, d_bound in zip(outlet, boundaries):
+        for n_in, n_bound in zip(d_in, d_bound):
+            if n_in != 0:
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
@@ -111,34 +119,39 @@ def check_inlet_outlet(boundaries,inlet,outlet):
     if error:
         raise_error()
 
-def unpad(grid,pad):
+
+def unpad(grid, pad):
     """
     Unpad a padded array
     """
     _dim = grid.shape
-    grid_out = grid[pad[0]:_dim[0]-pad[1],
-                    pad[2]:_dim[1]-pad[3],
-                    pad[4]:_dim[2]-pad[5]]
+    grid_out = grid[
+        pad[0] : _dim[0] - pad[1], pad[2] : _dim[1] - pad[3], pad[4] : _dim[2] - pad[5]
+    ]
     return np.ascontiguousarray(grid_out)
 
 
-def constant_pad(grid,pad,pad_value):
+def constant_pad(grid, pad, pad_value):
     """
-    Pad a grid with a constant value 
+    Pad a grid with a constant value
     """
-    grid = np.pad(grid,((pad[0], pad[1]),(pad[2], pad[3]),(pad[4], pad[5])),
-                  'constant', constant_values = pad_value)
+    grid = np.pad(
+        grid,
+        ((pad[0], pad[1]), (pad[2], pad[3]), (pad[4], pad[5])),
+        "constant",
+        constant_values=pad_value,
+    )
     return grid
 
-def own_grid(grid,own):
+
+def own_grid(grid, own):
     """
     Pass array with only nodes owned py that process
     """
-    grid_out =  grid[own[0]:own[1],
-                     own[2]:own[3],
-                     own[4]:own[5]]
+    grid_out = grid[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
 
     return np.ascontiguousarray(grid_out)
+
 
 # def phases_exists(grid,phase,own_nodes):
 #     """
@@ -154,13 +167,14 @@ def own_grid(grid,own):
 
 #     return phase_exists
 
-def global_grid(grid,index,local_grid):
-    """Take local grid from eachj process and combine into global grid
-    """
-    grid[index[0]:index[1],index[2]:index[3],index[4]:index[5]] = local_grid
+
+def global_grid(grid, index, local_grid):
+    """Take local grid from eachj process and combine into global grid"""
+    grid[index[0] : index[1], index[2] : index[3], index[4] : index[5]] = local_grid
     return grid
 
-def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
+
+def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
     """
     Trim solids to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
     Keep all face solids, and use extend factor to query which solids to include for edges and corners
@@ -168,49 +182,65 @@ def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
     face_solids = [[] for _ in range(len(Orientation.faces))]
     edge_solids = [[] for _ in range(len(Orientation.edges))]
     corner_solids = [[] for _ in range(len(Orientation.corners))]
-    
-    extend = [extend_factor*x for x in subdomain.size_subdomain]
+
+    extend = [extend_factor * x for x in subdomain.size_subdomain]
     coords = subdomain.coords
 
     ### Faces ###
     for fIndex in Orientation.faces:
         pointsXYZ = []
-        points = solids[np.where( (solids[:,0]>-1)
-                                & (solids[:,1]>-1)
-                                & (solids[:,2]>-1)
-                                & (solids[:,3]==fIndex) )][:,0:3]
-        for x,y,z in points:
-            pointsXYZ.append([coords[0][x],coords[1][y],coords[2][z]] )
+        points = solids[
+            np.where(
+                (solids[:, 0] > -1)
+                & (solids[:, 1] > -1)
+                & (solids[:, 2] > -1)
+                & (solids[:, 3] == fIndex)
+            )
+        ][:, 0:3]
+        for x, y, z in points:
+            pointsXYZ.append([coords[0][x], coords[1][y], coords[2][z]])
         face_solids[fIndex] = np.asarray(pointsXYZ)
 
     ### Edges ###
     for edge in subdomain.edges:
-        edge.get_extension(extend,subdomain.bounds)
-        for f,d in zip(edge.info['faceIndex'],reversed(edge.info['dir'])): # Flip dir for correct nodes
+        edge.get_extension(extend, subdomain.bounds)
+        for f, d in zip(
+            edge.info["faceIndex"], reversed(edge.info["dir"])
+        ):  # Flip dir for correct nodes
             f_solids = face_solids[f]
-            values = (edge.extend[d][0] <= f_solids[:,d]) & (f_solids[:,d] <= edge.extend[d][1])
+            values = (edge.extend[d][0] <= f_solids[:, d]) & (
+                f_solids[:, d] <= edge.extend[d][1]
+            )
             if len(edge_solids[edge.ID]) == 0:
                 edge_solids[edge.ID] = f_solids[np.where(values)]
             else:
-                edge_solids[edge.ID] = np.append(edge_solids[edge.ID],f_solids[np.where(values)],axis=0)
-        edge_solids[edge.ID] = np.unique(edge_solids[edge.ID],axis=0)
+                edge_solids[edge.ID] = np.append(
+                    edge_solids[edge.ID], f_solids[np.where(values)], axis=0
+                )
+        edge_solids[edge.ID] = np.unique(edge_solids[edge.ID], axis=0)
 
     ### Corners ###
-    iterates = [[1,2],[0,2],[0,1]]
+    iterates = [[1, 2], [0, 2], [0, 1]]
     for corner in subdomain.corners:
-        corner.get_extension(extend,subdomain.bounds)
-        values = [None,None]
-        for it,f in zip(iterates,corner.info['faceIndex']):
+        corner.get_extension(extend, subdomain.bounds)
+        values = [None, None]
+        for it, f in zip(iterates, corner.info["faceIndex"]):
             f_solids = face_solids[f]
-            for n,i in enumerate(it):
-                values[n] = (corner.extend[i][0] <= f_solids[:,i]) & (f_solids[:,i] <= corner.extend[i][1])
+            for n, i in enumerate(it):
+                values[n] = (corner.extend[i][0] <= f_solids[:, i]) & (
+                    f_solids[:, i] <= corner.extend[i][1]
+                )
             if len(corner_solids[corner.ID]) == 0:
                 corner_solids[corner.ID] = f_solids[np.where(values[0] & values[1])]
             else:
-                corner_solids[corner.ID] = np.append(corner_solids[corner.ID],f_solids[np.where(values[0] & values[1])],axis=0)
-        corner_solids[corner.ID] = np.unique(corner_solids[corner.ID],axis=0)
+                corner_solids[corner.ID] = np.append(
+                    corner_solids[corner.ID],
+                    f_solids[np.where(values[0] & values[1])],
+                    axis=0,
+                )
+        corner_solids[corner.ID] = np.unique(corner_solids[corner.ID], axis=0)
 
-    return face_solids,edge_solids,corner_solids
+    return face_solids, edge_solids, corner_solids
 
 
 # def reconstruct_grid_to_root(subdomain,grid):
@@ -239,35 +269,38 @@ def partition_boundary_solids(subdomain,solids,extend_factor = 0.7):
 #         return grid_out
 
 #     return 0
-    
-def deconstruct_grid(subdomain,grid,procs):
-    """Deconstruct the grid from a single process to multiple grids
-    """
+
+
+def deconstruct_grid(subdomain, grid, procs):
+    """Deconstruct the grid from a single process to multiple grids"""
 
     num_procs = np.prod(procs)
-    _domain = Domain.Domain(nodes = subdomain.domain.nodes,
-                            subdomains = procs,
-                            size_domain = subdomain.domain.size_domain,
-                            boundaries = subdomain.domain.boundaries,
-                            inlet = subdomain.domain.inlet,
-                            outlet = subdomain.domain.outlet)
+    _domain = Domain.Domain(
+        nodes=subdomain.domain.nodes,
+        subdomains=procs,
+        size_domain=subdomain.domain.size_domain,
+        boundaries=subdomain.domain.boundaries,
+        inlet=subdomain.domain.inlet,
+        outlet=subdomain.domain.outlet,
+    )
 
     _domain.get_subdomain_nodes()
     _domain.get_voxel_size()
 
-    sd_all = np.empty((num_procs), dtype = object)
-    local_grid = np.empty((num_procs), dtype = object)
-    for n in range(0,num_procs):
-        sd_all[n] = Subdomain.Subdomain(domain = _domain, ID = n, subdomains = procs)
+    sd_all = np.empty((num_procs), dtype=object)
+    local_grid = np.empty((num_procs), dtype=object)
+    for n in range(0, num_procs):
+        sd_all[n] = Subdomain.Subdomain(domain=_domain, ID=n, subdomains=procs)
         sd_all[n].get_info()
         sd_all[n].gather_cube_info()
         sd_all[n].get_coordinates()
 
-        local_grid[n] = grid[sd_all[n].index_start[0]:sd_all[n].index_start[0]+sd_all[n].nodes[0],
-                             sd_all[n].index_start[1]:sd_all[n].index_start[1]+sd_all[n].nodes[1],
-                             sd_all[n].index_start[2]:sd_all[n].index_start[2]+sd_all[n].nodes[2]]
-        
-        local_grid[n] = np.ascontiguousarray(local_grid[n])
-        
-    return sd_all,local_grid
+        local_grid[n] = grid[
+            sd_all[n].index_start[0] : sd_all[n].index_start[0] + sd_all[n].nodes[0],
+            sd_all[n].index_start[1] : sd_all[n].index_start[1] + sd_all[n].nodes[1],
+            sd_all[n].index_start[2] : sd_all[n].index_start[2] + sd_all[n].nodes[2],
+        ]
 
+        local_grid[n] = np.ascontiguousarray(local_grid[n])
+
+    return sd_all, local_grid

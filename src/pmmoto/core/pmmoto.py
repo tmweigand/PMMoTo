@@ -1,28 +1,52 @@
 from . import utils
 from . import domain
-from . import subdomain
+from . import domain_decompose
+from . import domain_discretization
 
 __all__ = [
     "initialize",
-    ]
+]
 
-def initialize(rank,mpi_size,subdomains,nodes,boundaries,inlet = None,outlet = None):
+
+def initialize(
+    box,
+    subdomain_map,
+    num_voxels,
+    boundaries,
+    inlet=None,
+    outlet=None,
+    rank=0,
+    mpi_size=1,
+):
     """
-    Initialize PMMoTo domain and subdomain classes and check for valid inputs. 
+    Initialize PMMoTo domain and subdomain classes and check for valid inputs.
     """
 
-    utils.check_inputs(mpi_size,subdomains,nodes,boundaries,inlet,outlet)
+    # utils.check_inputs(mpi_size, subdomain_map, num_voxels, boundaries, inlet, outlet)
 
-    pmmoto_domain = domain.Domain(nodes = nodes,
-                           subdomains = subdomains,
-                           boundaries = boundaries,
-                           inlet = inlet,
-                           outlet = outlet)
-    
-    pmmoto_domain.get_subdomain_nodes()
+    pmmoto_domain = domain.Domain(
+        box=box,
+        boundaries=boundaries,
+        inlet=inlet,
+        outlet=outlet,
+    )
 
-    pmmoto_subdomain = subdomain.Subdomain(ID = rank, subdomains = subdomains)
-    pmmoto_subdomain.get_info()
-    pmmoto_subdomain.gather_cube_info()
+    pmmoto_discretized_domain = domain_discretization.DiscretizedDomain(
+        box=box,
+        boundaries=boundaries,
+        inlet=inlet,
+        outlet=outlet,
+        num_voxels=num_voxels,
+    )
 
-    return pmmoto_subdomain
+    pmmoto_decomposed_domain = domain_decompose.DecomposedDomain(
+        box=box,
+        boundaries=boundaries,
+        inlet=inlet,
+        outlet=outlet,
+        num_voxels=num_voxels,
+        rank=rank,
+        subdomain_map=subdomain_map,
+    )
+
+    return pmmoto_decomposed_domain
