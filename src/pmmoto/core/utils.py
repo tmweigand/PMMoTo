@@ -120,6 +120,27 @@ def check_inlet_outlet(boundaries, inlet, outlet):
         raise_error()
 
 
+def check_padding(mpi_size, boundaries) -> bool:
+    """
+    Determine if padding needs to be added to the domain/subdomain
+
+    Args:
+        mpi_size (int): number of mpi processes
+        boundaries (tuple): boundary conditions
+    """
+    pad = False
+    if mpi_size > 1:
+        pad = True
+
+    for bound in boundaries:
+        if bound[0] != 0:
+            pad = True
+        if bound[1] != 0:
+            pad = True
+
+    return pad
+
+
 def unpad(grid, pad):
     """
     Unpad a padded array

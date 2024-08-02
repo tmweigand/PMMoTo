@@ -11,15 +11,22 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
     and pass properties to subdomain
     """
 
-    def __init__(
-        self, rank: int = 0, subdomain_map: tuple[int, ...] = (1, 1, 1), **kwargs
-    ):
+    def __init__(self, subdomain_map: tuple[int, ...] = (1, 1, 1), **kwargs):
         super().__init__(**kwargs)
-        self.rank = rank
         self.subdomain_map = subdomain_map
-        self.num_subdomains = np.prod(subdomain_map)
+        self.num_subdomains = np.prod(self.subdomain_map)
         self.map = self.gen_subdomain_map()
-        self.subdomain = self.initialize_subdomain()
+
+    @classmethod
+    def from_discretized_domain(cls, discretized_domain, subdomain_map):
+        return cls(
+            box=discretized_domain.box,
+            boundaries=discretized_domain.boundaries,
+            inlet=discretized_domain.inlet,
+            outlet=discretized_domain.outlet,
+            voxels=discretized_domain.voxels,
+            subdomain_map=subdomain_map,
+        )
 
     def gen_subdomain_map(self):
         """
@@ -27,27 +34,26 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         return np.arange(self.num_subdomains).reshape(self.subdomain_map)
 
-    def initialize_subdomain(self):
+    def initialize_subdomain(self, rank: int):
         """
-        Initialize the subdomains
+        Initialize the subdomains and return subdomain on rank
         """
-        for sd_id in self.map.flatten():
-            sd_index = self.get_subdomain_index(sd_id)
-            if self.rank == sd_id:
-                voxels = self.get_subdomain_voxels(sd_index)
-                box = self.get_subdomain_box(sd_index, voxels)
-                boundaries = self.get_subdomain_boundaries(sd_index)
-                inlet = self.get_subdomain_inlet(sd_index)
-                outlet = self.get_subdomain_outlet(sd_index)
-                _subdomain = subdomain.Subdomain(
-                    rank=sd_id,
-                    index=sd_index,
-                    box=box,
-                    boundaries=boundaries,
-                    inlet=inlet,
-                    outlet=outlet,
-                    num_voxels=voxels,
-                )
+        sd_index = self.get_subdomain_index(rank)
+        voxels = self.get_subdomain_voxels(sd_index)
+        box = self.get_subdomain_box(sd_index, voxels)
+        boundaries = self.get_subdomain_boundaries(sd_index)
+        inlet = self.get_subdomain_inlet(sd_index)
+        outlet = self.get_subdomain_outlet(sd_index)
+        _subdomain = subdomain.Subdomain(
+            rank=rank,
+            index=sd_index,
+            box=box,
+            boundaries=boundaries,
+            inlet=inlet,
+            outlet=outlet,
+            voxels=voxels,
+        )
+
         return _subdomain
 
     def get_subdomain_voxels(self, index: tuple[np.intp, ...]) -> tuple[int, ...]:
@@ -56,9 +62,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         voxels = [0, 0, 0]
         for dim, ind in enumerate(index):
-            sd_voxels, rem_sd_voxels = divmod(
-                self.num_voxels[dim], self.subdomain_map[dim]
-            )
+            sd_voxels, rem_sd_voxels = divmod(self.voxels[dim], self.subdomain_map[dim])
             if ind == self.subdomain_map[dim] - 1:
                 voxels[dim] = sd_voxels + rem_sd_voxels
             else:
@@ -80,15 +84,16 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         Note: subdomains are divided such that voxel spacing
         is constant
         """
-        box = np.zeros([self.dims, 2])
+        box = []
         for dim, ind in enumerate(index):
             length = voxels[dim] * self.resolution[dim]
-            box[dim, 0] = self.box[dim, 0] + length * ind
+            lower = self.box[dim][0] + length * ind
             if ind == self.subdomain_map[dim] - 1:
-                box[dim, 0] = self.box[dim, 1] - length
-            box[dim, 1] = box[dim, 0] + length
+                lower = self.box[dim][1] - length
+            upper = lower + length
+            box.append((lower, upper))
 
-        return box
+        return tuple(box)
 
     def get_subdomain_boundaries(self, index: tuple[np.intp, ...]):
         """

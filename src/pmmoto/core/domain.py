@@ -17,7 +17,7 @@ class Domain:
 
     def __init__(
         self,
-        box: np.ndarray[Literal[2], np.dtype[np.float64]],
+        box: tuple[tuple[float, float], ...],
         boundaries: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
         inlet: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
         outlet: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
@@ -36,7 +36,7 @@ class Domain:
         """
         length = np.zeros([self.dims], dtype=np.float64)
         for n in range(0, self.dims):
-            length[n] = self.box[n, 1] - self.box[n, 0]
+            length[n] = self.box[n][1] - self.box[n][0]
 
         return tuple(length)
 

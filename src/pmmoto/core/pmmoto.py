@@ -11,10 +11,10 @@ __all__ = [
 def initialize(
     box,
     subdomain_map,
-    num_voxels,
-    boundaries,
-    inlet=None,
-    outlet=None,
+    voxels,
+    boundaries=((0, 0), (0, 0), (0, 0)),
+    inlet=((0, 0), (0, 0), (0, 0)),
+    outlet=((0, 0), (0, 0), (0, 0)),
     rank=0,
     mpi_size=1,
 ):
@@ -22,7 +22,7 @@ def initialize(
     Initialize PMMoTo domain and subdomain classes and check for valid inputs.
     """
 
-    # utils.check_inputs(mpi_size, subdomain_map, num_voxels, boundaries, inlet, outlet)
+    # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
 
     pmmoto_domain = domain.Domain(
         box=box,
@@ -31,22 +31,23 @@ def initialize(
         outlet=outlet,
     )
 
-    pmmoto_discretized_domain = domain_discretization.DiscretizedDomain(
-        box=box,
-        boundaries=boundaries,
-        inlet=inlet,
-        outlet=outlet,
-        num_voxels=num_voxels,
+    pmmoto_discretized_domain = domain_discretization.DiscretizedDomain.from_domain(
+        domain=pmmoto_domain,
+        voxels=voxels,
     )
 
-    pmmoto_decomposed_domain = domain_decompose.DecomposedDomain(
-        box=box,
-        boundaries=boundaries,
-        inlet=inlet,
-        outlet=outlet,
-        num_voxels=num_voxels,
-        rank=rank,
-        subdomain_map=subdomain_map,
+    pmmoto_decomposed_domain = (
+        domain_decompose.DecomposedDomain.from_discretized_domain(
+            discretized_domain=pmmoto_discretized_domain,
+            subdomain_map=subdomain_map,
+        )
     )
 
-    return pmmoto_decomposed_domain
+    subdomain = pmmoto_decomposed_domain.initialize_subdomain(rank)
+
+    # # Pad subdomain if needed
+    # padding = utils.check_padding(mpi_size=mpi_size, boundaries=boundaries)
+
+    # if padding:
+
+    return subdomain

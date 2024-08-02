@@ -1,6 +1,5 @@
 """subdomains.py"""
 
-import numpy as np
 from . import domain_discretization
 
 
@@ -23,8 +22,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         Determine if subdomain is on a boundary
         """
         boundary = False
-        for m, p in self.boundaries:
-            if m != -1 or p != -1:
+        for minus, plus in self.boundaries:
+            if minus != -1 or plus != -1:
                 boundary = True
 
         return boundary

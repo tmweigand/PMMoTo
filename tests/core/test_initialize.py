@@ -18,5 +18,5 @@ def test_initialize(domain, domain_discretization, domain_decomposed):
         inlet=domain["inlet"],
         outlet=domain["outlet"],
         subdomain_map=domain_decomposed["subdomain_map"],
-        num_voxels=domain_discretization["num_voxels"],
+        voxels=domain_discretization["voxels"],
     )

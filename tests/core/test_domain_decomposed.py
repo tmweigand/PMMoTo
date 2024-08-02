@@ -3,36 +3,70 @@ import numpy as np
 import pmmoto
 
 
-def test_decomposed_domain(domain, domain_discretization, domain_decomposed):
+def test_decomposed_domain(
+    domain, domain_discretization, domain_decomposed, domain_decomposed_true
+):
     """
     Test decomposition of domain
     """
 
-    pmmoto_decomposed_domain = pmmoto.core.DecomposedDomain(
-        num_voxels=domain_discretization["num_voxels"],
-        box=domain["box"],
-        boundaries=domain["boundaries"],
-        inlet=domain["inlet"],
-        outlet=domain["outlet"],
-        subdomain_map=domain_decomposed["subdomain_map"],
+    pmmoto_domain = pmmoto.core.Domain(
+        domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
     )
 
-    pmmoto_index = pmmoto_decomposed_domain.get_subdomain_index(0)
-    voxels = pmmoto_decomposed_domain.get_subdomain_voxels(pmmoto_index)
-    boundaries = pmmoto_decomposed_domain.get_subdomain_boundaries(pmmoto_index)
-    box = pmmoto_decomposed_domain.get_subdomain_box(pmmoto_index, voxels)
-    inlet = pmmoto_decomposed_domain.get_subdomain_inlet(pmmoto_index)
-    outlet = pmmoto_decomposed_domain.get_subdomain_outlet(pmmoto_index)
-
-    np.testing.assert_array_equal(
-        pmmoto_decomposed_domain.map.flatten(),
-        np.arange(pmmoto_decomposed_domain.num_subdomains),
+    pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
+        domain=pmmoto_domain,
+        voxels=domain_discretization["voxels"],
     )
 
-    assert pmmoto_index == (0, 0, 0)
-    np.testing.assert_array_equal(boundaries, np.array([[0, -1], [1, -1], [2, -1]]))
-    np.testing.assert_array_equal(
-        box, np.array([[0.0, 50.0], [0.0, 50.0], [0.0, 50.0]])
+    pmmoto_decomposed_domain = (
+        pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
+            discretized_domain=pmmoto_discretized_domain,
+            subdomain_map=domain_decomposed["subdomain_map"],
+        )
     )
-    np.testing.assert_array_equal(inlet, np.array([[1, 0], [0, 0], [0, 0]]))
-    np.testing.assert_array_equal(outlet, np.array([[0, 0], [0, 0], [0, 0]]))
+
+    # import pickle
+
+    # data_out = {
+    #     "index": {},
+    #     "voxels": {},
+    #     "boundaries": {},
+    #     "box": {},
+    #     "inlet": {},
+    #     "outlet": {},
+    # }
+
+    for rank in range(pmmoto_decomposed_domain.num_subdomains):
+        pmmoto_index = pmmoto_decomposed_domain.get_subdomain_index(rank)
+        assert pmmoto_index == domain_decomposed_true["index"][rank]
+
+        voxels = pmmoto_decomposed_domain.get_subdomain_voxels(pmmoto_index)
+        assert voxels == domain_decomposed_true["voxels"][rank]
+
+        boundaries = pmmoto_decomposed_domain.get_subdomain_boundaries(pmmoto_index)
+        np.testing.assert_array_equal(
+            boundaries, domain_decomposed_true["boundaries"][rank]
+        )
+
+        box = pmmoto_decomposed_domain.get_subdomain_box(pmmoto_index, voxels)
+        np.testing.assert_array_equal(box, domain_decomposed_true["box"][rank])
+
+        inlet = pmmoto_decomposed_domain.get_subdomain_inlet(pmmoto_index)
+        np.testing.assert_array_equal(inlet, domain_decomposed_true["inlet"][rank])
+
+        outlet = pmmoto_decomposed_domain.get_subdomain_outlet(pmmoto_index)
+        np.testing.assert_array_equal(outlet, domain_decomposed_true["outlet"][rank])
+
+    #     data_out["index"][rank] = pmmoto_index
+    #     data_out["voxels"][rank] = voxels
+    #     data_out["boundaries"][rank] = boundaries
+    #     data_out["box"][rank] = box
+    #     data_out["inlet"][rank] = inlet
+    #     data_out["outlet"][rank] = outlet
+
+    # with open(
+    #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
+    #     "wb",
+    # ) as file:  # open a text file
+    #     pickle.dump(data_out, file)  # serialize the list
