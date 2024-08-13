@@ -10,8 +10,8 @@ def my_function():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subDomains = [2,2,2] # Specifies how Domain is broken among rrocs
-    nodes = [400,400,400] # Total Number of Nodes in Domain
+    subDomains = [6,6,6] # Specifies how Domain is broken among rrocs
+    nodes = [1560,1560,1560] # Total Number of Nodes in Domain
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[2,2],[2,2],[2,2]] # 0: Nothing Assumed  1: Walls 2: Periodic
@@ -19,7 +19,7 @@ def my_function():
     outlet = [[0,0],[0,0],[0,0]]
 
     ####CHANGE TO TARGET FILE
-    file = './testDomains/8pack.out'
+    file = './testDomains/packing_5.out'
 
 
     startTime = time.time()
@@ -45,7 +45,7 @@ def my_function():
     #### SET THESE PARAMETERS
     interval = 0.9  ##rate at which to change radius (each loop: radius = interval * radius)
     minSetSize = 10  ##in voxels, remove all smaller w phase, set to 0 for no removal 
-    sW = [0.30] ## saturation target list
+    sW = [0.80,0.65,0.50,0.35,0.20] ## saturation target list
 
     drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
 
