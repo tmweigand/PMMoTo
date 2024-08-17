@@ -11,6 +11,6 @@ module load python/3.10.14
 
 date
 
-mpirun -np 8 python3 testOpen.py
+mpirun -np 8 python3 testOpen_pack1.py
 
 date
