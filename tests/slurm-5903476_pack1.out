@@ -1,0 +1,48 @@
+Thu Aug 15 12:01:09 EDT 2024
+[c-209-15:06700] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06702] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06697] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06698] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06701] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06699] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06696] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+[c-209-15:06695] pml_ucx.c:285  Error: UCP worker does not support MPI_THREAD_MULTIPLE
+Running opening without CA control and with saturation targets
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+/nas/longleaf/home/kbruning/PMMoTo/tests/testOpen.py:50: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  drainL = PMMoTo.multiPhase.calcOpenSW(sW,twoPhase,interval,minSetSize)
+SKIP Capillary pressure: 7.812000e-01 Radius: 2.560164e+00 Wetting Phase Saturation: 9.935364e-01 Target Saturation: 8.000000e-01
+SKIP Capillary pressure: 8.680001e-01 Radius: 2.304147e+00 Wetting Phase Saturation: 9.907528e-01 Target Saturation: 8.000000e-01
+SKIP Capillary pressure: 9.644445e-01 Radius: 2.073733e+00 Wetting Phase Saturation: 9.891907e-01 Target Saturation: 8.000000e-01
+SKIP Capillary pressure: 1.071605e+00 Radius: 1.866359e+00 Wetting Phase Saturation: 9.487353e-01 Target Saturation: 8.000000e-01
+SKIP Capillary pressure: 1.190672e+00 Radius: 1.679723e+00 Wetting Phase Saturation: 8.726879e-01 Target Saturation: 8.000000e-01
+SAVE Capillary pressure: 1.322969e+00 Radius: 1.511751e+00 Wetting Phase Saturation: 7.790816e-01 Target Saturation: 8.000000e-01
+SKIP Capillary pressure: 1.469966e+00 Radius: 1.360576e+00 Wetting Phase Saturation: 6.763985e-01 Target Saturation: 6.500000e-01
+SAVE Capillary pressure: 1.633295e+00 Radius: 1.224518e+00 Wetting Phase Saturation: 5.494367e-01 Target Saturation: 6.500000e-01
+SAVE Capillary pressure: 1.814772e+00 Radius: 1.102067e+00 Wetting Phase Saturation: 4.394744e-01 Target Saturation: 5.000000e-01
+SAVE Capillary pressure: 2.016414e+00 Radius: 9.918599e-01 Wetting Phase Saturation: 3.491188e-01 Target Saturation: 3.500000e-01
+SKIP Capillary pressure: 2.240460e+00 Radius: 8.926739e-01 Wetting Phase Saturation: 2.702146e-01 Target Saturation: 2.000000e-01
+SKIP Capillary pressure: 2.489400e+00 Radius: 8.034065e-01 Wetting Phase Saturation: 2.078609e-01 Target Saturation: 2.000000e-01
+SAVE Capillary pressure: 2.766000e+00 Radius: 7.230659e-01 Wetting Phase Saturation: 1.588866e-01 Target Saturation: 2.000000e-01
+Parallel Time: 856.3484017848969
+Parallel Time: 856.3493962287903
+Parallel Time: 856.3528578281403
+Parallel Time: 856.3535289764404
+Parallel Time: 856.3544306755066
+Parallel Time: 856.3561208248138
+Parallel Time: 856.359769821167
+Parallel Time: 856.3598954677582
+Thu Aug 15 12:15:29 EDT 2024
