@@ -4,7 +4,7 @@
 # cython: wraparound=False
 from libcpp.vector cimport vector
 from numpy cimport uint64_t,int64_t
-
+from libc.stdio cimport printf
 
 # TODO: Clean up type defs
 
@@ -35,6 +35,7 @@ cdef inline Py_ssize_t get_global_ID_periodic(Py_ssize_t[3] x, int[3] domain_nod
         elif index[n] < 0:
             index[n] = domain_nodes[n] - index[n]
 
+    # printf("INDEX %i %i %i \n",index[0],index[1],index[2])
     return index[0]*domain_nodes[1]*domain_nodes[2] + index[1]*domain_nodes[2] + index[2]
 
 cdef inline vector[int64_t] get_global_index(Py_ssize_t[3] x, int[3] domain_nodes, int[3] index_start):

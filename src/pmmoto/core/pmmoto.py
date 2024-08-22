@@ -2,6 +2,7 @@ from . import utils
 from . import domain
 from . import domain_decompose
 from . import domain_discretization
+from . import subdomain_padded
 
 __all__ = [
     "initialize",
@@ -15,6 +16,7 @@ def initialize(
     boundaries=((0, 0), (0, 0), (0, 0)),
     inlet=((0, 0), (0, 0), (0, 0)),
     outlet=((0, 0), (0, 0), (0, 0)),
+    reservoir_voxels=0,
     rank=0,
     mpi_size=1,
 ):
@@ -25,10 +27,7 @@ def initialize(
     # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
 
     pmmoto_domain = domain.Domain(
-        box=box,
-        boundaries=boundaries,
-        inlet=inlet,
-        outlet=outlet,
+        box=box, boundaries=boundaries, inlet=inlet, outlet=outlet
     )
 
     pmmoto_discretized_domain = domain_discretization.DiscretizedDomain.from_domain(
@@ -43,11 +42,10 @@ def initialize(
         )
     )
 
-    subdomain = pmmoto_decomposed_domain.initialize_subdomain(rank)
+    pmmoto_subdomain = pmmoto_decomposed_domain.initialize_subdomain(rank)
 
-    # # Pad subdomain if needed
-    # padding = utils.check_padding(mpi_size=mpi_size, boundaries=boundaries)
+    padded_subdomain = subdomain_padded.PaddedSubdomain.from_subdomain(
+        subdomain=pmmoto_subdomain, pad=(1, 1, 1), reservoir_voxels=reservoir_voxels
+    )
 
-    # if padding:
-
-    return subdomain
+    return padded_subdomain, pmmoto_decomposed_domain

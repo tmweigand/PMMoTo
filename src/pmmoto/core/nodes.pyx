@@ -9,7 +9,7 @@ comm = MPI.COMM_WORLD
 
 from pmmoto.core import _set
 from pmmoto.core import _sets
-from pmmoto.core import Orientation
+from pmmoto.core import orientation
 from pmmoto.core import _Orientation
 cOrient = _Orientation.cOrientation()
 cdef int[26][5] directions
@@ -67,7 +67,7 @@ def get_node_info(grid,phase,inlet,outlet,domain,loop_info,subDomain):
   cdef int _phase = phase
 
   cdef int numFaces,fIndex
-  numFaces = Orientation.num_faces
+  numFaces = orientation.num_faces
 
   cdef int iStart,jStart,kStart
   iStart = subDomain.index_start[0]
@@ -103,7 +103,7 @@ def get_node_info(grid,phase,inlet,outlet,domain,loop_info,subDomain):
     jMax = _loop_info[fIndex][1][1]
     kMin = _loop_info[fIndex][2][0]
     kMax = _loop_info[fIndex][2][1]
-    bID = np.asarray(Orientation.faces[fIndex]['ID'],dtype=np.int8)
+    bID = np.asarray(orientation.faces[fIndex]['ID'],dtype=np.int8)
     sInlet = inlet[fIndex]
     sOutlet = outlet[fIndex]
     for i in range(iMin,iMax):

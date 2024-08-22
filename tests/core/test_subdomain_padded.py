@@ -1,13 +1,16 @@
 """test_subdomain_padded.py"""
 
-"""test_subdomain.py"""
-
 import numpy as np
 import pmmoto
 
 
 def test_subdomain_padded(
-    domain, domain_discretization, domain_decomposed, subdomains, subdomains_padded_true
+    domain,
+    domain_discretization,
+    domain_decomposed,
+    subdomains,
+    subdomains_padded,
+    subdomains_padded_true,
 ):
     """
     Test for subdomain
@@ -31,7 +34,7 @@ def test_subdomain_padded(
 
     # import pickle
 
-    # data_out = {"pad": {}, "voxels": {}, "box": {}, "coords": {}}
+    # data_out = {"pad": {}, "reservoir_pad": {}, "voxels": {}, "box": {}, "coords": {}}
 
     for rank in range(pmmoto_decomposed_domain.num_subdomains):
         pmmoto_subdomain = pmmoto.core.Subdomain(
@@ -45,7 +48,9 @@ def test_subdomain_padded(
         )
 
         pmmoto_padded_subdomain = pmmoto.core.PaddedSubdomain.from_subdomain(
-            subdomain=pmmoto_subdomain, pad=[1, 1, 1]
+            subdomain=pmmoto_subdomain,
+            pad=subdomains_padded["pad"],
+            reservoir_voxels=subdomains_padded["reservoir_voxels"],
         )
 
         np.testing.assert_array_equal(
@@ -72,10 +77,11 @@ def test_subdomain_padded(
             pmmoto_padded_subdomain.coords[2], subdomains_padded_true["coords"][rank][2]
         )
 
-    #     data_out["pad"][rank] = pmmoto_padded_subdomain.pad
-    #     data_out["voxels"][rank] = pmmoto_padded_subdomain.voxels
-    #     data_out["box"][rank] = pmmoto_padded_subdomain.box
-    #     data_out["coords"][rank] = pmmoto_padded_subdomain.coords
+        # data_out["pad"][rank] = pmmoto_padded_subdomain.pad
+        # data_out["reservoir_pad"][rank] = pmmoto_padded_subdomain.reservoir_pad
+        # data_out["voxels"][rank] = pmmoto_padded_subdomain.voxels
+        # data_out["box"][rank] = pmmoto_padded_subdomain.box
+        # data_out["coords"][rank] = pmmoto_padded_subdomain.coords
 
     # with open(
     #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_subdomain_padded.pkl",

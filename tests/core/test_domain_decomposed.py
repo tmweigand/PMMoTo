@@ -26,16 +26,18 @@ def test_decomposed_domain(
         )
     )
 
-    # import pickle
+    import pickle
 
-    # data_out = {
-    #     "index": {},
-    #     "voxels": {},
-    #     "boundaries": {},
-    #     "box": {},
-    #     "inlet": {},
-    #     "outlet": {},
-    # }
+    data_out = {
+        "index": {},
+        "voxels": {},
+        "boundaries": {},
+        "box": {},
+        "inlet": {},
+        "outlet": {},
+        "map": {},
+        "neighbor_ranks": {},
+    }
 
     for rank in range(pmmoto_decomposed_domain.num_subdomains):
         pmmoto_index = pmmoto_decomposed_domain.get_subdomain_index(rank)
@@ -58,15 +60,25 @@ def test_decomposed_domain(
         outlet = pmmoto_decomposed_domain.get_subdomain_outlet(pmmoto_index)
         np.testing.assert_array_equal(outlet, domain_decomposed_true["outlet"][rank])
 
-    #     data_out["index"][rank] = pmmoto_index
-    #     data_out["voxels"][rank] = voxels
-    #     data_out["boundaries"][rank] = boundaries
-    #     data_out["box"][rank] = box
-    #     data_out["inlet"][rank] = inlet
-    #     data_out["outlet"][rank] = outlet
+        map = pmmoto_decomposed_domain.gen_map()
+        np.testing.assert_array_equal(map, domain_decomposed_true["map"][rank])
 
-    # with open(
-    #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
-    #     "wb",
-    # ) as file:  # open a text file
-    #     pickle.dump(data_out, file)  # serialize the list
+        neighbor_ranks = pmmoto_decomposed_domain.get_neighbor_ranks(pmmoto_index)
+        np.testing.assert_array_equal(
+            neighbor_ranks, domain_decomposed_true["neighbor_ranks"][rank]
+        )
+
+        data_out["index"][rank] = pmmoto_index
+        data_out["voxels"][rank] = voxels
+        data_out["boundaries"][rank] = boundaries
+        data_out["box"][rank] = box
+        data_out["inlet"][rank] = inlet
+        data_out["outlet"][rank] = outlet
+        data_out["map"][rank] = map
+        data_out["neighbor_ranks"][rank] = neighbor_ranks
+
+    with open(
+        "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
+        "wb",
+    ) as file:  # open a text file
+        pickle.dump(data_out, file)  # serialize the list

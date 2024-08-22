@@ -73,11 +73,32 @@ def subdomains():
 
 
 @pytest.fixture
+def subdomains_padded():
+    """
+    Padded subdomain data
+    """
+    data = {"pad": (1, 1, 1), "reservoir_voxels": 3}
+
+    return data
+
+
+@pytest.fixture
 def subdomains_padded_true():
     """
-    PAdded subdomain results
+    Padded subdomain results
     """
     with open("tests/core/test_output/test_subdomain_padded.pkl", "rb") as file:
+        data = pickle.load(file)
+
+    return data
+
+
+@pytest.fixture
+def subdomain_features_true():
+    """
+    Subdomain feature results
+    """
+    with open("tests/core/test_output/test_subdomain_features.pkl", "rb") as file:
         data = pickle.load(file)
 
     return data

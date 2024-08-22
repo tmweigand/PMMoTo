@@ -3,5 +3,6 @@ from .domain_decompose import *
 from .domain_discretization import *
 from .subdomain import *
 from .subdomain_padded import *
-from .Multiphase import *
+from .multiphase import *
 from .sets import *
+from .utils import *

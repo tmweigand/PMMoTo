@@ -44,8 +44,16 @@ class Domain:
         """
         Check if any external boundary is periodic boundary
         """
+
+        if len(self.boundaries) == self.dims * 2:
+            boundaries = []
+            for n in range(self.dims):
+                boundaries.append([self.boundaries[n * 2], self.boundaries[n * 2 + 1]])
+        else:
+            boundaries = self.boundaries
+
         periodic = False
-        for d_bound in self.boundaries:
+        for d_bound in boundaries:
             for n_bound in d_bound:
                 if n_bound == 2:
                     periodic = True
@@ -56,49 +64,3 @@ class Domain:
         Use data from io to set domain size and determine voxel size and coordinates
         """
         pass
-
-    # def generate_global_map(self):
-    #     """
-    #     Generate Domain lookup map.
-    #     -2: Wall Boundary Condition
-    #     -1: No Assumption Boundary Condition
-    #     >=0: proc_ID
-    #     """
-
-    #     self.global_map[1:-1,1:-1,1:-1] = np.arange(self.num_subdomains).reshape(self.subdomains)
-
-    #     ### Set Boundaries of global SubDomain Map
-    #     if self.boundaries[0][0] == 1:
-    #         self.global_map[0,:,:] = -2
-    #     if self.boundaries[0][1] == 1:
-    #         self.global_map[-1,:,:] = -2
-    #     if self.boundaries[1][0] == 1:
-    #         self.global_map[:,0,:] = -2
-    #     if self.boundaries[1][1] == 1:
-    #         self.global_map[:,-1,:] = -2
-    #     if self.boundaries[2][0] == 1:
-    #         self.global_map[:,:,0] = -2
-    #     if self.boundaries[2][1] == 1:
-    #         self.global_map[:,:,-1] = -2
-
-    #     if self.boundaries[0][0] == 2:
-    #         self.global_map[0,:,:]  = self.global_map[-2,:,:]
-    #         self.global_map[-1,:,:] = self.global_map[1,:,:]
-
-    #     if self.boundaries[1][0] == 2:
-    #         self.global_map[:,0,:]  = self.global_map[:,-2,:]
-    #         self.global_map[:,-1,:] = self.global_map[:,1,:]
-
-    #     if self.boundaries[2][0] == 2:
-    #         self.global_map[:,:,0]  = self.global_map[:,:,-2]
-    #         self.global_map[:,:,-1] = self.global_map[:,:,1]
-
-    # def get_coords(self):
-    #     """
-    #     Calculate the Physical coordinaties of the voxels for entire domain
-    #     """
-    #     for n in range(self.dims):
-    #         self.coords[n] = np.linspace(
-    #             self.size_domain[n][0]+self.voxel[n]/2.,
-    #             self.size_domain[n][1]-self.voxel[n]/2.,
-    #             self.nodes[n] )

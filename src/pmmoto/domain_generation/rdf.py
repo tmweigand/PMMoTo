@@ -3,10 +3,6 @@
 import numpy as np
 from mpi4py import MPI
 from pmmoto.domain_generation import _domainGeneration
-from pmmoto.core import communication
-from pmmoto.core import utils
-from pmmoto.core import porousMedia
-from pmmoto.core import Orientation
 
 __all__ = ["generate_rdf", "generate_bounded_rdf"]
 

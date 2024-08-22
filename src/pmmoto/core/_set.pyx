@@ -50,15 +50,13 @@ def _match_boundary_sets(match,set,n_sets,face):
     for n_set in n_sets[face.info['ID']]:
         if n_set.phase == set.phase:
             if match_boundary_nodes(n_set.boundary_nodes,set.boundary_nodes):
-
                 n_ID = (n_set.proc_ID,n_set.local_ID)
                 if n_ID not in match.n_ID:
                     match.n_ID.append((n_set.proc_ID,n_set.local_ID))
-                if n_set.inlet:
+                if n_set.inlet or set.inlet:
                     match.inlet = True
-                if n_set.outlet:
+                if n_set.outlet or set.outlet:
                     match.outlet = True
-                
     return match
 
 def _get_num_global_nodes(set_boundary_nodes,n_set_boundary_nodes):

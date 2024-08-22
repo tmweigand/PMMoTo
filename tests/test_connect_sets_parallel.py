@@ -3,13 +3,13 @@ from mpi4py import MPI
 import pmmoto
 
 
-def test_connect_sets():
+def test_connect_sets_parallel():
 
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomain_map = [1, 1, 1]  # Specifies how Domain is broken among procs
+    subdomain_map = [2, 2, 2]  # Specifies how Domain is broken among procs
     voxels = [100, 100, 100]  # Total Number of Nodes in Domain
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
@@ -17,7 +17,7 @@ def test_connect_sets():
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0, 0], [0, 0], [0, 0]]  # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet = [[0, 0], [0, 0], [1, 0]]
-    outlet = [[0, 0], [0, 0], [0, 1]]
+    outlet = [[0, 0], [0, 0], [0, 0]]
 
     file = "tests/testDomains/50pack.out"
 
@@ -32,10 +32,10 @@ def test_connect_sets():
         outlet=outlet,
         rank=rank,
         mpi_size=size,
-        reservoir_voxels=2,
+        reservoir_voxels=0,
     )
 
-    sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
+    sphere_data, _ = pmmoto.io.read_sphere_pack_xyzr_domain(file)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(
         sd,
         sphere_data,
@@ -46,10 +46,9 @@ def test_connect_sets():
     )
 
     if save_data:
-
         kwargs = {"sets": connected_sets["grid"]}
         pmmoto.io.save_grid_data(
-            "dataOut/test_connects_sets_grid", sd, pm.grid, **kwargs
+            "dataOut/test_connects_sets_parallel_grid", sd, pm.grid, **kwargs
         )
 
         kwargs = {
@@ -57,11 +56,12 @@ def test_connect_sets():
             "outlet": "subdomain_data.outlet",
             "proc": "proc_ID",
         }
+
         pmmoto.io.save_set_data(
-            "dataOut/test_connect_sets", sd, connected_sets["sets"], **kwargs
+            "dataOut/test_connect_sets_parallel", sd, connected_sets["sets"], **kwargs
         )
 
 
 if __name__ == "__main__":
-    test_connect_sets()
+    test_connect_sets_parallel()
     MPI.Finalize()

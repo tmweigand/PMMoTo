@@ -1,5 +1,5 @@
 from .distance import *
 from .morphology import *
-from .connectedComponents import *
+from .connected_components import *
 from . import medialAxis
-from . import multiPhase
+from . import multiphase

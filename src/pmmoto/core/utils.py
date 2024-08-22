@@ -3,11 +3,15 @@ import sys
 import numpy as np
 
 # from mpi4py import MPI
-from . import Orientation
+from . import orientation
 from . import domain
 from . import subdomain
+from mpi4py import MPI
 
-# comm = MPI.COMM_WORLD
+comm = MPI.COMM_WORLD
+
+
+__all__ = ["phase_exists"]
 
 
 def raise_error():
@@ -18,7 +22,7 @@ def raise_error():
 
 def check_grid(subdomain, grid):
     """Esure solid voxel on each subprocess"""
-    if np.sum(grid) == np.prod(subdomain.nodes):
+    if np.sum(grid) == np.prod(subdomain.voxels):
         print(
             "This code requires at least 1 solid voxel in each subdomain. Please reorder processors!"
         )
@@ -174,23 +178,22 @@ def own_grid(grid, own):
     return np.ascontiguousarray(grid_out)
 
 
-# def phases_exists(grid,phase,own_nodes):
-#     """
-#     Determine if phase exists in grid
-#     """
-#     phase_exists = False
-#     _own_grid = own_grid(grid,own_nodes)
-#     local_count = np.count_nonzero( _own_grid == phase)
-#     global_count = comm.allreduce(local_count,op = MPI.SUM )
+def phase_exists(grid, phase):
+    """
+    Determine if phase exists in grid
+    """
+    phase_exists = False
+    local_count = np.count_nonzero(grid == phase)
+    global_count = comm.allreduce(local_count, op=MPI.SUM)
 
-#     if global_count > 0:
-#         phase_exists =  True
+    if global_count > 0:
+        phase_exists = True
 
-#     return phase_exists
+    return phase_exists
 
 
 def global_grid(grid, index, local_grid):
-    """Take local grid from eachj process and combine into global grid"""
+    """Take local grid from each process and combine into global grid"""
     grid[index[0] : index[1], index[2] : index[3], index[4] : index[5]] = local_grid
     return grid
 
@@ -200,15 +203,16 @@ def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
     Trim solids to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
     Keep all face solids, and use extend factor to query which solids to include for edges and corners
     """
-    face_solids = [[] for _ in range(len(Orientation.faces))]
-    edge_solids = [[] for _ in range(len(Orientation.edges))]
-    corner_solids = [[] for _ in range(len(Orientation.corners))]
+    face_solids = [[] for _ in range(len(orientation.faces))]
+    edge_solids = [[] for _ in range(len(orientation.edges))]
+    corner_solids = [[] for _ in range(len(orientation.corners))]
 
-    extend = [extend_factor * x for x in subdomain.size_subdomain]
+    length = subdomain.get_length()
+    extend = [extend_factor * x for x in length]
     coords = subdomain.coords
 
     ### Faces ###
-    for fIndex in Orientation.faces:
+    for fIndex in orientation.faces:
         pointsXYZ = []
         points = solids[
             np.where(
@@ -223,8 +227,8 @@ def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
         face_solids[fIndex] = np.asarray(pointsXYZ)
 
     ### Edges ###
-    for edge in subdomain.edges:
-        edge.get_extension(extend, subdomain.bounds)
+    for edge in subdomain.features["edges"]:
+        edge.get_extension(extend, subdomain.box)
         for f, d in zip(
             edge.info["faceIndex"], reversed(edge.info["dir"])
         ):  # Flip dir for correct nodes
@@ -242,8 +246,8 @@ def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
 
     ### Corners ###
     iterates = [[1, 2], [0, 2], [0, 1]]
-    for corner in subdomain.corners:
-        corner.get_extension(extend, subdomain.bounds)
+    for corner in subdomain.features["corners"]:
+        corner.get_extension(extend, subdomain.box)
         values = [None, None]
         for it, f in zip(iterates, corner.info["faceIndex"]):
             f_solids = face_solids[f]
