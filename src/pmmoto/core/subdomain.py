@@ -31,7 +31,9 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.neighbor_ranks = neighbor_ranks
         self.periodic = self.periodic_check()
         self.boundary = self.boundary_check()
-        self.features = self.gather_info()
+        self.features = subdomain_features.collect_features(
+            self.neighbor_ranks, self.boundary, self.boundaries
+        )
 
     def boundary_check(self) -> bool:
         """
@@ -44,81 +46,76 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return boundary
 
-    def gather_info(self):
-        """
-        Collect information for faces, edges, and corners
-        """
+        # faces = [None] * orientation.num_faces
+        # edges = [None] * orientation.num_edges
+        # corners = [None] * orientation.num_corners
 
-        faces = [None] * orientation.num_faces
-        edges = [None] * orientation.num_edges
-        corners = [None] * orientation.num_corners
+        # ### Faces
+        # for n_face in range(0, orientation.num_faces):
+        #     feature_index = orientation.faces[n_face]["ID"]
+        #     neighbor_proc = self.neighbor_ranks[feature_index]
 
-        ### Faces
-        for n_face in range(0, orientation.num_faces):
-            feature_index = orientation.faces[n_face]["ID"]
-            neighbor_proc = self.neighbor_ranks[feature_index]
+        #     _periodic = False
+        #     if self.boundaries[n_face] == 2:
+        #         _periodic = True
 
-            _periodic = False
-            if self.boundaries[n_face] == 2:
-                _periodic = True
+        #     faces[n_face] = subdomain_features.Face(
+        #         n_face, neighbor_proc, self.boundary, _periodic
+        #     )
 
-            faces[n_face] = subdomain_features.Face(
-                n_face, neighbor_proc, self.boundary, _periodic
-            )
+        # ### Edges
+        # for n_edge in range(0, orientation.num_edges):
+        #     feature_index = orientation.edges[n_edge]["ID"]
+        #     neighbor_proc = self.neighbor_ranks[feature_index]
 
-        ### Edges
-        for n_edge in range(0, orientation.num_edges):
-            feature_index = orientation.edges[n_edge]["ID"]
-            neighbor_proc = self.neighbor_ranks[feature_index]
+        #     external_faces = []
+        #     periodic_faces = [False, False, False]
+        #     for n, n_face in enumerate(orientation.edges[n_edge]["faceIndex"]):
 
-            external_faces = []
-            periodic_faces = [False, False, False]
-            for n, n_face in enumerate(orientation.edges[n_edge]["faceIndex"]):
+        #         if self.boundaries[n_face] == 2:
+        #             periodic_faces[n] = True
 
-                if self.boundaries[n_face] == 2:
-                    periodic_faces[n] = True
+        #         elif self.boundaries[n_face] == 0:
+        #             external_faces.append(n_face)
 
-                elif self.boundaries[n_face] == 0:
-                    external_faces.append(n_face)
+        #     edges[n_edge] = subdomain_features.Edge(
+        #         n_edge,
+        #         neighbor_proc,
+        #         self.boundary,
+        #         any(periodic_faces),
+        #         periodic_faces,
+        #         external_faces,
+        #     )
 
-            edges[n_edge] = subdomain_features.Edge(
-                n_edge,
-                neighbor_proc,
-                self.boundary,
-                any(periodic_faces),
-                periodic_faces,
-                external_faces,
-            )
+        # ### Corners
+        # for n_corner in range(0, orientation.num_corners):
+        #     feature_index = orientation.corners[n_corner]["ID"]
+        #     neighbor_proc = self.neighbor_ranks[feature_index]
 
-        ### Corners
-        for n_corner in range(0, orientation.num_corners):
-            feature_index = orientation.corners[n_corner]["ID"]
-            neighbor_proc = self.neighbor_ranks[feature_index]
+        #     ### Determine if Periodic Corner or Global Boundary Corner
+        #     external_faces = []
+        #     external_edges = []
+        #     periodic_faces = [False, False, False]
+        #     for n, n_face in enumerate(orientation.corners[n_corner]["faceIndex"]):
+        #         if self.boundaries[n_face] == 2:
+        #             periodic_faces[n] = True
+        #         elif self.boundaries[n_face] == 0:
+        #             external_faces.append(n_face)
 
-            ### Determine if Periodic Corner or Global Boundary Corner
-            external_faces = []
-            external_edges = []
-            periodic_faces = [False, False, False]
-            for n, n_face in enumerate(orientation.corners[n_corner]["faceIndex"]):
-                if self.boundaries[n_face] == 2:
-                    periodic_faces[n] = True
-                elif self.boundaries[n_face] == 0:
-                    external_faces.append(n_face)
+        #     for edge in orientation.corners[n_corner]["edgeIndex"]:
+        #         if edges[edge].boundary:
+        #             external_edges.append(edge)
 
-            for edge in orientation.corners[n_corner]["edgeIndex"]:
-                if edges[edge].boundary:
-                    external_edges.append(edge)
+        #     corners[n_corner] = subdomain_features.Corner(
+        #         n_corner,
+        #         neighbor_proc,
+        #         self.boundary,
+        #         any(periodic_faces),
+        #         periodic_faces,
+        #         external_faces,
+        #         external_edges,
+        #     )
 
-            corners[n_corner] = subdomain_features.Corner(
-                n_corner,
-                neighbor_proc,
-                self.boundary,
-                any(periodic_faces),
-                periodic_faces,
-                external_faces,
-                external_edges,
-            )
+        # data_out = {"faces": faces, "edges": edges, "corners": corners}
 
-        data_out = {"faces": faces, "edges": edges, "corners": corners}
-
-        return data_out
+        # return data_out

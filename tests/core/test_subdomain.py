@@ -34,6 +34,10 @@ def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains)
             inlet=subdomains["inlet"][rank],
             outlet=subdomains["outlet"][rank],
             voxels=subdomains["voxels"][rank],
+            start=subdomains["start"][rank],
+            num_subdomains=pmmoto_decomposed_domain.num_subdomains,
+            domain_voxels=domain_discretization["voxels"],
+            neighbor_ranks=subdomains["neighbor_ranks"],
         )
 
         if rank != 13:
