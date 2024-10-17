@@ -1,10 +1,16 @@
 import numpy as np
 import cc3d
-from pmmoto.core import _nodes
+from pmmoto.core import voxels
 from pmmoto.core import sets
 from pmmoto.io import dataOutput
 
-__all__ = ["connect_all_phases", "connect_single_phase"]
+__all__ = [
+    "connect_all_phases",
+    "connect_single_phase",
+    "get_boundary_label_phase_map",
+    "get_label_phase_map",
+    "phase_count",
+]
 
 
 def _connect_components(grid):
@@ -30,7 +36,7 @@ def connect_all_phases(
 
     # Collect phase information
     # phase_map = _get_boundary_label_phase_map(label_grid,label_count,grid,boundary_node_data)
-    phase_map = _get_label_phase_map(img, label_grid)
+    # phase_map = _get_label_phase_map(img, label_grid)
     phase_count = _phase_count(phase_map)
 
     print(f"Phase Map {phase_map}")
@@ -85,7 +91,7 @@ def connect_single_phase(img, inlet, outlet, phase=None):
     return output
 
 
-def _get_boundary_label_phase_map(label_grid, label_count, grid, node_data):
+def get_boundary_label_phase_map(label_grid, label_count, grid, node_data):
     """
     Collect the label to phase mapping
     """
@@ -101,16 +107,18 @@ def _get_boundary_label_phase_map(label_grid, label_count, grid, node_data):
     return phase_map
 
 
-def _get_label_phase_map(img, label_grid, phase=None):
+def get_label_phase_map(grid, label_grid, phase=None):
     """
     Collect the label to phase mapping for all labels
     TODO: SLOW and probably better way for this
     """
-    phase_map_all = _nodes.get_label_phase_info(
-        img.grid,
+
+    assert grid.shape == label_grid.shape
+
+    phase_map_all = voxels.get_label_phase_info(
+        grid,
         label_grid,
     )
-    print(phase_map_all, phase)
     phase_map = {}
     if phase is not None:
         for label, _phase in phase_map_all.items():
@@ -122,7 +130,7 @@ def _get_label_phase_map(img, label_grid, phase=None):
     return phase_map
 
 
-def _phase_count(phase_map):
+def phase_count(phase_map):
     """
     Count the number of labels for a given phase
     """

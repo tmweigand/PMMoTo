@@ -60,6 +60,7 @@ class Face(Feature):
         """
         Determine if the face is an external boundary
         """
+
         return boundary_type > -1
 
 

@@ -26,18 +26,21 @@ def test_decomposed_domain(
         )
     )
 
-    import pickle
+    # import pickle
 
-    data_out = {
-        "index": {},
-        "voxels": {},
-        "boundaries": {},
-        "box": {},
-        "inlet": {},
-        "outlet": {},
-        "map": {},
-        "neighbor_ranks": {},
-    }
+    # data_out = {
+    #     "index": {},
+    #     "voxels": {},
+    #     "boundaries": {},
+    #     "box": {},
+    #     "inlet": {},
+    #     "outlet": {},
+    #     "map": {},
+    #     "neighbor_ranks": {},
+    #     "start": {},
+    #     "num_subdomains": {},
+    #     "domain_voxels": {},
+    # }
 
     for rank in range(pmmoto_decomposed_domain.num_subdomains):
         pmmoto_index = pmmoto_decomposed_domain.get_subdomain_index(rank)
@@ -68,17 +71,23 @@ def test_decomposed_domain(
             neighbor_ranks, domain_decomposed_true["neighbor_ranks"][rank]
         )
 
-        data_out["index"][rank] = pmmoto_index
-        data_out["voxels"][rank] = voxels
-        data_out["boundaries"][rank] = boundaries
-        data_out["box"][rank] = box
-        data_out["inlet"][rank] = inlet
-        data_out["outlet"][rank] = outlet
-        data_out["map"][rank] = map
-        data_out["neighbor_ranks"][rank] = neighbor_ranks
+        start = pmmoto_decomposed_domain.get_subdomain_start(pmmoto_index)
+        np.testing.assert_array_equal(start, domain_decomposed_true["start"][rank])
 
-    with open(
-        "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
-        "wb",
-    ) as file:  # open a text file
-        pickle.dump(data_out, file)  # serialize the list
+    #     data_out["index"][rank] = pmmoto_index
+    #     data_out["voxels"][rank] = voxels
+    #     data_out["boundaries"][rank] = boundaries
+    #     data_out["box"][rank] = box
+    #     data_out["inlet"][rank] = inlet
+    #     data_out["outlet"][rank] = outlet
+    #     data_out["map"][rank] = map
+    #     data_out["neighbor_ranks"][rank] = neighbor_ranks
+    #     data_out["start"][rank] = start
+    #     data_out["num_subdomains"][rank] = pmmoto_decomposed_domain.num_subdomains
+    #     data_out["domain_voxels"][rank] = pmmoto_decomposed_domain.voxels
+
+    # with open(
+    #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
+    #     "wb",
+    # ) as file:  # open a text file
+    #     pickle.dump(data_out, file)  # serialize the list

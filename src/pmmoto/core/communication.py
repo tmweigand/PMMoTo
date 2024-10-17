@@ -5,6 +5,9 @@ from . import orientation
 import numpy as np
 from mpi4py import MPI
 
+__all__ = ["update_buffer", "generate_halo", "pass_external_data", "pass_boundary_sets"]
+
+
 comm = MPI.COMM_WORLD
 
 
@@ -69,19 +72,28 @@ def buffer_pack(subdomain, grid):
 
     slices = send_faces
     for face in subdomain.features["faces"]:
-        if face.n_proc > -1 and face.n_proc != subdomain.rank:
+        if (
+            subdomain.features["faces"][face].n_proc > -1
+            and subdomain.features["faces"][face].n_proc != subdomain.rank
+        ):
             s = slices[face.ID, :]
             buffer_data[face.n_proc]["ID"][face.info["ID"]] = grid[s[0], s[1], s[2]]
 
     slices = send_edges
     for edge in subdomain.features["edges"]:
-        if edge.n_proc > -1 and edge.n_proc != subdomain.rank:
+        if (
+            subdomain.features["edges"][edge].n_proc > -1
+            and subdomain.features["edges"][edge].n_proc != subdomain.rank
+        ):
             s = slices[edge.ID, :]
             buffer_data[edge.n_proc]["ID"][edge.info["ID"]] = grid[s[0], s[1], s[2]]
 
     slices = send_corners
     for corner in subdomain.features["corners"]:
-        if corner.n_proc > -1 and corner.n_proc != subdomain.rank:
+        if (
+            subdomain.features["corners"][corner].n_proc > -1
+            and subdomain.features["corners"][corner].n_proc != subdomain.rank
+        ):
             s = slices[corner.ID, :]
             buffer_data[corner.n_proc]["ID"][corner.info["ID"]] = grid[s[0], s[1], s[2]]
 
@@ -107,7 +119,8 @@ def buffer_unpack(subdomain, grid, face_recv, edge_recv, corner_recv):
     #### Faces ####
     r_slices = recv_faces
     s_slices = send_faces
-    for face in subdomain.features["faces"]:
+    for _face in subdomain.features["faces"]:
+        face = subdomain.features["faces"][_face]
         if face.n_proc > -1 and face.n_proc != subdomain.rank:
             r_s = r_slices[face.ID, :]
             buffer_grid[r_s[0], r_s[1], r_s[2]] = face_recv[face.ID]["ID"][
@@ -121,7 +134,8 @@ def buffer_unpack(subdomain, grid, face_recv, edge_recv, corner_recv):
     #### Edges ####
     r_slices = recv_edges
     s_slices = send_edges
-    for edge in subdomain.features["edges"]:
+    for _edge in subdomain.features["edges"]:
+        edge = subdomain.features["edges"][_edge]
         if edge.n_proc > -1 and edge.n_proc != subdomain.rank:
             r_s = r_slices[edge.ID, :]
             buffer_grid[r_s[0], r_s[1], r_s[2]] = edge_recv[edge.ID]["ID"][
@@ -135,7 +149,8 @@ def buffer_unpack(subdomain, grid, face_recv, edge_recv, corner_recv):
     #### Corners ####
     r_slices = recv_corners
     s_slices = send_corners
-    for corner in subdomain.features["corners"]:
+    for _corner in subdomain.features["corners"]:
+        corner = subdomain.features["corners"][_corner]
         if corner.n_proc > -1 and corner.n_proc != subdomain.rank:
             r_s = r_slices[corner.ID, :]
             buffer_grid[r_s[0], r_s[1], r_s[2]] = corner_recv[corner.ID]["ID"][
@@ -462,97 +477,62 @@ def boundary_set_unpack(subdomain, sets, face_recv, edge_recv, corner_recv):
 
 def communicate(subdomain, send_data):
     """
-    Send data between processess
+    Send data between processes for faces, edges, and corners.
     """
-
-    #### FACES ####
-    reqs = [None] * orientation.num_faces
-    reqr = [None] * orientation.num_faces
-    recv_face = [None] * orientation.num_faces
-    for face in subdomain.features["faces"]:
-        opp_neigh = subdomain.features["faces"][face.info["oppIndex"]].n_proc
-        if (
-            opp_neigh > -1
-            and face.n_proc != subdomain.rank
-            and opp_neigh in send_data.keys()
-        ):
-            reqs[face.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
-        if (
-            face.n_proc > -1
-            and face.n_proc != subdomain.rank
-            and face.n_proc in send_data.keys()
-        ):
-            reqr[face.ID] = comm.recv(source=face.n_proc)
-
-    reqs = [i for i in reqs if i]
-    MPI.Request.waitall(reqs)
-
-    for face in subdomain.features["faces"]:
-        if (
-            face.n_proc > -1
-            and face.n_proc != subdomain.rank
-            and face.n_proc in send_data.keys()
-        ):
-            recv_face[face.ID] = reqr[face.ID]
-
-    #### EDGES ####
-    reqs = [None] * orientation.num_edges
-    reqr = [None] * orientation.num_edges
-    recv_edge = [None] * orientation.num_edges
-    for edge in subdomain.features["edges"]:
-        opp_neigh = subdomain.features["edges"][edge.info["oppIndex"]].n_proc
-        if (
-            opp_neigh > -1
-            and edge.n_proc != subdomain.rank
-            and opp_neigh in send_data.keys()
-        ):
-            reqs[edge.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
-        if (
-            edge.n_proc > -1
-            and edge.n_proc != subdomain.rank
-            and edge.n_proc in send_data.keys()
-        ):
-            reqr[edge.ID] = comm.recv(source=edge.n_proc)
-
-    reqs = [i for i in reqs if i]
-    MPI.Request.waitall(reqs)
-
-    for edge in subdomain.features["edges"]:
-        if (
-            edge.n_proc > -1
-            and edge.n_proc != subdomain.rank
-            and edge.n_proc in send_data.keys()
-        ):
-            recv_edge[edge.ID] = reqr[edge.ID]
-
-    #### CORNERS ####
-    reqs = [None] * orientation.num_corners
-    reqr = [None] * orientation.num_corners
-    recv_corner = [None] * orientation.num_corners
-    for corner in subdomain.features["corners"]:
-        opp_neigh = subdomain.features["corners"][corner.info["oppIndex"]].n_proc
-        if (
-            opp_neigh > -1
-            and corner.n_proc != subdomain.rank
-            and opp_neigh in send_data.keys()
-        ):
-            reqs[corner.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
-        if (
-            corner.n_proc > -1
-            and corner.n_proc != subdomain.rank
-            and corner.n_proc in send_data.keys()
-        ):
-            reqr[corner.ID] = comm.recv(source=corner.n_proc)
-
-    reqs = [i for i in reqs if i]
-    MPI.Request.waitall(reqs)
-
-    for corner in subdomain.features["corners"]:
-        if (
-            corner.n_proc > -1
-            and corner.n_proc != subdomain.rank
-            and corner.n_proc in send_data.keys()
-        ):
-            recv_corner[corner.ID] = reqr[corner.ID]
+    recv_face = send_recv(
+        subdomain.rank, subdomain.features["faces"], orientation.num_faces, send_data
+    )
+    recv_edge = send_recv(
+        subdomain.rank, subdomain.features["edges"], orientation.num_edges, send_data
+    )
+    recv_corner = send_recv(
+        subdomain.rank,
+        subdomain.features["corners"],
+        orientation.num_corners,
+        send_data,
+    )
 
     return recv_face, recv_edge, recv_corner
+
+
+def send_recv(rank, features, num_features, send_data):
+    """_summary_
+
+    Args:
+        features (_type_): _description_
+        num_features (_type_): _description_
+        send_data (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    reqs = [None] * num_features
+    reqr = [None] * num_features
+    recv_data = [None] * num_features
+
+    for feature in features.values():
+        opp_neigh = features[feature.info["oppIndex"]].n_proc
+        if opp_neigh > -1 and feature.n_proc != rank and opp_neigh in send_data:
+            reqs[feature.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
+        if (
+            feature.n_proc > -1
+            and feature.n_proc != rank
+            and feature.n_proc in send_data
+        ):
+            reqr[feature.ID] = comm.recv(source=feature.n_proc)
+
+    # Wait for all sends to complete
+    reqs = [r for r in reqs if r]
+    MPI.Request.waitall(reqs)
+
+    # Collect received data
+    for feature in features.values():
+        if (
+            feature.n_proc > -1
+            and feature.n_proc != rank
+            and feature.n_proc in send_data
+        ):
+            recv_data[feature.ID] = reqr[feature.ID]
+
+    return recv_data

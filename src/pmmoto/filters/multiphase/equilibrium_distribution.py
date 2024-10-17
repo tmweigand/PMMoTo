@@ -7,7 +7,7 @@ from pmmoto.filters import connect_all_phases
 from pmmoto.core import multiphase
 from pmmoto.io import dataOutput
 from pmmoto.core import utils
-from pmmoto.core import _nodes
+
 
 comm = MPI.COMM_WORLD
 
@@ -125,8 +125,6 @@ def calcOpenSW(
                 # Step 3g
                 morph = morphology.dilate(subdomain, ind, probe_radius)
                 # morph = morphology.morph(ind, mP.subDomain, eqDist.probeR)
-
-                print(np.sum(morph))
 
                 dataOutput.save_grid_data("dataOut/test_open_morph", subdomain, morph)
 

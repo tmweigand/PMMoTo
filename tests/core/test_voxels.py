@@ -1,13 +1,10 @@
-"""test_subdomain.py"""
+"""test_voxels.py"""
 
 import numpy as np
 import pmmoto
 
 
-def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains):
-    """
-    Test for subdomain
-    """
+def test_voxels(domain, domain_decomposed, domain_discretization, subdomains):
 
     pmmoto_domain = pmmoto.core.Domain(
         domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
@@ -40,7 +37,10 @@ def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains)
             neighbor_ranks=subdomains["neighbor_ranks"][rank],
         )
 
-        if rank != 13:
-            assert pmmoto_subdomain.boundary
-        else:
-            assert not pmmoto_subdomain.boundary
+        grid = np.ones([2, 2, 2])
+        label_grid = np.ones([2, 2, 2])
+
+        phase_label = pmmoto.core.voxels.get_label_phase_info(grid, label_grid)
+        print(phase_label)
+
+        # pmmoto.core.voxels.count_label_voxels(grid, map)

@@ -34,7 +34,7 @@ def test_subdomain_padded(
 
     # import pickle
 
-    # data_out = {"pad": {}, "reservoir_pad": {}, "voxels": {}, "box": {}, "coords": {}}
+    # data_out = {"pad": {}, "reservoir_pad": {}, "voxels": {}, "box": {}, "coords": {}, "start": {}, "num_subdomain":{}, "domain_voxels":{}}
 
     for rank in range(pmmoto_decomposed_domain.num_subdomains):
         pmmoto_subdomain = pmmoto.core.Subdomain(
@@ -45,6 +45,10 @@ def test_subdomain_padded(
             inlet=subdomains["inlet"][rank],
             outlet=subdomains["outlet"][rank],
             voxels=subdomains["voxels"][rank],
+            start=subdomains["start"][rank],
+            num_subdomains=pmmoto_decomposed_domain.num_subdomains,
+            domain_voxels=domain_discretization["voxels"],
+            neighbor_ranks=subdomains["neighbor_ranks"][rank],
         )
 
         pmmoto_padded_subdomain = pmmoto.core.PaddedSubdomain.from_subdomain(

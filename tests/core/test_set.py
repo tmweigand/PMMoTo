@@ -1,13 +1,10 @@
-"""test_subdomain.py"""
+"""test_set.py"""
 
 import numpy as np
 import pmmoto
 
 
-def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains):
-    """
-    Test for subdomain
-    """
+def test_set(domain, domain_decomposed, domain_discretization, subdomains):
 
     pmmoto_domain = pmmoto.core.Domain(
         domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
@@ -40,7 +37,8 @@ def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains)
             neighbor_ranks=subdomains["neighbor_ranks"][rank],
         )
 
-        if rank != 13:
-            assert pmmoto_subdomain.boundary
-        else:
-            assert not pmmoto_subdomain.boundary
+        _set = pmmoto.core.set.Set(
+            subdomain=pmmoto_subdomain,
+            local_ID=0,
+            phase=-1,
+        )
