@@ -135,7 +135,7 @@ def gen_pm_atom(
     grid = gen_pm_sphere(
         x,
         y,
-        x,
+        z,
         spheres
     )
    

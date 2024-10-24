@@ -1,20 +1,22 @@
-import os
 import numpy as np
 from mpi4py import MPI
-from pyevtk.hl import (
-    pointsToVTK,
-    gridToVTK,
-    writeParallelVTKGrid,
-    _addDataToParallelFile,
-)
-from pyevtk import vtk
+
+# from evtk import (
+#     pointsToVTK,
+#     gridToVTK,
+#     writeParallelVTKGrid,
+#     _addDataToParallelFile,
+# )
+# from pyevtk import vtk
 from pmmoto.core import communication
 from . import io_utils
+from . import evtk
 
 comm = MPI.COMM_WORLD
 
 __all__ = [
     "save_grid_data",
+    "save_grid_data_parallel",
     "save_grid_data_proc",
     "save_grid_data_deconstructed",
     "save_grid_data_csv",
@@ -22,8 +24,94 @@ __all__ = [
 ]
 
 
-def save_grid_data(file_name, subdomain, grid, **kwargs):
-    """Save grid data as vtk"""
+def save_grid_data(file_name, subdomains, grid, **kwargs):
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        subdomains (_type_): _description_
+        grid (_type_): _description_
+    """
+
+    io_utils.check_file_path(file_name)
+
+    file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
+    local_file_proc = (
+        file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."
+    )
+
+    for n in range(0, subdomains[0].num_subdomains):
+        subdomain = subdomains[n]
+        point_data = {"grid": grid[n]}
+        point_data_info = {"grid": (grid[n].dtype, 1)}
+        for key, value in kwargs.items():
+            point_data[key] = value
+            point_data_info[key] = (value.dtype, 1)
+
+        start = [0, 0, 0]
+        end = [0, 0, 0]
+        for dim in range(subdomains[0].dims):
+            start[dim] = subdomains[n].start[dim]
+            end[dim] = subdomains[n].start[dim] + subdomains[n].voxels[dim]
+
+        evtk.imageToVTK(
+            path=file_proc + str(subdomain.rank),
+            origin=(0, 0, 0),
+            start=start,
+            end=end,
+            spacing=subdomain.resolution,
+            cellData=point_data,
+        )
+
+        if subdomain.rank == 0:
+            name = [local_file_proc] * subdomain.num_subdomains
+            starts = [[0, 0, 0] for _ in range(subdomain.num_subdomains)]
+            ends = [[0, 0, 0] for _ in range(subdomain.num_subdomains)]
+            domain_voxels = [[np.inf, np.inf, np.inf], [-np.inf, -np.inf, -np.inf]]
+            for n in range(0, subdomain.num_subdomains):
+                name[n] = name[n] + str(n) + ".vti"
+                for dim in range(subdomains[0].dims):
+                    starts[n][dim] = (
+                        subdomains[n].start[dim] + subdomains[n].pad[dim][0]
+                    )
+                    ends[n][dim] = (
+                        subdomains[n].start[dim]
+                        + subdomains[n].voxels[dim]
+                        - subdomains[n].pad[dim][1]
+                    )
+
+                    if starts[n][dim] < domain_voxels[0][dim]:
+                        domain_voxels[0][dim] = starts[n][dim]
+
+                    if ends[n][dim] > domain_voxels[1][dim]:
+                        domain_voxels[1][dim] = ends[n][dim] + 1
+
+            evtk.writeParallelVTKGrid(
+                file_name,
+                coordsData=(
+                    (
+                        domain_voxels[1][0] - domain_voxels[0][0],
+                        domain_voxels[1][1] - domain_voxels[0][1],
+                        domain_voxels[1][2] - domain_voxels[0][2],
+                    ),
+                    subdomain.coords[0].dtype,
+                ),
+                starts=starts,
+                ends=ends,
+                sources=name,
+                spacing=subdomain.resolution,
+                cellData=point_data_info,
+            )
+
+
+def save_grid_data_parallel(file_name, subdomain, grid, **kwargs):
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        subdomain (_type_): _description_
+        grid (_type_): _description_
+    """
 
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
@@ -88,22 +176,26 @@ def save_grid_data(file_name, subdomain, grid, **kwargs):
         )
 
 
-def save_grid_data_proc(file_name, subdomains, grids):
-    """Save grid data for a single process"""
+def save_grid_data_proc(file_name, subdomain, grids):
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        subdomain (_type_): _description_
+        grids (_type_): _description_
+    """
 
     io_utils.check_file_path(file_name)
     file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
-    num_procs = len(subdomains)
-    for n in range(0, num_procs):
-        point_data = {"Grid": grids[n]}
-        gridToVTK(
-            file_proc + str(n),
-            subdomains[n].coords[0],
-            subdomains[n].coords[1],
-            subdomains[n].coords[2],
-            start=[0, 0, 0],
-            pointData=point_data,
-        )
+    point_data = {"Grid": grids}
+    gridToVTK(
+        file_proc + str(subdomain.rank),
+        subdomain.coords[0],
+        subdomain.coords[1],
+        subdomain.coords[2],
+        start=[0, 0, 0],
+        pointData=point_data,
+    )
 
 
 def save_grid_data_deconstructed(file_name, coords, grid):
@@ -123,7 +215,17 @@ def save_grid_data_deconstructed(file_name, coords, grid):
 
 
 def save_grid_data_csv(file_name, subdomain, x, y, z, grid, remove_halo=False):
-    """Save grid as csv. Warning this is not lightweight."""
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        subdomain (_type_): _description_
+        x (_type_): _description_
+        y (_type_): _description_
+        z (_type_): _description_
+        grid (_type_): _description_
+        remove_halo (bool, optional): _description_. Defaults to False.
+    """
     rank = subdomain.rank
 
     if rank == 0:
@@ -158,8 +260,12 @@ def save_grid_data_csv(file_name, subdomain, x, y, z, grid, remove_halo=False):
 
 
 def save_set_data(file_name, subdomain, set_list, **kwargs):
-    """
-    Save the set data as vtk.
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        subdomain (_type_): _description_
+        set_list (_type_): _description_
     """
 
     rank = subdomain.rank

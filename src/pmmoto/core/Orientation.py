@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["get_loop_info"]
+
 
 def get_boundary_id(boundary_index):
     """
@@ -244,12 +246,23 @@ def get_index_ordering(inlet, outlet):
     return order
 
 
-def get_loop_info(grid, subdomain, inlet, outlet, res_pad):
+def get_loop_info(
+    grid,
+    boundaries=None,
+    inlet=None,
+    outlet=None,
+    res_pad=0,
+):
     """
     Grap loop information to cycle through the boundary Faces and internal nodes
     Reservoirs are treated as entire face
     Order ensures that inlet/outlet edges and corners are included in optimized looping
     """
+    if inlet is None:
+        inlet = [0, 0, 0, 0, 0, 0]
+    if outlet is None:
+        outlet = [0, 0, 0, 0, 0, 0]
+
     order = get_index_ordering(inlet, outlet)
     loop_info = np.zeros([num_faces + 1, 3, 2], dtype=np.int64)
 
@@ -260,8 +273,9 @@ def get_loop_info(grid, subdomain, inlet, outlet, res_pad):
 
     range_info = 2 * np.ones([6], dtype=np.uint8)
     for f_index in faces:
-        if subdomain.boundaries[f_index] == 0:
-            range_info[f_index] = range_info[f_index] - 1
+        if boundaries:
+            if boundaries[f_index] == 0:
+                range_info[f_index] = range_info[f_index] - 1
         if inlet[f_index] > 0:
             range_info[f_index] = range_info[f_index] + res_pad
         if outlet[f_index] > 0:

@@ -14,17 +14,13 @@ cdef inline npy_uint8 get_boundary_ID(vector[npy_int8] boundary_ID):
     Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
     Output: boundary_ID
     """
-    cdef int n
     cdef int[3] b_ID
     cdef int[3][3] params = [[0, 9, 18],[0, 3, 6],[0, 1, 2]]
 
-    for n in range(0,3):
-        if boundary_ID[n] < 0:
-            b_ID[n] = params[n][0]
-        elif boundary_ID[n] > 0:
-            b_ID[n] = params[n][1]
-        else:
-            b_ID[n] = params[n][2]
+    # Convert boundary_ID values directly to their corresponding b_ID values
+    b_ID[0] = params[0][boundary_ID[0] + 1]
+    b_ID[1] = params[1][boundary_ID[1] + 1]
+    b_ID[2] = params[2][boundary_ID[2] + 1]
 
     return b_ID[0] + b_ID[1] + b_ID[2]
 

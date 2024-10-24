@@ -31,8 +31,9 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.neighbor_ranks = neighbor_ranks
         self.periodic = self.periodic_check()
         self.boundary = self.boundary_check()
+        self.coords = self.get_coords()
         self.features = subdomain_features.collect_features(
-            self.neighbor_ranks, self.boundary, self.boundaries
+            self.neighbor_ranks, self.boundary, self.boundaries, self.voxels
         )
 
     def boundary_check(self) -> bool:

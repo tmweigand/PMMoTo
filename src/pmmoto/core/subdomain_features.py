@@ -1,5 +1,6 @@
 """subdomain_features.py"""
 
+import numpy as np
 from . import orientation
 
 __all__ = ["collect_features"]
@@ -7,8 +8,8 @@ __all__ = ["collect_features"]
 
 class Feature(object):
     """
-    Base class for holding face,edge,corner information for a subdomain.
-    Calling those features for lack of a better term.
+    Base class for holding features: {face, edge, corner} information for a subdomain.
+    This is the main abstraction for handling boundary conditions and parallel communication
     """
 
     def __init__(self, ID, n_proc, boundary):
@@ -22,6 +23,33 @@ class Feature(object):
         self.feature_id = None
         self.opp_info = None
         self.extend = [[0, 0], [0, 0], [0, 0]]
+        self.loop = None
+
+    def get_feature_voxels(self, voxels, pad=None):
+        """_summary_
+
+        Args:
+            grid (_type_): _description_
+            pad (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
+        if pad is None:
+            pad = [[0, 0], [0, 0], [0, 0]]
+
+        loop = np.zeros([3, 2], dtype=np.uint64)
+
+        for n, length in enumerate(voxels):
+            loop[n, 1] = length
+            if self.info["ID"][n] == -1:
+                loop[n] = [0, pad[n][0] + 1]
+            elif self.info["ID"][n] == 1:
+                loop[n] = [length - pad[n][1] - 1, length]
+            else:
+                loop[n] = [pad[n][0] + 1, length - pad[n][1] - 1]
+
+        return loop
 
 
 class Face(Feature):
@@ -234,7 +262,7 @@ class Corner(Feature):
                 self.extend[n][1] = 0
 
 
-def collect_features(neighbor_ranks, boundary, boundary_types):
+def collect_features(neighbor_ranks, boundary, boundary_types, voxels):
     """
     Collect information for faces, edges, and corners
     """
@@ -247,11 +275,13 @@ def collect_features(neighbor_ranks, boundary, boundary_types):
     for n_face in range(0, orientation.num_faces):
         neighbor_proc = neighbor_ranks[orientation.faces[n_face]["ID"]]
         faces[n_face] = Face(n_face, neighbor_proc, boundary, boundary_types[n_face])
+        faces[n_face].loop = faces[n_face].get_feature_voxels(voxels)
 
     ### Edges
     for n_edge in range(0, orientation.num_edges):
         neighbor_proc = neighbor_ranks[orientation.edges[n_edge]["ID"]]
         edges[n_edge] = Edge(n_edge, neighbor_proc, boundary, boundary_types)
+        edges[n_edge].loop = edges[n_edge].get_feature_voxels(voxels)
 
     ### Corners
     for n_corner in range(0, orientation.num_corners):
@@ -263,7 +293,25 @@ def collect_features(neighbor_ranks, boundary, boundary_types):
             boundary_types,
             edges,
         )
+        corners[n_corner].loop = corners[n_corner].get_feature_voxels(voxels)
 
     data_out = {"faces": faces, "edges": edges, "corners": corners}
 
     return data_out
+
+
+def set_padding(features, voxels, pad, reservoir_pad=0):
+    """
+    If the subdomain is padded, set the padding for the features
+    """
+
+    for f in features["faces"].values():
+        f.loop = f.get_feature_voxels(voxels, pad)
+
+    for f in features["edges"].values():
+        f.loop = f.get_feature_voxels(voxels, pad)
+
+    for f in features["corners"].values():
+        f.loop = f.get_feature_voxels(voxels, pad)
+
+    return features

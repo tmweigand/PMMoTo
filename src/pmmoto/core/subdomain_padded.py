@@ -2,6 +2,7 @@
 
 import numpy as np
 from . import subdomain
+from . import subdomain_features
 
 
 class PaddedSubdomain(subdomain.Subdomain):
@@ -24,9 +25,12 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.voxels = self.get_voxels()
         self.box = self.get_padded_box()
         self.coords = self.get_coords()
+        self.features = subdomain_features.set_padding(
+            self.features, self.voxels, self.pad, self.reservoir_pad
+        )
 
     @classmethod
-    def from_subdomain(cls, subdomain, pad, reservoir_voxels):
+    def from_subdomain(cls, subdomain, pad, reservoir_voxels=0):
         return cls(
             rank=subdomain.rank,
             index=subdomain.index,

@@ -2,7 +2,7 @@ import numpy as np
 import cc3d
 from pmmoto.core import voxels
 from pmmoto.core import sets
-from pmmoto.io import dataOutput
+from pmmoto.io import output
 
 __all__ = [
     "connect_all_phases",

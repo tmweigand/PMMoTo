@@ -4,6 +4,16 @@ import numpy as np
 import pmmoto
 
 
+def test_voxls_get_id():
+    """
+    Simple test to check voxel id mapping.
+    """
+    x = [1, 2, 7]
+    v = [5, 6, 5]
+    id = pmmoto.core.voxels.get_id(x, v)
+    assert id == 42
+
+
 def test_voxels(domain, domain_decomposed, domain_discretization, subdomains):
 
     pmmoto_domain = pmmoto.core.Domain(
@@ -37,10 +47,13 @@ def test_voxels(domain, domain_decomposed, domain_discretization, subdomains):
             neighbor_ranks=subdomains["neighbor_ranks"][rank],
         )
 
-        grid = np.ones([2, 2, 2])
-        label_grid = np.ones([2, 2, 2])
+        grid = np.zeros(pmmoto_subdomain.voxels, dtype=np.uint64)
 
-        phase_label = pmmoto.core.voxels.get_label_phase_info(grid, label_grid)
-        print(phase_label)
+        pmmoto.core.voxels.get_boundary_set_info_NEW(
+            subdomain=pmmoto_subdomain, img=grid, n_labels=1
+        )
 
-        # pmmoto.core.voxels.count_label_voxels(grid, map)
+    # phase_label = pmmoto.core.voxels.get_label_phase_info(grid, label_grid)
+    # print(phase_label)
+
+    # pmmoto.core.voxels.count_label_voxels(grid, map)

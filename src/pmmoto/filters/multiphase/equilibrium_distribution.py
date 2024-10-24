@@ -5,7 +5,7 @@ from pmmoto.filters import distance
 from pmmoto.filters import morphology
 from pmmoto.filters import connect_all_phases
 from pmmoto.core import multiphase
-from pmmoto.io import dataOutput
+from pmmoto.io import output
 from pmmoto.core import utils
 
 
@@ -126,7 +126,7 @@ def calcOpenSW(
                 morph = morphology.dilate(subdomain, ind, probe_radius)
                 # morph = morphology.morph(ind, mP.subDomain, eqDist.probeR)
 
-                dataOutput.save_grid_data("dataOut/test_open_morph", subdomain, morph)
+                output.save_grid_data("dataOut/test_open_morph", subdomain, morph)
 
                 _multiphase.grid = np.where(
                     (morph == 1), nw_id, _multiphase.grid
@@ -137,7 +137,7 @@ def calcOpenSW(
 
                         saturation_new = _multiphase.get_saturation(nw_id)
 
-                        dataOutput.save_grid_data(
+                        output.save_grid_data(
                             "dataOut/test_open_connect", subdomain, _multiphase.grid
                         )
 
@@ -152,7 +152,7 @@ def calcOpenSW(
                         voxel_count = connected["voxel_count"]
                         label_to_phase_map = connected["phase_map"]
 
-                        dataOutput.save_grid_data(
+                        output.save_grid_data(
                             "dataOut/test_open_label", subdomain, labeled_grid
                         )
 
@@ -167,7 +167,7 @@ def calcOpenSW(
                         _nodes.renumber_grid(labeled_grid, label_to_phase_map)
                         _multiphase.grid = labeled_grid
 
-                        dataOutput.save_grid_data(
+                        output.save_grid_data(
                             "dataOut/test_open_new_mp_grid", subdomain, _multiphase.grid
                         )
 

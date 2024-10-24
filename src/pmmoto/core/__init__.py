@@ -2,6 +2,8 @@ from .domain import *
 from .domain_decompose import *
 from .domain_discretization import *
 from .multiphase import *
+from .orientation import *
+from .porousmedia import *
 from .sets import *
 from .subdomain import *
 from .subdomain_padded import *
