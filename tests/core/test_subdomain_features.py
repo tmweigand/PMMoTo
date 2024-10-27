@@ -30,95 +30,67 @@ def compare_dicts(true_dict, sample_dict, rank, feature):
                         assert all(true_value[key_2] == sample_value[key_2])
 
 
-# def test_subdomain_features(
-#     domain,
-#     domain_discretization,
-#     domain_decomposed,
-#     subdomains,
-#     subdomain_features_true,
-# ):
-#     """
-#     Test for subdomain features
-#     """
+def test_subdomain_features(
+    domain,
+    domain_discretization,
+    domain_decomposed,
+    subdomains,
+    subdomain_features_true,
+):
+    """
+    Test for subdomain features
+    """
 
-#     pmmoto_domain = pmmoto.core.Domain(
-#         domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
-#     )
+    pmmoto_domain = pmmoto.core.Domain(
+        domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
+    )
 
-#     pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
-#         domain=pmmoto_domain,
-#         voxels=domain_discretization["voxels"],
-#     )
+    pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
+        domain=pmmoto_domain,
+        voxels=domain_discretization["voxels"],
+    )
 
-#     pmmoto_decomposed_domain = (
-#         pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
-#             discretized_domain=pmmoto_discretized_domain,
-#             subdomain_map=domain_decomposed["subdomain_map"],
-#         )
-#     )
+    pmmoto_decomposed_domain = (
+        pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
+            discretized_domain=pmmoto_discretized_domain,
+            subdomain_map=domain_decomposed["subdomain_map"],
+        )
+    )
 
-#     # import pickle
+    # import pickle
 
-#     # data_out = {"faces": {}, "edges": {}, "corners": {}}
-#     pmmoto_subdomain = {}
-#     padded_subdomain = {}
-#     grid = {}
-#     grid_padded = {}
+    # data_out = {"faces": {}, "edges": {}, "corners": {}}
+    pmmoto_subdomain = {}
 
-#     for rank in range(pmmoto_decomposed_domain.num_subdomains):
-#         pmmoto_subdomain[rank] = pmmoto.core.Subdomain(
-#             rank=rank,
-#             index=subdomains["index"][rank],
-#             neighbor_ranks=subdomains["neighbor_ranks"][rank],
-#             box=subdomains["box"][rank],
-#             boundaries=subdomains["boundaries"][rank],
-#             inlet=subdomains["inlet"][rank],
-#             outlet=subdomains["outlet"][rank],
-#             voxels=subdomains["voxels"][rank],
-#             start=subdomains["start"][rank],
-#             num_subdomains=pmmoto_decomposed_domain.num_subdomains,
-#             domain_voxels=domain_discretization["voxels"],
-#         )
+    for rank in range(pmmoto_decomposed_domain.num_subdomains):
+        pmmoto_subdomain[rank] = pmmoto.core.Subdomain(
+            rank=rank,
+            index=subdomains["index"][rank],
+            neighbor_ranks=subdomains["neighbor_ranks"][rank],
+            box=subdomains["box"][rank],
+            boundaries=subdomains["boundaries"][rank],
+            inlet=subdomains["inlet"][rank],
+            outlet=subdomains["outlet"][rank],
+            voxels=subdomains["voxels"][rank],
+            start=subdomains["start"][rank],
+            num_subdomains=pmmoto_decomposed_domain.num_subdomains,
+            domain_voxels=domain_discretization["voxels"],
+        )
 
-#         compare_dicts(
-#             subdomain_features_true, pmmoto_subdomain[rank].features, rank, "faces"
-#         )
-#         compare_dicts(
-#             subdomain_features_true, pmmoto_subdomain[rank].features, rank, "edges"
-#         )
-#         compare_dicts(
-#             subdomain_features_true, pmmoto_subdomain[rank].features, rank, "corners"
-#         )
+        compare_dicts(
+            subdomain_features_true, pmmoto_subdomain[rank].features, rank, "faces"
+        )
+        compare_dicts(
+            subdomain_features_true, pmmoto_subdomain[rank].features, rank, "edges"
+        )
+        compare_dicts(
+            subdomain_features_true, pmmoto_subdomain[rank].features, rank, "corners"
+        )
 
-#         grid[rank] = np.zeros(pmmoto_subdomain[rank].voxels)
-#         for f in pmmoto_subdomain[rank].features["faces"].values():
-#             for i in range(f.loop[0][0], f.loop[0][1]):
-#                 for j in range(f.loop[1][0], f.loop[1][1]):
-#                     for k in range(f.loop[2][0], f.loop[2][1]):
-#                         grid[rank][i, j, k] = rank
+    # data_out["faces"][rank] = pmmoto_subdomain.features["faces"]
+    # data_out["edges"][rank] = pmmoto_subdomain.features["edges"]
+    # data_out["corners"][rank] = pmmoto_subdomain.features["corners"]
 
-#     pmmoto.io.save_grid_data("data_out/test_subdomain", pmmoto_subdomain, grid)
-
-# for rank in range(pmmoto_decomposed_domain.num_subdomains):
-#     padded_subdomain[rank] = (
-#         pmmoto.core.subdomain_padded.PaddedSubdomain.from_subdomain(
-#             subdomain=pmmoto_subdomain[rank],
-#             pad=(1, 1, 1),
-#         )
-#     )
-
-#     grid_padded[rank] = np.zeros(padded_subdomain[rank].voxels)
-#     for f in padded_subdomain[rank].features["faces"].values():
-#         for i in range(f.loop[0][0], f.loop[0][1]):
-#             for j in range(f.loop[1][0], f.loop[1][1]):
-#                 for k in range(f.loop[2][0], f.loop[2][1]):
-#                     grid_padded[rank][i, j, k] = rank
-
-# pmmoto.io.save_grid_data("data_out/test_padded", padded_subdomain, grid_padded)
-
-#     data_out["faces"][rank] = pmmoto_subdomain.features["faces"]
-#     data_out["edges"][rank] = pmmoto_subdomain.features["edges"]
-#     data_out["corners"][rank] = pmmoto_subdomain.features["corners"]
 
 # with open(
 #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_subdomain_features.pkl",
@@ -127,7 +99,7 @@ def compare_dicts(true_dict, sample_dict, rank, feature):
 #     pickle.dump(data_out, file)  # serialize the list
 
 
-def test():
+def test_feature_loop():
     """
     Test  subdomain features
     """
@@ -135,7 +107,7 @@ def test():
     # subdomain_map = [1, 1, 1]
     subdomain_map = [5, 5, 5]
 
-    voxels = [100, 100, 100]
+    voxels = (100, 100, 100)
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]

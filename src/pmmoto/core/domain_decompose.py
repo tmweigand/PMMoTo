@@ -1,9 +1,10 @@
 """decomposed_domain.py"""
 
 import numpy as np
-from pmmoto.core import subdomain
 from pmmoto.core import domain_discretization
 from pmmoto.core import orientation
+from pmmoto.core import subdomain
+from pmmoto.core import subdomain_features
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
@@ -143,50 +144,61 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
     def gen_map(self):
         """
-        Generate process lookup map.
-        -2: Wall Boundary Condition
-        -1: No Assumption Boundary Condition
-        >=0: proc_ID
+        Generate process and boundary condition map.This is accomplished on a per-feature basis despite the boundary conditions being defined on faces. As a result of this,non-fully periodic boundary conditions need to be handled with care due to how padding is performed.
+
+        The output array is padded on all dimensions with values of:
+            -2: Wall Boundary Condition
+            -1: No Assumption Boundary Condition
+            >=0: proc_ID
         """
-        _map = -np.ones([sd + 2 for sd in self.subdomain_map], dtype=np.int64)
-        _map[1:-1, 1:-1, 1:-1] = np.arange(self.num_subdomains).reshape(
-            self.subdomain_map
+        proc_map = np.arange(np.prod(self.subdomain_map)).reshape(self.subdomain_map)
+        boundary_proc_map = -np.ones(
+            [sd + 2 for sd in self.subdomain_map], dtype=np.int64
         )
+        boundary_proc_map[1:-1, 1:-1, 1:-1] = proc_map
+        features = orientation.features
+        for feature in features:
+            loop = subdomain_features.get_feature_voxels(
+                feature, boundary_proc_map.shape
+            )
 
-        ### Set Boundaries of global SubDomain Map
-        if self.boundaries[0][0] == 1:
-            _map[0, :, :] = -2
-        if self.boundaries[0][1] == 1:
-            _map[-1, :, :] = -2
-        if self.boundaries[1][0] == 1:
-            _map[:, 0, :] = -2
-        if self.boundaries[1][1] == 1:
-            _map[:, -1, :] = -2
-        if self.boundaries[2][0] == 1:
-            _map[:, :, 0] = -2
-        if self.boundaries[2][1] == 1:
-            _map[:, :, -1] = -2
+            for i in range(loop[0][0], loop[0][1]):
+                for j in range(loop[1][0], loop[1][1]):
+                    for k in range(loop[2][0], loop[2][1]):
 
-        if self.boundaries[0][0] == 2:
-            _map[0, :, :] = _map[-2, :, :]
-            _map[-1, :, :] = _map[1, :, :]
+                        i_per = (i - 1) % self.subdomain_map[0]
+                        j_per = (j - 1) % self.subdomain_map[1]
+                        k_per = (k - 1) % self.subdomain_map[2]
 
-        if self.boundaries[1][0] == 2:
-            _map[:, 0, :] = _map[:, -2, :]
-            _map[:, -1, :] = _map[:, 1, :]
+                        if self.boundaries[0][0] != 2:
+                            i_per = (i - 1 - feature[0]) % self.subdomain_map[0]
+                        if self.boundaries[1][0] != 2:
+                            j_per = (j - 1 - feature[1]) % self.subdomain_map[1]
+                        if self.boundaries[2][0] != 2:
+                            k_per = (k - 1 - feature[2]) % self.subdomain_map[2]
 
-        if self.boundaries[2][0] == 2:
-            _map[:, :, 0] = _map[:, :, -2]
-            _map[:, :, -1] = _map[:, :, 1]
+                        if (
+                            (feature[0] != 0 and self.boundaries[0][0] == 1)
+                            or (feature[1] != 0 and self.boundaries[1][0] == 1)
+                            or (feature[2] != 0 and self.boundaries[2][0] == 1)
+                        ):
+                            boundary_proc_map[i, j, k] = -2
 
-        return _map
+                        elif (
+                            (feature[0] != 0 and self.boundaries[0][0] == 2)
+                            or (feature[1] != 0 and self.boundaries[1][0] == 2)
+                            or (feature[2] != 0 and self.boundaries[2][0] == 2)
+                        ):
+
+                            boundary_proc_map[i, j, k] = proc_map[i_per, j_per, k_per]
+
+        return boundary_proc_map
 
     def get_neighbor_ranks(self, sd_index: tuple[int, int, int]):
         """
         Determine the neighbor process rank
         """
         neighbor_ranks = {}
-
         for n_face in range(0, orientation.num_faces):
             feature_index = orientation.faces[n_face]["ID"]
             neighbor_ranks[feature_index] = self._get_neighbor_ranks(

@@ -5,7 +5,12 @@ from . import orientation
 import numpy as np
 from mpi4py import MPI
 
-__all__ = ["update_buffer", "generate_halo", "pass_external_data", "pass_boundary_sets"]
+__all__ = [
+    "update_buffer",
+    "generate_halo",
+    "pass_external_data",
+    "pass_boundary_sets",
+]
 
 
 comm = MPI.COMM_WORLD
@@ -493,6 +498,26 @@ def communicate(subdomain, send_data):
     )
 
     return recv_face, recv_edge, recv_corner
+
+
+def communicate_NEW(subdomain, send_data):
+    """
+    Send data between processes for faces, edges, and corners.
+    """
+
+    feature_types = ["faces", "edges", "corners"]
+    counts = [orientation.num_faces, orientation.num_edges, orientation.num_corners]
+    recv_data = {}
+
+    for feature_count, feature in zip(counts, feature_types):
+        recv_data[feature] = send_recv(
+            subdomain.rank,
+            subdomain.features[feature],
+            feature_count,
+            send_data,
+        )
+
+    return recv_data
 
 
 def send_recv(rank, features, num_features, send_data):

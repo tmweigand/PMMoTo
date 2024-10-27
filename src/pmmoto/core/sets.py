@@ -38,32 +38,30 @@ class Sets(object):
         self.boundary_sets = {}
         self.boundary_set_map = [[] for _ in orientation.features]
 
-    def collect_boundary_set_info(self, data, grid, phase_map):
+    def collect_boundary_set_info(self, data, grid, label):
         """
         Loop through each set and determine if a boundary set.
         If so:
             create a boundary set instance
 
         """
-        for label in phase_map:
-            phase = phase_map[label]
-            if data["boundary"][label]:
+        if data["boundary"][label]:
 
-                boundary_set = set_boundary.BoundarySet(
-                    subdomain=self.subdomain,
-                    local_ID=label,
-                    phase=phase,
-                    boundary_nodes=data["boundary_nodes"][label],
-                    boundary_features=data["boundary_features"][label],
-                    inlet=data["inlets"][label],
-                    outlet=data["outlets"][label],
-                )
+            boundary_set = set_boundary.BoundarySet(
+                subdomain=self.subdomain,
+                local_ID=label,
+                phase=0,
+                boundary_nodes=data["boundary_nodes"][label],
+                boundary_features=data["boundary_features"][label],
+                inlet=data["inlets"][label],
+                outlet=data["outlets"][label],
+            )
 
-                boundary_set.set_voxels(data["nodes"][label], grid.shape)
-                assert boundary_set.subdomain_data.boundary
-                boundary_set.set_boundary_data()
-                self.boundary_sets[label] = boundary_set
-                self.sets[label] = boundary_set
+            boundary_set.set_voxels(data["nodes"][label], grid.shape)
+            assert boundary_set.subdomain_data.boundary
+            boundary_set.set_boundary_data()
+            self.boundary_sets[label] = boundary_set
+            self.sets[label] = boundary_set
 
         self.count.boundary = len(self.boundary_sets)
         self.count.internal = self.count.all - self.count.boundary
@@ -180,44 +178,50 @@ class Sets(object):
 
 
 def create_sets_and_merge(
-    img, set_count, label_count, label_grid, phase_map, inlet, outlet
+    img,
+    subdomain,
+    label_count,
 ):
     """
     Find the sets on the boundaries of all subdomains and merge them to form one set
     """
-    boundary_node_data = voxels.get_boundary_set_info(
-        img, label_grid, label_count, phase_map, inlet, outlet
+    boundary_node_data = voxels.get_boundary_voxels(
+        subdomain,
+        img,
+        label_count,
     )
 
     # Initialize Sets
-    all_sets = Sets(img.subdomain, set_count)
+    all_sets = Sets(subdomain, label_count)
 
     # Collect node info and put in sets
-    all_sets.collect_boundary_set_info(boundary_node_data, img.grid, phase_map)
+    print(boundary_node_data)
+    for label in range(label_count):
+        all_sets.collect_boundary_set_info(boundary_node_data, img, label)
 
     # Match sets across process boundaries
-    n_sets = communication.pass_boundary_sets(img.subdomain, all_sets)
+    # n_sets = communication.pass_boundary_sets(img.subdomain, all_sets)
 
-    all_sets.match_boundary_sets(n_sets)
+    # all_sets.match_boundary_sets(n_sets)
 
-    # Merge matched sets
-    all_set_data = comm.gather(
-        {
-            "matched_sets": all_sets.matched_sets,
-            "internal_set_count": all_sets.count.internal,
-        },
-        root=0,
-    )
+    # # Merge matched sets
+    # all_set_data = comm.gather(
+    #     {
+    #         "matched_sets": all_sets.matched_sets,
+    #         "internal_set_count": all_sets.count.internal,
+    #     },
+    #     root=0,
+    # )
 
-    single_matched_sets = all_sets.single_merge_matched_sets(all_set_data)
+    # single_matched_sets = all_sets.single_merge_matched_sets(all_set_data)
 
-    # Send matched sets
-    matched_sets = comm.scatter(single_matched_sets, root=0)
+    # # Send matched sets
+    # matched_sets = comm.scatter(single_matched_sets, root=0)
 
-    # Update Local/Global Label Mapping
-    local_global_map = all_sets.gen_global_ID_mapping(matched_sets)
+    # # Update Local/Global Label Mapping
+    # local_global_map = all_sets.gen_global_ID_mapping(matched_sets)
 
-    # Update Matched Sets
-    all_sets.update_boundary_sets(matched_sets)  # ERRROR HERE
+    # # Update Matched Sets
+    # all_sets.update_boundary_sets(matched_sets)  # ERRROR HERE
 
-    return all_sets, local_global_map
+    # return all_sets, local_global_map

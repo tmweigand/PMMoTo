@@ -1,3 +1,4 @@
+from .communication import *
 from .domain import *
 from .domain_decompose import *
 from .domain_discretization import *

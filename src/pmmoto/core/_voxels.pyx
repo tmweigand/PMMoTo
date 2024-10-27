@@ -49,7 +49,7 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
 
 # ctypedef Py_ssize_t(*f_global_ID)(Py_ssize_t[3], int[3]) 
 
-def get_boundary_set_info_NEW(
+def get_boundary_data(
                 cnp.uint64_t [:,:,:] grid,
                 int n_labels,
                 cnp.uint64_t [:,:] loop,

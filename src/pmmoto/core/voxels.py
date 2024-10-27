@@ -6,14 +6,13 @@ from . import _voxels
 
 __all__ = [
     "get_id",
-    "get_boundary_set_info_NEW",
-    "get_boundary_set_info",
+    "get_boundary_voxels",
     "get_label_phase_info",
     "count_label_voxels",
 ]
 
 
-def get_boundary_set_info_NEW(subdomain, img, n_labels):
+def get_boundary_voxels(subdomain, img, n_labels):
     """_summary_
 
     Args:
@@ -24,57 +23,19 @@ def get_boundary_set_info_NEW(subdomain, img, n_labels):
         inlet (_type_): _description_
         outlet (_type_): _description_
     """
-    boundary_node_data = {}
-    for f in subdomain.features["faces"].values():
-        boundary_node_data[f.info["ID"]] = _voxels.get_boundary_set_info_NEW(
-            img,
-            n_labels,
-            f.get_feature_voxels(img),
-            subdomain.domain_voxels,
-            subdomain.start,
-        )
+    boundary_data = {}
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for f in subdomain.features[feature_type].values():
+            boundary_data[f.info["ID"]] = _voxels.get_boundary_data(
+                img,
+                n_labels,
+                f.loop,
+                subdomain.domain_voxels,
+                subdomain.start,
+            )
 
-    for f in subdomain.features["edges"].values():
-        boundary_node_data[f.info["ID"]] = _voxels.get_boundary_set_info_NEW(
-            img,
-            n_labels,
-            f.get_feature_voxels(img),
-            subdomain.domain_voxels,
-            subdomain.start,
-        )
-
-    for f in subdomain.features["corners"].values():
-        boundary_node_data[f.info["ID"]] = _voxels.get_boundary_set_info_NEW(
-            img,
-            n_labels,
-            f.get_feature_voxels(img),
-            subdomain.domain_voxels,
-            subdomain.start,
-        )
-
-    print(boundary_node_data)
-
-    return boundary_node_data
-
-
-def get_boundary_set_info(img, label_grid, n_labels):
-    """_summary_
-
-    Args:
-        img (_type_): _description_
-        label_grid (_type_): _description_
-        n_labels (_type_): _description_
-        phase_map (_type_): _description_
-        inlet (_type_): _description_
-        outlet (_type_): _description_
-    """
-    boundary_node_data = _voxels.get_boundary_set_info(
-        img.subdomain, label_grid, n_labels, img.loop_info
-    )
-
-    print(boundary_node_data)
-
-    return boundary_node_data
+    return boundary_data
 
 
 def get_id(x, total_voxels):
@@ -118,3 +79,38 @@ def count_label_voxels(grid, map):
         map (_type_): _description_
     """
     _map = _voxels.count_label_voxels(grid, map)
+
+
+def boundary_voxels_pack(subdomain, boundary_voxels):
+    """
+    This function packs the data to send based on get_boundary_voxels
+    """
+    send_data = {}
+
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature in subdomain.features[feature_type].values():
+            if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
+                send_data[feature.n_proc] = boundary_voxels[feature.info["ID"]]
+
+    return send_data
+
+
+def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
+    """
+    Unpack the neighboring boundary neighbor data. This also handles
+    periodic boundary conditions.
+    """
+
+    data_out = {}
+
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature in subdomain.features[feature_type].values():
+            print(feature.__dict__, subdomain.rank)
+            if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
+                data_out[feature.info["ID"]] = recv_data[feature.info["ID"]]
+            elif feature.n_proc == subdomain.rank:
+                data_out[feature.info["ID"]] = boundary_voxels[feature.opp_info["ID"]]
+
+    return data_out
