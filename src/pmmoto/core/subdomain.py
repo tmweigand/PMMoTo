@@ -20,6 +20,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         num_subdomains: int,
         domain_voxels: tuple[int, int, int],
         neighbor_ranks={},
+        boundary_types=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -29,11 +30,12 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.start = start
         self.domain_voxels = domain_voxels
         self.neighbor_ranks = neighbor_ranks
+        self.boundary_types = boundary_types
         self.periodic = self.periodic_check()
         self.boundary = self.boundary_check()
         self.coords = self.get_coords()
         self.features = subdomain_features.collect_features(
-            self.neighbor_ranks, self.boundary, self.boundaries, self.voxels
+            self.neighbor_ranks, self.boundaries, self.boundary_types, self.voxels
         )
 
     def boundary_check(self) -> bool:

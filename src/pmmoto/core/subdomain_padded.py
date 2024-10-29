@@ -40,6 +40,7 @@ class PaddedSubdomain(subdomain.Subdomain):
             start=subdomain.start,
             box=subdomain.box,
             boundaries=subdomain.boundaries,
+            boundary_types=subdomain.boundary_types,
             inlet=subdomain.inlet,
             outlet=subdomain.outlet,
             voxels=subdomain.voxels,
@@ -50,35 +51,26 @@ class PaddedSubdomain(subdomain.Subdomain):
 
     def get_padding(self, pad: tuple[int, int, int]) -> tuple[tuple[int, int], ...]:
         """
-        Add pad to boundaries of subdomain. Padding is only applied to the following boundaries
-            -1: Internal subdomain boundary
-             1: Wall boundary
-             2: Periodic boundary
-
+        Add pad to boundaries of subdomain. Padding is applied to all boundaries
+        except 'end' boundary type.
         Args:
             pad (tuple[int, int, int]): _description_
 
         Returns:
             tuple[int, int, int]: _description_
         """
+        _pad = [[0, 0], [0, 0], [0, 0]]
+        feature_types = ["faces"]
+        for feature_type in feature_types:
+            for feature_id, feature in self.subdomain.features[feature_type].items():
+                index = feature.info["argOrder"][0]
+                if self.boundary_types[feature_id] != "end":
+                    if feature_id[index] < 0:
+                        _pad[index][0] = pad[index]
+                    elif feature_id[index] > 0:
+                        _pad[index][1] = pad[index]
 
-        boundaries = []
-        for n in range(self.dims):
-            boundaries.append([self.boundaries[n * 2], self.boundaries[n * 2 + 1]])
-
-        _pad = []
-        for n, (minus, plus) in enumerate(boundaries):
-            lower = 0
-            if minus != 0:
-                lower = pad[n]
-
-            upper = 0
-            if plus != 0:
-                upper = pad[n]
-
-            _pad.append((lower, upper))
-
-        return tuple(_pad)
+        return tuple(tuple(sublist) for sublist in _pad)
 
     def get_voxels(self) -> tuple[int, ...]:
         """

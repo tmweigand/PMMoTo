@@ -24,6 +24,18 @@ from . import orientation
 #     "_get_id"
 # ]
 
+
+def match_boundary_voxels(own_data,neighbor_data):
+    """
+    Match the boundary voxels for each feature based on global voxel ID
+    """
+    for key, voxels in own_data["boundary_voxels"].items():
+        for n_key,n_voxels in neighbor_data["boundary_voxels"].items():
+            print(_match_boundary_voxels(voxels,n_voxels))
+    
+
+
+
 cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
     """
     Determine the ID for a voxel.
@@ -85,8 +97,10 @@ def get_boundary_data(
                     get_id(_index,domain_nodes)
                     )
 
+    
+
     output = {
-        'boundary_nodes': b_nodes,
+        'boundary_voxels': b_nodes,
         'boundary': boundary,
     }
 

@@ -9,6 +9,7 @@ __all__ = [
     "get_boundary_voxels",
     "get_label_phase_info",
     "count_label_voxels",
+    "match_boundary_voxels",
 ]
 
 
@@ -34,6 +35,10 @@ def get_boundary_voxels(subdomain, img, n_labels):
                 subdomain.domain_voxels,
                 subdomain.start,
             )
+
+            # Sort boundary_voxels to make matching more efficient for large number of labels
+            for voxels in boundary_data[f.info["ID"]]["boundary_voxels"].values():
+                voxels.sort()
 
     return boundary_data
 
@@ -100,6 +105,10 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
     """
     Unpack the neighboring boundary neighbor data. This also handles
     periodic boundary conditions.
+
+    The feature_id for the return value has been accounted for:
+        own_data[feature_id] = data_out[feature_id]
+
     """
 
     data_out = {}
@@ -107,10 +116,30 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature in subdomain.features[feature_type].values():
-            print(feature.__dict__, subdomain.rank)
             if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
                 data_out[feature.info["ID"]] = recv_data[feature.info["ID"]]
             elif feature.n_proc == subdomain.rank:
                 data_out[feature.info["ID"]] = boundary_voxels[feature.opp_info["ID"]]
 
     return data_out
+
+
+def match_boundary_voxels(subdomain, boundary_voxels, recv_data):
+    """
+    Match the boundary voxels
+    """
+    feature_types = ["faces", "edges", "corners"]
+    feature_types = ["edges", "corners"]
+    for feature_type in feature_types:
+        for feature in subdomain.features[feature_type].values():
+            if feature.info["ID"] in recv_data:
+                print(
+                    feature.info["ID"],
+                    feature.opp_info["ID"],
+                    boundary_voxels[feature.info["ID"]],
+                    recv_data[feature.info["ID"]],
+                )
+                _voxels.match_boundary_voxels(
+                    boundary_voxels[feature.info["ID"]],
+                    recv_data[feature.info["ID"]],
+                )

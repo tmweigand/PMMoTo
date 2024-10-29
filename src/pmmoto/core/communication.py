@@ -10,6 +10,7 @@ __all__ = [
     "generate_halo",
     "pass_external_data",
     "pass_boundary_sets",
+    "communicate_NEW",
 ]
 
 

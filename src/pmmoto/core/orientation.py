@@ -28,7 +28,7 @@ def add_faces(boundary_features):
     Since loop_info are by face, need to add face index for edges and corners in case
     edge and corner n_procs are < 0 but face is valid.
     """
-    for n in range(0, num_neighbors):
+    for n in range(0, num_features):
         if boundary_features[n]:
             for nn in allFaces[n]:
                 boundary_features[nn] = True
@@ -37,169 +37,209 @@ def add_faces(boundary_features):
 num_faces = 6
 num_edges = 12
 num_corners = 8
-num_neighbors = 26
+num_features = 26
 
 faces = {
-    0: {
-        "ID": (-1, 0, 0),
-        "oppIndex": 1,
+    (-1, 0, 0): {
+        "opp": (1, 0, 0),
         "argOrder": np.array([0, 1, 2], dtype=np.uint8),
         "dir": 1,
     },
-    1: {
-        "ID": (1, 0, 0),
-        "oppIndex": 0,
+    (1, 0, 0): {
+        "opp": (-1, 0, 0),
         "argOrder": np.array([0, 1, 2], dtype=np.uint8),
         "dir": -1,
     },
-    2: {
-        "ID": (0, -1, 0),
-        "oppIndex": 3,
+    (0, -1, 0): {
+        "opp": (0, 1, 0),
         "argOrder": np.array([1, 0, 2], dtype=np.uint8),
         "dir": 1,
     },
-    3: {
-        "ID": (0, 1, 0),
-        "oppIndex": 2,
+    (0, 1, 0): {
+        "opp": (0, -1, 0),
         "argOrder": np.array([1, 0, 2], dtype=np.uint8),
         "dir": -1,
     },
-    4: {
-        "ID": (0, 0, -1),
-        "oppIndex": 5,
+    (0, 0, -1): {
+        "opp": (0, 0, 1),
         "argOrder": np.array([2, 0, 1], dtype=np.uint8),
         "dir": 1,
     },
-    5: {
-        "ID": (0, 0, 1),
-        "oppIndex": 4,
+    (0, 0, 1): {
+        "opp": (0, 0, -1),
         "argOrder": np.array([2, 0, 1], dtype=np.uint8),
         "dir": -1,
     },
 }
 
 edges = {
-    0: {"ID": (-1, 0, -1), "oppIndex": 5, "faceIndex": (0, 4), "dir": (0, 2)},
-    1: {"ID": (-1, 0, 1), "oppIndex": 4, "faceIndex": (0, 5), "dir": (0, 2)},
-    2: {"ID": (-1, -1, 0), "oppIndex": 7, "faceIndex": (0, 2), "dir": (0, 1)},
-    3: {"ID": (-1, 1, 0), "oppIndex": 6, "faceIndex": (0, 3), "dir": (0, 1)},
-    4: {"ID": (1, 0, -1), "oppIndex": 1, "faceIndex": (1, 4), "dir": (0, 2)},
-    5: {"ID": (1, 0, 1), "oppIndex": 0, "faceIndex": (1, 5), "dir": (0, 2)},
-    6: {"ID": (1, -1, 0), "oppIndex": 3, "faceIndex": (1, 2), "dir": (0, 1)},
-    7: {"ID": (1, 1, 0), "oppIndex": 2, "faceIndex": (1, 3), "dir": (0, 1)},
-    8: {"ID": (0, -1, -1), "oppIndex": 11, "faceIndex": (2, 4), "dir": (1, 2)},
-    9: {"ID": (0, -1, 1), "oppIndex": 10, "faceIndex": (2, 5), "dir": (1, 2)},
-    10: {"ID": (0, 1, -1), "oppIndex": 9, "faceIndex": (3, 4), "dir": (1, 2)},
-    11: {"ID": (0, 1, 1), "oppIndex": 8, "faceIndex": (3, 5), "dir": (1, 2)},
+    (-1, 0, -1): {
+        "opp": (1, 0, 1),
+        "faces": ((-1, 0, 0), (0, 0, -1)),
+        "dir": (0, 2),
+    },
+    (-1, 0, 1): {
+        "opp": (1, 0, -1),
+        "faces": ((-1, 0, 0), (0, 0, 1)),
+        "dir": (0, 2),
+    },
+    (-1, -1, 0): {
+        "opp": (1, 1, 0),
+        "faces": ((-1, 0, 0), (0, -1, 0)),
+        "dir": (0, 1),
+    },
+    (-1, 1, 0): {
+        "opp": (1, -1, 0),
+        "faces": ((-1, 0, 0), (0, 1, 0)),
+        "dir": (0, 1),
+    },
+    (1, 0, -1): {
+        "opp": (-1, 0, 1),
+        "faces": ((1, 0, 0), (0, 0, -1)),
+        "dir": (0, 2),
+    },
+    (1, 0, 1): {
+        "opp": (-1, 0, -1),
+        "faces": ((1, 0, 0), (0, 0, 1)),
+        "dir": (0, 2),
+    },
+    (1, -1, 0): {
+        "opp": (-1, 1, 0),
+        "faces": ((1, 0, 0), (0, -1, 0)),
+        "dir": (0, 1),
+    },
+    (1, 1, 0): {
+        "opp": (-1, -1, 0),
+        "faces": ((1, 0, 0), (0, 1, 0)),
+        "dir": (0, 1),
+    },
+    (0, -1, -1): {
+        "opp": (0, 1, 1),
+        "faces": ((0, -1, 0), (0, 0, -1)),
+        "dir": (1, 2),
+    },
+    (0, -1, 1): {
+        "opp": (0, 1, -1),
+        "faces": ((0, -1, 0), (0, 0, 1)),
+        "dir": (1, 2),
+    },
+    (0, 1, -1): {
+        "opp": (0, -1, 1),
+        "faces": ((0, 1, 0), (0, 0, -1)),
+        "dir": (1, 2),
+    },
+    (0, 1, 1): {
+        "opp": (0, -1, -1),
+        "faces": ((0, 1, 0), (0, 0, 1)),
+        "dir": (1, 2),
+    },
 }
 
 corners = {
-    0: {
-        "ID": (-1, -1, -1),
-        "oppIndex": 7,
-        "faceIndex": (0, 2, 4),
-        "edgeIndex": (0, 2, 8),
+    (-1, -1, -1): {
+        "opp": (1, 1, 1),
+        "faces": ((-1, 0, 0), (0, -1, 0), (0, 0, -1)),
+        "edges": ((-1, 0, -1), (-1, -1, 0), (0, -1, -1)),
     },
-    1: {
-        "ID": (-1, -1, 1),
-        "oppIndex": 6,
-        "faceIndex": (0, 2, 5),
-        "edgeIndex": (1, 2, 9),
+    (-1, -1, 1): {
+        "opp": (1, 1, -1),
+        "faces": ((-1, 0, 0), (0, -1, 0), (0, 0, 1)),
+        "edges": ((-1, 0, 1), (-1, -1, 0), (0, -1, 1)),
     },
-    2: {
-        "ID": (-1, 1, -1),
-        "oppIndex": 5,
-        "faceIndex": (0, 3, 4),
-        "edgeIndex": (0, 3, 10),
+    (-1, 1, -1): {
+        "opp": (1, -1, 1),
+        "faces": ((-1, 0, 0), (0, 1, 0), (0, 0, -1)),
+        "edges": ((-1, 0, -1), (-1, 1, 0), (0, 1, -1)),
     },
-    3: {
-        "ID": (-1, 1, 1),
-        "oppIndex": 4,
-        "faceIndex": (0, 3, 5),
-        "edgeIndex": (1, 3, 11),
+    (-1, 1, 1): {
+        "opp": (1, -1, -1),
+        "faces": ((-1, 0, 0), (0, 1, 0), (0, 0, 1)),
+        "edges": ((-1, 0, 1), (-1, 1, 0), (0, 1, 1)),
     },
-    4: {
-        "ID": (1, -1, -1),
-        "oppIndex": 3,
-        "faceIndex": (1, 2, 4),
-        "edgeIndex": (4, 6, 8),
+    (1, -1, -1): {
+        "opp": (-1, 1, 1),
+        "faces": ((1, 0, 0), (0, -1, 0), (0, 0, -1)),
+        "edges": ((1, 0, -1), (1, -1, 0), (0, -1, -1)),
     },
-    5: {
-        "ID": (1, -1, 1),
-        "oppIndex": 2,
-        "faceIndex": (1, 2, 5),
-        "edgeIndex": (5, 6, 9),
+    (1, -1, 1): {
+        "opp": (-1, 1, -1),
+        "faces": ((1, 0, 0), (0, -1, 0), (0, 0, 1)),
+        "edges": ((1, 0, 1), (1, -1, 0), (0, -1, 1)),
     },
-    6: {
-        "ID": (1, 1, -1),
-        "oppIndex": 1,
-        "faceIndex": (1, 3, 4),
-        "edgeIndex": (4, 7, 10),
+    (1, 1, -1): {
+        "opp": (-1, -1, 1),
+        "faces": ((1, 0, 0), (0, 1, 0), (0, 0, -1)),
+        "edges": ((1, 0, -1), (1, 1, 0), (0, 1, -1)),
     },
-    7: {
-        "ID": (1, 1, 1),
-        "oppIndex": 0,
-        "faceIndex": (1, 3, 5),
-        "edgeIndex": (5, 7, 11),
+    (1, 1, 1): {
+        "opp": (-1, -1, -1),
+        "faces": ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+        "edges": ((1, 0, 1), (1, 1, 0), (0, 1, 1)),
     },
 }
 
-features = [
-    (-1, 0, 0),
-    (1, 0, 0),
-    (0, -1, 0),
-    (0, 1, 0),
-    (0, 0, -1),
-    (0, 0, 1),
-    (-1, 0, -1),
-    (-1, 0, 1),
-    (-1, -1, 0),
-    (-1, 1, 0),
-    (1, 0, -1),
-    (1, 0, 1),
-    (1, -1, 0),
-    (1, 1, 0),
-    (0, -1, -1),
-    (0, -1, 1),
-    (0, 1, -1),
-    (0, 1, 1),
-    (-1, -1, -1),
-    (-1, -1, 1),
-    (-1, 1, -1),
-    (-1, 1, 1),
-    (1, -1, -1),
-    (1, -1, 1),
-    (1, 1, -1),
-    (1, 1, 1),
-]
+
+features = {}
+features["faces"] = faces
+features["edges"] = edges
+features["corners"] = corners
+
+# features = [
+#     (-1, 0, 0),
+#     (1, 0, 0),
+#     (0, -1, 0),
+#     (0, 1, 0),
+#     (0, 0, -1),
+#     (0, 0, 1),
+#     (-1, 0, -1),
+#     (-1, 0, 1),
+#     (-1, -1, 0),
+#     (-1, 1, 0),
+#     (1, 0, -1),
+#     (1, 0, 1),
+#     (1, -1, 0),
+#     (1, 1, 0),
+#     (0, -1, -1),
+#     (0, -1, 1),
+#     (0, 1, -1),
+#     (0, 1, 1),
+#     (-1, -1, -1),
+#     (-1, -1, 1),
+#     (-1, 1, -1),
+#     (-1, 1, 1),
+#     (1, -1, -1),
+#     (1, -1, 1),
+#     (1, 1, -1),
+#     (1, 1, 1),
+# ]
 
 directions = {
-    0: {"ID": [-1, -1, -1], "index": 0, "oppIndex": 25},
-    1: {"ID": [-1, -1, 0], "index": 1, "oppIndex": 24},
-    2: {"ID": [-1, -1, 1], "index": 2, "oppIndex": 23},
-    3: {"ID": [-1, 0, -1], "index": 3, "oppIndex": 22},
-    4: {"ID": [-1, 0, 0], "index": 4, "oppIndex": 21},
-    5: {"ID": [-1, 0, 1], "index": 5, "oppIndex": 20},
-    6: {"ID": [-1, 1, -1], "index": 6, "oppIndex": 19},
-    7: {"ID": [-1, 1, 0], "index": 7, "oppIndex": 18},
-    8: {"ID": [-1, 1, 1], "index": 8, "oppIndex": 17},
-    9: {"ID": [0, -1, -1], "index": 9, "oppIndex": 16},
-    10: {"ID": [0, -1, 0], "index": 10, "oppIndex": 15},
-    11: {"ID": [0, -1, 1], "index": 11, "oppIndex": 14},
-    12: {"ID": [0, 0, -1], "index": 12, "oppIndex": 13},
-    13: {"ID": [0, 0, 1], "index": 13, "oppIndex": 12},
-    14: {"ID": [0, 1, -1], "index": 14, "oppIndex": 11},
-    15: {"ID": [0, 1, 0], "index": 15, "oppIndex": 10},
-    16: {"ID": [0, 1, 1], "index": 16, "oppIndex": 9},
-    17: {"ID": [1, -1, -1], "index": 17, "oppIndex": 8},
-    18: {"ID": [1, -1, 0], "index": 18, "oppIndex": 7},
-    19: {"ID": [1, -1, 1], "index": 19, "oppIndex": 6},
-    20: {"ID": [1, 0, -1], "index": 20, "oppIndex": 5},
-    21: {"ID": [1, 0, 0], "index": 21, "oppIndex": 4},
-    22: {"ID": [1, 0, 1], "index": 22, "oppIndex": 3},
-    23: {"ID": [1, 1, -1], "index": 23, "oppIndex": 2},
-    24: {"ID": [1, 1, 0], "index": 24, "oppIndex": 1},
-    25: {"ID": [1, 1, 1], "index": 25, "oppIndex": 0},
+    0: {"ID": [-1, -1, -1], "index": 0, "opp_index": 25},
+    1: {"ID": [-1, -1, 0], "index": 1, "opp_index": 24},
+    2: {"ID": [-1, -1, 1], "index": 2, "opp_index": 23},
+    3: {"ID": [-1, 0, -1], "index": 3, "opp_index": 22},
+    4: {"ID": [-1, 0, 0], "index": 4, "opp_index": 21},
+    5: {"ID": [-1, 0, 1], "index": 5, "opp_index": 20},
+    6: {"ID": [-1, 1, -1], "index": 6, "opp_index": 19},
+    7: {"ID": [-1, 1, 0], "index": 7, "opp_index": 18},
+    8: {"ID": [-1, 1, 1], "index": 8, "opp_index": 17},
+    9: {"ID": [0, -1, -1], "index": 9, "opp_index": 16},
+    10: {"ID": [0, -1, 0], "index": 10, "opp_index": 15},
+    11: {"ID": [0, -1, 1], "index": 11, "opp_index": 14},
+    12: {"ID": [0, 0, -1], "index": 12, "opp_index": 13},
+    13: {"ID": [0, 0, 1], "index": 13, "opp_index": 12},
+    14: {"ID": [0, 1, -1], "index": 14, "opp_index": 11},
+    15: {"ID": [0, 1, 0], "index": 15, "opp_index": 10},
+    16: {"ID": [0, 1, 1], "index": 16, "opp_index": 9},
+    17: {"ID": [1, -1, -1], "index": 17, "opp_index": 8},
+    18: {"ID": [1, -1, 0], "index": 18, "opp_index": 7},
+    19: {"ID": [1, -1, 1], "index": 19, "opp_index": 6},
+    20: {"ID": [1, 0, -1], "index": 20, "opp_index": 5},
+    21: {"ID": [1, 0, 0], "index": 21, "opp_index": 4},
+    22: {"ID": [1, 0, 1], "index": 22, "opp_index": 3},
+    23: {"ID": [1, 1, -1], "index": 23, "opp_index": 2},
+    24: {"ID": [1, 1, 0], "index": 24, "opp_index": 1},
+    25: {"ID": [1, 1, 1], "index": 25, "opp_index": 0},
 }
 
 allFaces = [

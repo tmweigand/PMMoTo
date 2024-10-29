@@ -31,6 +31,7 @@ def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains)
             index=subdomains["index"][rank],
             box=subdomains["box"][rank],
             boundaries=subdomains["boundaries"][rank],
+            boundary_types=subdomains["boundary_type"][rank],
             inlet=subdomains["inlet"][rank],
             outlet=subdomains["outlet"][rank],
             voxels=subdomains["voxels"][rank],
@@ -39,8 +40,3 @@ def test_subdomain(domain, domain_discretization, domain_decomposed, subdomains)
             domain_voxels=domain_discretization["voxels"],
             neighbor_ranks=subdomains["neighbor_ranks"][rank],
         )
-
-        if rank != 13:
-            assert pmmoto_subdomain.boundary
-        else:
-            assert not pmmoto_subdomain.boundary

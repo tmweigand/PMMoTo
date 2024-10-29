@@ -42,6 +42,7 @@ def test_subdomain_padded(
             index=subdomains["index"][rank],
             box=subdomains["box"][rank],
             boundaries=subdomains["boundaries"][rank],
+            boundary_types=subdomains["boundary_type"][rank],
             inlet=subdomains["inlet"][rank],
             outlet=subdomains["outlet"][rank],
             voxels=subdomains["voxels"][rank],

@@ -17,7 +17,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         super().__init__(**kwargs)
         self.subdomain_map = subdomain_map
         self.num_subdomains = np.prod(self.subdomain_map)
-        self.map = self.gen_map()
+        self.map, self.boundary_features = self.gen_maps()
 
     @classmethod
     def from_discretized_domain(cls, discretized_domain, subdomain_map):
@@ -37,7 +37,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         sd_index = self.get_subdomain_index(rank)
         voxels = self.get_subdomain_voxels(sd_index)
         box = self.get_subdomain_box(sd_index, voxels)
-        boundaries = self.get_subdomain_boundaries(sd_index)
+        boundaries, boundary_types = self.get_subdomain_boundaries(sd_index)
         inlet = self.get_subdomain_inlet(sd_index)
         outlet = self.get_subdomain_outlet(sd_index)
         start = self.get_subdomain_start(sd_index)
@@ -51,6 +51,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
             neighbor_ranks=neighbor_ranks,
             box=box,
             boundaries=boundaries,
+            boundary_types=boundary_types,
             inlet=inlet,
             outlet=outlet,
             voxels=voxels,
@@ -60,7 +61,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
     def get_subdomain_voxels(self, index: tuple[np.intp, ...]) -> tuple[int, ...]:
         """
-        Calculate number of voxels in each subdomain
+        Calculate number of voxels in each subdomain.
+        This can be very bad when voxels ~= ranks or something like that
         """
         voxels = [0, 0, 0]
         for dim, ind in enumerate(index):
@@ -99,18 +101,42 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
     def get_subdomain_boundaries(self, index: tuple[np.intp, ...]):
         """
-        Determine the boundary types for each subdomain
-        Also change orientation of how boundary is stored here
+        Determine the boundary types for each subdomain and feature in subdomain
+        How to handle edges and corners? Now, assume  periodic -> end -> wall is the priority ranking
+        to account for non-fully periodic domains and issues with padding and pass the edges and corners
         """
-        dims = len(index)
-        boundaries = -np.ones([dims * 2], dtype=np.int8)
-        for dim, ind in enumerate(index):
-            if ind == 0:
-                boundaries[dim * 2] = self.boundaries[dim][0]
-            if ind == self.subdomain_map[dim] - 1:
-                boundaries[dim * 2 + 1] = self.boundaries[dim][1]
+        boundaries = {}
+        boundary_type = {}
+        feature_types = ["faces", "edges", "corners"]
+        for feature_type in feature_types:
+            features = orientation.features[feature_type].keys()
+            for feature in features:
+                boundary = True
+                _boundary_type = []
+                for dim, (ind, f_id) in enumerate(zip(index, feature)):
+                    if f_id == 0:
+                        continue
+                    elif (ind == 0) and (f_id == -1):
+                        _boundary_type.append(self.boundaries[dim][0])
+                    elif (ind == self.subdomain_map[dim] - 1) and (f_id == 1):
+                        _boundary_type.append(self.boundaries[dim][1])
+                    else:
+                        boundary = False
 
-        return boundaries
+                if boundary:
+                    boundaries[feature] = True
+
+                    if 2 in _boundary_type:
+                        boundary_type[feature] = "periodic"
+                    elif 0 in _boundary_type:
+                        boundary_type[feature] = "end"
+                    else:
+                        boundary_type[feature] = "wall"
+                else:
+                    boundaries[feature] = False
+                    boundary_type[feature] = "internal"
+
+        return boundaries, boundary_type
 
     def get_subdomain_inlet(self, index: tuple[np.intp, ...]):
         """
@@ -142,11 +168,14 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
         return outlet
 
-    def gen_map(self):
+    def gen_maps(self):
         """
-        Generate process and boundary condition map.This is accomplished on a per-feature basis despite the boundary conditions being defined on faces. As a result of this,non-fully periodic boundary conditions need to be handled with care due to how padding is performed.
+        Generate process and boundary condition map. This is accomplished on a per-feature basis
+        despite the boundary conditions being defined on faces. As a result of this, non-fully
+        periodic boundary conditions need to be handled with care due to how padding is performed.
 
-        The output array is padded on all dimensions with values of:
+        The output arrays is padded on all dimensions with values of:
+            -3: Periodic
             -2: Wall Boundary Condition
             -1: No Assumption Boundary Condition
             >=0: proc_ID
@@ -155,68 +184,68 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         boundary_proc_map = -np.ones(
             [sd + 2 for sd in self.subdomain_map], dtype=np.int64
         )
-        boundary_proc_map[1:-1, 1:-1, 1:-1] = proc_map
-        features = orientation.features
-        for feature in features:
-            loop = subdomain_features.get_feature_voxels(
-                feature, boundary_proc_map.shape
-            )
+        boundary_features_opp = {}
 
-            for i in range(loop[0][0], loop[0][1]):
-                for j in range(loop[1][0], loop[1][1]):
-                    for k in range(loop[2][0], loop[2][1]):
+        feature_types = ["faces", "edges", "corners"]
+        for feature_type in feature_types:
+            features = orientation.features[feature_type].keys()
 
-                        i_per = (i - 1) % self.subdomain_map[0]
-                        j_per = (j - 1) % self.subdomain_map[1]
-                        k_per = (k - 1) % self.subdomain_map[2]
+            for feature in features:
+                loop = subdomain_features.get_feature_voxels(
+                    feature, boundary_proc_map.shape
+                )
 
-                        if self.boundaries[0][0] != 2:
-                            i_per = (i - 1 - feature[0]) % self.subdomain_map[0]
-                        if self.boundaries[1][0] != 2:
-                            j_per = (j - 1 - feature[1]) % self.subdomain_map[1]
-                        if self.boundaries[2][0] != 2:
-                            k_per = (k - 1 - feature[2]) % self.subdomain_map[2]
+                for i in range(loop[0][0], loop[0][1]):
+                    for j in range(loop[1][0], loop[1][1]):
+                        for k in range(loop[2][0], loop[2][1]):
 
-                        if (
-                            (feature[0] != 0 and self.boundaries[0][0] == 1)
-                            or (feature[1] != 0 and self.boundaries[1][0] == 1)
-                            or (feature[2] != 0 and self.boundaries[2][0] == 1)
-                        ):
-                            boundary_proc_map[i, j, k] = -2
+                            i_per = (i - 1) % self.subdomain_map[0]
+                            j_per = (j - 1) % self.subdomain_map[1]
+                            k_per = (k - 1) % self.subdomain_map[2]
 
-                        elif (
-                            (feature[0] != 0 and self.boundaries[0][0] == 2)
-                            or (feature[1] != 0 and self.boundaries[1][0] == 2)
-                            or (feature[2] != 0 and self.boundaries[2][0] == 2)
-                        ):
+                            opp = [-f for f in feature]
 
-                            boundary_proc_map[i, j, k] = proc_map[i_per, j_per, k_per]
+                            if self.boundaries[0][0] != 2:
+                                i_per = (i - 1 - feature[0]) % self.subdomain_map[0]
+                                opp[0] = -opp[0]
+                            if self.boundaries[1][0] != 2:
+                                j_per = (j - 1 - feature[1]) % self.subdomain_map[1]
+                                opp[1] = -opp[1]
+                            if self.boundaries[2][0] != 2:
+                                k_per = (k - 1 - feature[2]) % self.subdomain_map[2]
+                                opp[2] = -opp[2]
 
-        return boundary_proc_map
+                            if (
+                                (feature[0] != 0 and self.boundaries[0][0] == 1)
+                                or (feature[1] != 0 and self.boundaries[1][0] == 1)
+                                or (feature[2] != 0 and self.boundaries[2][0] == 1)
+                            ):
+                                boundary_proc_map[i, j, k] = -2
+                                boundary_features_opp[feature] = "wall"
+
+                            elif (
+                                (feature[0] != 0 and self.boundaries[0][0] == 2)
+                                or (feature[1] != 0 and self.boundaries[1][0] == 2)
+                                or (feature[2] != 0 and self.boundaries[2][0] == 2)
+                            ):
+
+                                boundary_proc_map[i, j, k] = proc_map[
+                                    i_per, j_per, k_per
+                                ]
+                                boundary_features_opp[feature] = tuple(opp)
+        return boundary_proc_map, boundary_features_opp
 
     def get_neighbor_ranks(self, sd_index: tuple[int, int, int]):
         """
         Determine the neighbor process rank
         """
         neighbor_ranks = {}
-        for n_face in range(0, orientation.num_faces):
-            feature_index = orientation.faces[n_face]["ID"]
-            neighbor_ranks[feature_index] = self._get_neighbor_ranks(
-                sd_index, feature_index
-            )
-
-        for n_edge in range(0, orientation.num_edges):
-            feature_index = orientation.edges[n_edge]["ID"]
-            neighbor_ranks[feature_index] = self._get_neighbor_ranks(
-                sd_index, feature_index
-            )
-
-        for n_corner in range(0, orientation.num_corners):
-            feature_index = orientation.corners[n_corner]["ID"]
-            neighbor_ranks[feature_index] = self._get_neighbor_ranks(
-                sd_index, feature_index
-            )
-
+        feature_types = ["faces", "edges", "corners"]
+        for feature_type in feature_types:
+            for feature_index in orientation.features[feature_type].keys():
+                neighbor_ranks[feature_index] = self._get_neighbor_ranks(
+                    sd_index, feature_index
+                )
         return neighbor_ranks
 
     def _get_neighbor_ranks(

@@ -71,7 +71,7 @@ def test_boundary_set_info():
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
-    boundaries = [[2, 2], [0, 0], [0, 0]]
+    boundaries = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -97,13 +97,15 @@ def test_boundary_set_info():
         )
 
         grid = np.zeros(sd[rank].voxels, dtype=np.uint64)
-        # grid[0, :, :] = 1
+
+        # grid[0:2, :, :] = 1
         data = pmmoto.core.voxels.get_boundary_voxels(
             subdomain=sd[rank], img=grid, n_labels=2
         )
 
         send_data = pmmoto.core.voxels.boundary_voxels_pack(sd[rank], data)
-        # _recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
+        # if send_data:
+        #     recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
         recv_data = pmmoto.core.voxels.boundary_voxels_unpack(sd[rank], data, data)
-
-        print(data)
+        # print(recv_data)
+        pmmoto.core.voxels.match_boundary_voxels(sd[rank], data, recv_data)

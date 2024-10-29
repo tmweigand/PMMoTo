@@ -1,54 +1,24 @@
-# cython: profile=True
-# cython: linetrace=True
-# cython: boundscheck=False
-# cython: wraparound=False
-# from libcpp.vector cimport vector
-# from numpy cimport uint64_t,int64_t
-# from libc.stdio cimport printf
+from libcpp.vector cimport vector
+from numpy cimport npy_intp, npy_int8, npy_uint8, ndarray, npy_float32
+from libcpp cimport bool
+from libcpp.utility cimport pair
+from libcpp.algorithm cimport binary_search
 
-# TODO: Clean up type defs
+cdef inline bool _match_boundary_voxels(vector[npy_intp] list1, vector[npy_intp] list2):
+    """
+    Input: Two Sorted Lists
+    Output: Bool of at least one shared element
+    """
+    cdef bool match = False
+    for l in list1:
+        if (binary_search(list2.begin(), list2.end(), l)):
+            match = True
+            break
+    return match
 
-
-
-# cdef inline uint64_t get_id(Py_ssize_t[3] x, int[3] voxels):
-#     """
-#     Determine the the id for a voxel. 
-#     subdomain yields local id
-#     domain yields global id
-#     """
-#     cdef int index_0, index_1, index_2
-
-#     # Use modulo to handle periodic boundary conditions
-#     index_0 = x[0] % voxels[0]
-#     index_1 = x[1] % voxels[1]
-#     index_2 = x[2] % voxels[2]
-
-#     return index_0 * voxels[1] * voxels[2] + index_1 * voxels[2] + index_2
-
-# cdef inline vector[int64_t] get_global_index(Py_ssize_t[3] x, int[3] domain_nodes, int[3] index_start):
-#     """
-#     Determine the global index [i,j,k]
-#     """
-#     cdef: 
-#         int n
-#         vector[int64_t] index
-
-#     for n in range(0,3):
-#         index.push_back(x[n] + index_start[n])
-#     return index
-
-# cdef inline vector[int64_t] get_global_index_periodic(Py_ssize_t[3] x, int[3] domain_nodes, int[3] index_start):
-#     """
-#     Determine the global index [i,j,k]. Loop around if periodic so match. 
-#     """
-#     cdef: 
-#         int n
-#         vector[int64_t] index
-
-#     for n in range(0,3):
-#         index.push_back(x[n] + index_start[n])
-#         if index[n] >= domain_nodes[n]:
-#             index[n] = 0
-#         elif index[n] < 0:
-#             index[n] = domain_nodes[n] - 1
-#     return index
+cdef inline int count_matched_voxels(vector[npy_intp] list1, vector[npy_intp] list2):
+    cdef int count = 0
+    for l in list1:
+        if (binary_search(list2.begin(), list2.end(), l)):
+            count += 1
+    return count
