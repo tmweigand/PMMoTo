@@ -17,7 +17,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         super().__init__(**kwargs)
         self.subdomain_map = subdomain_map
         self.num_subdomains = np.prod(self.subdomain_map)
-        self.map, self.boundary_features = self.gen_maps()
+        self.map, self.global_boundary_features = self.gen_maps()
 
     @classmethod
     def from_discretized_domain(cls, discretized_domain, subdomain_map):
@@ -38,6 +38,9 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         voxels = self.get_subdomain_voxels(sd_index)
         box = self.get_subdomain_box(sd_index, voxels)
         boundaries, boundary_types = self.get_subdomain_boundaries(sd_index)
+        global_boundary_features = self.get_subdomain_global_opposite_feature(
+            boundary_types
+        )
         inlet = self.get_subdomain_inlet(sd_index)
         outlet = self.get_subdomain_outlet(sd_index)
         start = self.get_subdomain_start(sd_index)
@@ -55,6 +58,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
             inlet=inlet,
             outlet=outlet,
             voxels=voxels,
+            global_boundary_features=global_boundary_features,
         )
 
         return _subdomain
@@ -233,7 +237,23 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
                                     i_per, j_per, k_per
                                 ]
                                 boundary_features_opp[feature] = tuple(opp)
+
         return boundary_proc_map, boundary_features_opp
+
+    def get_subdomain_global_opposite_feature(self, boundary_types):
+        """
+        Determine the opposite feature for domain boundary features
+        """
+        global_feature_info = {}
+        for feature_id, bc in boundary_types.items():
+            if bc != "internal" and bc != "end":
+                global_feature_info[feature_id] = self.global_boundary_features[
+                    feature_id
+                ]
+            else:
+                global_feature_info[feature_id] = None
+
+        return global_feature_info
 
     def get_neighbor_ranks(self, sd_index: tuple[int, int, int]):
         """

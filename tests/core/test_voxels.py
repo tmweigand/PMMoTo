@@ -71,6 +71,7 @@ def test_boundary_set_info():
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
+    # boundaries = [[2, 2], [0, 0], [0, 0]]
     boundaries = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
@@ -103,9 +104,10 @@ def test_boundary_set_info():
             subdomain=sd[rank], img=grid, n_labels=2
         )
 
+        print(data)
+
         send_data = pmmoto.core.voxels.boundary_voxels_pack(sd[rank], data)
-        # if send_data:
-        #     recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
+        # # if send_data:
+        # #     recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
         recv_data = pmmoto.core.voxels.boundary_voxels_unpack(sd[rank], data, data)
-        # print(recv_data)
         pmmoto.core.voxels.match_boundary_voxels(sd[rank], data, recv_data)

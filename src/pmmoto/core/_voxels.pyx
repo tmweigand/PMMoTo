@@ -31,7 +31,7 @@ def match_boundary_voxels(own_data,neighbor_data):
     """
     for key, voxels in own_data["boundary_voxels"].items():
         for n_key,n_voxels in neighbor_data["boundary_voxels"].items():
-            print(_match_boundary_voxels(voxels,n_voxels))
+            print(f"MATCHED?: {key}<->{n_key} {_match_boundary_voxels(voxels,n_voxels)}")
     
 
 

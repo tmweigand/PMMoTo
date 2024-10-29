@@ -27,17 +27,17 @@ def get_boundary_voxels(subdomain, img, n_labels):
     boundary_data = {}
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
-        for f in subdomain.features[feature_type].values():
-            boundary_data[f.info["ID"]] = _voxels.get_boundary_data(
+        for feature_id, feature in subdomain.features[feature_type].items():
+            boundary_data[feature_id] = _voxels.get_boundary_data(
                 img,
                 n_labels,
-                f.loop,
+                feature.loop,
                 subdomain.domain_voxels,
                 subdomain.start,
             )
 
             # Sort boundary_voxels to make matching more efficient for large number of labels
-            for voxels in boundary_data[f.info["ID"]]["boundary_voxels"].values():
+            for voxels in boundary_data[feature_id]["boundary_voxels"].values():
                 voxels.sort()
 
     return boundary_data
@@ -94,9 +94,9 @@ def boundary_voxels_pack(subdomain, boundary_voxels):
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
-        for feature in subdomain.features[feature_type].values():
+        for feature_id, feature in subdomain.features[feature_type].items():
             if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
-                send_data[feature.n_proc] = boundary_voxels[feature.info["ID"]]
+                send_data[feature.n_proc] = boundary_voxels[feature_id]
 
     return send_data
 
@@ -115,11 +115,11 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
-        for feature in subdomain.features[feature_type].values():
+        for feature_id, feature in subdomain.features[feature_type].items():
             if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
-                data_out[feature.info["ID"]] = recv_data[feature.info["ID"]]
+                data_out[feature_id] = recv_data[feature_id]
             elif feature.n_proc == subdomain.rank:
-                data_out[feature.info["ID"]] = boundary_voxels[feature.opp_info["ID"]]
+                data_out[feature_id] = boundary_voxels[feature.opp_info]
 
     return data_out
 
@@ -131,15 +131,15 @@ def match_boundary_voxels(subdomain, boundary_voxels, recv_data):
     feature_types = ["faces", "edges", "corners"]
     feature_types = ["edges", "corners"]
     for feature_type in feature_types:
-        for feature in subdomain.features[feature_type].values():
-            if feature.info["ID"] in recv_data:
+        for feature_id, feature in subdomain.features[feature_type].items():
+            if feature_id in recv_data:
                 print(
-                    feature.info["ID"],
-                    feature.opp_info["ID"],
-                    boundary_voxels[feature.info["ID"]],
-                    recv_data[feature.info["ID"]],
+                    feature_id,
+                    feature.opp_info,
+                    boundary_voxels[feature_id],
+                    recv_data[feature_id],
                 )
                 _voxels.match_boundary_voxels(
-                    boundary_voxels[feature.info["ID"]],
-                    recv_data[feature.info["ID"]],
+                    boundary_voxels[feature_id],
+                    recv_data[feature_id],
                 )

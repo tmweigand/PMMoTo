@@ -137,68 +137,69 @@ def test_set_opposite_feature():
         )
 
 
-# def test_feature_loop():
-#     """
-#     Test subdomain features
-#     """
+def test_feature_loop():
+    """
+    Test subdomain features
+    """
 
-#     # subdomain_map = [1, 1, 1]
-#     subdomain_map = [5, 5, 5]
+    subdomain_map = [1, 1, 1]
+    # subdomain_map = [5, 5, 5]
 
-#     voxels = (100, 100, 100)
+    voxels = (10, 10, 10)
 
-#     box = [[0, 10], [0, 10], [0, 10]]
-#     # boundaries = [[0, 0], [0, 0], [0, 0]]
-#     boundaries = [[2, 2], [2, 2], [2, 2]]
-#     inlet = [[0, 0], [0, 0], [0, 0]]
-#     outlet = [[0, 0], [0, 0], [0, 0]]
+    box = [[0, 10], [0, 10], [0, 10]]
+    # boundaries = [[0, 0], [0, 0], [0, 0]]
+    # boundaries = [[2, 2], [0, 0], [0, 0]]
+    boundaries = [[2, 2], [2, 2], [2, 2]]
+    inlet = [[0, 0], [0, 0], [0, 0]]
+    outlet = [[0, 0], [0, 0], [0, 0]]
 
-#     save_data = True
+    save_data = True
 
-#     sd = {}
-#     domain = {}
-#     grid = {}
+    sd = {}
+    domain = {}
+    grid = {}
 
-#     size = np.prod(subdomain_map)
+    size = np.prod(subdomain_map)
 
-#     for rank in range(size):
-#         sd[rank], domain[rank] = pmmoto.initialize(
-#             box=box,
-#             subdomain_map=subdomain_map,
-#             voxels=voxels,
-#             boundaries=boundaries,
-#             inlet=inlet,
-#             outlet=outlet,
-#             rank=rank,
-#             mpi_size=size,
-#             reservoir_voxels=0,
-#         )
-#         grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-#         for f in sd[rank].features["faces"].values():
-#             for i in range(f.loop[0][0], f.loop[0][1]):
-#                 for j in range(f.loop[1][0], f.loop[1][1]):
-#                     for k in range(f.loop[2][0], f.loop[2][1]):
-#                         grid[rank][i, j, k] = 1
+    for rank in range(size):
+        sd[rank], domain[rank] = pmmoto.initialize(
+            box=box,
+            subdomain_map=subdomain_map,
+            voxels=voxels,
+            boundaries=boundaries,
+            inlet=inlet,
+            outlet=outlet,
+            rank=rank,
+            mpi_size=size,
+            reservoir_voxels=0,
+        )
+        grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
+        for f in sd[rank].features["faces"].values():
+            for i in range(f.loop[0][0], f.loop[0][1]):
+                for j in range(f.loop[1][0], f.loop[1][1]):
+                    for k in range(f.loop[2][0], f.loop[2][1]):
+                        grid[rank][i, j, k] = 1
 
-#         assert np.sum(grid[rank]) == 3888
+        # assert np.sum(grid[rank]) == 3888
 
-#         grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-#         for f in sd[rank].features["edges"].values():
-#             for i in range(f.loop[0][0], f.loop[0][1]):
-#                 for j in range(f.loop[1][0], f.loop[1][1]):
-#                     for k in range(f.loop[2][0], f.loop[2][1]):
-#                         grid[rank][i, j, k] = 2
+        # grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
+        for f in sd[rank].features["edges"].values():
+            for i in range(f.loop[0][0], f.loop[0][1]):
+                for j in range(f.loop[1][0], f.loop[1][1]):
+                    for k in range(f.loop[2][0], f.loop[2][1]):
+                        grid[rank][i, j, k] = 2
 
-#         assert np.sum(grid[rank]) == 1728
+        # assert np.sum(grid[rank]) == 1728
 
-#         grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-#         for f in sd[rank].features["corners"].values():
-#             for i in range(f.loop[0][0], f.loop[0][1]):
-#                 for j in range(f.loop[1][0], f.loop[1][1]):
-#                     for k in range(f.loop[2][0], f.loop[2][1]):
-#                         grid[rank][i, j, k] = 5
+        # grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
+        for f in sd[rank].features["corners"].values():
+            for i in range(f.loop[0][0], f.loop[0][1]):
+                for j in range(f.loop[1][0], f.loop[1][1]):
+                    for k in range(f.loop[2][0], f.loop[2][1]):
+                        grid[rank][i, j, k] = 5
 
-#         assert np.sum(grid[rank]) == 320
+        # assert np.sum(grid[rank]) == 320
 
-#     if save_data:
-#         pmmoto.io.save_grid_data("data_out/test_output", sd, grid)
+    if save_data:
+        pmmoto.io.save_grid_data("data_out/test_output", sd, grid)

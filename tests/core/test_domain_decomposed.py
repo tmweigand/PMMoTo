@@ -126,13 +126,3 @@ def test_maps():
     )
 
     pmmoto_decomposed_domain.initialize_subdomain(0)
-
-    # print()
-    # print()
-    # print(pmmoto_decomposed_domain.boundary_features)
-
-    # print(
-    #     pmmoto_decomposed_domain.get_subdomain_boundaries((0, 0, 0)),
-    #     pmmoto_decomposed_domain.map,
-    #     pmmoto_decomposed_domain.boundary_features,
-    # )

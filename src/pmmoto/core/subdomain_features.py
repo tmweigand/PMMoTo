@@ -30,12 +30,17 @@ class Face(Feature):
     Face information for a subdomain
     """
 
-    def __init__(self, ID, n_proc, boundary, boundary_type=None):
+    def __init__(
+        self, ID, n_proc, boundary, boundary_type=None, global_boundary_feature=None
+    ):
         super().__init__(ID, n_proc, boundary)
         self.info = orientation.faces[ID]
         self.global_boundary = self.get_global_boundary(boundary_type)
         self.periodic = self.is_periodic(boundary)
-        self.opp_info = orientation.faces[ID]["opp"]
+        if global_boundary_feature is not None:
+            self.opp_info = global_boundary_feature
+        else:
+            self.opp_info = orientation.faces[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction()
 
     def is_periodic(self, boundary_type) -> bool:
@@ -71,31 +76,19 @@ class Edge(Feature):
     There are 12 external corners. All others are termed internal
     """
 
-    def __init__(self, ID, n_proc, boundary, boundary_type):
+    def __init__(
+        self, ID, n_proc, boundary, boundary_type, global_boundary_feature=None
+    ):
         super().__init__(ID, n_proc, boundary)
         self.info = orientation.edges[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.global_boundary = self.get_global_boundary()
-        if self.periodic:
-            self.opp_info = self.set_opposite_feature(boundary_type)
+        if global_boundary_feature is not None:
+            self.opp_info = global_boundary_feature
         else:
             self.opp_info = orientation.edges[orientation.edges[ID]["opp"]]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
-
-    def set_opposite_feature(self, boundary_type):
-        """
-        Args:
-            boundary_type (_type_): _description_
-        """
-        opp_feature_id = [0, 0, 0]
-        for n in [0, 1, 2]:
-            if self.ID[n] != 0 and boundary_type[n * 2] == 2:
-                opp_feature_id[n] = -self.ID[n]
-            elif self.ID[n] != 0 and boundary_type[n * 2] != 2:
-                opp_feature_id[n] = self.ID[n]
-
-        # return orientation.edges[orientation.edges[_id]["oppIndex"]]
 
     def is_periodic(self, boundary_type) -> bool:
         """Determine if an edge is a periodic edge
@@ -163,13 +156,18 @@ class Corner(Feature):
     There are 8 external corners. All others are termed internal
     """
 
-    def __init__(self, ID, n_proc, boundary, boundary_type, edges):
+    def __init__(
+        self, ID, n_proc, boundary, boundary_type, edges, global_boundary_feature=None
+    ):
         super().__init__(ID, n_proc, boundary)
         self.info = orientation.corners[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.external_edges = self.collect_external_edges(edges)
-        self.opp_info = orientation.corners[ID]["opp"]
+        if global_boundary_feature is not None:
+            self.opp_info = global_boundary_feature
+        else:
+            self.opp_info = orientation.corners[orientation.corners[ID]["opp"]]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
         self.global_boundary = self.get_global_boundary()
 
@@ -242,7 +240,9 @@ class Corner(Feature):
                 self.extend[n][1] = 0
 
 
-def collect_features(neighbor_ranks, boundaries, boundary_types, voxels):
+def collect_features(
+    neighbor_ranks, boundaries, boundary_types, global_boundary_features, voxels
+):
     """
     Collect information for faces, edges, and corners
     """
@@ -259,6 +259,7 @@ def collect_features(neighbor_ranks, boundaries, boundary_types, voxels):
                 neighbor_ranks[feature],
                 boundaries[feature],
                 boundary_types[feature],
+                global_boundary_features[feature],
             )
         else:
             faces[feature] = Face(
@@ -271,7 +272,11 @@ def collect_features(neighbor_ranks, boundaries, boundary_types, voxels):
     ### Edges
     for feature in orientation.edges.keys():
         edges[feature] = Edge(
-            feature, neighbor_ranks[feature], boundaries[feature], boundary_types
+            feature,
+            neighbor_ranks[feature],
+            boundaries[feature],
+            boundary_types,
+            global_boundary_features[feature],
         )
         edges[feature].loop = get_feature_voxels(feature, voxels)
 
@@ -283,6 +288,7 @@ def collect_features(neighbor_ranks, boundaries, boundary_types, voxels):
             boundaries[feature],
             boundary_types,
             edges,
+            global_boundary_features[feature],
         )
         corners[feature].loop = get_feature_voxels(feature, voxels)
 
