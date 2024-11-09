@@ -1,6 +1,7 @@
 """subdomain_features.py"""
 
 import numpy as np
+import itertools
 from . import orientation
 
 __all__ = ["collect_features", "get_feature_voxels"]
@@ -37,10 +38,10 @@ class Face(Feature):
         self.info = orientation.faces[ID]
         self.global_boundary = self.get_global_boundary(boundary_type)
         self.periodic = self.is_periodic(boundary)
-        if global_boundary_feature is not None:
-            self.opp_info = global_boundary_feature
-        else:
-            self.opp_info = orientation.faces[ID]["opp"]
+        # if global_boundary_feature is not None:
+        #     self.opp_info = global_boundary_feature
+        # else:
+        self.opp_info = orientation.faces[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction()
 
     def is_periodic(self, boundary_type) -> bool:
@@ -84,10 +85,10 @@ class Edge(Feature):
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.global_boundary = self.get_global_boundary()
-        if global_boundary_feature is not None:
-            self.opp_info = global_boundary_feature
-        else:
-            self.opp_info = orientation.edges[orientation.edges[ID]["opp"]]
+        # if global_boundary_feature is not None:
+        #     self.opp_info = global_boundary_feature
+        # else:
+        self.opp_info = orientation.edges[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
 
     def is_periodic(self, boundary_type) -> bool:
@@ -164,10 +165,10 @@ class Corner(Feature):
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.external_edges = self.collect_external_edges(edges)
-        if global_boundary_feature is not None:
-            self.opp_info = global_boundary_feature
-        else:
-            self.opp_info = orientation.corners[orientation.corners[ID]["opp"]]
+        # if global_boundary_feature is not None:
+        #     self.opp_info = global_boundary_feature
+        # else:
+        self.opp_info = orientation.corners[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
         self.global_boundary = self.get_global_boundary()
 
@@ -241,7 +242,7 @@ class Corner(Feature):
 
 
 def collect_features(
-    neighbor_ranks, boundaries, boundary_types, global_boundary_features, voxels
+    neighbor_ranks, boundaries, boundary_types, domain_boundary_features, voxels
 ):
     """
     Collect information for faces, edges, and corners
@@ -254,12 +255,16 @@ def collect_features(
     ### Faces
     for feature in orientation.faces.keys():
         if feature in boundary_types:
+            if feature not in domain_boundary_features:
+                domain_boundary_feature = None
+            else:
+                domain_boundary_feature = domain_boundary_features[feature]
             faces[feature] = Face(
                 feature,
                 neighbor_ranks[feature],
                 boundaries[feature],
                 boundary_types[feature],
-                global_boundary_features[feature],
+                domain_boundary_feature,
             )
         else:
             faces[feature] = Face(
@@ -271,24 +276,32 @@ def collect_features(
 
     ### Edges
     for feature in orientation.edges.keys():
+        if feature not in domain_boundary_features:
+            domain_boundary_feature = None
+        else:
+            domain_boundary_feature = domain_boundary_features[feature]
         edges[feature] = Edge(
             feature,
             neighbor_ranks[feature],
             boundaries[feature],
             boundary_types,
-            global_boundary_features[feature],
+            domain_boundary_feature,
         )
         edges[feature].loop = get_feature_voxels(feature, voxels)
 
     ### Corners
     for feature in orientation.corners.keys():
+        if feature not in domain_boundary_features:
+            domain_boundary_feature = None
+        else:
+            domain_boundary_feature = domain_boundary_features[feature]
         corners[feature] = Corner(
             feature,
             neighbor_ranks[feature],
             boundaries[feature],
             boundary_types,
             edges,
-            global_boundary_features[feature],
+            domain_boundary_feature,
         )
         corners[feature].loop = get_feature_voxels(feature, voxels)
 
@@ -320,18 +333,39 @@ def get_feature_voxels(feature_id, voxels, pad=None):
     Returns:
         _type_: _description_
     """
+    padded = True
     if pad is None:
+        padded = False
         pad = [[0, 0], [0, 0], [0, 0]]
-
-    loop = np.zeros([3, 2], dtype=np.uint64)
-
+        loop = {
+            "own": np.zeros([3, 2], dtype=np.uint64),
+        }
+    else:
+        loop = {
+            "own": np.zeros([3, 2], dtype=np.uint64),
+            "neighbor": np.zeros([3, 2], dtype=np.uint64),
+        }
     for n, length in enumerate(voxels):
-        loop[n, 1] = length
         if feature_id[n] == -1:
-            loop[n] = [0, pad[n][0] + 1]
+            if padded:
+                loop["own"][n] = [pad[n][0], pad[n][0] * 2]
+            else:
+                loop["own"][n] = [0, 1]
+            if "neighbor" in loop:
+                loop["neighbor"][n] = [0, pad[n][0]]
         elif feature_id[n] == 1:
-            loop[n] = [length - pad[n][1] - 1, length]
+            if padded:
+                loop["own"][n] = [length - pad[n][1] * 2, length - pad[n][1]]
+            else:
+                loop["own"][n] = [length - 2, length - 1]
+            if "neighbor" in loop:
+                loop["neighbor"][n] = [length - pad[n][1], length]
         else:
-            loop[n] = [pad[n][0] + 1, length - pad[n][1] - 1]
+            if padded:
+                loop["own"][n] = [pad[n][0], length - pad[n][1]]
+            else:
+                loop["own"][n] = [0, length - 1]
+            if "neighbor" in loop:
+                loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
 
     return loop

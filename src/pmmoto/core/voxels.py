@@ -2,6 +2,7 @@
 
 import numpy as np
 from . import _voxels
+from . import communication
 
 
 __all__ = [
@@ -9,38 +10,31 @@ __all__ = [
     "get_boundary_voxels",
     "get_label_phase_info",
     "count_label_voxels",
-    "match_boundary_voxels",
+    "match_neighbor_boundary_voxels",
+    "match_global_boundary_voxels",
 ]
 
 
-def get_boundary_voxels(subdomain, img, n_labels):
+def get_boundary_voxels(subdomain, img):
     """_summary_
 
     Args:
+        subdomain (_type_): _description_
         img (_type_): _description_
-        label_grid (_type_): _description_
-        n_labels (_type_): _description_
-        phase_map (_type_): _description_
-        inlet (_type_): _description_
-        outlet (_type_): _description_
     """
-    boundary_data = {}
+    out_voxels = {"own": {}, "neighbor": {}}
+
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            boundary_data[feature_id] = _voxels.get_boundary_data(
-                img,
-                n_labels,
-                feature.loop,
-                subdomain.domain_voxels,
-                subdomain.start,
-            )
+            for kind, out in out_voxels.items():
+                out[feature_id] = img[
+                    feature.loop[kind][0][0] : feature.loop[kind][0][1],
+                    feature.loop[kind][1][0] : feature.loop[kind][1][1],
+                    feature.loop[kind][2][0] : feature.loop[kind][2][1],
+                ].flatten()
 
-            # Sort boundary_voxels to make matching more efficient for large number of labels
-            for voxels in boundary_data[feature_id]["boundary_voxels"].values():
-                voxels.sort()
-
-    return boundary_data
+    return out_voxels
 
 
 def get_id(x, total_voxels):
@@ -90,15 +84,32 @@ def boundary_voxels_pack(subdomain, boundary_voxels):
     """
     This function packs the data to send based on get_boundary_voxels
     """
-    send_data = {}
+    send_data = {"own": {}, "neighbor": {}}
+    periodic_data = {"own": {}, "neighbor": {}}
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
             if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
-                send_data[feature.n_proc] = boundary_voxels[feature_id]
+                send_data["own"][feature_id] = {
+                    "rank": subdomain.rank,
+                    "data": boundary_voxels["own"][feature_id],
+                }
+                send_data["neighbor"][feature_id] = {
+                    "rank": subdomain.rank,
+                    "data": boundary_voxels["neighbor"][feature_id],
+                }
+            if feature.n_proc == subdomain.rank:
+                periodic_data["own"][feature_id] = {
+                    "rank": subdomain.rank,
+                    "data": boundary_voxels["own"][feature_id],
+                }
+                periodic_data["neighbor"][feature_id] = {
+                    "rank": subdomain.rank,
+                    "data": boundary_voxels["neighbor"][feature_id],
+                }
 
-    return send_data
+    return send_data, periodic_data
 
 
 def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
@@ -124,22 +135,61 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
     return data_out
 
 
-def match_boundary_voxels(subdomain, boundary_voxels, recv_data):
+def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
     """
-    Match the boundary voxels
+    Matches boundary voxels of the subdomain with neighboring voxels and returns unique matches.
+
+    Args:
+        subdomain (object): Subdomain object containing feature information.
+        boundary_voxels (dict): Dictionary with 'own' and 'neighbor' boundary voxel data.
+        recv_data (dict): Received data containing neighbor voxel information.
+
+    Returns:
+        list: Unique matches in the format
+            (subdomain rank, own voxel, neighbor rank, neighbor voxel).
     """
+    unique_matches = []
+
     feature_types = ["faces", "edges", "corners"]
-    feature_types = ["edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            if feature_id in recv_data:
-                print(
-                    feature_id,
-                    feature.opp_info,
-                    boundary_voxels[feature_id],
-                    recv_data[feature_id],
+            if feature.opp_info in recv_data["neighbor"]:
+                to_match = np.stack(
+                    [
+                        np.concatenate(
+                            (
+                                boundary_voxels["own"][feature_id],
+                                boundary_voxels["neighbor"][feature_id],
+                            )
+                        ),
+                        np.concatenate(
+                            (
+                                recv_data["neighbor"][feature.opp_info]["data"],
+                                recv_data["own"][feature.opp_info]["data"],
+                            )
+                        ),
+                    ],
+                    axis=1,
                 )
-                _voxels.match_boundary_voxels(
-                    boundary_voxels[feature_id],
-                    recv_data[feature_id],
-                )
+
+                for match in np.unique(to_match, axis=0):
+                    match_tuple = (
+                        subdomain.rank,
+                        match[0],
+                        recv_data["own"][feature.opp_info]["rank"],
+                        match[1],
+                    )
+                    if match_tuple not in unique_matches:
+                        unique_matches.append(match_tuple)
+
+    return unique_matches
+
+
+def match_global_boundary_voxels(subdomain, matches):
+    """_summary_
+
+    Args:
+        subdomain (_type_): _description_
+        matches (_type_): _description_
+    """
+    all_matches = communication.gather(matches)

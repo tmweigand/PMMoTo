@@ -4,6 +4,10 @@ from libcpp cimport bool
 from libcpp.utility cimport pair
 from libcpp.algorithm cimport binary_search
 
+cdef inline  npy_intp mod(npy_intp a, npy_intp base):    
+  return ((a % base) + base) % base;
+
+
 cdef inline bool _match_boundary_voxels(vector[npy_intp] list1, vector[npy_intp] list2):
     """
     Input: Two Sorted Lists

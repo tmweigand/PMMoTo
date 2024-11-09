@@ -19,6 +19,7 @@ def initialize(
     reservoir_voxels=0,
     rank=0,
     mpi_size=1,
+    pad=(1, 1, 1),
 ):
     """
     Initialize PMMoTo domain and subdomain classes and check for valid inputs.
@@ -45,7 +46,7 @@ def initialize(
     pmmoto_subdomain = pmmoto_decomposed_domain.initialize_subdomain(rank)
 
     padded_subdomain = subdomain_padded.PaddedSubdomain.from_subdomain(
-        subdomain=pmmoto_subdomain, pad=(1, 1, 1), reservoir_voxels=reservoir_voxels
+        subdomain=pmmoto_subdomain, pad=pad, reservoir_voxels=reservoir_voxels
     )
 
     return padded_subdomain, pmmoto_decomposed_domain

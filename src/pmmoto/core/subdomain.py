@@ -20,8 +20,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         num_subdomains: int,
         domain_voxels: tuple[int, int, int],
         neighbor_ranks={},
-        boundary_types=None,
-        global_boundary_features=None,
+        boundary_types={},
+        global_boundary_features={},
         **kwargs,
     ):
         super().__init__(**kwargs)

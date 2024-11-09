@@ -6,6 +6,7 @@ import numpy as np
 from mpi4py import MPI
 
 __all__ = [
+    "gather",
     "update_buffer",
     "generate_halo",
     "pass_external_data",
@@ -17,13 +18,29 @@ __all__ = [
 comm = MPI.COMM_WORLD
 
 
+def gather(data):
+    """_summary_
+
+    Args:
+        data (_type_): _description_
+    """
+    all_data = comm.gather(data, root=0)
+
+    return all_data
+
+
 def update_buffer(subdomain, grid):
     """
-    Organize the communication to update the padding/buffer on subdomains
+    Organize the communication to update the padding/buffer on subdomains account for periodic boundary conditions here
     """
-    buffer_data = buffer_pack(subdomain, grid)
-    f, e, c = communicate(subdomain, buffer_data)
-    buffer_grid = buffer_unpack(subdomain, grid, f, e, c)
+    send_data, own_data = buffer_pack(subdomain, grid)
+
+    if send_data:
+        recv_data = communicate_NEW(subdomain, send_data)
+        own_data.update(recv_data)
+
+    buffer_grid = buffer_unpack(subdomain, grid, own_data)
+
     return buffer_grid
 
 
@@ -63,111 +80,47 @@ def buffer_pack(subdomain, grid):
     for faces, edges and corners.
     """
 
-    pad = np.zeros([subdomain.dims * 2], dtype=int)
-    for n in range(subdomain.dims):
-        pad[n * 2] = subdomain.pad[n][0]
-        pad[n * 2 + 1] = subdomain.pad[n][1]
-
-    send_faces, send_edges, send_corners = orientation.get_send_buffer(pad, grid.shape)
-
     buffer_data = {}
+    periodic_data = {}
     for feature, n_proc in subdomain.neighbor_ranks.items():
         if n_proc > -1 and n_proc != subdomain.rank:
             buffer_data[n_proc] = {"ID": {}}
             buffer_data[n_proc]["ID"][feature] = None
 
-    slices = send_faces
-    for face in subdomain.features["faces"]:
-        if (
-            subdomain.features["faces"][face].n_proc > -1
-            and subdomain.features["faces"][face].n_proc != subdomain.rank
-        ):
-            s = slices[face.ID, :]
-            buffer_data[face.n_proc]["ID"][face.info["ID"]] = grid[s[0], s[1], s[2]]
-
-    slices = send_edges
-    for edge in subdomain.features["edges"]:
-        if (
-            subdomain.features["edges"][edge].n_proc > -1
-            and subdomain.features["edges"][edge].n_proc != subdomain.rank
-        ):
-            s = slices[edge.ID, :]
-            buffer_data[edge.n_proc]["ID"][edge.info["ID"]] = grid[s[0], s[1], s[2]]
-
-    slices = send_corners
-    for corner in subdomain.features["corners"]:
-        if (
-            subdomain.features["corners"][corner].n_proc > -1
-            and subdomain.features["corners"][corner].n_proc != subdomain.rank
-        ):
-            s = slices[corner.ID, :]
-            buffer_data[corner.n_proc]["ID"][corner.info["ID"]] = grid[s[0], s[1], s[2]]
-
-    return buffer_data
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature_id, feature in subdomain.features[feature_type].items():
+            if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
+                buffer_data[feature.n_proc]["ID"][feature_id] = grid[
+                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                ]
+            elif feature.n_proc == subdomain.rank:
+                periodic_data[feature_id] = grid[
+                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                ]
+    return buffer_data, periodic_data
 
 
-def buffer_unpack(subdomain, grid, face_recv, edge_recv, corner_recv):
+def buffer_unpack(subdomain, grid, features_recv):
     """
     Unpack buffer information and account for serial periodic boundary conditions
     """
 
-    pad = np.zeros([subdomain.dims * 2], dtype=int)
-    for n in range(subdomain.dims):
-        pad[n * 2] = subdomain.pad[n][0]
-        pad[n * 2 + 1] = subdomain.pad[n][1]
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature in subdomain.features[feature_type].values():
+            if feature.opp_info in features_recv:
+                grid[
+                    feature.loop["neighbor"][0][0] : feature.loop["neighbor"][0][1],
+                    feature.loop["neighbor"][1][0] : feature.loop["neighbor"][1][1],
+                    feature.loop["neighbor"][2][0] : feature.loop["neighbor"][2][1],
+                ] = features_recv[feature.opp_info]
 
-    buffer_grid = np.copy(grid)
-    recv_faces, recv_edges, recv_corners = orientation.get_recv_buffer(
-        pad, buffer_grid.shape
-    )
-    send_faces, send_edges, send_corners = orientation.get_send_buffer(pad, grid.shape)
-
-    #### Faces ####
-    r_slices = recv_faces
-    s_slices = send_faces
-    for _face in subdomain.features["faces"]:
-        face = subdomain.features["faces"][_face]
-        if face.n_proc > -1 and face.n_proc != subdomain.rank:
-            r_s = r_slices[face.ID, :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = face_recv[face.ID]["ID"][
-                face.opp_info["ID"]
-            ]
-        elif face.n_proc == subdomain.rank:
-            r_s = r_slices[face.ID, :]
-            s_s = s_slices[face.info["oppIndex"], :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = grid[s_s[0], s_s[1], s_s[2]]
-
-    #### Edges ####
-    r_slices = recv_edges
-    s_slices = send_edges
-    for _edge in subdomain.features["edges"]:
-        edge = subdomain.features["edges"][_edge]
-        if edge.n_proc > -1 and edge.n_proc != subdomain.rank:
-            r_s = r_slices[edge.ID, :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = edge_recv[edge.ID]["ID"][
-                edge.opp_info["ID"]
-            ]
-        elif edge.n_proc == subdomain.rank:
-            r_s = r_slices[edge.ID, :]
-            s_s = s_slices[edge.info["oppIndex"], :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = grid[s_s[0], s_s[1], s_s[2]]
-
-    #### Corners ####
-    r_slices = recv_corners
-    s_slices = send_corners
-    for _corner in subdomain.features["corners"]:
-        corner = subdomain.features["corners"][_corner]
-        if corner.n_proc > -1 and corner.n_proc != subdomain.rank:
-            r_s = r_slices[corner.ID, :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = corner_recv[corner.ID]["ID"][
-                corner.opp_info["ID"]
-            ]
-        elif corner.n_proc == subdomain.rank:
-            r_s = r_slices[corner.ID, :]
-            s_s = s_slices[corner.info["oppIndex"], :]
-            buffer_grid[r_s[0], r_s[1], r_s[2]] = grid[s_s[0], s_s[1], s_s[2]]
-
-    return buffer_grid
+    return grid
 
 
 def halo_pack(subdomain, grid, halo):
@@ -485,20 +438,21 @@ def communicate(subdomain, send_data):
     """
     Send data between processes for faces, edges, and corners.
     """
-    recv_face = send_recv(
+    out_features = {}
+    out_features["faces"] = send_recv(
         subdomain.rank, subdomain.features["faces"], orientation.num_faces, send_data
     )
-    recv_edge = send_recv(
+    out_features["edges"] = send_recv(
         subdomain.rank, subdomain.features["edges"], orientation.num_edges, send_data
     )
-    recv_corner = send_recv(
+    out_features["corners"] = send_recv(
         subdomain.rank,
         subdomain.features["corners"],
         orientation.num_corners,
         send_data,
     )
 
-    return recv_face, recv_edge, recv_corner
+    return out_features
 
 
 def communicate_NEW(subdomain, send_data):
@@ -538,7 +492,7 @@ def send_recv(rank, features, num_features, send_data):
     recv_data = [None] * num_features
 
     for feature in features.values():
-        opp_neigh = features[feature.info["oppIndex"]].n_proc
+        opp_neigh = features[feature.info["opp"]].n_proc
         if opp_neigh > -1 and feature.n_proc != rank and opp_neigh in send_data:
             reqs[feature.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
         if (

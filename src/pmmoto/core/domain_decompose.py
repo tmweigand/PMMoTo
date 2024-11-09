@@ -17,7 +17,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         super().__init__(**kwargs)
         self.subdomain_map = subdomain_map
         self.num_subdomains = np.prod(self.subdomain_map)
-        self.map, self.global_boundary_features = self.gen_maps()
+        self.map = self.gen_map()
+        # self.global_boundary_features = self.get_global_boundary_feature()
 
     @classmethod
     def from_discretized_domain(cls, discretized_domain, subdomain_map):
@@ -38,9 +39,9 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         voxels = self.get_subdomain_voxels(sd_index)
         box = self.get_subdomain_box(sd_index, voxels)
         boundaries, boundary_types = self.get_subdomain_boundaries(sd_index)
-        global_boundary_features = self.get_subdomain_global_opposite_feature(
-            boundary_types
-        )
+        # global_boundary_features = self.get_subdomain_global_opposite_feature(
+        #     boundary_types
+        # )
         inlet = self.get_subdomain_inlet(sd_index)
         outlet = self.get_subdomain_outlet(sd_index)
         start = self.get_subdomain_start(sd_index)
@@ -58,7 +59,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
             inlet=inlet,
             outlet=outlet,
             voxels=voxels,
-            global_boundary_features=global_boundary_features,
+            # global_boundary_features=global_boundary_features,
         )
 
         return _subdomain
@@ -172,73 +173,41 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
         return outlet
 
-    def gen_maps(self):
+    def gen_map(self):
         """
-        Generate process and boundary condition map. This is accomplished on a per-feature basis
-        despite the boundary conditions being defined on faces. As a result of this, non-fully
-        periodic boundary conditions need to be handled with care due to how padding is performed.
-
-        The output arrays is padded on all dimensions with values of:
-            -3: Periodic
-            -2: Wall Boundary Condition
-            -1: No Assumption Boundary Condition
-            >=0: proc_ID
+        Generate process lookup map.
+        -2: Wall Boundary Condition
+        -1: No Assumption Boundary Condition
+        >=0: proc_ID
         """
-        proc_map = np.arange(np.prod(self.subdomain_map)).reshape(self.subdomain_map)
-        boundary_proc_map = -np.ones(
-            [sd + 2 for sd in self.subdomain_map], dtype=np.int64
+        _map = -np.ones([sd + 2 for sd in self.subdomain_map], dtype=np.int64)
+        _map[1:-1, 1:-1, 1:-1] = np.arange(self.num_subdomains).reshape(
+            self.subdomain_map
         )
-        boundary_features_opp = {}
+        ### Set Boundaries of global SubDomain Map
+        if self.boundaries[0][0] == 1:
+            _map[0, :, :] = -2
+        if self.boundaries[0][1] == 1:
+            _map[-1, :, :] = -2
+        if self.boundaries[1][0] == 1:
+            _map[:, 0, :] = -2
+        if self.boundaries[1][1] == 1:
+            _map[:, -1, :] = -2
+        if self.boundaries[2][0] == 1:
+            _map[:, :, 0] = -2
+        if self.boundaries[2][1] == 1:
+            _map[:, :, -1] = -2
+        if self.boundaries[0][0] == 2:
+            _map[0, :, :] = _map[-2, :, :]
+            _map[-1, :, :] = _map[1, :, :]
+        if self.boundaries[1][0] == 2:
+            _map[:, 0, :] = _map[:, -2, :]
+            _map[:, -1, :] = _map[:, 1, :]
+        if self.boundaries[2][0] == 2:
+            _map[:, :, 0] = _map[:, :, -2]
+            _map[:, :, -1] = _map[:, :, 1]
 
-        feature_types = ["faces", "edges", "corners"]
-        for feature_type in feature_types:
-            features = orientation.features[feature_type].keys()
-
-            for feature in features:
-                loop = subdomain_features.get_feature_voxels(
-                    feature, boundary_proc_map.shape
-                )
-
-                for i in range(loop[0][0], loop[0][1]):
-                    for j in range(loop[1][0], loop[1][1]):
-                        for k in range(loop[2][0], loop[2][1]):
-
-                            i_per = (i - 1) % self.subdomain_map[0]
-                            j_per = (j - 1) % self.subdomain_map[1]
-                            k_per = (k - 1) % self.subdomain_map[2]
-
-                            opp = [-f for f in feature]
-
-                            if self.boundaries[0][0] != 2:
-                                i_per = (i - 1 - feature[0]) % self.subdomain_map[0]
-                                opp[0] = -opp[0]
-                            if self.boundaries[1][0] != 2:
-                                j_per = (j - 1 - feature[1]) % self.subdomain_map[1]
-                                opp[1] = -opp[1]
-                            if self.boundaries[2][0] != 2:
-                                k_per = (k - 1 - feature[2]) % self.subdomain_map[2]
-                                opp[2] = -opp[2]
-
-                            if (
-                                (feature[0] != 0 and self.boundaries[0][0] == 1)
-                                or (feature[1] != 0 and self.boundaries[1][0] == 1)
-                                or (feature[2] != 0 and self.boundaries[2][0] == 1)
-                            ):
-                                boundary_proc_map[i, j, k] = -2
-                                boundary_features_opp[feature] = "wall"
-
-                            elif (
-                                (feature[0] != 0 and self.boundaries[0][0] == 2)
-                                or (feature[1] != 0 and self.boundaries[1][0] == 2)
-                                or (feature[2] != 0 and self.boundaries[2][0] == 2)
-                            ):
-
-                                boundary_proc_map[i, j, k] = proc_map[
-                                    i_per, j_per, k_per
-                                ]
-                                boundary_features_opp[feature] = tuple(opp)
-
-        return boundary_proc_map, boundary_features_opp
+        return _map
 
     def get_subdomain_global_opposite_feature(self, boundary_types):
         """

@@ -17,12 +17,52 @@ from libc.stdio cimport printf
 from numpy cimport npy_intp, npy_int8, uint64_t, int64_t, uint8_t
 
 from . import orientation
-# from . import _Orientation
-# from . cimport _Orientation
 
 # __all__ = [
 #     "_get_id"
 # ]
+
+
+def _merge_matched_voxels(all_match_data):
+    """
+    Connect all matched voxels from entire domain
+    """
+
+    # Convert list of lists to list and create keys
+    matches = []
+    all_matches = {}
+    for mathces_by_rank in all_match_data:
+        for rank,match in mathces_by_rank['matched_sets'].items():
+            matches.append(match)
+            all_matches[rank] = match
+
+    # Loop through all matched sets
+    merged_sets = 0
+    for match in matches:
+        if not match.visited:
+            match.visited = True
+            queue = [match.ID]
+            connections = [match.ID]
+
+            while len(queue) > 0:
+            
+                current_match = all_matches[queue.pop()]
+                        
+                for n_ID in current_match.n_ID:
+                    if not all_matches[n_ID].visited:
+                        all_matches[n_ID].visited = True
+                        queue.append(n_ID)
+                        connections.append(n_ID)
+
+            for connect in connections:
+                all_matches[connect].n_ID = connections
+                all_matches[connect].global_ID = merged_sets
+
+            if connections:
+                        merged_sets += 1
+
+    return matches,merged_sets
+
 
 
 def match_boundary_voxels(own_data,neighbor_data):
@@ -46,12 +86,12 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
         - Global or local ID of the voxel.
     Periodic boundary conditions are applied by using modulo arithmetic.
     """
-    cdef Py_ssize_t index_0, index_1, index_2
+    cdef uint64_t index_0, index_1, index_2
 
     # Use modulo to handle periodic boundary conditions
-    index_0 = x[0] % voxels[0]
-    index_1 = x[1] % voxels[1]
-    index_2 = x[2] % voxels[2]
+    index_0 = mod(x[0], voxels[0])
+    index_1 = mod(x[1], voxels[1])
+    index_2 = mod(x[2], voxels[2])
 
     cdef uint64_t id = index_0 * voxels[1] * voxels[2] + index_1 * voxels[2] + index_2
 
@@ -64,7 +104,7 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
 def get_boundary_data(
                 cnp.uint64_t [:,:,:] grid,
                 int n_labels,
-                cnp.uint64_t [:,:] loop,
+                dict loop_dict,
                 tuple domain_voxels,
                 tuple index
                 ):
@@ -85,18 +125,18 @@ def get_boundary_data(
     for _ in range(0,n_labels):
         boundary.push_back(False)
 
-    for i in range(loop[0][0],loop[0][1]):
-        for j in range(loop[1][0],loop[1][1]):
-            for k in range(loop[2][0],loop[2][1]):
-                label = grid[i,j,k]
-                boundary[label] = True
-                _index[0] = i+index[0]
-                _index[1] = j+index[1]
-                _index[2] = k+index[2]
-                b_nodes[label].push_back(
-                    get_id(_index,domain_nodes)
-                    )
-
+    for loop in loop_dict.values():
+        for i in range(loop[0][0],loop[0][1]):
+            for j in range(loop[1][0],loop[1][1]):
+                for k in range(loop[2][0],loop[2][1]):
+                    label = grid[i,j,k]
+                    boundary[label] = True
+                    _index[0] = i+index[0]
+                    _index[1] = j+index[1]
+                    _index[2] = k+index[2]
+                    b_nodes[label].push_back(
+                        get_id(_index,domain_nodes)
+                        )
     
 
     output = {

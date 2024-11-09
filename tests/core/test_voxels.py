@@ -13,6 +13,11 @@ def test_voxls_get_id():
     id = pmmoto.core.voxels.get_id(x, v)
     assert id == 42
 
+    x = [-1, -1, -1]
+    v = [10, 10, 10]
+    id = pmmoto.core.voxels.get_id(x, v)
+    assert id == 999
+
 
 # def test_voxels(domain, domain_decomposed, domain_discretization, subdomains):
 
@@ -59,7 +64,7 @@ def test_voxls_get_id():
 # pmmoto.core.voxels.count_label_voxels(grid, map)
 
 
-def test_boundary_set_info():
+def test_boundary_voxel_info():
     """
     Test  subdomain features
     """
@@ -72,7 +77,7 @@ def test_boundary_set_info():
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
     # boundaries = [[2, 2], [0, 0], [0, 0]]
-    boundaries = [[2, 2], [2, 2], [2, 2]]
+    boundaries = [[0, 0], [0, 0], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -97,17 +102,29 @@ def test_boundary_set_info():
             reservoir_voxels=0,
         )
 
-        grid = np.zeros(sd[rank].voxels, dtype=np.uint64)
-
-        # grid[0:2, :, :] = 1
-        data = pmmoto.core.voxels.get_boundary_voxels(
-            subdomain=sd[rank], img=grid, n_labels=2
+        grid = np.arange(np.prod(sd[rank].voxels), dtype=np.uint64).reshape(
+            sd[rank].voxels
         )
 
-        print(data)
+        grid = pmmoto.core.communication.update_buffer(sd[rank], grid)
 
-        send_data = pmmoto.core.voxels.boundary_voxels_pack(sd[rank], data)
-        # # if send_data:
-        # #     recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
-        recv_data = pmmoto.core.voxels.boundary_voxels_unpack(sd[rank], data, data)
-        pmmoto.core.voxels.match_boundary_voxels(sd[rank], data, recv_data)
+        data = pmmoto.core.voxels.get_boundary_voxels(
+            subdomain=sd[rank],
+            img=grid,
+        )
+
+        send_data, own_data = pmmoto.core.voxels.boundary_voxels_pack(sd[rank], data)
+
+        if send_data:
+            recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
+            own_data.update(recv_data)
+
+        matches = pmmoto.core.voxels.match_neighbor_boundary_voxels(
+            sd[rank], data, own_data
+        )
+
+
+def test_merge_matched_voxels():
+    """
+    Test merge matched voxels
+    """

@@ -111,7 +111,7 @@ def test_set_opposite_feature():
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
-    boundaries = [[2, 2], [0, 0], [0, 0]]
+    boundaries = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -143,9 +143,9 @@ def test_feature_loop():
     """
 
     subdomain_map = [1, 1, 1]
-    # subdomain_map = [5, 5, 5]
+    # subdomain_map = [2, 2, 2]
 
-    voxels = (10, 10, 10)
+    voxels = (50, 50, 50)
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
@@ -173,33 +173,33 @@ def test_feature_loop():
             rank=rank,
             mpi_size=size,
             reservoir_voxels=0,
+            pad=(3, 3, 3),
         )
         grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-        for f in sd[rank].features["faces"].values():
-            for i in range(f.loop[0][0], f.loop[0][1]):
-                for j in range(f.loop[1][0], f.loop[1][1]):
-                    for k in range(f.loop[2][0], f.loop[2][1]):
-                        grid[rank][i, j, k] = 1
+        feature_types = [
+            "faces",
+        ]
+        for feature_type in feature_types:
+            for feature_id, feature in sd[rank].features[feature_type].items():
 
-        # assert np.sum(grid[rank]) == 3888
+                _shape = grid[rank].shape
+                loop_both = pmmoto.core.subdomain_features.get_feature_voxels(
+                    feature_id,
+                    _shape,
+                    sd[rank].pad,
+                )
 
-        # grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-        for f in sd[rank].features["edges"].values():
-            for i in range(f.loop[0][0], f.loop[0][1]):
-                for j in range(f.loop[1][0], f.loop[1][1]):
-                    for k in range(f.loop[2][0], f.loop[2][1]):
-                        grid[rank][i, j, k] = 2
+                grid[rank][
+                    loop_both["own"][0][0] : loop_both["own"][0][1],
+                    loop_both["own"][1][0] : loop_both["own"][1][1],
+                    loop_both["own"][2][0] : loop_both["own"][2][1],
+                ] = 1
 
-        # assert np.sum(grid[rank]) == 1728
-
-        # grid[rank] = np.zeros(sd[rank].voxels, dtype=int)
-        for f in sd[rank].features["corners"].values():
-            for i in range(f.loop[0][0], f.loop[0][1]):
-                for j in range(f.loop[1][0], f.loop[1][1]):
-                    for k in range(f.loop[2][0], f.loop[2][1]):
-                        grid[rank][i, j, k] = 5
-
-        # assert np.sum(grid[rank]) == 320
+                grid[rank][
+                    loop_both["neighbor"][0][0] : loop_both["neighbor"][0][1],
+                    loop_both["neighbor"][1][0] : loop_both["neighbor"][1][1],
+                    loop_both["neighbor"][2][0] : loop_both["neighbor"][2][1],
+                ] = 2
 
     if save_data:
         pmmoto.io.save_grid_data("data_out/test_output", sd, grid)
