@@ -2,7 +2,8 @@ import numpy as np
 import cc3d
 from pmmoto.core import voxels
 from pmmoto.core import sets
-from pmmoto.io import output
+from pmmoto.core import communication
+
 
 __all__ = [
     "connect_all_phases",
@@ -26,47 +27,35 @@ def _connect_components(grid):
 
 
 def connect_all_phases(
-    img, return_grid=False, return_set=False, return_voxel_count=False
+    img, subdomain, return_grid=False, return_set=False, return_voxel_count=False
 ):
     """
     Create sets for all phases in grid
     """
 
     label_grid, label_count = _connect_components(img.grid)
-
-    # Collect phase information
-    # phase_map = _get_boundary_label_phase_map(label_grid,label_count,grid,boundary_node_data)
-    # phase_map = _get_label_phase_map(img, label_grid)
-    phase_count = _phase_count(phase_map)
-
-    print(f"Phase Map {phase_map}")
-    print(f"Phase Count {phase_count}")
-
-    all_sets, local_global_map = sets.create_sets_and_merge(
-        img, label_count, label_count, label_grid, phase_map, img.inlet, img.outlet
+    data = voxels.get_boundary_voxels(
+        subdomain=subdomain,
+        img=img.grid,
     )
 
-    output = {}
+    send_data, own_data = voxels.boundary_voxels_pack(subdomain, data)
 
-    if return_grid:
-        _nodes.renumber_grid(label_grid, local_global_map)
+    if own_data or send_data:
+        if send_data:
+            recv_data = communication.communicate(subdomain, send_data, unpack=True)
+            own_data.update(recv_data)
 
-        if return_voxel_count:
-            voxel_count = {}
-            for n in range(label_count):
-                voxel_count[n] = 0
+        matches = voxels.match_neighbor_boundary_voxels(subdomain, data, own_data)
 
-            voxel_count = _nodes.count_label_voxels(label_grid, voxel_count)
-            output["voxel_count"] = voxel_count
-            output["phase_map"] = phase_map
+        local_global_map = voxels.match_global_boundary_voxels(
+            subdomain, matches, label_count
+        )
 
-        output["grid"] = label_grid
+        print(subdomain.rank, label_count, local_global_map)
+        # voxels.renumber_image(label_grid, local_global_map)
 
-    if return_set:
-        all_sets.update_global_ID(local_global_map)
-        output["sets"] = all_sets
-
-    return output
+    return label_grid
 
 
 def connect_single_phase(img, inlet, outlet, phase=None):

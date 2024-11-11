@@ -6,16 +6,28 @@ import numpy as np
 from mpi4py import MPI
 
 __all__ = [
+    "all_gather",
     "gather",
     "update_buffer",
     "generate_halo",
     "pass_external_data",
     "pass_boundary_sets",
-    "communicate_NEW",
+    "communicate",
 ]
 
 
 comm = MPI.COMM_WORLD
+
+
+def all_gather(data):
+    """_summary_
+
+    Args:
+        data (_type_): _description_
+    """
+    all_data = comm.allgather(data)
+
+    return all_data
 
 
 def gather(data):
@@ -36,7 +48,7 @@ def update_buffer(subdomain, grid):
     send_data, own_data = buffer_pack(subdomain, grid)
 
     if send_data:
-        recv_data = communicate_NEW(subdomain, send_data)
+        recv_data = communicate(subdomain, send_data)
         own_data.update(recv_data)
 
     buffer_grid = buffer_unpack(subdomain, grid, own_data)
@@ -82,21 +94,21 @@ def buffer_pack(subdomain, grid):
 
     buffer_data = {}
     periodic_data = {}
-    for feature, n_proc in subdomain.neighbor_ranks.items():
-        if n_proc > -1 and n_proc != subdomain.rank:
-            buffer_data[n_proc] = {"ID": {}}
-            buffer_data[n_proc]["ID"][feature] = None
+    # for feature, n_proc in subdomain.neighbor_ranks.items():
+    #     if n_proc > -1 and n_proc != subdomain.rank:
+    #         buffer_data[n_proc] = {"ID": {}}
+    #         buffer_data[n_proc]["ID"][feature] = None
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
-                buffer_data[feature.n_proc]["ID"][feature_id] = grid[
+            if feature.neighbor_rank > -1 and feature.neighbor_rank != subdomain.rank:
+                buffer_data[feature_id] = grid[
                     feature.loop["own"][0][0] : feature.loop["own"][0][1],
                     feature.loop["own"][1][0] : feature.loop["own"][1][1],
                     feature.loop["own"][2][0] : feature.loop["own"][2][1],
                 ]
-            elif feature.n_proc == subdomain.rank:
+            elif feature.neighbor_rank == subdomain.rank:
                 periodic_data[feature_id] = grid[
                     feature.loop["own"][0][0] : feature.loop["own"][0][1],
                     feature.loop["own"][1][0] : feature.loop["own"][1][1],
@@ -434,48 +446,31 @@ def boundary_set_unpack(subdomain, sets, face_recv, edge_recv, corner_recv):
     return external_sets
 
 
-def communicate(subdomain, send_data):
+def communicate(subdomain, send_data, unpack=False):
     """
     Send data between processes for faces, edges, and corners.
     """
-    out_features = {}
-    out_features["faces"] = send_recv(
-        subdomain.rank, subdomain.features["faces"], orientation.num_faces, send_data
-    )
-    out_features["edges"] = send_recv(
-        subdomain.rank, subdomain.features["edges"], orientation.num_edges, send_data
-    )
-    out_features["corners"] = send_recv(
-        subdomain.rank,
-        subdomain.features["corners"],
-        orientation.num_corners,
-        send_data,
-    )
-
-    return out_features
-
-
-def communicate_NEW(subdomain, send_data):
-    """
-    Send data between processes for faces, edges, and corners.
-    """
-
-    feature_types = ["faces", "edges", "corners"]
-    counts = [orientation.num_faces, orientation.num_edges, orientation.num_corners]
     recv_data = {}
-
-    for feature_count, feature in zip(counts, feature_types):
+    feature_types = ["faces", "edges", "corners"]
+    for feature in feature_types:
         recv_data[feature] = send_recv(
             subdomain.rank,
             subdomain.features[feature],
-            feature_count,
             send_data,
         )
+
+    if unpack:
+        unpack_recv_data = {}
+        for feature in feature_types:
+            for feature_id, feature in recv_data[feature].items():
+                unpack_recv_data[feature_id] = feature
+
+        return unpack_recv_data
 
     return recv_data
 
 
-def send_recv(rank, features, num_features, send_data):
+def send_recv(rank, features, send_data):
     """_summary_
 
     Args:
@@ -487,32 +482,28 @@ def send_recv(rank, features, num_features, send_data):
         _type_: _description_
     """
 
-    reqs = [None] * num_features
-    reqr = [None] * num_features
-    recv_data = [None] * num_features
+    reqs = {}
+    reqr = {}
+    recv_data = {}
 
-    for feature in features.values():
-        opp_neigh = features[feature.info["opp"]].n_proc
-        if opp_neigh > -1 and feature.n_proc != rank and opp_neigh in send_data:
-            reqs[feature.ID] = comm.isend(send_data[opp_neigh], dest=opp_neigh)
+    for feature_id, feature in features.items():
         if (
-            feature.n_proc > -1
-            and feature.n_proc != rank
-            and feature.n_proc in send_data
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank != rank
+            and feature_id in send_data
         ):
-            reqr[feature.ID] = comm.recv(source=feature.n_proc)
+            reqs[feature_id] = comm.isend(
+                send_data[feature_id], dest=feature.neighbor_rank
+            )
+
+        if (
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank != rank
+            and feature_id in send_data
+        ):
+            reqr[feature_id] = comm.recv(source=feature.neighbor_rank)
 
     # Wait for all sends to complete
-    reqs = [r for r in reqs if r]
-    MPI.Request.waitall(reqs)
+    MPI.Request.waitall(list(reqs.values()))
 
-    # Collect received data
-    for feature in features.values():
-        if (
-            feature.n_proc > -1
-            and feature.n_proc != rank
-            and feature.n_proc in send_data
-        ):
-            recv_data[feature.ID] = reqr[feature.ID]
-
-    return recv_data
+    return reqr

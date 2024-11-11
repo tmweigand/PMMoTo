@@ -16,8 +16,8 @@ def test_connect_sets():
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0, 0], [0, 0], [0, 0]]  # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet = [[0, 0], [0, 0], [1, 0]]
-    outlet = [[0, 0], [0, 0], [0, 1]]
+    inlet = [[0, 0], [0, 0], [0, 0]]
+    outlet = [[0, 0], [0, 0], [0, 0]]
 
     file = "tests/testDomains/50pack.out"
 
@@ -32,7 +32,7 @@ def test_connect_sets():
         outlet=outlet,
         rank=rank,
         mpi_size=size,
-        reservoir_voxels=2,
+        reservoir_voxels=0,
     )
 
     sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
@@ -41,24 +41,13 @@ def test_connect_sets():
         sphere_data,
     )
 
-    connected_sets = pmmoto.filters.connect_all_phases(
-        pm, return_grid=True, return_set=True
-    )
+    connected_sets = pmmoto.filters.connect_all_phases(pm, sd)
 
     if save_data:
 
-        kwargs = {"sets": connected_sets["grid"]}
-        pmmoto.io.save_grid_data(
-            "dataOut/test_connects_sets_grid", sd, pm.grid, **kwargs
-        )
-
-        kwargs = {
-            "inlet": "subdomain_data.inlet",
-            "outlet": "subdomain_data.outlet",
-            "proc": "proc_ID",
-        }
-        pmmoto.io.save_set_data(
-            "dataOut/test_connect_sets", sd, connected_sets["sets"], **kwargs
+        kwargs = {"sets": connected_sets}
+        pmmoto.io.save_grid_data_serial(
+            "data_out/test_connects_sets_grid", sd, domain, pm.grid, **kwargs
         )
 
 

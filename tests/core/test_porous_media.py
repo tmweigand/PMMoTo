@@ -40,12 +40,10 @@ def test_porous_media():
     )
 
     pm.get_porosity()
-    print(pm.porosity)
 
     if save_data:
-
         kwargs = {}
-        pmmoto.io.save_grid_data("dataOut/test_porous_media", sd, pm.grid, **kwargs)
+        pmmoto.io.save_grid_data("data_out/test_porous_media", sd, pm.grid, **kwargs)
 
 
 if __name__ == "__main__":

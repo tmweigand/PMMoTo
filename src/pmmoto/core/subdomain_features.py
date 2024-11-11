@@ -13,9 +13,9 @@ class Feature(object):
     This is the main abstraction for handling boundary conditions and parallel communication
     """
 
-    def __init__(self, ID, n_proc, boundary):
+    def __init__(self, ID, neighbor_rank, boundary):
         self.ID = ID
-        self.n_proc = n_proc
+        self.neighbor_rank = neighbor_rank
         self.boundary = boundary
         self.periodic = False
         self.periodic_correction = (0, 0, 0)
@@ -32,9 +32,14 @@ class Face(Feature):
     """
 
     def __init__(
-        self, ID, n_proc, boundary, boundary_type=None, global_boundary_feature=None
+        self,
+        ID,
+        neighbor_rank,
+        boundary,
+        boundary_type=None,
+        global_boundary_feature=None,
     ):
-        super().__init__(ID, n_proc, boundary)
+        super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.faces[ID]
         self.global_boundary = self.get_global_boundary(boundary_type)
         self.periodic = self.is_periodic(boundary)
@@ -78,9 +83,9 @@ class Edge(Feature):
     """
 
     def __init__(
-        self, ID, n_proc, boundary, boundary_type, global_boundary_feature=None
+        self, ID, neighbor_rank, boundary, boundary_type, global_boundary_feature=None
     ):
-        super().__init__(ID, n_proc, boundary)
+        super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.edges[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
@@ -158,9 +163,15 @@ class Corner(Feature):
     """
 
     def __init__(
-        self, ID, n_proc, boundary, boundary_type, edges, global_boundary_feature=None
+        self,
+        ID,
+        neighbor_rank,
+        boundary,
+        boundary_type,
+        edges,
+        global_boundary_feature=None,
     ):
-        super().__init__(ID, n_proc, boundary)
+        super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.corners[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)

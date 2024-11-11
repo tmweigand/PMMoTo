@@ -11,7 +11,6 @@ class PorousMedia:
     def __init__(self, subdomain, grid):
         self.subdomain = subdomain
         self.grid = grid
-        self.loop_info = np.zeros([orientation.num_faces + 1, 3, 2], dtype=np.int64)
         self.porosity = None
 
         # Set solid phase inlet/outlet to zeros
@@ -53,9 +52,5 @@ def gen_pm(subdomain, grid, res_size=0):
     Gather loop_info for efficient looping
     """
     pm = PorousMedia(subdomain=subdomain, grid=grid)
-    pm.set_wall_bcs()
-    pm.loop_info = orientation.get_loop_info(
-        pm.grid, subdomain, subdomain.inlet, subdomain.outlet, res_size
-    )
 
     return pm

@@ -213,16 +213,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         Determine the opposite feature for domain boundary features
         """
-        global_feature_info = {}
-        for feature_id, bc in boundary_types.items():
-            if bc != "internal" and bc != "end":
-                global_feature_info[feature_id] = self.global_boundary_features[
-                    feature_id
-                ]
-            else:
-                global_feature_info[feature_id] = None
-
-        return global_feature_info
+        pass
 
     def get_neighbor_ranks(self, sd_index: tuple[int, int, int]):
         """

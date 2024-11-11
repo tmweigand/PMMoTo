@@ -70,14 +70,14 @@ def test_boundary_voxel_info():
     """
 
     subdomain_map = [1, 1, 1]
-    # subdomain_map = [2, 2, 2]
+    subdomain_map = [2, 2, 2]
 
     voxels = (10, 10, 10)
 
     box = [[0, 10], [0, 10], [0, 10]]
     # boundaries = [[0, 0], [0, 0], [0, 0]]
     # boundaries = [[2, 2], [0, 0], [0, 0]]
-    boundaries = [[0, 0], [0, 0], [2, 2]]
+    boundaries = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -123,8 +123,21 @@ def test_boundary_voxel_info():
             sd[rank], data, own_data
         )
 
+        pmmoto.core.voxels.match_global_boundary_voxels(sd[rank], matches)
+
 
 def test_merge_matched_voxels():
-    """
-    Test merge matched voxels
-    """
+    pass
+    all_match_data = [
+        {
+            (0, 0): {"neighbor": [(1, 0), (2, 0), (3, 0)]},
+            (0, 1): {"neighbor": [(1, 1)]},
+        },
+        {(1, 0): {"neighbor": [(0, 0)]}, (1, 1): {"neighbor": [(0, 1)]}},
+        {(2, 0): {"neighbor": [(0, 0)]}},
+        {(3, 0): {"neighbor": [(0, 0)]}},
+    ]
+
+    pmmoto.core._voxels._merge_matched_voxels(all_match_data)
+
+    # print(matches, merged_sets)

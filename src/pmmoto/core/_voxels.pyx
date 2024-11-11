@@ -5,6 +5,7 @@
 # cython: cdivision=True
 
 import numpy as np
+import dataclasses
 cimport numpy as cnp
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -18,50 +19,83 @@ from numpy cimport npy_intp, npy_int8, uint64_t, int64_t, uint8_t
 
 from . import orientation
 
-# __all__ = [
-#     "_get_id"
-# ]
+__all__ = [
+    "_merge_matched_voxels",
+    "_get_id"
+]
 
+
+cdef struct match_test:
+    npy_intp local_id
+    npy_intp rank
+    npy_intp neighbor_local_id
+    npy_intp neighbor_rank
+    npy_intp global_id
 
 def _merge_matched_voxels(all_match_data):
     """
-    Connect all matched voxels from entire domain
+    Connect all matched voxels from the entire domain.
+
+    Args:
+        all_match_data (list): List of dictionaries with matched sets by rank.
+
+    Returns:
+        tuple: (List of all matches with updated connections, total merged sets).
     """
+    matches = {}
+    local_counts = []
+    boundary_counts = []
+    local_global_map = {}
 
-    # Convert list of lists to list and create keys
-    matches = []
-    all_matches = {}
-    for mathces_by_rank in all_match_data:
-        for rank,match in mathces_by_rank['matched_sets'].items():
-            matches.append(match)
-            all_matches[rank] = match
+    # Flatten matched sets by rank and initialize `local_global_map`
+    for matches_by_rank in all_match_data:
+        local_counts.append(matches_by_rank['label_count'])
+        del matches_by_rank['label_count']
+        boundary_counts.append(len(matches_by_rank.keys()))
 
-    # Loop through all matched sets
-    merged_sets = 0
-    for match in matches:
-        if not match.visited:
-            match.visited = True
-            queue = [match.ID]
-            connections = [match.ID]
+        for key,match in matches_by_rank.items():
+            match['visited'] = False
+            matches[key] = match
+            local_global_map[key] = {}
 
-            while len(queue) > 0:
-            
-                current_match = all_matches[queue.pop()]
-                        
-                for n_ID in current_match.n_ID:
-                    if not all_matches[n_ID].visited:
-                        all_matches[n_ID].visited = True
-                        queue.append(n_ID)
-                        connections.append(n_ID)
+    # Merge connected sets
+    global_id = 0
+    for key,match in matches.items():
+        if match["visited"]:
+            continue
 
-            for connect in connections:
-                all_matches[connect].n_ID = connections
-                all_matches[connect].global_ID = merged_sets
+        match["visited"] = True
+        queue = [key]
+        connections = []
 
-            if connections:
-                        merged_sets += 1
+        # Traverse connected matches
+        while queue:
+            current_id = queue.pop()
+            current_match = matches[current_id]
+            connections.append(current_id)
 
-    return matches,merged_sets
+            for neighbor_id in current_match["neighbor"]:
+                neighbor_match = matches[neighbor_id]
+                if not neighbor_match["visited"]:
+                    neighbor_match["visited"] = True
+                    queue.append(neighbor_id)
+
+        # Update global IDs for all connected matches
+        for conn_id in connections:
+            # all_matches[conn_id]["neighbor"] = connections
+            local_global_map[conn_id]["global_id"] = global_id
+
+        global_id += 1 if connections else 0
+
+
+    for rank,_ in enumerate(local_counts):
+        if rank == 0:
+            local_global_map[rank] = global_id 
+        else:
+            local_labels = local_counts[rank-1] - boundary_counts[rank-1]
+            local_global_map[rank] = local_global_map[rank-1] + local_labels
+
+    return local_global_map
 
 
 
@@ -387,7 +421,7 @@ def get_boundary_data(
     # return phase_label
 
 
-def renumber_grid(cnp.uint64_t [:,:,:] grid, unordered_map[int, int] map):
+def _renumber_grid(cnp.uint64_t [:,:,:] grid, unordered_map[int, int] map):
     """
     Renumber a grid in-place based on map.
     """

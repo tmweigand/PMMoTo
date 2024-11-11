@@ -26,3 +26,10 @@ cdef inline int count_matched_voxels(vector[npy_intp] list1, vector[npy_intp] li
         if (binary_search(list2.begin(), list2.end(), l)):
             count += 1
     return count
+
+# cdef struct match:
+#     npy_intp id
+#     npy_intp global_id
+#     npy_intp rank
+#     vector[npy_intp] neighbor_id
+#     vector[npy_intp] neighbor_rank
