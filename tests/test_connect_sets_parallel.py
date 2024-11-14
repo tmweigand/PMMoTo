@@ -16,7 +16,7 @@ def test_connect_sets_parallel():
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
     boundaries = [[0, 0], [0, 0], [0, 0]]  # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet = [[0, 0], [0, 0], [0, 0]]
+    inlet = [[1, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
     file = "tests/testDomains/50pack.out"
@@ -47,7 +47,10 @@ def test_connect_sets_parallel():
 
     connected_grid = pmmoto.filters.connect_components(grid, sd)
     label_phase_map = pmmoto.filters.gen_grid_to_label_map(grid, connected_grid)
-    inlet_label_map = pmmoto.filters.gen_inlet_label_map(sd, grid)
+    inlet_label_map = pmmoto.filters.gen_inlet_label_map(sd, connected_grid)
+    outlet_label_map = pmmoto.filters.gen_outlet_label_map(sd, connected_grid)
+
+    print(label_phase_map, inlet_label_map, outlet_label_map)
 
     if save_data:
         kwargs = {"cc": connected_grid}

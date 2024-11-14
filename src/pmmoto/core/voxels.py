@@ -11,6 +11,7 @@ __all__ = [
     "get_boundary_voxels",
     "gen_grid_to_label_map",
     "gen_inlet_label_map",
+    "gen_outlet_label_map",
     "count_label_voxels",
     "match_neighbor_boundary_voxels",
     "match_global_boundary_voxels",
@@ -231,14 +232,48 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
 
 
 def gen_inlet_label_map(subdomain, label_grid):
-    """_summary_
+    """
+    Determine which face is on inlet.
+    Currently restricted to a single face
 
     Args:
         subdomain (_type_): _description_
         label_grid (_type_): _description_
     """
-    feature_types = ["faces", "edges", "corners"]
+    inlet_labels = None
+    feature_types = ["faces"]  # only faces can be an inlet
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
             if feature.inlet:
-                print(feature_id)
+                inlet_labels = np.unique(
+                    label_grid[
+                        feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                        feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                        feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                    ]
+                )[0]
+    return inlet_labels
+
+
+def gen_outlet_label_map(subdomain, label_grid):
+    """
+    Determine which face is on outlet.
+    Currently restricted to a single face
+
+    Args:
+        subdomain (_type_): _description_
+        label_grid (_type_): _description_
+    """
+    outlet_labels = None
+    feature_types = ["faces"]  # only faces can be an inlet
+    for feature_type in feature_types:
+        for feature_id, feature in subdomain.features[feature_type].items():
+            if feature.outlet:
+                inlet_labels = np.unique(
+                    label_grid[
+                        feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                        feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                        feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                    ]
+                )[0]
+    return outlet_labels

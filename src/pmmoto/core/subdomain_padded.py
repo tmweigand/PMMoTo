@@ -44,7 +44,6 @@ class PaddedSubdomain(subdomain.Subdomain):
             inlet=subdomain.inlet,
             outlet=subdomain.outlet,
             voxels=subdomain.voxels,
-            global_boundary_features=subdomain.global_boundary_features,
             subdomain=subdomain,
             pad=pad,
             reservoir_voxels=reservoir_voxels,

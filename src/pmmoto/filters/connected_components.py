@@ -9,6 +9,7 @@ __all__ = [
     "connect_components",
     "gen_grid_to_label_map",
     "gen_inlet_label_map",
+    "gen_outlet_label_map",
     "phase_count",
 ]
 
@@ -103,3 +104,13 @@ def gen_inlet_label_map(subdomain, label_grid):
         lables (_type_): _description_
     """
     return voxels.gen_inlet_label_map(subdomain, label_grid)
+
+
+def gen_outlet_label_map(subdomain, label_grid):
+    """_summary_
+
+    Args:
+        subdomain (_type_): _description_
+        lables (_type_): _description_
+    """
+    return voxels.gen_outlet_label_map(subdomain, label_grid)

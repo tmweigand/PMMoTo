@@ -4,7 +4,6 @@ import numpy as np
 from pmmoto.core import domain_discretization
 from pmmoto.core import orientation
 from pmmoto.core import subdomain
-from pmmoto.core import subdomain_features
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
@@ -18,7 +17,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         self.subdomain_map = subdomain_map
         self.num_subdomains = np.prod(self.subdomain_map)
         self.map = self.gen_map()
-        # self.global_boundary_features = self.get_global_boundary_feature()
 
     @classmethod
     def from_discretized_domain(cls, discretized_domain, subdomain_map):
@@ -39,9 +37,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         voxels = self.get_subdomain_voxels(sd_index)
         box = self.get_subdomain_box(sd_index, voxels)
         boundaries, boundary_types = self.get_subdomain_boundaries(sd_index)
-        # global_boundary_features = self.get_subdomain_global_opposite_feature(
-        #     boundary_types
-        # )
         inlet = self.get_subdomain_inlet(sd_index)
         outlet = self.get_subdomain_outlet(sd_index)
         start = self.get_subdomain_start(sd_index)
@@ -59,7 +54,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
             inlet=inlet,
             outlet=outlet,
             voxels=voxels,
-            # global_boundary_features=global_boundary_features,
         )
 
         return _subdomain

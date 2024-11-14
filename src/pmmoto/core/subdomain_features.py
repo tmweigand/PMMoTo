@@ -37,17 +37,33 @@ class Face(Feature):
         neighbor_rank,
         boundary,
         boundary_type=None,
-        global_boundary_feature=None,
+        inlet=None,
+        outlet=None,
     ):
         super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.faces[ID]
+        self.opp_info = orientation.faces[ID]["opp"]
         self.global_boundary = self.get_global_boundary(boundary_type)
         self.periodic = self.is_periodic(boundary)
-        # if global_boundary_feature is not None:
-        #     self.opp_info = global_boundary_feature
-        # else:
-        self.opp_info = orientation.faces[ID]["opp"]
+        self.inlet = self.is_inlet(inlet)
+        self.outlet = self.is_outlet(outlet)
         self.periodic_correction = self.get_periodic_correction()
+
+    def is_inlet(self, inlet) -> bool:
+        """Determine if the face is on the inlet
+
+        Returns:
+            bool: True if on inlet
+        """
+        return inlet
+
+    def is_outlet(self, outlet) -> bool:
+        """Determine if the face is on the outlet
+
+        Returns:
+            bool: True if on outlet
+        """
+        return outlet
 
     def is_periodic(self, boundary_type) -> bool:
         """Determine if the face is a periodic face
@@ -71,7 +87,6 @@ class Face(Feature):
         """
         Determine if the face is an external boundary
         """
-
         return boundary
 
 
@@ -83,16 +98,17 @@ class Edge(Feature):
     """
 
     def __init__(
-        self, ID, neighbor_rank, boundary, boundary_type, global_boundary_feature=None
+        self,
+        ID,
+        neighbor_rank,
+        boundary,
+        boundary_type,
     ):
         super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.edges[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.global_boundary = self.get_global_boundary()
-        # if global_boundary_feature is not None:
-        #     self.opp_info = global_boundary_feature
-        # else:
         self.opp_info = orientation.edges[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
 
@@ -169,16 +185,12 @@ class Corner(Feature):
         boundary,
         boundary_type,
         edges,
-        global_boundary_feature=None,
     ):
         super().__init__(ID, neighbor_rank, boundary)
         self.info = orientation.corners[ID]
         self.periodic = self.is_periodic(boundary_type)
         self.external_faces = self.collect_external_faces(boundary_type)
         self.external_edges = self.collect_external_edges(edges)
-        # if global_boundary_feature is not None:
-        #     self.opp_info = global_boundary_feature
-        # else:
         self.opp_info = orientation.corners[ID]["opp"]
         self.periodic_correction = self.get_periodic_correction(boundary_type)
         self.global_boundary = self.get_global_boundary()
@@ -253,7 +265,12 @@ class Corner(Feature):
 
 
 def collect_features(
-    neighbor_ranks, boundaries, boundary_types, domain_boundary_features, voxels
+    neighbor_ranks,
+    boundaries,
+    boundary_types,
+    voxels,
+    inlet=None,
+    outlet=None,
 ):
     """
     Collect information for faces, edges, and corners
@@ -263,56 +280,43 @@ def collect_features(
     edges = {}
     corners = {}
 
+    if inlet is None:
+        inlet = (False, False, False, False, False, False)
+    if outlet is None:
+        outlet = (False, False, False, False, False, False)
+
     ### Faces
     for feature in orientation.faces.keys():
-        if feature in boundary_types:
-            if feature not in domain_boundary_features:
-                domain_boundary_feature = None
-            else:
-                domain_boundary_feature = domain_boundary_features[feature]
-            faces[feature] = Face(
-                feature,
-                neighbor_ranks[feature],
-                boundaries[feature],
-                boundary_types[feature],
-                domain_boundary_feature,
-            )
-        else:
-            faces[feature] = Face(
-                feature,
-                neighbor_ranks[feature],
-                boundaries[feature],
-            )
+        face_dim = np.nonzero(feature)[0][0]
+        index = face_dim * 2 if feature[face_dim] < 0 else face_dim * 2 + 1
+        faces[feature] = Face(
+            feature,
+            neighbor_ranks[feature],
+            boundaries[feature],
+            boundary_types[feature],
+            inlet[index],
+            outlet[index],
+        )
         faces[feature].loop = get_feature_voxels(feature, voxels)
 
     ### Edges
     for feature in orientation.edges.keys():
-        if feature not in domain_boundary_features:
-            domain_boundary_feature = None
-        else:
-            domain_boundary_feature = domain_boundary_features[feature]
         edges[feature] = Edge(
             feature,
             neighbor_ranks[feature],
             boundaries[feature],
             boundary_types,
-            domain_boundary_feature,
         )
         edges[feature].loop = get_feature_voxels(feature, voxels)
 
     ### Corners
     for feature in orientation.corners.keys():
-        if feature not in domain_boundary_features:
-            domain_boundary_feature = None
-        else:
-            domain_boundary_feature = domain_boundary_features[feature]
         corners[feature] = Corner(
             feature,
             neighbor_ranks[feature],
             boundaries[feature],
             boundary_types,
             edges,
-            domain_boundary_feature,
         )
         corners[feature].loop = get_feature_voxels(feature, voxels)
 
@@ -358,14 +362,14 @@ def get_feature_voxels(feature_id, voxels, pad=None):
         }
     for n, length in enumerate(voxels):
         if feature_id[n] == -1:
-            if padded:
+            if pad[n][0] != 0:
                 loop["own"][n] = [pad[n][0], pad[n][0] * 2]
             else:
                 loop["own"][n] = [0, 1]
             if "neighbor" in loop:
                 loop["neighbor"][n] = [0, pad[n][0]]
         elif feature_id[n] == 1:
-            if padded:
+            if pad[n][1] != 0:
                 loop["own"][n] = [length - pad[n][1] * 2, length - pad[n][1]]
             else:
                 loop["own"][n] = [length - 2, length - 1]
