@@ -115,8 +115,6 @@ def write_parallel_VTK_grid(file_name, subdomain, domain, grid, **kwargs):
         starts[n] = domain.get_subdomain_start(_index)
         ends[n] = [sum(x) for x in zip(starts[n], domain.get_subdomain_voxels(_index))]
 
-    print(starts, ends)
-
     evtk.writeParallelVTKGrid(
         file_name,
         coordsData=(

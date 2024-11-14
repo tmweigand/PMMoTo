@@ -195,7 +195,6 @@ def create_sets_and_merge(
     all_sets = Sets(subdomain, label_count)
 
     # Collect node info and put in sets
-    print(boundary_node_data)
     for label in range(label_count):
         all_sets.collect_boundary_set_info(boundary_node_data, img, label)
 

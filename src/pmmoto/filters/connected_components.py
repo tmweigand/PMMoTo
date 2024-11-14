@@ -6,10 +6,9 @@ from pmmoto.core import communication
 
 
 __all__ = [
-    "connect_all_phases",
-    "connect_single_phase",
-    "get_boundary_label_phase_map",
-    "get_label_phase_map",
+    "connect_components",
+    "gen_grid_to_label_map",
+    "gen_inlet_label_map",
     "phase_count",
 ]
 
@@ -26,17 +25,33 @@ def _connect_components(grid):
     return label_grid, label_count
 
 
-def connect_all_phases(
-    img, subdomain, return_grid=False, return_set=False, return_voxel_count=False
+def connect_components(
+    grid,
+    subdomain,
 ):
     """
     Create sets for all phases in grid
     """
 
-    label_grid, label_count = _connect_components(img.grid)
+    label_grid, label_count = _connect_components(grid)
+
+    if subdomain.num_subdomains > 1:
+        connect_subdomain_boundaries(subdomain, label_grid, label_count)
+
+    return label_grid
+
+
+def connect_subdomain_boundaries(subdomain, label_grid, label_count):
+    """_summary_
+
+    Args:
+        subdomain (_type_): _description_
+        label_grid (_type_): _description_
+        label_count (_type_): _description_
+    """
     data = voxels.get_boundary_voxels(
         subdomain=subdomain,
-        img=img.grid,
+        img=label_grid,
     )
 
     send_data, own_data = voxels.boundary_voxels_pack(subdomain, data)
@@ -52,71 +67,17 @@ def connect_all_phases(
             subdomain, matches, label_count
         )
 
-        print(subdomain.rank, label_count, local_global_map)
-        # voxels.renumber_image(label_grid, local_global_map)
-
-    return label_grid
+        voxels.renumber_image(label_grid, local_global_map)
 
 
-def connect_single_phase(img, inlet, outlet, phase=None):
-    """
-    Create sets for all phases in grid
-    """
-
-    label_grid, label_count = _connect_components(img.grid)
-
-    phase_map = _get_label_phase_map(img, label_grid, phase)
-    phase_count = _phase_count(phase_map)
-
-    all_sets, local_global_map = sets.create_sets_and_merge(
-        img, phase_count[phase], label_count, label_grid, phase_map, inlet, outlet
-    )
-
-    all_sets.update_global_ID(local_global_map)
-
-    output = {}
-    output["sets"] = all_sets
-
-    return output
-
-
-def get_boundary_label_phase_map(label_grid, label_count, grid, node_data):
-    """
-    Collect the label to phase mapping
-    """
-    phase_map = {}
-    for label in range(0, label_count):
-        if node_data["boundary"][label]:
-            phase_map[label] = np.unravel_index(
-                node_data["phase"][label], label_grid.shape
-            )
-            index = np.unravel_index(node_data["phase"][label], label_grid.shape)
-            phase_map[label] = grid[index[0], index[1], index[2]]
-
-    return phase_map
-
-
-def get_label_phase_map(grid, label_grid, phase=None):
+def gen_grid_to_label_map(grid, label_grid):
     """
     Collect the label to phase mapping for all labels
-    TODO: SLOW and probably better way for this
     """
-
-    assert grid.shape == label_grid.shape
-
-    phase_map_all = voxels.get_label_phase_info(
+    return voxels.gen_grid_to_label_map(
         grid,
         label_grid,
     )
-    phase_map = {}
-    if phase is not None:
-        for label, _phase in phase_map_all.items():
-            if _phase == phase:
-                phase_map[label] = _phase
-    else:
-        phase_map = phase_map_all
-
-    return phase_map
 
 
 def phase_count(phase_map):
@@ -132,3 +93,13 @@ def phase_count(phase_map):
             phase_count[phase] = 1
 
     return phase_count
+
+
+def gen_inlet_label_map(subdomain, label_grid):
+    """_summary_
+
+    Args:
+        subdomain (_type_): _description_
+        lables (_type_): _description_
+    """
+    return voxels.gen_inlet_label_map(subdomain, label_grid)

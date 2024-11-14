@@ -48,8 +48,6 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
         atom_cutoff,
     )
 
-    print(f"Grid sum {np.sum(_grid)}")
-
     pm = porousmedia.gen_pm(subdomain, _grid, res_size)
     pm.grid = communication.update_buffer(subdomain, pm.grid)
 

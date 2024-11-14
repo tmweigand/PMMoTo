@@ -41,10 +41,16 @@ def test_connect_sets_parallel():
         sphere_data,
     )
 
-    connected_sets = pmmoto.filters.connect_all_phases(pm, sd)
+    grid = np.ones_like(pm.grid)
+    grid[2:-2, 2:-2, 2:-2] = sd.rank
+    grid = pmmoto.core.communication.update_buffer(sd, grid)
+
+    connected_grid = pmmoto.filters.connect_components(grid, sd)
+    label_phase_map = pmmoto.filters.gen_grid_to_label_map(grid, connected_grid)
+    inlet_label_map = pmmoto.filters.gen_inlet_label_map(sd, grid)
 
     if save_data:
-        kwargs = {"sets": connected_sets}
+        kwargs = {"cc": connected_grid}
         pmmoto.io.save_grid_data_parallel(
             "data_out/test_connects_sets_parallel_grid", sd, domain, pm.grid, **kwargs
         )

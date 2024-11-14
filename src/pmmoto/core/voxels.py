@@ -9,7 +9,8 @@ __all__ = [
     "renumber_image",
     "get_id",
     "get_boundary_voxels",
-    "get_label_phase_info",
+    "gen_grid_to_label_map",
+    "gen_inlet_label_map",
     "count_label_voxels",
     "match_neighbor_boundary_voxels",
     "match_global_boundary_voxels",
@@ -69,18 +70,18 @@ def get_id(x, total_voxels):
     return id
 
 
-def get_label_phase_info(grid, label_grid):
+def gen_grid_to_label_map(grid, labels):
     """_summary_
 
     Args:
         grid (_type_): _description_
         label_grid (_type_): _description_
     """
-    phase_label = _voxels.get_label_phase_info(
-        grid.astype(np.uint8), label_grid.astype(np.uint64)
-    )
+    assert grid.shape == labels.shape
 
-    return phase_label
+    return _voxels.gen_grid_to_label_map(
+        grid.astype(np.uint8), labels.astype(np.uint64)
+    )
 
 
 def count_label_voxels(grid, map):
@@ -207,10 +208,15 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
         subdomain (_type_): _description_
         matches (_type_): _description_
     """
+
+    ### Send number of labels on rank for re-labeling
     matches["label_count"] = label_count
     all_matches = communication.all_gather(matches)
+
+    ### Generate the local-global label map
     local_global_map = _voxels._merge_matched_voxels(all_matches)
 
+    ### Generate the global id for non-boundary labels as well
     final_map = {}
     local_start = local_global_map[subdomain.rank]
     count = 0
@@ -222,3 +228,17 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
             count += 1
 
     return final_map
+
+
+def gen_inlet_label_map(subdomain, label_grid):
+    """_summary_
+
+    Args:
+        subdomain (_type_): _description_
+        label_grid (_type_): _description_
+    """
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature_id, feature in subdomain.features[feature_type].items():
+            if feature.inlet:
+                print(feature_id)

@@ -3,7 +3,7 @@ from mpi4py import MPI
 
 from pmmoto.filters import distance
 from pmmoto.filters import morphology
-from pmmoto.filters import connect_all_phases
+from pmmoto.filters import connect_components
 from pmmoto.core import multiphase
 from pmmoto.io import output
 from pmmoto.core import utils

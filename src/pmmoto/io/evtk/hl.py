@@ -928,7 +928,7 @@ def writeParallelVTKGrid(
     w = VtkParallelFile(path, ftype)
     start = (0, 0, 0)
     (s_x, s_y, s_z), dtype = coordsData
-    end = s_x - 1, s_y - 1, s_z - 1
+    end = s_x, s_y, s_z
 
     if ftype is not VtkPImageData:
         w.openGrid(start=start, end=end, ghostlevel=ghostlevel)
