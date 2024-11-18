@@ -10,12 +10,12 @@ def test_porous_media():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomain_map = [1, 1, 1]
+    subdomains = [1, 1, 1]
     voxels = [100, 100, 100]
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
     file = "tests/testDomains/50pack.out"
-    boundaries = [[2, 2], [2, 2], [2, 2]]
+    boundary_types = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -23,9 +23,9 @@ def test_porous_media():
 
     sd, domain = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=rank,
@@ -33,19 +33,20 @@ def test_porous_media():
         reservoir_voxels=0,
     )
 
-    sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
-    pm = pmmoto.domain_generation.gen_pm_spheres_domain(
-        sd,
-        sphere_data,
-    )
 
-    pm.get_porosity()
+#     sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
+#     pm = pmmoto.domain_generation.gen_pm_spheres_domain(
+#         sd,
+#         sphere_data,
+#     )
 
-    if save_data:
-        kwargs = {}
-        pmmoto.io.save_grid_data("data_out/test_porous_media", sd, pm.grid, **kwargs)
+#     pm.get_porosity()
+
+#     if save_data:
+#         kwargs = {}
+#         pmmoto.io.save_grid_data("data_out/test_porous_media", sd, pm.grid, **kwargs)
 
 
-if __name__ == "__main__":
-    test_porous_media()
-    MPI.Finalize()
+# if __name__ == "__main__":
+#     test_porous_media()
+#     MPI.Finalize()

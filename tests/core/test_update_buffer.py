@@ -51,18 +51,18 @@ def test_update_buffer():
         dtype=int,
     )
 
-    subdomain_map = [1, 1, 1]
+    subdomains = (1, 1, 1)
     voxels = [3, 3, 3]
     box = [[0, 1], [0, 1], [0, 1]]
-    boundaries = [[2, 2], [2, 2], [2, 2]]
+    boundary_types = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
     sd, domain = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=rank,

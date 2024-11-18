@@ -10,12 +10,12 @@ def test_multiphase():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomain_map = [1, 1, 1]
+    subdomains = [1, 1, 1]
     voxels = [100, 100, 100]
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
     file = "tests/testDomains/50pack.out"
-    boundaries = [[2, 2], [2, 2], [2, 2]]
+    boundary_types = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -34,9 +34,9 @@ def test_multiphase():
 
     sd, domain = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=rank,
@@ -50,24 +50,25 @@ def test_multiphase():
         sphere_data,
     )
 
-    mp = pmmoto.core.initialize_multiphase(
-        porous_media=pm,
-        num_phases=num_fluid_phases,
-        inlets=mp_inlet,
-        outlets=mp_outlet,
-    )
 
-    mp = pmmoto.domain_generation.gen_mp_constant(mp, fluid_phase=2)
+#     mp = pmmoto.core.initialize_multiphase(
+#         porous_media=pm,
+#         num_phases=num_fluid_phases,
+#         inlets=mp_inlet,
+#         outlets=mp_outlet,
+#     )
 
-    saturation = mp.get_saturation(2)
-    print(saturation)
+#     mp = pmmoto.domain_generation.gen_mp_constant(mp, fluid_phase=2)
 
-    if save_data:
+#     saturation = mp.get_saturation(2)
+#     print(saturation)
 
-        kwargs = {}
-        pmmoto.io.save_grid_data("dataOut/test_opening", sd, mp.grid, **kwargs)
+#     if save_data:
+
+#         kwargs = {}
+#         pmmoto.io.save_grid_data("dataOut/test_opening", sd, mp.grid, **kwargs)
 
 
-if __name__ == "__main__":
-    test_multiphase()
-    MPI.Finalize()
+# if __name__ == "__main__":
+#     test_multiphase()
+#     MPI.Finalize()

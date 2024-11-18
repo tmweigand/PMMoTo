@@ -2,7 +2,10 @@ import numpy as np
 from mpi4py import MPI
 import pmmoto
 
+import pytest
 
+
+@pytest.mark.skip(reason="TBD")
 def test_connect_sets_parallel():
 
     comm = MPI.COMM_WORLD

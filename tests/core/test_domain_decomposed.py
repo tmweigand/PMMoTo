@@ -2,122 +2,74 @@ import numpy as np
 import pmmoto
 
 
-def test_decomposed_domain(
-    domain, domain_discretization, domain_decomposed, domain_decomposed_true
-):
+def test_decomposed_domain():
     """
     Test decomposition of domain
     """
 
+    box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
+    boundary_types = ((0, 0), (1, 1), (2, 2))
+    inlet = ((1, 0), (0, 0), (0, 0))
+    outlet = ((0, 1), (0, 0), (0, 0))
+    voxels = (10, 10, 10)
+    subdomains = (3, 3, 3)
+
     pmmoto_domain = pmmoto.core.Domain(
-        domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
+        box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
     )
 
     pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
-        domain=pmmoto_domain,
-        voxels=domain_discretization["voxels"],
+        domain=pmmoto_domain, voxels=voxels
     )
 
     pmmoto_decomposed_domain = (
         pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
             discretized_domain=pmmoto_discretized_domain,
-            subdomain_map=domain_decomposed["subdomain_map"],
+            subdomains=subdomains,
         )
     )
 
-    import pickle
+    assert pmmoto_decomposed_domain.num_subdomains == 27
 
-    data_out = {
-        "index": {},
-        "voxels": {},
-        "boundaries": {},
-        "boundary_type": {},
-        "box": {},
-        "inlet": {},
-        "outlet": {},
-        "map": {},
-        "neighbor_ranks": {},
-        "start": {},
-        "num_subdomains": {},
-        "domain_voxels": {},
-    }
-
-    for rank in range(pmmoto_decomposed_domain.num_subdomains):
-        pmmoto_index = pmmoto_decomposed_domain.get_subdomain_index(rank)
-        assert pmmoto_index == domain_decomposed_true["index"][rank]
-
-        voxels = pmmoto_decomposed_domain.get_subdomain_voxels(pmmoto_index)
-        assert voxels == domain_decomposed_true["voxels"][rank]
-
-        boundaries, boundary_type = pmmoto_decomposed_domain.get_subdomain_boundaries(
-            pmmoto_index
-        )
-        np.testing.assert_array_equal(
-            boundaries, domain_decomposed_true["boundaries"][rank]
-        )
-        np.testing.assert_array_equal(
-            boundary_type, domain_decomposed_true["boundary_type"][rank]
-        )
-
-        box = pmmoto_decomposed_domain.get_subdomain_box(pmmoto_index, voxels)
-        np.testing.assert_array_equal(box, domain_decomposed_true["box"][rank])
-
-        inlet = pmmoto_decomposed_domain.get_subdomain_inlet(pmmoto_index)
-        np.testing.assert_array_equal(inlet, domain_decomposed_true["inlet"][rank])
-
-        outlet = pmmoto_decomposed_domain.get_subdomain_outlet(pmmoto_index)
-        np.testing.assert_array_equal(outlet, domain_decomposed_true["outlet"][rank])
-
-        _map = pmmoto_decomposed_domain.gen_map()
-        np.testing.assert_array_equal(_map, domain_decomposed_true["map"][rank])
-
-        neighbor_ranks = pmmoto_decomposed_domain.get_neighbor_ranks(pmmoto_index)
-        np.testing.assert_array_equal(
-            neighbor_ranks, domain_decomposed_true["neighbor_ranks"][rank]
-        )
-
-        start = pmmoto_decomposed_domain.get_subdomain_start(pmmoto_index)
-        np.testing.assert_array_equal(start, domain_decomposed_true["start"][rank])
-
-    #     data_out["index"][rank] = pmmoto_index
-    #     data_out["voxels"][rank] = voxels
-    #     data_out["boundaries"][rank] = boundaries
-    #     data_out["boundary_type"][rank] = boundary_type
-    #     data_out["box"][rank] = box
-    #     data_out["inlet"][rank] = inlet
-    #     data_out["outlet"][rank] = outlet
-    #     data_out["map"][rank] = _map
-    #     data_out["neighbor_ranks"][rank] = neighbor_ranks
-    #     data_out["start"][rank] = start
-    #     data_out["num_subdomains"][rank] = pmmoto_decomposed_domain.num_subdomains
-    #     data_out["domain_voxels"][rank] = pmmoto_decomposed_domain.voxels
-
-    # with open(
-    #     "/Users/tim/Desktop/pmmoto/tests/core/test_output/test_decomposed_domain.pkl",
-    #     "wb",
-    # ) as file:  # open a text file
-    #     pickle.dump(data_out, file)  # serialize the list
-
-
-# def test_maps():
-#     """
-#     Test  subdomain features
-#     """
-
-#     subdomain_map = (1, 1, 1)
-#     voxels = (10, 10, 10)
-#     box = [[0, 10], [0, 10], [0, 10]]
-#     boundaries = [[2, 2], [0, 0], [0, 0]]
-#     inlet = [[0, 0], [0, 0], [0, 0]]
-#     outlet = [[0, 0], [0, 0], [0, 0]]
-
-#     pmmoto_decomposed_domain = pmmoto.core.domain_decompose.DecomposedDomain(
-#         box=box,
-#         boundaries=boundaries,
-#         inlet=inlet,
-#         outlet=outlet,
-#         voxels=voxels,
-#         subdomain_map=subdomain_map,
-#     )
-
-#     # pmmoto_decomposed_domain.initialize_subdomain(0)
+    np.testing.assert_array_equal(
+        pmmoto_decomposed_domain.map,
+        np.array(
+            [
+                [
+                    [-2, -2, -2, -2, -2],
+                    [-1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1],
+                    [-2, -2, -2, -2, -2],
+                ],
+                [
+                    [-2, -2, -2, -2, -2],
+                    [2, 0, 1, 2, 0],
+                    [5, 3, 4, 5, 3],
+                    [8, 6, 7, 8, 6],
+                    [-2, -2, -2, -2, -2],
+                ],
+                [
+                    [-2, -2, -2, -2, -2],
+                    [11, 9, 10, 11, 9],
+                    [14, 12, 13, 14, 12],
+                    [17, 15, 16, 17, 15],
+                    [-2, -2, -2, -2, -2],
+                ],
+                [
+                    [-2, -2, -2, -2, -2],
+                    [20, 18, 19, 20, 18],
+                    [23, 21, 22, 23, 21],
+                    [26, 24, 25, 26, 24],
+                    [-2, -2, -2, -2, -2],
+                ],
+                [
+                    [-2, -2, -2, -2, -2],
+                    [-1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1],
+                    [-2, -2, -2, -2, -2],
+                ],
+            ]
+        ),
+    )

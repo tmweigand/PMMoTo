@@ -14,11 +14,11 @@ class PorousMedia:
         self.porosity = None
 
         # Set solid phase inlet/outlet to zeros
-        _inlet = np.zeros([2, subdomain.dims * 2], dtype=np.uint8)
+        _inlet = np.zeros([2, 3 * 2], dtype=np.uint8)
         _inlet[1, :] = subdomain.inlet.reshape([1, 6])
         self.inlet = _inlet
 
-        _outlet = np.zeros([2, subdomain.dims * 2], dtype=np.uint8)
+        _outlet = np.zeros([2, 3 * 2], dtype=np.uint8)
         _outlet[1, :] = subdomain.outlet.reshape([1, 6])
         self.outlet = _outlet
 

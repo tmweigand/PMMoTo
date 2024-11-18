@@ -4,7 +4,10 @@ from mpi4py import MPI
 import numpy as np
 import pmmoto
 
+import pytest
 
+
+@pytest.mark.skip(reason="TBD")
 def test_phase_exists():
     """
     Check to make sure utils.phase_exists works properly

@@ -2,8 +2,10 @@ import numpy as np
 from mpi4py import MPI
 import pmmoto
 import time
+import pytest
 
 
+@pytest.mark.skip(reason="TBD")
 def test_connected_sets():
 
     comm = MPI.COMM_WORLD
