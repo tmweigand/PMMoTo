@@ -38,7 +38,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         _map = -np.ones([sd + 2 for sd in self.subdomains], dtype=np.int64)
         _map[1:-1, 1:-1, 1:-1] = np.arange(self.num_subdomains).reshape(self.subdomains)
-        ### Set Boundaries of global SubDomain Map
 
         if self.boundary_types[0][0] == 1:
             _map[0, :, :] = -2

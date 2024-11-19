@@ -58,7 +58,7 @@ def test_update_buffer():
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
         subdomains=subdomains,
         voxels=voxels,

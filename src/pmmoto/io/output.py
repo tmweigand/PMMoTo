@@ -20,6 +20,7 @@ __all__ = [
     "save_grid_data_serial",
     "save_grid_data_parallel",
     "save_grid_data_proc",
+    "save_grid",
     # "save_grid_data_deconstructed",
     # "save_grid_data_csv",
     # "save_set_data",
@@ -89,6 +90,28 @@ def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
         start=subdomain.start,
         end=[sum(x) for x in zip(subdomain.start, subdomain.voxels)],
         spacing=subdomain.resolution,
+        cellData=point_data,
+    )
+
+
+def save_grid(file_name, grid):
+    """_summary_
+
+    Args:
+        file_name (_type_): _description_
+        grid (_type_): _description_
+    """
+
+    io_utils.check_file_path(file_name)
+
+    point_data = {"grid": grid}
+
+    evtk.imageToVTK(
+        path=file_name,
+        origin=(0, 0, 0),
+        start=(0, 0, 0),
+        end=grid.shape,
+        spacing=(1, 1, 1),
         cellData=point_data,
     )
 

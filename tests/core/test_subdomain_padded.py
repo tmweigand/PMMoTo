@@ -4,39 +4,219 @@ import numpy as np
 import pmmoto
 
 
-def test_subdomain_padded():
+def generate_padded_subdomain(rank, pad, reservoir_voxels):
     """
-    Test for subdomain
+    Generate a padded subdomain
     """
-
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
     boundary_types = ((0, 0), (1, 1), (2, 2))
     inlet = ((1, 0), (0, 0), (0, 0))
     outlet = ((0, 1), (0, 0), (0, 0))
-    voxels = (10, 10, 10)
+    voxels = (100, 100, 100)
     subdomains = (3, 3, 3)
 
-    pmmoto_domain = pmmoto.core.Domain(
-        box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
+    sd = pmmoto.initialize(
+        box=box,
+        subdomains=subdomains,
+        voxels=voxels,
+        boundary_types=boundary_types,
+        inlet=inlet,
+        outlet=outlet,
+        reservoir_voxels=reservoir_voxels,
+        rank=rank,
+        pad=pad,
     )
 
-    pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
-        domain=pmmoto_domain, voxels=voxels
-    )
+    return sd
 
-    pmmoto_decomposed_domain = (
-        pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
-            discretized_domain=pmmoto_discretized_domain,
-            subdomains=subdomains,
+
+def test_subdomain():
+    """
+    Test for subdomain
+    """
+
+    rank = 12
+    pad = (1, 1, 1)
+    reservoir_voxels = 1
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+    index = sd.get_index()
+    assert index == (1, 1, 0)
+
+    sd_pad = sd.get_padding(pad)
+    np.testing.assert_array_equal(sd_pad, ((1, 1), (1, 1), (1, 1)))
+
+    sd_voxels = sd.get_voxels()
+    assert sd_voxels == (35, 35, 35)
+
+    box = sd.get_box()
+
+    assert box == (
+        (
+            (84.82, 93.33),
+            (4.7113999999999905, 58.80909999999998),
+            (-9.0585841, -6.8909724),
         )
     )
 
+    global_boundary, sd_boundary_types = sd.get_boundaries()
+
+    for feature_id, is_global_boundary in global_boundary.items():
+        if feature_id == (0, 0, -1):
+            assert is_global_boundary
+        else:
+            assert not is_global_boundary
+
+    for feature_id, boundary_type in sd_boundary_types.items():
+        if feature_id == (0, 0, -1):
+            assert boundary_type == "periodic"
+        else:
+            assert boundary_type == "internal"
+
+    sd_inlet = sd.get_inlet()
+    np.testing.assert_array_equal(sd_inlet, [0, 0, 0, 0, 0, 0])
+
+    sd_outlet = sd.get_outlet()
+    np.testing.assert_array_equal(sd_outlet, [0, 0, 0, 0, 0, 0])
+
+    start = sd.get_start()
+    assert start == (32, 32, -1)
+
+    res_padding = sd.get_reservoir_padding(reservoir_voxels)
+    np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
+
+    own_voxels = sd.get_own_voxels(sd_pad, start, sd_voxels)
+    np.testing.assert_array_equal(own_voxels, [33, 68, 33, 68, 0, 35])
+
+
+def test_subdomain_2():
+    """
+    Test for subdomain
+    """
+
+    rank = 26
+    pad = (2, 2, 2)
+    reservoir_voxels = 3
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+    index = sd.get_index()
+    assert index == (2, 2, 2)
+
+    sd_pad = sd.get_padding(pad)
+    np.testing.assert_array_equal(sd_pad, ((2, 0), (2, 2), (2, 2)))
+
+    sd_voxels = sd.get_voxels()
+    assert sd_voxels == (36, 38, 38)
+
+    box = sd.get_box()
+
+    assert box == (
+        (91.26, 100.0),
+        (42.726000000000006, 104.13419999999999),
+        (-5.484954, -3.0244218),
+    )
+
+    global_boundary, sd_boundary_types = sd.get_boundaries()
+
+    global_features = {
+        (1, 0, 0): "end",
+        (0, 1, 0): "wall",
+        (0, 0, 1): "periodic",
+        (1, 0, 1): "periodic",
+        (1, 1, 0): "end",
+        (0, 1, 1): "periodic",
+        (1, 1, 1): "periodic",
+    }
+
+    for feature_id, is_global_boundary in global_boundary.items():
+        if feature_id in global_features:
+            assert is_global_boundary
+        else:
+            assert not is_global_boundary
+
+    for feature_id, boundary_type in sd_boundary_types.items():
+        if feature_id in global_features:
+            assert boundary_type == global_features[feature_id]
+        else:
+            assert boundary_type == "internal"
+
+    sd_inlet = sd.get_inlet()
+    np.testing.assert_array_equal(sd_inlet, [0, 0, 0, 0, 0, 0])
+
+    sd_outlet = sd.get_outlet()
+    np.testing.assert_array_equal(sd_outlet, [0, 1, 0, 0, 0, 0])
+
+    start = sd.get_start()
+    assert start == (64, 64, 64)
+
+    res_padding = sd.get_reservoir_padding(reservoir_voxels)
+    np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
+
+    own_voxels = sd.get_own_voxels(sd_pad, start, sd_voxels)
+    np.testing.assert_array_equal(own_voxels, [66, 102, 66, 104, 66, 104])
+
+
+def test_subdomain_3():
+    """
+    Test for subdomain
+    """
+
     rank = 0
     pad = (1, 1, 1)
-    reservoir_voxels = 0
-    sd = pmmoto.core.subdomain_padded.PaddedSubdomain(
-        rank=rank,
-        decomposed_domain=pmmoto_decomposed_domain,
-        pad=pad,
-        reservoir_voxels=reservoir_voxels,
+    reservoir_voxels = 3
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+    index = sd.get_index()
+    assert index == (0, 0, 0)
+
+    sd_pad = sd.get_padding(pad)
+    np.testing.assert_array_equal(sd_pad, ((0, 1), (1, 1), (1, 1)))
+
+    sd_voxels = sd.get_voxels()
+    assert sd_voxels == (37, 35, 35)
+
+    box = sd.get_box()
+    assert box == (
+        (76.31, 85.74000000000001),
+        (-46.4621, 7.6355999999999895),
+        (-9.0585841, -6.8909724),
     )
+
+    global_boundary, sd_boundary_types = sd.get_boundaries()
+
+    global_features = {
+        (-1, 0, 0): "end",
+        (0, -1, 0): "wall",
+        (0, 0, -1): "periodic",
+        (-1, 0, -1): "periodic",
+        (-1, -1, 0): "end",
+        (0, -1, -1): "periodic",
+        (-1, -1, -1): "periodic",
+    }
+
+    for feature_id, is_global_boundary in global_boundary.items():
+        if feature_id in global_features:
+            assert is_global_boundary
+        else:
+            assert not is_global_boundary
+
+    for feature_id, boundary_type in sd_boundary_types.items():
+        if feature_id in global_features:
+            assert boundary_type == global_features[feature_id]
+        else:
+            assert boundary_type == "internal"
+
+    sd_inlet = sd.get_inlet()
+    np.testing.assert_array_equal(sd_inlet, [1, 0, 0, 0, 0, 0])
+
+    sd_outlet = sd.get_outlet()
+    np.testing.assert_array_equal(sd_outlet, [0, 0, 0, 0, 0, 0])
+
+    start = sd.get_start()
+    assert start == (-3, -1, -1)
+
+    res_padding = sd.get_reservoir_padding(reservoir_voxels)
+    np.testing.assert_array_equal(res_padding, [[3, 0], [0, 0], [0, 0]])
+
+    own_voxels = sd.get_own_voxels(sd_pad, start, sd_voxels)
+    np.testing.assert_array_equal(own_voxels, [-3, 34, 0, 35, 0, 35])

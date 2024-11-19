@@ -51,4 +51,4 @@ def initialize(
         reservoir_voxels=reservoir_voxels,
     )
 
-    return padded_subdomain, pmmoto_decomposed_domain
+    return padded_subdomain

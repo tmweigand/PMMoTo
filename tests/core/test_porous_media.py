@@ -21,7 +21,7 @@ def test_porous_media():
 
     save_data = True
 
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
         subdomains=subdomains,
         voxels=voxels,

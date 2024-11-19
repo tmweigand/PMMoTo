@@ -32,7 +32,7 @@ def test_multiphase():
 
     save_data = True
 
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
         subdomains=subdomains,
         voxels=voxels,

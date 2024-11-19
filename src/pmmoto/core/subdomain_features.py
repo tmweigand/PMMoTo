@@ -13,13 +13,13 @@ class Feature(object):
     This is the main abstraction for handling boundary conditions and parallel communication
     """
 
-    def __init__(self, ID, neighbor_rank, boundary):
-        self.ID = ID
+    def __init__(self, feature_id, neighbor_rank, boundary_type, global_boundary=None):
+        self.feature_id = feature_id
         self.neighbor_rank = neighbor_rank
-        self.boundary = boundary
+        self.boundary_type = boundary_type
+        self.global_boundary = global_boundary
         self.periodic = False
         self.periodic_correction = (0, 0, 0)
-        self.global_boundary = False
         self.info = None
         self.opp_info = None
         self.extend = [[0, 0], [0, 0], [0, 0]]
@@ -33,18 +33,19 @@ class Face(Feature):
 
     def __init__(
         self,
-        ID,
+        feature_id,
         neighbor_rank,
-        boundary,
-        boundary_type=None,
+        boundary_type,
+        global_boundary=None,
         inlet=None,
         outlet=None,
     ):
-        super().__init__(ID, neighbor_rank, boundary)
-        self.info = orientation.faces[ID]
-        self.opp_info = orientation.faces[ID]["opp"]
-        self.global_boundary = self.get_global_boundary(boundary_type)
-        self.periodic = self.is_periodic(boundary)
+        assert feature_id in orientation.faces
+        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
+        self.info = orientation.faces[feature_id]
+        self.opp_info = orientation.faces[feature_id]["opp"]
+        self.global_boundary = self.get_global_boundary(global_boundary)
+        self.periodic = self.is_periodic(boundary_type)
         self.inlet = self.is_inlet(inlet)
         self.outlet = self.is_outlet(outlet)
         self.periodic_correction = self.get_periodic_correction()
@@ -83,11 +84,11 @@ class Face(Feature):
 
         return tuple(_period_correction)
 
-    def get_global_boundary(self, boundary) -> bool:
+    def get_global_boundary(self, global_boundary) -> bool:
         """
         Determine if the face is an external boundary
         """
-        return boundary
+        return global_boundary
 
 
 class Edge(Feature):
@@ -99,18 +100,19 @@ class Edge(Feature):
 
     def __init__(
         self,
-        ID,
+        feature_id,
         neighbor_rank,
-        boundary,
         boundary_type,
+        global_boundary=None,
     ):
-        super().__init__(ID, neighbor_rank, boundary)
-        self.info = orientation.edges[ID]
+        assert feature_id in orientation.edges
+        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
+        self.info = orientation.edges[feature_id]
         self.periodic = self.is_periodic(boundary_type)
-        self.external_faces = self.collect_external_faces(boundary_type)
-        self.global_boundary = self.get_global_boundary()
-        self.opp_info = orientation.edges[ID]["opp"]
-        self.periodic_correction = self.get_periodic_correction(boundary_type)
+        self.opp_info = orientation.edges[feature_id]["opp"]
+        self.global_boundary = self.get_global_boundary(global_boundary)
+        #
+        # self.periodic_correction = self.get_periodic_correction(boundary_type)
 
     def is_periodic(self, boundary_type) -> bool:
         """Determine if an edge is a periodic edge
@@ -120,55 +122,41 @@ class Edge(Feature):
         """
         return boundary_type == "periodic"
 
-    def collect_external_faces(self, boundary_type):
-        """
-        Determine if edges are on an external face with boundary type 0"""
-        external_faces = []
-        for face in orientation.edges[self.ID]["faces"]:
-            if face in boundary_type:
-                if boundary_type[face] == "end":
-                    external_faces.append(face)
-
-        return external_faces
-
-    def get_periodic_correction(self, boundary_type) -> tuple[int, ...]:
+    def get_periodic_correction(self) -> tuple[int, ...]:
         """
         Determine spatial correction factor if periodic
         """
         _period_correction = [0, 0, 0]
         for face in self.info["faces"]:
-            if face in boundary_type:
-                if boundary_type[face] == "periodic":
-                    _period_correction[orientation.faces[face]["argOrder"][0]] = (
-                        orientation.faces[face]["dir"]
-                    )
+            if self.boundary_type == "periodic":
+                _period_correction[orientation.faces[face]["argOrder"][0]] = (
+                    orientation.faces[face]["dir"]
+                )
 
         return tuple(_period_correction)
 
-    def get_global_boundary(self) -> bool:
+    def get_global_boundary(self, global_boundary) -> bool:
         """
         Determine if the edge is an external boundary
         """
-        global_boundary = False
-        if len(self.external_faces) == 2:
-            global_boundary = True
+
         return global_boundary
 
-    def get_extension(self, extend_domain, bounds):
-        """
-        Determine the span of the feature based on extend
-        """
-        _faces = orientation.edges[self.ID]["ID"]
-        for n, f in enumerate(_faces):
-            if f > 0:
-                self.extend[n][0] = bounds[n][-1] - extend_domain[n]
-                self.extend[n][1] = bounds[n][-1]
-            elif f < 0:
-                self.extend[n][0] = bounds[n][0]
-                self.extend[n][1] = bounds[n][0] + extend_domain[n]
-            else:
-                self.extend[n][0] = 0
-                self.extend[n][1] = 0
+    # def get_extension(self, extend_domain, bounds):
+    #     """
+    #     Determine the span of the feature based on extend
+    #     """
+    #     _faces = orientation.edges[self.feature_id]["ID"]
+    #     for n, f in enumerate(_faces):
+    #         if f > 0:
+    #             self.extend[n][0] = bounds[n][-1] - extend_domain[n]
+    #             self.extend[n][1] = bounds[n][-1]
+    #         elif f < 0:
+    #             self.extend[n][0] = bounds[n][0]
+    #             self.extend[n][1] = bounds[n][0] + extend_domain[n]
+    #         else:
+    #             self.extend[n][0] = 0
+    #             self.extend[n][1] = 0
 
 
 class Corner(Feature):
@@ -180,20 +168,17 @@ class Corner(Feature):
 
     def __init__(
         self,
-        ID,
+        feature_id,
         neighbor_rank,
-        boundary,
         boundary_type,
-        edges,
+        global_boundary=None,
     ):
-        super().__init__(ID, neighbor_rank, boundary)
-        self.info = orientation.corners[ID]
+        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
+        self.info = orientation.corners[feature_id]
         self.periodic = self.is_periodic(boundary_type)
-        self.external_faces = self.collect_external_faces(boundary_type)
-        self.external_edges = self.collect_external_edges(edges)
-        self.opp_info = orientation.corners[ID]["opp"]
-        self.periodic_correction = self.get_periodic_correction(boundary_type)
-        self.global_boundary = self.get_global_boundary()
+        self.opp_info = orientation.corners[feature_id]["opp"]
+        self.periodic_correction = self.get_periodic_correction()
+        self.global_boundary = self.get_global_boundary(global_boundary)
 
     def is_periodic(self, boundary_type) -> bool:
         """Determine if a corner is a periodic corner
@@ -201,76 +186,54 @@ class Corner(Feature):
         Returns:
             bool: True if periodic
         """
-        return boundary_type[self.ID] == "periodic"
+        return boundary_type == "periodic"
 
-    def get_periodic_correction(self, boundary_type) -> tuple[int, ...]:
+    def get_periodic_correction(self) -> tuple[int, ...]:
         """
         Determine spatial correction factor (shift) if periodic
         """
         _period_correction = [0, 0, 0]
         for n_face in self.info["faces"]:
-            if boundary_type[n_face] == 2:
+            if self.boundary_type == "periodic":
                 _period_correction[orientation.faces[n_face]["argOrder"][0]] = (
                     orientation.faces[n_face]["dir"]
                 )
 
         return tuple(_period_correction)
 
-    def collect_external_faces(self, boundary_type):
+    def get_global_boundary(self, global_boundary) -> bool:
         """
-        Determine if corners are on an external face with boundary type 0
+        Determine if the corner is a global boundary
         """
-        external_faces = []
-        for n_face in orientation.corners[self.ID]["faces"]:
-            if boundary_type[n_face] == 0:
-                external_faces.append(n_face)
 
-        return external_faces
-
-    def collect_external_edges(self, edges):
-        """
-        Determine if corners are on an external edge with boundary type 0
-        """
-        external_edges = []
-        for edge in orientation.corners[self.ID]["edges"]:
-            if edges[edge].boundary:
-                external_edges.append(edge)
-
-        return external_edges
-
-    def get_global_boundary(self) -> bool:
-        """
-        Determine if the edge is an external boundary
-        """
-        global_boundary = False
-        if len(self.external_faces) == 3 or len(self.external_edges) == 3:
-            global_boundary = True
         return global_boundary
 
-    def get_extension(self, extend_domain, bounds):
-        """
-        Determine the span of the feature based on extend
-        """
-        faces = orientation.corners[self.ID]["ID"]
-        for n, f in enumerate(faces):
-            if f > 0:
-                self.extend[n][0] = bounds[n][-1] - extend_domain[n]
-                self.extend[n][1] = bounds[n][-1]
-            elif f < 0:
-                self.extend[n][0] = bounds[n][0]
-                self.extend[n][1] = bounds[n][0] + extend_domain[n]
-            else:
-                self.extend[n][0] = 0
-                self.extend[n][1] = 0
+    # def get_extension(self, extend_domain, bounds):
+    #     """
+    #     Determine the span of the feature based on extend
+    #     """
+    #     faces = orientation.corners[self.feature_id]["ID"]
+    #     for n, f in enumerate(faces):
+    #         if f > 0:
+    #             self.extend[n][0] = bounds[n][-1] - extend_domain[n]
+    #             self.extend[n][1] = bounds[n][-1]
+    #         elif f < 0:
+    #             self.extend[n][0] = bounds[n][0]
+    #             self.extend[n][1] = bounds[n][0] + extend_domain[n]
+    #         else:
+    #             self.extend[n][0] = 0
+    #             self.extend[n][1] = 0
 
 
 def collect_features(
     neighbor_ranks,
-    boundaries,
+    global_boundary,
     boundary_types,
     voxels,
     inlet=None,
     outlet=None,
+    pad=None,
+    reservoir_pad=None,
 ):
     """
     Collect information for faces, edges, and corners
@@ -292,50 +255,36 @@ def collect_features(
         faces[feature] = Face(
             feature,
             neighbor_ranks[feature],
-            boundaries[feature],
+            global_boundary[feature],
             boundary_types[feature],
             inlet[index],
             outlet[index],
         )
-        faces[feature].loop = get_feature_voxels(feature, voxels)
+        faces[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
     ### Edges
     for feature in orientation.edges.keys():
         edges[feature] = Edge(
             feature,
             neighbor_ranks[feature],
-            boundaries[feature],
-            boundary_types,
+            global_boundary[feature],
+            boundary_types[feature],
         )
-        edges[feature].loop = get_feature_voxels(feature, voxels)
+        edges[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
     ### Corners
     for feature in orientation.corners.keys():
         corners[feature] = Corner(
             feature,
             neighbor_ranks[feature],
-            boundaries[feature],
-            boundary_types,
-            edges,
+            global_boundary[feature],
+            boundary_types[feature],
         )
-        corners[feature].loop = get_feature_voxels(feature, voxels)
+        corners[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
     data_out = {"faces": faces, "edges": edges, "corners": corners}
 
     return data_out
-
-
-def set_padding(features, voxels, pad, reservoir_pad=0):
-    """
-    If the subdomain is padded, set the padding for the features
-    """
-
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in features[feature_type].items():
-            feature.loop = get_feature_voxels(feature_id, voxels, pad)
-
-    return features
 
 
 def get_feature_voxels(feature_id, voxels, pad=None):
@@ -349,7 +298,7 @@ def get_feature_voxels(feature_id, voxels, pad=None):
         _type_: _description_
     """
     padded = True
-    if pad is None:
+    if pad is None or np.sum(pad) == 0:
         padded = False
         pad = [[0, 0], [0, 0], [0, 0]]
         loop = {
@@ -360,6 +309,7 @@ def get_feature_voxels(feature_id, voxels, pad=None):
             "own": np.zeros([3, 2], dtype=np.uint64),
             "neighbor": np.zeros([3, 2], dtype=np.uint64),
         }
+
     for n, length in enumerate(voxels):
         if feature_id[n] == -1:
             if pad[n][0] != 0:
@@ -372,14 +322,14 @@ def get_feature_voxels(feature_id, voxels, pad=None):
             if pad[n][1] != 0:
                 loop["own"][n] = [length - pad[n][1] * 2, length - pad[n][1]]
             else:
-                loop["own"][n] = [length - 2, length - 1]
+                loop["own"][n] = [length - 1, length]
             if "neighbor" in loop:
                 loop["neighbor"][n] = [length - pad[n][1], length]
         else:
             if padded:
                 loop["own"][n] = [pad[n][0], length - pad[n][1]]
             else:
-                loop["own"][n] = [0, length - 1]
+                loop["own"][n] = [0, length]
             if "neighbor" in loop:
                 loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
 
