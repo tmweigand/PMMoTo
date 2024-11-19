@@ -10,6 +10,7 @@ from mpi4py import MPI
 # from pyevtk import vtk
 from pmmoto.core import domain_decompose
 from pmmoto.core import communication
+from pmmoto.core import subdomain_padded
 from . import io_utils
 from . import evtk
 
@@ -27,7 +28,7 @@ __all__ = [
 ]
 
 
-def save_grid_data_serial(file_name, subdomains, domain, grid, **kwargs):
+def save_grid_data_serial(file_name, subdomains, grid, **kwargs):
     """_summary_
 
     Args:
@@ -44,7 +45,7 @@ def save_grid_data_serial(file_name, subdomains, domain, grid, **kwargs):
     for subdomain in subdomains:
         save_grid_data_proc(file_name, subdomain, grid, **kwargs)
 
-    write_parallel_VTK_grid(file_name, subdomains[0], domain, grid, **kwargs)
+    write_parallel_VTK_grid(file_name, subdomains[0], grid, **kwargs)
 
 
 def save_grid_data_parallel(file_name, subdomain, domain, grid, **kwargs):
@@ -89,7 +90,7 @@ def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
         origin=(0, 0, 0),
         start=subdomain.start,
         end=[sum(x) for x in zip(subdomain.start, subdomain.voxels)],
-        spacing=subdomain.resolution,
+        spacing=subdomain.domain.resolution,
         cellData=point_data,
     )
 
@@ -116,7 +117,7 @@ def save_grid(file_name, grid):
     )
 
 
-def write_parallel_VTK_grid(file_name, subdomain, domain, grid, **kwargs):
+def write_parallel_VTK_grid(file_name, subdomain, grid, **kwargs):
     """
     Wrapper to evtk.writeParallelVTKGrid
     """
@@ -128,26 +129,27 @@ def write_parallel_VTK_grid(file_name, subdomain, domain, grid, **kwargs):
     for key, value in kwargs.items():
         data_info[key] = (value.dtype, 1)
 
-    name = [local_file_proc] * subdomain.num_subdomains
-    starts = [[0, 0, 0] for _ in range(subdomain.num_subdomains)]
-    ends = [[0, 0, 0] for _ in range(subdomain.num_subdomains)]
+    name = [local_file_proc] * subdomain.domain.num_subdomains
+    starts = [[0, 0, 0] for _ in range(subdomain.domain.num_subdomains)]
+    ends = [[0, 0, 0] for _ in range(subdomain.domain.num_subdomains)]
 
-    for n in range(0, subdomain.num_subdomains):
+    for n in range(0, subdomain.domain.num_subdomains):
+        _sd = subdomain_padded.PaddedSubdomain(n, subdomain.domain)
         name[n] = name[n] + str(n) + ".vti"
-        _index = domain.get_subdomain_index(n)
-        starts[n] = domain.get_subdomain_start(_index)
-        ends[n] = [sum(x) for x in zip(starts[n], domain.get_subdomain_voxels(_index))]
+        _index = _sd.get_index()
+        starts[n] = _sd.get_start()
+        ends[n] = [sum(x) for x in zip(starts[n], _sd.get_voxels())]
 
     evtk.writeParallelVTKGrid(
         file_name,
         coordsData=(
-            domain.voxels,
+            subdomain.domain.voxels,
             subdomain.coords[0].dtype,
         ),
         starts=starts,
         ends=ends,
         sources=name,
-        spacing=subdomain.resolution,
+        spacing=subdomain.domain.resolution,
         cellData=data_info,
     )
 

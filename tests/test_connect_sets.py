@@ -12,13 +12,17 @@ def test_connect_sets():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomain_map = [1, 1, 1]  # Specifies how Domain is broken among procs
+    subdomains = [1, 1, 1]  # Specifies how Domain is broken among procs
     voxels = [100, 100, 100]  # Total Number of Nodes in Domain
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0, 0], [0, 0], [0, 0]]  # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundary_types = [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+    ]  # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -26,11 +30,11 @@ def test_connect_sets():
 
     save_data = True
 
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=rank,
@@ -44,13 +48,13 @@ def test_connect_sets():
         sphere_data,
     )
 
-    connected_sets = pmmoto.filters.connect_all_phases(pm, sd)
+    connected_sets = pmmoto.filters.connect_components(pm.grid, sd)
 
     if save_data:
 
         kwargs = {"sets": connected_sets}
         pmmoto.io.save_grid_data_serial(
-            "data_out/test_connects_sets_grid", sd, domain, pm.grid, **kwargs
+            "data_out/test_connects_sets_grid", sd, pm.grid, **kwargs
         )
 
 

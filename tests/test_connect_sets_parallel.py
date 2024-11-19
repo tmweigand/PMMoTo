@@ -12,13 +12,17 @@ def test_connect_sets_parallel():
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    subdomain_map = [2, 2, 2]  # Specifies how Domain is broken among procs
+    subdomains = [2, 2, 2]  # Specifies how Domain is broken among procs
     voxels = [100, 100, 100]  # Total Number of Nodes in Domain
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0, 0], [0, 0], [0, 0]]  # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundary_types = [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+    ]  # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet = [[1, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -26,11 +30,11 @@ def test_connect_sets_parallel():
 
     save_data = True
 
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=rank,

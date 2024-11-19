@@ -36,7 +36,7 @@ def connect_components(
 
     label_grid, label_count = _connect_components(grid)
 
-    if subdomain.num_subdomains > 1:
+    if subdomain.domain.num_subdomains > 1:
         connect_subdomain_boundaries(subdomain, label_grid, label_count)
 
     return label_grid

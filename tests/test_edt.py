@@ -13,13 +13,17 @@ def my_function():
     # size = comm.Get_size()
     # rank = comm.Get_rank()
 
-    subdomain_map = [1, 1, 1]  # Specifies how domain is broken among processes
+    subdomains = [1, 1, 1]  # Specifies how domain is broken among processes
     voxels = [300, 300, 300]  # Total Number of Nodes in Domain
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
 
     ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[2, 2], [2, 2], [2, 2]]  # 0: Nothing Assumed  1: Walls 2: Periodic
+    boundary_types = [
+        [2, 2],
+        [2, 2],
+        [2, 2],
+    ]  # 0: Nothing Assumed  1: Walls 2: Periodic
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
 
@@ -29,11 +33,11 @@ def my_function():
     testAlgo = True
 
     startTime = time.time()
-    sd, domain = pmmoto.initialize(
+    sd = pmmoto.initialize(
         box=box,
-        subdomain_map=subdomain_map,
+        subdomains=subdomains,
         voxels=voxels,
-        boundaries=boundaries,
+        boundary_types=boundary_types,
         inlet=inlet,
         outlet=outlet,
         rank=0,
@@ -46,7 +50,7 @@ def my_function():
         sphere_data,
     )
 
-    edt = pmmoto.filters.calc_edt(domain, sd, pm.grid)
+    edt = pmmoto.filters.calc_edt(sd, pm.grid)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
     pmmoto.io.save_grid_data("dataOut/grid", sd, pm.grid, dist=edt)
