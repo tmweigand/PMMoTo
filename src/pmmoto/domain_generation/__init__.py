@@ -1,3 +1,3 @@
-from .domainGeneration import *
-from ._domainGeneration import *
+from .domain_generation import *
+from ._domain_generation import *
 from .rdf import *

@@ -16,7 +16,8 @@ __all__ = [
     "gen_pm_atom",
     "gen_pm_verlet_sphere",
     "gen_pm_verlet_atom",
-    "gen_pm_inkbottle"
+    "gen_pm_inkbottle",
+    "convert_atoms_to_spheres"
 ]
 
 cdef vector[verlet_sphere] gen_verlet_list(
@@ -126,7 +127,7 @@ def gen_pm_atom(
     """
     Determine if voxel centroid is located in atom
     """
-    spheres = convert_atoms_spheres(
+    spheres = convert_atoms_to_spheres(
         atom_locations,
         atom_types,
         atom_cutoff
@@ -291,7 +292,7 @@ def gen_pm_verlet_atom(
     Calculate the radii for atoms and use spheres routines
     """
 
-    spheres = convert_atoms_spheres(
+    spheres = convert_atoms_to_spheres(
         atom_locations,
         atom_types,
         atom_cutoff)
@@ -307,7 +308,7 @@ def gen_pm_verlet_atom(
     return grid
 
 
-def convert_atoms_spheres(
+def convert_atoms_to_spheres(
     double[:,:] atom_locations,
     long[:] atom_types,
     unordered_map[int,double]  atom_cutoff 

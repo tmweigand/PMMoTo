@@ -2,7 +2,7 @@
 
 import numpy as np
 from mpi4py import MPI
-from pmmoto.domain_generation import _domainGeneration
+from pmmoto.domain_generation import _domain_generation
 
 __all__ = ["generate_rdf", "generate_bounded_rdf"]
 

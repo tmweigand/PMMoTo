@@ -183,3 +183,49 @@ def test_feature_voxels_figure():
         ] = 2
 
     pmmoto.io.save_grid("data_out/test_feature_voxels", grid)
+
+
+def test_collect_periodic_features():
+    """
+    Check function that loops through the subdomain features and
+    returns a list of all of the periodic ones.
+    """
+
+    rank = 26
+    pad = (1, 1, 1)
+    reservoir_voxels = 0
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+    periodic_features = pmmoto.core.subdomain_features.collect_periodic_features(
+        sd.features
+    )
+
+    np.testing.assert_equal(
+        periodic_features, [(0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1)]
+    )
+
+
+def test_collect_periodic_corrections():
+    """
+    Check function that loops through the subdomain features and
+    returns a list of all of the periodic corrections.
+    """
+
+    rank = 26
+    pad = (1, 1, 1)
+    reservoir_voxels = 0
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+    periodic_corrections = pmmoto.core.subdomain_features.collect_periodic_corrections(
+        sd.features
+    )
+
+    np.testing.assert_equal(
+        periodic_corrections,
+        {
+            (0, 0, 1): (0, 0, -1),
+            (1, 0, 1): (0, 0, 0),
+            (0, 1, 1): (0, 0, 0),
+            (1, 1, 1): (-1, -1, -1),
+        },
+    )

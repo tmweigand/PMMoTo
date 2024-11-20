@@ -1,10 +1,11 @@
 import numpy as np
 from mpi4py import MPI
-from pmmoto.domain_generation import _domainGeneration
+from pmmoto.domain_generation import _domain_generation
 from pmmoto.core import communication
 from pmmoto.core import utils
 from pmmoto.core import porousmedia
 from pmmoto.core import orientation
+from pmmoto.core import subdomain_features
 
 
 __all__ = [
@@ -17,6 +18,9 @@ __all__ = [
     "gen_mp_from_grid",
     "gen_periodic_spheres",
     "gen_periodic_atoms",
+    "is_inside_domain",
+    "collect_boundary_crossings",
+    "reflect_boundary_sphere",
 ]
 
 
@@ -24,7 +28,7 @@ def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     """
     Generate binary domain (pm) from sphere data that contains radii
     """
-    _grid = _domainGeneration.gen_pm_sphere(
+    _grid = _domain_generation.gen_pm_sphere(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
     pm = porousmedia.gen_pm(subdomain, _grid, res_size)
@@ -39,7 +43,7 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
     """
     Generate binary domain (pm) from atom data, types and cutoff
     """
-    _grid = _domainGeneration.gen_pm_atom(
+    _grid = _domain_generation.gen_pm_atom(
         subdomain.coords[0],
         subdomain.coords[1],
         subdomain.coords[2],
@@ -61,7 +65,7 @@ def gen_pm_verlet_spheres_domain(subdomain, spheres, verlet=[1, 1, 1], res_size=
     Generate binary domain (pm) from sphere data that contains radii
        using verlet domains
     """
-    _grid = _domainGeneration.gen_pm_verlet_sphere(
+    _grid = _domain_generation.gen_pm_verlet_sphere(
         verlet, subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
     pm = porousmedia.gen_pm(subdomain, _grid, res_size)
@@ -79,7 +83,7 @@ def gen_pm_verlet_atom_domain(
     Generate binary domain (pm) from atom data, types and cutoff
        using verlet domains
     """
-    _grid = _domainGeneration.gen_pm_verlet_atom(
+    _grid = _domain_generation.gen_pm_verlet_atom(
         verlet,
         subdomain.coords[0],
         subdomain.coords[1],
@@ -100,7 +104,7 @@ def gen_pm_verlet_atom_domain(
 def gen_pm_inkbottle(subdomain, domain_data, res_size=0):
     """ """
     subdomain.update_domain_size(domain_data)
-    _grid = _domainGeneration.gen_pm_inkbottle(
+    _grid = _domain_generation.gen_pm_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
     pm = porousmedia.gen_pm(subdomain, _grid, res_size)
@@ -128,73 +132,106 @@ def gen_mp_from_grid(mp, grid):
     return mp
 
 
-def is_boundary_sphere(sphere_data, voxel, domain):
+def collect_boundary_crossings(sphere_data, domain_box):
     """
-    Determine if a sphere crosses the domain boundaries
+    Determine if a sphere crosses the domain boundaries.
+
+    Args:
+        sphere_data (list or tuple): Sphere data as (x, y, z, radius).
+        domain_box (numpy array): Domain boundaries as a 2D array [[x_min, x_max], [y_min, y_max], [z_min, z_max]].
+
+    Returns:
+        numpy.ndarray: Array of size 6 indicating boundary crossings:
+                       [x_min_cross, x_max_cross, y_min_cross, y_max_cross, z_min_cross, z_max_cross].
     """
-    crosses_boundary = np.zeros(6, dtype=np.uint8)
-    for n in range(0, 3):
-        if sphere_data[n] - sphere_data[3] - voxel[n] <= domain[n, 0]:
-            crosses_boundary[n * 2] = True
-        if sphere_data[n] + sphere_data[3] + voxel[n] >= domain[n, 1]:
-            crosses_boundary[n * 2 + 1] = True
+    boundary_features = []
+    features = orientation.get_features()
+    for feature_id in features:
+        boundary = [0, 0, 0]
+        for n, val in enumerate(feature_id):
+            if val == -1:
+                if sphere_data[n] - sphere_data[3] <= domain_box[n][0]:
+                    boundary[n] = 1
+            elif val == 1:
+                if sphere_data[n] + sphere_data[3] >= domain_box[n][1]:
+                    boundary[n] = 1
 
-    return crosses_boundary
+        if sum(boundary) == sum(abs(_id) for _id in feature_id):
+            boundary_features.append(feature_id)
+
+    return boundary_features
 
 
-def is_inside_domain(sphere_data, domain):
+def is_inside_domain(sphere_coordinates, domain_box):
     """
-    Determine if a sphere is within domain boundaries
+    Determine if a sphere is within the domain boundaries.
+
+    Args:
+        sphere_data (list or tuple): Coordinates of the sphere (x, y, z).
+        domain_box (list of tuples): Domain boundaries [(x_min, x_max), (y_min, y_max), (z_min, z_max)].
+
+    Returns:
+        bool: True if the sphere is within the domain boundaries, False otherwise.
     """
-    count_dim = 0
-    for n in range(0, 3):
-        if domain[n, 0] <= sphere_data[n] <= domain[n, 1]:
-            count_dim += 1
-
-    return count_dim == 3
+    return all(
+        dim_min <= coord <= dim_max
+        for coord, (dim_min, dim_max) in zip(sphere_coordinates, domain_box)
+    )
 
 
-def reflect_boundary_sphere(sphere_data, crosses_boundary, domain_length, boundaries):
+def reflect_boundary_sphere(sphere_data, boundary_feature, subdomain):
     """
     Add spheres that cross periodic boundaries
     """
+
+    periodic_features = subdomain_features.collect_periodic_features(subdomain.features)
+
+    periodic_corrections = subdomain_features.collect_periodic_corrections(
+        subdomain.features
+    )
+
     periodic_spheres = []
-    for f_index in orientation.faces:
-        face = orientation.faces[f_index]
-        index = face["argOrder"][0]
-        if crosses_boundary[f_index] and boundaries[index] == 2:
-            shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-            add_sphere = list(sphere_data)
-            add_sphere[index] = shift_sphere
-            periodic_spheres.append(add_sphere)
+    for feature_id in boundary_feature:
+        if feature_id in periodic_features:
+            periodic_spheres.append(
+                sphere_data * subdomain.feature[feature_id].periodic_correction
+            )
+    # for f_index in orientation.faces:
+    #     face = orientation.faces[f_index]
+    #     index = face["argOrder"][0]
+    #     if crosses_boundary[index] and boundary_types[index] == 2:
+    #         shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
+    #         add_sphere = list(sphere_data)
+    #         add_sphere[index] = shift_sphere
+    #         periodic_spheres.append(add_sphere)
 
-    for e_index in orientation.edges:
-        edge = orientation.edges[e_index]
-        add_sphere = list(sphere_data)
-        periodic = [False, False]
-        for n_face, f_index in enumerate(edge["faceIndex"]):
-            face = orientation.faces[f_index]
-            index = face["argOrder"][0]
-            if crosses_boundary[f_index] and boundaries[index] == 2:
-                shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-                add_sphere[index] = shift_sphere
-                periodic[n_face] = True
-        if all(periodic):
-            periodic_spheres.append(add_sphere)
+    # for e_index in orientation.edges:
+    #     edge = orientation.edges[e_index]
+    #     add_sphere = list(sphere_data)
+    #     periodic = [False, False]
+    #     for n_face, f_index in enumerate(edge["faceIndex"]):
+    #         face = orientation.faces[f_index]
+    #         index = face["argOrder"][0]
+    #         if crosses_boundary[index] and boundary_types[index] == 2:
+    #             shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
+    #             add_sphere[index] = shift_sphere
+    #             periodic[n_face] = True
+    #     if all(periodic):
+    #         periodic_spheres.append(add_sphere)
 
-    for c_index in orientation.corners:
-        corner = orientation.corners[c_index]
-        add_sphere = list(sphere_data)
-        periodic = [False, False, False]
-        for n_face, f_index in enumerate(corner["faceIndex"]):
-            face = orientation.faces[f_index]
-            index = face["argOrder"][0]
-            if crosses_boundary[f_index] and boundaries[index] == 2:
-                shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-                add_sphere[index] = shift_sphere
-                periodic[n_face] = True
-        if all(periodic):
-            periodic_spheres.append(add_sphere)
+    # for c_index in orientation.corners:
+    #     corner = orientation.corners[c_index]
+    #     add_sphere = list(sphere_data)
+    #     periodic = [False, False, False]
+    #     for n_face, f_index in enumerate(corner["faceIndex"]):
+    #         face = orientation.faces[f_index]
+    #         index = face["argOrder"][0]
+    #         if crosses_boundary[index] and boundary_types[index] == 2:
+    #             shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
+    #             add_sphere[index] = shift_sphere
+    #             periodic[n_face] = True
+    #     if all(periodic):
+    #         periodic_spheres.append(add_sphere)
 
     return periodic_spheres
 
@@ -204,7 +241,6 @@ def gen_periodic_spheres(subdomain, sphere_data):
     Add spheres that extend pass boundary and are periodic
     """
     domain = subdomain.domain.size_domain
-    res = subdomain.domain.voxel
     domain_length = subdomain.domain.length_domain
     boundaries = np.array(subdomain.domain.boundaries).flatten()
 
@@ -214,7 +250,9 @@ def gen_periodic_spheres(subdomain, sphere_data):
     for n_sphere in range(num_spheres):
         inside_domain = is_inside_domain(sphere_data[n_sphere, :], domain)
         if inside_domain:
-            crosses_boundary = is_boundary_sphere(sphere_data[n_sphere, :], res, domain)
+            crosses_boundary = collect_boundary_crossings(
+                sphere_data[n_sphere, :], domain
+            )
 
             # Pass internal spheres
             if np.sum(crosses_boundary) == 0:

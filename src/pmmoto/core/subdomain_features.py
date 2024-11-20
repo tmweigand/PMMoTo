@@ -4,7 +4,11 @@ import numpy as np
 import itertools
 from . import orientation
 
-__all__ = ["collect_features", "get_feature_voxels"]
+__all__ = [
+    "collect_features",
+    "get_feature_voxels",
+    "collect_periodic_features",
+]
 
 
 class Feature(object):
@@ -253,32 +257,32 @@ def collect_features(
         face_dim = np.nonzero(feature)[0][0]
         index = face_dim * 2 if feature[face_dim] < 0 else face_dim * 2 + 1
         faces[feature] = Face(
-            feature,
-            neighbor_ranks[feature],
-            global_boundary[feature],
-            boundary_types[feature],
-            inlet[index],
-            outlet[index],
+            feature_id=feature,
+            neighbor_rank=neighbor_ranks[feature],
+            boundary_type=boundary_types[feature],
+            global_boundary=global_boundary[feature],
+            inlet=inlet[index],
+            outlet=outlet[index],
         )
         faces[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
     ### Edges
     for feature in orientation.edges.keys():
         edges[feature] = Edge(
-            feature,
-            neighbor_ranks[feature],
-            global_boundary[feature],
-            boundary_types[feature],
+            feature_id=feature,
+            neighbor_rank=neighbor_ranks[feature],
+            boundary_type=boundary_types[feature],
+            global_boundary=global_boundary[feature],
         )
         edges[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
     ### Corners
     for feature in orientation.corners.keys():
         corners[feature] = Corner(
-            feature,
-            neighbor_ranks[feature],
-            global_boundary[feature],
-            boundary_types[feature],
+            feature_id=feature,
+            neighbor_rank=neighbor_ranks[feature],
+            boundary_type=boundary_types[feature],
+            global_boundary=global_boundary[feature],
         )
         corners[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
 
@@ -334,3 +338,37 @@ def get_feature_voxels(feature_id, voxels, pad=None):
                 loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
 
     return loop
+
+
+def collect_periodic_features(features):
+    """
+    Loop through features and collect periodic ones
+
+    Args:
+        features (_type_): _description_
+    """
+    periodic_features = []
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature_id, feature in features[feature_type].items():
+            if feature.periodic:
+                periodic_features.append(feature_id)
+
+    return periodic_features
+
+
+def collect_periodic_corrections(features):
+    """
+    Loop through features and collect periodic ones
+
+    Args:
+        features (_type_): _description_
+    """
+    periodic_corrections = {}
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature_id, feature in features[feature_type].items():
+            if feature.periodic:
+                periodic_corrections[feature_id] = feature.periodic_correction
+
+    return periodic_corrections
