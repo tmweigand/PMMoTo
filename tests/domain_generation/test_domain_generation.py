@@ -161,11 +161,177 @@ def test_reflect_boundary_sphere(padded_subdomain):
     Test addition of periodic spheres
     """
 
-    sphere = np.array([0.9, 0.5, 0.5, 0.25])
+    # Face sphere
+    periodic_features = pmmoto.core.subdomain_features.collect_periodic_features(
+        padded_subdomain.features
+    )
+
+    periodic_corrections = pmmoto.core.subdomain_features.collect_periodic_corrections(
+        padded_subdomain.features
+    )
+    sphere = np.array([[0.9, 0.5, 0.5, 0.25]])
     boundary_features = pmmoto.domain_generation.collect_boundary_crossings(
-        sphere, padded_subdomain.domain.box
+        sphere[0], padded_subdomain.domain.box
     )
 
     periodic_spheres = pmmoto.domain_generation.reflect_boundary_sphere(
-        sphere, boundary_features, padded_subdomain
+        sphere[0],
+        boundary_features,
+        padded_subdomain.domain.length,
+        periodic_features,
+        periodic_corrections,
+    )
+
+    np.testing.assert_allclose(periodic_spheres, [[-0.1, 0.5, 0.5, 0.25]])
+
+    # Edge sphere
+
+    sphere = np.array([[0.1, 0.5, 0.1, 0.15]])
+    boundary_features = pmmoto.domain_generation.collect_boundary_crossings(
+        sphere[0], padded_subdomain.domain.box
+    )
+
+    periodic_spheres = pmmoto.domain_generation.reflect_boundary_sphere(
+        sphere[0],
+        boundary_features,
+        padded_subdomain.domain.length,
+        periodic_features,
+        periodic_corrections,
+    )
+
+    np.testing.assert_allclose(
+        periodic_spheres,
+        [[1.1, 0.5, 0.1, 0.15], [0.1, 0.5, 1.1, 0.15], [0.1, 0.5, 0.1, 0.15]],
+    )
+
+    # Corner sphere
+
+    sphere = np.array([[0.1, 0.1, 0.1, 0.45]])
+    boundary_features = pmmoto.domain_generation.collect_boundary_crossings(
+        sphere[0], padded_subdomain.domain.box
+    )
+
+    periodic_spheres = pmmoto.domain_generation.reflect_boundary_sphere(
+        sphere[0],
+        boundary_features,
+        padded_subdomain.domain.length,
+        periodic_features,
+        periodic_corrections,
+    )
+
+    np.testing.assert_allclose(
+        periodic_spheres,
+        [
+            [1.1, 0.1, 0.1, 0.45],
+            [0.1, 1.1, 0.1, 0.45],
+            [0.1, 0.1, 1.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [1.1, 1.1, 1.1, 0.45],
+        ],
+    )
+
+
+def test_gen_periodic_spheres(padded_subdomain):
+    """
+    Test the addition of periodic spheres
+    """
+
+    # No periodic spheres
+
+    spheres = np.array([[0.5, 0.5, 0.5, 0.25]])
+
+    periodic_spheres = pmmoto.domain_generation.gen_periodic_spheres(
+        padded_subdomain, spheres
+    )
+
+    np.testing.assert_allclose(periodic_spheres, [[0.5, 0.5, 0.5, 0.25]])
+
+    spheres = np.array(
+        [[0.9, 0.5, 0.5, 0.25], [0.1, 0.5, 0.1, 0.15], [0.1, 0.1, 0.1, 0.45]]
+    )
+
+    periodic_spheres = pmmoto.domain_generation.gen_periodic_spheres(
+        padded_subdomain, spheres
+    )
+
+    np.testing.assert_allclose(
+        periodic_spheres,
+        [
+            [0.9, 0.5, 0.5, 0.25],
+            [0.1, 0.5, 0.1, 0.15],
+            [0.1, 0.1, 0.1, 0.45],
+            [-0.1, 0.5, 0.5, 0.25],
+            [1.1, 0.5, 0.1, 0.15],
+            [0.1, 0.5, 1.1, 0.15],
+            [0.1, 0.5, 0.1, 0.15],
+            [1.1, 0.1, 0.1, 0.45],
+            [0.1, 1.1, 0.1, 0.45],
+            [0.1, 0.1, 1.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [0.1, 0.1, 0.1, 0.45],
+            [1.1, 1.1, 1.1, 0.45],
+        ],
+    )
+
+
+def test_gen_periodic_atoms(padded_subdomain):
+    """
+    Test the addition of periodic spheres
+    """
+
+    # No periodic spheres
+
+    atom_locations = np.array([[0.5, 0.5, 0.5]])
+
+    atom_types = np.array([0], dtype=np.int64)
+    atom_cutoff = {}
+    atom_cutoff[0] = 0.25
+
+    atom_locations, atom_types = pmmoto.domain_generation.gen_periodic_atoms(
+        padded_subdomain, atom_locations, atom_types, atom_cutoff
+    )
+
+    np.testing.assert_allclose(atom_locations, [[0.5, 0.5, 0.5]])
+    np.testing.assert_allclose(atom_types, [0])
+
+    atom_locations = np.array([[0.1, 0.5, 0.5], [0.1, 0.5, 0.9], [0.97, 0.97, 0.97]])
+
+    atom_types = np.array([0, 1, 12], dtype=np.int64)
+    atom_cutoff = {}
+    atom_cutoff[0] = 0.25
+    atom_cutoff[1] = 0.35
+    atom_cutoff[12] = 0.05
+
+    atom_locations, atom_types = pmmoto.domain_generation.gen_periodic_atoms(
+        padded_subdomain, atom_locations, atom_types, atom_cutoff
+    )
+
+    np.testing.assert_allclose(
+        atom_locations,
+        [
+            [0.1, 0.5, 0.5],
+            [0.1, 0.5, 0.9],
+            [0.97, 0.97, 0.97],
+            [1.1, 0.5, 0.5],
+            [1.1, 0.5, 0.9],
+            [0.1, 0.5, -0.1],
+            [0.1, 0.5, 0.9],
+            [-0.03, 0.97, 0.97],
+            [0.97, -0.03, 0.97],
+            [0.97, 0.97, -0.03],
+            [0.97, 0.97, 0.97],
+            [0.97, 0.97, 0.97],
+            [0.97, 0.97, 0.97],
+            [-0.03, -0.03, -0.03],
+            [0.1, 0.5, 0.5],
+            [0.1, 0.5, 0.9],
+            [0.97, 0.97, 0.97],
+        ],
+    )
+
+    np.testing.assert_allclose(
+        atom_types, [0, 1, 12, 0, 0, 0, 0, 1, 1, 1, 1, 12, 12, 12, 12]
     )

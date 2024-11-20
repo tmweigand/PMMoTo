@@ -1,5 +1,4 @@
 import numpy as np
-from mpi4py import MPI
 from pmmoto.domain_generation import _domain_generation
 from pmmoto.core import communication
 from pmmoto.core import utils
@@ -179,59 +178,25 @@ def is_inside_domain(sphere_coordinates, domain_box):
     )
 
 
-def reflect_boundary_sphere(sphere_data, boundary_feature, subdomain):
+def reflect_boundary_sphere(
+    sphere_data,
+    boundary_feature,
+    domain_length,
+    periodic_features,
+    periodic_corrections,
+):
     """
-    Add spheres that cross periodic boundaries
+    Add spheres that cross periodic boundaries by using periodic_correction form features
     """
 
-    periodic_features = subdomain_features.collect_periodic_features(subdomain.features)
-
-    periodic_corrections = subdomain_features.collect_periodic_correction(
-        subdomain.features
-    )
-
-    periodic_spheres = []
-    for feature_id in boundary_feature:
+    periodic_spheres = np.zeros([len(boundary_feature), 4])
+    periodic_spheres[:, 3] = sphere_data[3]
+    for n, feature_id in enumerate(boundary_feature):
         if feature_id in periodic_features:
-            periodic_spheres.append(
-                sphere_data * subdomain.feature[feature_id].periodic_correction
-            )
-    # for f_index in orientation.faces:
-    #     face = orientation.faces[f_index]
-    #     index = face["argOrder"][0]
-    #     if crosses_boundary[index] and boundary_types[index] == 2:
-    #         shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-    #         add_sphere = list(sphere_data)
-    #         add_sphere[index] = shift_sphere
-    #         periodic_spheres.append(add_sphere)
-
-    # for e_index in orientation.edges:
-    #     edge = orientation.edges[e_index]
-    #     add_sphere = list(sphere_data)
-    #     periodic = [False, False]
-    #     for n_face, f_index in enumerate(edge["faceIndex"]):
-    #         face = orientation.faces[f_index]
-    #         index = face["argOrder"][0]
-    #         if crosses_boundary[index] and boundary_types[index] == 2:
-    #             shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-    #             add_sphere[index] = shift_sphere
-    #             periodic[n_face] = True
-    #     if all(periodic):
-    #         periodic_spheres.append(add_sphere)
-
-    # for c_index in orientation.corners:
-    #     corner = orientation.corners[c_index]
-    #     add_sphere = list(sphere_data)
-    #     periodic = [False, False, False]
-    #     for n_face, f_index in enumerate(corner["faceIndex"]):
-    #         face = orientation.faces[f_index]
-    #         index = face["argOrder"][0]
-    #         if crosses_boundary[index] and boundary_types[index] == 2:
-    #             shift_sphere = sphere_data[index] + face["dir"] * domain_length[index]
-    #             add_sphere[index] = shift_sphere
-    #             periodic[n_face] = True
-    #     if all(periodic):
-    #         periodic_spheres.append(add_sphere)
+            periodic_spheres[n][0:3] = sphere_data[0:3] + [
+                corr * len
+                for corr, len in zip(periodic_corrections[feature_id], domain_length)
+            ]
 
     return periodic_spheres
 
@@ -240,30 +205,38 @@ def gen_periodic_spheres(subdomain, sphere_data):
     """
     Add spheres that extend pass boundary and are periodic
     """
-    domain = subdomain.domain.size_domain
-    domain_length = subdomain.domain.length_domain
-    boundaries = np.array(subdomain.domain.boundaries).flatten()
+
+    periodic_features = subdomain_features.collect_periodic_features(subdomain.features)
+
+    periodic_corrections = subdomain_features.collect_periodic_corrections(
+        subdomain.features
+    )
 
     num_spheres = sphere_data.shape[0]
 
     all_periodic_spheres = []
     for n_sphere in range(num_spheres):
-        inside_domain = is_inside_domain(sphere_data[n_sphere, :], domain)
+        inside_domain = is_inside_domain(sphere_data[n_sphere, :], subdomain.domain.box)
         if inside_domain:
-            crosses_boundary = collect_boundary_crossings(
-                sphere_data[n_sphere, :], domain
+            boundary_features = collect_boundary_crossings(
+                sphere_data[n_sphere, :], subdomain.domain.box
             )
 
             # Pass internal spheres
-            if np.sum(crosses_boundary) == 0:
-                continue
-            periodic_spheres = reflect_boundary_sphere(
-                sphere_data[n_sphere, :], crosses_boundary, domain_length, boundaries
-            )
+            if boundary_features:
+                periodic_spheres = reflect_boundary_sphere(
+                    sphere_data[n_sphere, :],
+                    boundary_features,
+                    subdomain.domain.length,
+                    periodic_features,
+                    periodic_corrections,
+                )
 
-            all_periodic_spheres.extend(periodic_spheres)
+                all_periodic_spheres.extend(periodic_spheres)
 
-    sphere_data = np.concatenate((np.array(all_periodic_spheres), sphere_data))
+    if all_periodic_spheres:
+        sphere_data = np.concatenate((sphere_data, np.array(all_periodic_spheres)))
+
     return sphere_data
 
 
@@ -271,41 +244,44 @@ def gen_periodic_atoms(subdomain, atom_locations, atom_types, atom_cutoff):
     """
     Add atoms that extend pass boundary and are periodic
     """
-    domain = subdomain.domain.size_domain
-    res = subdomain.domain.voxel
-    domain_length = subdomain.domain.length_domain
-    boundaries = np.array(subdomain.domain.boundaries).flatten()
+
+    periodic_features = subdomain_features.collect_periodic_features(subdomain.features)
+
+    periodic_corrections = subdomain_features.collect_periodic_corrections(
+        subdomain.features
+    )
 
     num_atom = atom_locations.shape[0]
 
-    sphere = np.zeros(4)
+    atom = np.zeros(4)
     periodic_atom_locations = []
     periodic_atom_types = []
-    for n_atom in range(num_atom):
+    for atom_location, atom_type in zip(atom_locations, atom_types):
 
-        sphere[0:3] = atom_locations[n_atom]
-        sphere[3] = atom_cutoff[atom_types[n_atom]]
+        atom[0:3] = atom_location
+        atom[3] = atom_cutoff[atom_type]
 
-        inside_domain = is_inside_domain(sphere, domain)
+        inside_domain = is_inside_domain(atom, subdomain.domain.box)
         if inside_domain:
-            crosses_boundary = is_boundary_sphere(sphere, res, domain)
+            boundary_features = collect_boundary_crossings(atom, subdomain.domain.box)
+            if boundary_features:
 
-            # Pass internal spheres
-            if np.sum(crosses_boundary) == 0:
-                continue
-            add_periodic_atoms = reflect_boundary_sphere(
-                sphere, crosses_boundary, domain_length, boundaries
-            )
-
-            for atom in add_periodic_atoms:
-                periodic_atom_locations.extend([atom[0:3]])
-                periodic_atom_types.extend([atom_types[n_atom]])
+                periodic_atoms = reflect_boundary_sphere(
+                    atom,
+                    boundary_features,
+                    subdomain.domain.length,
+                    periodic_features,
+                    periodic_corrections,
+                )
+                print(atom_type)
+                periodic_atom_locations.extend(periodic_atoms[:, 0:3])
+                periodic_atom_types.extend([atom_type] * periodic_atoms.shape[1])
 
     if periodic_atom_locations:
         atom_locations = np.concatenate(
-            (np.array(periodic_atom_locations), atom_locations)
+            (atom_locations, np.array(periodic_atom_locations), atom_locations)
         )
         atom_types = np.concatenate(
-            (np.array(periodic_atom_types, dtype=int), atom_types)
+            (atom_types, np.array(periodic_atom_types, dtype=int))
         )
     return atom_locations, atom_types
