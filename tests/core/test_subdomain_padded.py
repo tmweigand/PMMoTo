@@ -59,7 +59,8 @@ def test_subdomain():
         )
     )
 
-    global_boundary, sd_boundary_types = sd.get_boundaries()
+    global_boundary = sd.get_global_boundary()
+    sd_boundary_types = sd.get_boundary_types(global_boundary)
 
     for feature_id, is_global_boundary in global_boundary.items():
         if feature_id == (0, 0, -1):
@@ -116,16 +117,17 @@ def test_subdomain_2():
         (-5.484954, -3.0244218),
     )
 
-    global_boundary, sd_boundary_types = sd.get_boundaries()
+    global_boundary = sd.get_global_boundary()
+    sd_boundary_types = sd.get_boundary_types(global_boundary)
 
     global_features = {
         (1, 0, 0): "end",
         (0, 1, 0): "wall",
         (0, 0, 1): "periodic",
-        (1, 0, 1): "periodic",
+        (1, 0, 1): "end",
         (1, 1, 0): "end",
-        (0, 1, 1): "periodic",
-        (1, 1, 1): "periodic",
+        (0, 1, 1): "wall",
+        (1, 1, 1): "end",
     }
 
     for feature_id, is_global_boundary in global_boundary.items():
@@ -182,16 +184,17 @@ def test_subdomain_3():
         (-9.0585841, -6.8909724),
     )
 
-    global_boundary, sd_boundary_types = sd.get_boundaries()
+    global_boundary = sd.get_global_boundary()
+    sd_boundary_types = sd.get_boundary_types(global_boundary)
 
     global_features = {
         (-1, 0, 0): "end",
         (0, -1, 0): "wall",
         (0, 0, -1): "periodic",
-        (-1, 0, -1): "periodic",
+        (-1, 0, -1): "end",
         (-1, -1, 0): "end",
-        (0, -1, -1): "periodic",
-        (-1, -1, -1): "periodic",
+        (0, -1, -1): "wall",
+        (-1, -1, -1): "end",
     }
 
     for feature_id, is_global_boundary in global_boundary.items():

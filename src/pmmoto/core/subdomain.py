@@ -21,7 +21,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.index = self.get_index()
         self.voxels = self.get_voxels()
         self.box = self.get_box()
-        self.global_boundary, self.boundary_types = self.get_boundaries()
+        self.global_boundary = self.get_global_boundary()
+        self.boundary_types = self.get_boundary_types(self.global_boundary)
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
         self.start = self.get_start()
@@ -77,44 +78,69 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(box)
 
-    def get_boundaries(self):
+    def get_global_boundary(self):
         """
-        Determine the boundary types for each subdomain and feature in subdomain
-        How to handle edges and corners? Now, assume  periodic -> end -> wall is the priority ranking
-        to account for non-fully periodic domains and issues with padding and pass the edges and corners
+        Determine if the features are on the domain boundary
         """
         global_boundary = {}
-        boundary_type = {}
-        feature_types = ["faces", "edges", "corners"]
-        for feature_type in feature_types:
-            features = orientation.features[feature_type].keys()
-            for feature in features:
-                boundary = True
-                _boundary_type = []
-                for dim, (ind, f_id) in enumerate(zip(self.index, feature)):
-                    if f_id == 0:
-                        continue
-                    elif (ind == 0) and (f_id == -1):
-                        _boundary_type.append(self.domain.boundary_types[dim][0])
-                    elif (ind == self.domain.subdomains[dim] - 1) and (f_id == 1):
-                        _boundary_type.append(self.domain.boundary_types[dim][1])
-                    else:
-                        boundary = False
-
-                if boundary:
-                    global_boundary[feature] = True
-
-                    if 2 in _boundary_type:
-                        boundary_type[feature] = "periodic"
-                    elif 0 in _boundary_type:
-                        boundary_type[feature] = "end"
-                    else:
-                        boundary_type[feature] = "wall"
+        features = orientation.get_features()
+        for feature in features:
+            boundary = True
+            for ind, f_id, subdomains in zip(
+                self.index, feature, self.domain.subdomains
+            ):
+                ### Conditions for a domain boundary feature
+                if (
+                    f_id == 0
+                    or ((ind == 0) and (f_id == -1))
+                    or ((ind == subdomains - 1) and (f_id == 1))
+                ):
+                    continue
                 else:
-                    global_boundary[feature] = False
-                    boundary_type[feature] = "internal"
+                    boundary = False
 
-        return global_boundary, boundary_type
+            if boundary:
+                global_boundary[feature] = True
+            else:
+                global_boundary[feature] = False
+
+        return global_boundary
+
+    def get_boundary_types(self, global_boundary):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        boundary_type = {}
+        features = orientation.get_features()
+        for feature in features:
+            if global_boundary[feature]:
+                _boundary_type = []
+                for ind, f_id, subdomains, boundary_types in zip(
+                    self.index,
+                    feature,
+                    self.domain.subdomains,
+                    self.domain.boundary_types,
+                ):
+                    if (ind == 0) and (f_id == -1):
+                        _boundary_type.append(boundary_types[0])
+                    elif (ind == subdomains - 1) and (f_id == 1):
+                        _boundary_type.append(boundary_types[1])
+
+                _boundary_type.sort()
+                if _boundary_type[0] == 0:
+                    boundary_type[feature] = "end"
+                elif _boundary_type[0] == 1:
+                    boundary_type[feature] = "wall"
+                elif _boundary_type[0] == 2:
+                    boundary_type[feature] = "periodic"
+                else:
+                    raise Exception
+            else:
+                boundary_type[feature] = "internal"
+
+        return boundary_type
 
     def get_inlet(self):
         """

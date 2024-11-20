@@ -186,7 +186,7 @@ def reflect_boundary_sphere(sphere_data, boundary_feature, subdomain):
 
     periodic_features = subdomain_features.collect_periodic_features(subdomain.features)
 
-    periodic_corrections = subdomain_features.collect_periodic_corrections(
+    periodic_corrections = subdomain_features.collect_periodic_correction(
         subdomain.features
     )
 

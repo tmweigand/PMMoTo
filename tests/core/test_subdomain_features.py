@@ -200,9 +200,7 @@ def test_collect_periodic_features():
         sd.features
     )
 
-    np.testing.assert_equal(
-        periodic_features, [(0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1)]
-    )
+    np.testing.assert_equal(periodic_features, [(0, 0, 1)])
 
 
 def test_collect_periodic_corrections():
@@ -224,8 +222,5 @@ def test_collect_periodic_corrections():
         periodic_corrections,
         {
             (0, 0, 1): (0, 0, -1),
-            (1, 0, 1): (0, 0, 0),
-            (0, 1, 1): (0, 0, 0),
-            (1, 1, 1): (-1, -1, -1),
         },
     )
