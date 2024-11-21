@@ -9,7 +9,7 @@ __all__ = ["generate_rdf", "generate_bounded_rdf"]
 
 def generate_rdf(atom_map, rdf_data):
     """
-    Generate Radial Distribution Functions from atom and data.
+    Generate Radial Distribution Functions from atom map and rdf data
 
     """
     rdf = {}
@@ -33,20 +33,35 @@ def generate_bounded_rdf(rdf):
 
 class RDF:
     """
-    Radial Distribution Function Class
+    Radial distribution function class
+    RDF = g(r) where:
+      r is the radial distance and
+      g is the free energy.
+
+    An alternative is:
+     G = -k_b*T ln g(r) / \sum_{r=0}^{r_f} g(r) where:
+      k_b is the Boltzmann constant
+      T is the temperature
+      r_f is pairwise distance cutoff
+
+    This is a common output for MD simulations.
+    See: https://docs.lammps.org/compute_rdf.html
+
+    This class reads in LAMMPS generated output and generates
+    a new interpolated function.
     """
 
-    def __init__(self, name, ID):
+    def __init__(self, name, atom_id=None):
         self.name = name
-        self.ID = ID
+        self.atom_id = atom_id
         self.r_data = None
         self.g_data = None
-        self.G = None
+
         self.bounds = None
 
     def set_RDF(self, r, g):
         """
-        Set r and g(r) of radial distributrion function
+        Set r and g(r) of radial distribution function
         """
         self.r_data = r
         self.g_data = g
@@ -57,63 +72,69 @@ class RDF:
         """
         return np.interp(r, self.r_data, self.g_data)
 
-    def get_G(self):
+    def get_G(self, k_b=8.31446261815324, temp=300):
         """
         Galculate G(r)
         """
-        kb = 8.31446261815324
-        T = 300
         _sum = np.sum(self.g_data)
-        self.G = -kb * T * np.log(self.g_data) / _sum
+        return -k_b * temp * np.log(self.g_data) / _sum
 
 
 class Bounded_RDF(RDF):
     """
-    Bounded Radial Distibution Class
+    Bounded radial distribution function class
+    where the intepolated function is restricted to:
+        g(r)> 0 : r : g(r) = 1
+
+    This class finds those bounds and introduces a function
+     r(g)
     """
 
     def __init__(self, rdf):
         self.rdf = rdf
-        self.r_data = None
-        self.g_data = None
+        self.set_bounds(rdf.g_data)
+        self.r_data, self.g_data = self.get_bounded_RDF_data(rdf, bounds)
         self.bounds = [None, None]
-        self.set_bounds()
 
-    def set_bounds(self):
+    def get_bounds(self, rdf_g_data):
         """
-        Set the bounds of the Bounded RDF
+        Get the the r values of the bounded RDF such that:
+            g(r) > 0 : r : g(r) = 1
         """
-        self.bounds[0] = self.find_min_r()
+        self.bounds[0] = self.find_min_r(rdf_g_data)
         self.bounds[1] = self.find_max_r(1.1)
-        self.set_RDF()
 
-    def find_min_r(self):
+    def find_min_r(self, rdf_g_data):
         """
-        Find the smallest r values FROM DATA such that all g(r) values are non-zero after r
+        Find the smallest r values from the RDF data such that:
+             min r where g(r) > 0
         """
-        r_loc = np.where([self.rdf.g_data == 0])[1][-1]
+        r_loc = np.where([rdf_g_data == 0])[1][-1]
 
         return r_loc
 
     def find_max_r(self, g):
         """
-        Find the smallest r values FROM DATA such that all g(r) values are non-zero after r
+        Find the smallest r value from the RDF data such that:
+          all g(r) values are non-zero after r
         """
         find_r = g - self.rdf.g_data
         r_loc = np.where([find_r < 0])[1][0]
 
         return r_loc
 
-    def set_RDF(self):
+    def get_bounded_RDF_data(self, rdf, bounds):
         """
-        Set the Bounds of the Radial Distribution Function
+        Set the bounds of the radial distribution function
         """
-        self.r_data = self.rdf.r_data[self.bounds[0] : self.bounds[1]]
-        self.g_data = self.rdf.g_data[self.bounds[0] : self.bounds[1]]
+        r_data = rdf.r_data[bounds[0] : bounds[1]]
+        g_data = rdf.g_data[bounds[0] : bounds[1]]
+
+        return r_data, g_data
 
     def r(self, g):
         """
         Given a g-value return r
-        !!! Only Works for Bounded RDF
+        Note! This only works for bounded RDFs
         """
         return np.interp(g, self.g_data, self.r_data)

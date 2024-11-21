@@ -14,7 +14,7 @@ def test_multiphase():
     voxels = [100, 100, 100]
 
     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
-    file = "tests/testDomains/50pack.out"
+    file = "tests/test_data/sphere_packs/50pack.out"
     boundary_types = [[2, 2], [2, 2], [2, 2]]
     inlet = [[0, 0], [0, 0], [0, 0]]
     outlet = [[0, 0], [0, 0], [0, 0]]
