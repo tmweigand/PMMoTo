@@ -5,7 +5,6 @@ import pmmoto
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-import matplotlib.pyplot as plt
 
 
 def my_function():

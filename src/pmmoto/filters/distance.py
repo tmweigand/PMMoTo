@@ -1,9 +1,9 @@
 import numpy as np
 from mpi4py import MPI
-from pykdtree.kdtree import KDTree
+# from pykdtree.kdtree import KDTree
 
 ### if using WSL, uncomment line below.
-# from scipy.spatial import KDTree
+from scipy.spatial import KDTree
 
 from edt import edt3d
 from pmmoto.core import communication

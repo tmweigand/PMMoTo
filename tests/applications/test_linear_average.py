@@ -1,6 +1,5 @@
 import numpy as np
 from mpi4py import MPI
-import matplotlib.pyplot as plt
 import pmmoto
 
 def my_function():
