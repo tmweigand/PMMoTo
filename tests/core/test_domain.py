@@ -14,7 +14,7 @@ def test_domain():
     inlet = ((1, 0), (0, 0), (0, 0))
     outlet = ((0, 1), (0, 0), (0, 0))
 
-    pmmoto_domain = pmmoto.core.Domain(
+    pmmoto_domain = pmmoto.core.domain.Domain(
         box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
     )
 

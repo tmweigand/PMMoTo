@@ -1,10 +1,9 @@
 import numpy as np
-from pmmoto.domain_generation import _domain_generation
-from pmmoto.core import communication
-from pmmoto.core import utils
-from pmmoto.core import porousmedia
-from pmmoto.core import orientation
-from pmmoto.core import subdomain_features
+from . import _domain_generation
+from ..core import communication
+from ..core import utils
+from ..core import porousmedia
+from ..core import subdomain_features
 
 
 __all__ = [
@@ -143,6 +142,8 @@ def collect_boundary_crossings(sphere_data, domain_box):
         numpy.ndarray: Array of size 6 indicating boundary crossings:
                        [x_min_cross, x_max_cross, y_min_cross, y_max_cross, z_min_cross, z_max_cross].
     """
+    from ..core import orientation
+
     boundary_features = []
     features = orientation.get_features()
     for feature_id in features:
@@ -222,7 +223,7 @@ def gen_periodic_spheres(subdomain, sphere_data):
                 sphere_data[n_sphere, :], subdomain.domain.box
             )
 
-            # Pass internal spheres
+            # Ignore internal spheres
             if boundary_features:
                 periodic_spheres = reflect_boundary_sphere(
                     sphere_data[n_sphere, :],
@@ -251,8 +252,6 @@ def gen_periodic_atoms(subdomain, atom_locations, atom_types, atom_cutoff):
         subdomain.features
     )
 
-    num_atom = atom_locations.shape[0]
-
     atom = np.zeros(4)
     periodic_atom_locations = []
     periodic_atom_types = []
@@ -273,7 +272,6 @@ def gen_periodic_atoms(subdomain, atom_locations, atom_types, atom_cutoff):
                     periodic_features,
                     periodic_corrections,
                 )
-                print(atom_type)
                 periodic_atom_locations.extend(periodic_atoms[:, 0:3])
                 periodic_atom_types.extend([atom_type] * periodic_atoms.shape[1])
 

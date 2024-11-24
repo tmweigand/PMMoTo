@@ -3,9 +3,6 @@ import sys
 import numpy as np
 
 # from mpi4py import MPI
-from . import orientation
-from . import domain
-from . import subdomain
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -203,6 +200,8 @@ def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
     Trim solids to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
     Keep all face solids, and use extend factor to query which solids to include for edges and corners
     """
+    from . import orientation
+
     face_solids = [[] for _ in range(len(orientation.faces))]
     edge_solids = [[] for _ in range(len(orientation.edges))]
     corner_solids = [[] for _ in range(len(orientation.corners))]

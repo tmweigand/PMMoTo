@@ -1,9 +1,7 @@
 """decomposed_domain.py"""
 
 import numpy as np
-from pmmoto.core import domain_discretization
-from pmmoto.core import orientation
-from pmmoto.core import subdomain
+from . import domain_discretization
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
@@ -67,6 +65,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         Determine the neighbor process rank
         """
+        from . import orientation
+
         neighbor_ranks = {}
         feature_types = ["faces", "edges", "corners"]
         for feature_type in feature_types:

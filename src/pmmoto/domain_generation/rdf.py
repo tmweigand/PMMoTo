@@ -1,34 +1,6 @@
 """rdf.py"""
 
 import numpy as np
-from mpi4py import MPI
-from pmmoto.domain_generation import _domain_generation
-
-__all__ = ["generate_rdf", "generate_bounded_rdf"]
-
-
-def generate_rdf(atom_map, rdf_data):
-    """
-    Generate Radial Distribution Functions from atom map and rdf data
-
-    """
-    rdf = {}
-    for atom, data in rdf_data.items():
-        _rdf = RDF(atom, atom_map[atom])
-        _rdf.set_RDF(r=data[:, 1], g=data[:, 2])
-        rdf[atom] = _rdf
-    return rdf
-
-
-def generate_bounded_rdf(rdf):
-    """
-    Generate Bounded Radial Distribution Functions from RDF
-            g(r)> 0 : r : g(r) = 1
-    """
-    b_rdf = {}
-    for atom in rdf:
-        b_rdf[atom] = Bounded_RDF(rdf[atom])
-    return b_rdf
 
 
 class RDF:
@@ -39,7 +11,7 @@ class RDF:
       g is the free energy.
 
     An alternative is:
-     G = -k_b*T ln g(r) / \sum_{r=0}^{r_f} g(r) where:
+     G = -k_b*T ln g(r) / sum_{r=0}^{r_f} g(r) where:
       k_b is the Boltzmann constant
       T is the temperature
       r_f is pairwise distance cutoff
@@ -51,20 +23,12 @@ class RDF:
     a new interpolated function.
     """
 
-    def __init__(self, name, atom_id=None):
+    def __init__(self, name, atom_id, r, g):
         self.name = name
         self.atom_id = atom_id
-        self.r_data = None
-        self.g_data = None
-
-        self.bounds = None
-
-    def set_RDF(self, r, g):
-        """
-        Set r and g(r) of radial distribution function
-        """
         self.r_data = r
         self.g_data = g
+        self.bounds = None
 
     def g(self, r):
         """
@@ -90,19 +54,21 @@ class Bounded_RDF(RDF):
      r(g)
     """
 
-    def __init__(self, rdf):
-        self.rdf = rdf
-        self.set_bounds(rdf.g_data)
-        self.r_data, self.g_data = self.get_bounded_RDF_data(rdf, bounds)
-        self.bounds = [None, None]
+    def __init__(self, name, atom_id, r, g):
+        super().__init__(name, atom_id, r, g)
+        self.bounds = self.determine_bounds(r, g)
+        self.r_data, self.g_data = self.get_bounded_RDF_data(r, g, self.bounds)
 
-    def get_bounds(self, rdf_g_data):
+    def determine_bounds(self, r, g):
         """
         Get the the r values of the bounded RDF such that:
             g(r) > 0 : r : g(r) = 1
         """
-        self.bounds[0] = self.find_min_r(rdf_g_data)
-        self.bounds[1] = self.find_max_r(1.1)
+        bounds = [0, len(g)]
+        bounds[0] = self.find_min_r(g)
+        bounds[1] = self.find_max_r(1.1)
+
+        return bounds
 
     def find_min_r(self, rdf_g_data):
         """
@@ -118,19 +84,19 @@ class Bounded_RDF(RDF):
         Find the smallest r value from the RDF data such that:
           all g(r) values are non-zero after r
         """
-        find_r = g - self.rdf.g_data
+        find_r = g - self.g_data
         r_loc = np.where([find_r < 0])[1][0]
 
         return r_loc
 
-    def get_bounded_RDF_data(self, rdf, bounds):
+    def get_bounded_RDF_data(self, r, g, bounds):
         """
         Set the bounds of the radial distribution function
         """
-        r_data = rdf.r_data[bounds[0] : bounds[1]]
-        g_data = rdf.g_data[bounds[0] : bounds[1]]
+        r_out = r[bounds[0] : bounds[1]]
+        g_out = g[bounds[0] : bounds[1]]
 
-        return r_data, g_data
+        return r_out, g_out
 
     def r(self, g):
         """

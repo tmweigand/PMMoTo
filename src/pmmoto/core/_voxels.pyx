@@ -16,7 +16,7 @@ from libcpp.unordered_map cimport unordered_map
 
 from numpy cimport npy_intp, npy_int8, uint64_t, int64_t, uint8_t
 
-from . import orientation
+# from . import orientation
 
 __all__ = [
     "_merge_matched_voxels",

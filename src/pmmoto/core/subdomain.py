@@ -1,9 +1,10 @@
 """subdomains.py"""
 
 import numpy as np
-from . import domain_discretization
+
 from . import orientation
-from . import subdomain_features
+from ..core import domain_discretization
+from ..core import subdomain_features
 
 
 class Subdomain(domain_discretization.DiscretizedDomain):
@@ -82,6 +83,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         """
         Determine if the features are on the domain boundary
         """
+
         global_boundary = {}
         features = orientation.get_features()
         for feature in features:

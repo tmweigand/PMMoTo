@@ -1,13 +1,30 @@
-from .communication import *
-from .domain import *
-from .domain_decompose import *
-from .domain_discretization import *
-from .multiphase import *
-from .orientation import *
-from .porousmedia import *
-from .sets import *
-from .subdomain import *
-from .subdomain_padded import *
-from .subdomain_features import *
-from .utils import *
-from .voxels import *
+# from . import orientation
+
+# from . import communication
+# from . import domain
+# from . import domain_decompose
+# from . import domain_discretization
+# from . import multiphase
+# from . import porousmedia
+# from . import sets
+# from . import subdomain
+# from . import subdomain_padded
+# from . import subdomain_features
+# from . import utils
+# from . import voxels
+
+# __all__ = [
+#     "orientation",
+#     "communication",
+#     "domain",
+#     "domain_decompose",
+#     "domain_discretization",
+#     "multiphase",
+#     "porousmedia",
+#     "sets",
+#     "subdomain",
+#     "subdomain_padded",
+#     "subdomain_features",
+#     "utils",
+#     "voxels",
+# ]

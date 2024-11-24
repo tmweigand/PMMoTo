@@ -1,12 +1,8 @@
 import numpy as np
 import dataclasses
-from pmmoto.core import orientation
-from pmmoto.core import set
-from pmmoto.core import set_boundary
+
 
 from pmmoto.core import _sets
-from pmmoto.core import communication
-from pmmoto.core import voxels
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -36,7 +32,7 @@ class Sets(object):
         self.sets = {}
         self.matched_sets = {}
         self.boundary_sets = {}
-        self.boundary_set_map = [[] for _ in orientation.features]
+        # self.boundary_set_map = [[] for _ in orientation.features]
 
     def collect_boundary_set_info(self, data, grid, label):
         """
@@ -45,51 +41,54 @@ class Sets(object):
             create a boundary set instance
 
         """
-        if data["boundary"][label]:
+        pass
+        # if data["boundary"][label]:
 
-            boundary_set = set_boundary.BoundarySet(
-                subdomain=self.subdomain,
-                local_ID=label,
-                phase=0,
-                boundary_nodes=data["boundary_nodes"][label],
-                boundary_features=data["boundary_features"][label],
-                inlet=data["inlets"][label],
-                outlet=data["outlets"][label],
-            )
+        #     boundary_set = set_boundary.BoundarySet(
+        #         subdomain=self.subdomain,
+        #         local_ID=label,
+        #         phase=0,
+        #         boundary_nodes=data["boundary_nodes"][label],
+        #         boundary_features=data["boundary_features"][label],
+        #         inlet=data["inlets"][label],
+        #         outlet=data["outlets"][label],
+        #     )
 
-            boundary_set.set_voxels(data["nodes"][label], grid.shape)
-            assert boundary_set.subdomain_data.boundary
-            boundary_set.set_boundary_data()
-            self.boundary_sets[label] = boundary_set
-            self.sets[label] = boundary_set
+        #     boundary_set.set_voxels(data["nodes"][label], grid.shape)
+        #     assert boundary_set.subdomain_data.boundary
+        #     boundary_set.set_boundary_data()
+        #     self.boundary_sets[label] = boundary_set
+        #     self.sets[label] = boundary_set
 
-        self.count.boundary = len(self.boundary_sets)
-        self.count.internal = self.count.all - self.count.boundary
-        self.get_boundary_set_map()
+        # self.count.boundary = len(self.boundary_sets)
+        # self.count.internal = self.count.all - self.count.boundary
+        # self.get_boundary_set_map()
 
     def collect_internal_set_info(self, node_data, grid, label_count):
         """
         Initialize Set class for internal sets
         """
-        for label in range(0, label_count):
-            if node_data["phase"][label] > -1:
-                if label in self.sets:
-                    self.sets[label].add_internal_nodes(node_data["nodes"][label])
-                else:
-                    sset = set.Set(self.subdomain, label, self.subdomain.rank)
-                    index = np.unravel_index(node_data["phase"][label], grid.shape)
-                    sset.set_phase(grid, index)
-                    sset.set_voxels(node_data["nodes"][label], grid.shape)
-                    self.sets[label] = sset
+        pass
+        # for label in range(0, label_count):
+        #     if node_data["phase"][label] > -1:
+        #         if label in self.sets:
+        #             self.sets[label].add_internal_nodes(node_data["nodes"][label])
+        #         else:
+        #             sset = set.Set(self.subdomain, label, self.subdomain.rank)
+        #             index = np.unravel_index(node_data["phase"][label], grid.shape)
+        #             sset.set_phase(grid, index)
+        #             sset.set_voxels(node_data["nodes"][label], grid.shape)
+        #             self.sets[label] = sset
 
     def get_boundary_set_map(self):
         """
         Populate the list that contains the subdomain features and the set on that feature
         """
-        for local_ID, sset in self.boundary_sets.items():
-            for n_feature, feature in enumerate(sset.subdomain_data.index):
-                if feature:
-                    self.boundary_set_map[n_feature].append(local_ID)
+        pass
+        # for local_ID, sset in self.boundary_sets.items():
+        #     for n_feature, feature in enumerate(sset.subdomain_data.index):
+        #         if feature:
+        #             self.boundary_set_map[n_feature].append(local_ID)
 
     def match_boundary_sets(self, n_sets):
         """
@@ -185,18 +184,19 @@ def create_sets_and_merge(
     """
     Find the sets on the boundaries of all subdomains and merge them to form one set
     """
-    boundary_node_data = voxels.get_boundary_voxels(
-        subdomain,
-        img,
-        label_count,
-    )
+    pass
+    # boundary_node_data = voxels.get_boundary_voxels(
+    #     subdomain,
+    #     img,
+    #     label_count,
+    # )
 
-    # Initialize Sets
-    all_sets = Sets(subdomain, label_count)
+    # # Initialize Sets
+    # all_sets = Sets(subdomain, label_count)
 
-    # Collect node info and put in sets
-    for label in range(label_count):
-        all_sets.collect_boundary_set_info(boundary_node_data, img, label)
+    # # Collect node info and put in sets
+    # for label in range(label_count):
+    #     all_sets.collect_boundary_set_info(boundary_node_data, img, label)
 
     # Match sets across process boundaries
     # n_sets = communication.pass_boundary_sets(img.subdomain, all_sets)

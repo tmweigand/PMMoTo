@@ -15,12 +15,14 @@ def test_discretized_domain():
     outlet = ((0, 1), (0, 0), (0, 0))
     voxels = (10, 10, 10)
 
-    pmmoto_domain = pmmoto.core.Domain(
+    pmmoto_domain = pmmoto.core.domain.Domain(
         box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
     )
 
-    pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
-        domain=pmmoto_domain, voxels=voxels
+    pmmoto_discretized_domain = (
+        pmmoto.core.domain_discretization.DiscretizedDomain.from_domain(
+            domain=pmmoto_domain, voxels=voxels
+        )
     )
 
     resolution = pmmoto_discretized_domain.get_resolution()

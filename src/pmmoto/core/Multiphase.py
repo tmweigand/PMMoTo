@@ -1,10 +1,9 @@
 """multiphase.py"""
 
 import numpy as np
-from . import orientation
-from . import utils
 from . import porousmedia
-from pmmoto.analysis import stats
+
+# from pmmoto.analysis import stats
 
 __all__ = ["get_probe_radius", "get_pc", "initialize_multiphase"]
 
@@ -70,11 +69,11 @@ class Multiphase(porousmedia.PorousMedia):
                 if self.subdomain.outlet[n * 2 + 1] and outlets[fluid - 1][n][1]:
                     self.outlet[fluid][n * 2 + 1] = True
 
-    def get_saturation(self, phase):
-        """
-        Calalcaute the saturation of a given phase
-        """
-        return stats.get_saturation(self.subdomain, self.grid, phase)
+    # def get_saturation(self, phase):
+    #     """
+    #     Calalcaute the saturation of a given phase
+    #     """
+    #     return stats.get_saturation(self.subdomain, self.grid, phase)
 
 
 def initialize_multiphase(

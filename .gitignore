@@ -9,6 +9,7 @@ profile_out.*
 *.csv
 *.out
 *.pyc
+
 manuscript/
 logo/
 ICOM/
@@ -20,6 +21,7 @@ PMMoTo.egg-info/
 PMMoTo/__pycache__/
 PMMoTo/tmp/
 env/*
+.tox/
 
 PMMoTo/tests/
 

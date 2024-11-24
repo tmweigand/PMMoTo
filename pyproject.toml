@@ -8,25 +8,27 @@ authors = [
 ]
 
 classifiers = [
-    "Programming Language :: Python :: 3.10"
-    ]
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "numpy<2.0",
     "cython ==3.0",
-    "mpi4py==3.1.6",
+    "mpi4py>=4.0.0",
     "edt>=2.3.1",
     "scipy>=1.9.3",
     "connected_components_3d>=3.12.4"
-    ]
+]
 requires-python = ">=3.10"
 
 [build-system]
-requires = ["setuptools","numpy","cython"]
+requires = ["setuptools", "numpy", "cython"]
 build-backend = "setuptools.build_meta"
 
 [tools.setuptools.packages.find]
 where = ["src"]
-
+include = ["pmmoto*"]
 
 [project.optional-dependencies]
 test = [
@@ -34,4 +36,4 @@ test = [
     "pytest-cov>=2.0",
     "mypy>=1.0",
     "tox>=3.24"
-    ]
+]

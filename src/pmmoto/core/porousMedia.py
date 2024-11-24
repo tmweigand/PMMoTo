@@ -1,6 +1,4 @@
 import numpy as np
-from pmmoto.core import orientation
-from pmmoto.analysis import stats
 
 
 class PorousMedia:
@@ -39,11 +37,11 @@ class PorousMedia:
         if self.subdomain.boundaries[5] == 1:
             self.grid[:, :, -1] = 0
 
-    def get_porosity(self):
-        """
-        Calalcaute the porosity of porous media grid
-        """
-        self.porosity = 1.0 - stats.get_volume_fraction(self.subdomain, self.grid, 0)
+    # def get_porosity(self):
+    #     """
+    #     Calalcaute the porosity of porous media grid
+    #     """
+    #     self.porosity = 1.0 - stats.get_volume_fraction(self.subdomain, self.grid, 0)
 
 
 def gen_pm(subdomain, grid, res_size=0):

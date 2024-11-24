@@ -2,6 +2,7 @@
 
 import numpy as np
 import itertools
+
 from . import orientation
 
 __all__ = [

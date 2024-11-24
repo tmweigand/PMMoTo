@@ -8,9 +8,8 @@ from mpi4py import MPI
 #     _addDataToParallelFile,
 # )
 # from pyevtk import vtk
-from pmmoto.core import domain_decompose
-from pmmoto.core import communication
-from pmmoto.core import subdomain_padded
+
+from ..core import subdomain_padded
 from . import io_utils
 from . import evtk
 

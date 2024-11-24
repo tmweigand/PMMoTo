@@ -1,8 +1,8 @@
 """subdomain_padded.py"""
 
 import numpy as np
-from . import subdomain
-from . import subdomain_features
+from ..core import subdomain
+from ..core import subdomain_features
 
 
 class PaddedSubdomain(subdomain.Subdomain):
