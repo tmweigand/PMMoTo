@@ -54,6 +54,7 @@ class Face(Feature):
         self.inlet = self.is_inlet(inlet)
         self.outlet = self.is_outlet(outlet)
         self.periodic_correction = self.get_periodic_correction()
+        self.forward = self.get_direction()
 
     def is_inlet(self, inlet) -> bool:
         """Determine if the face is on the inlet
@@ -94,6 +95,33 @@ class Face(Feature):
         Determine if the face is an external boundary
         """
         return global_boundary
+
+    def get_strides(self, strides):
+        """_summary_
+
+        Args:
+            strides (tuple): The output from a NumPy array .strides
+
+        Returns:
+            _type_: _description_
+        """
+        for feature_id, stride in zip(self.feature_id, strides):
+            if feature_id != 0:
+                return stride
+
+    def get_direction(self):
+        """
+        Determine if the face is point in the forward direction:
+            -1 for the non-negative feature id
+
+        Returns:
+            _type_: _description_
+        """
+        forward = True
+        for feature_id in self.feature_id:
+            if feature_id == 1:
+                forward = False
+        return forward
 
 
 class Edge(Feature):

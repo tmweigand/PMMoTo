@@ -19,125 +19,154 @@ def test_voxls_get_id():
     assert id == 999
 
 
-# # def test_voxels(domain, domain_decomposed, domain_discretization, subdomains):
+def test_1d_slice_extraction():
+    """
+    Test for ensuring looping through 1d slice is working with c++ interface
+    FOr the 2 direction, check on the diagonal
+    """
 
-# #     pmmoto_domain = pmmoto.core.Domain(
-# #         domain["box"], domain["boundaries"], domain["inlet"], domain["outlet"]
-# #     )
+    # Example data
+    n = 5
+    img = np.arange(n**3, dtype=np.uint8).reshape(n, n, n)
 
-# #     pmmoto_discretized_domain = pmmoto.core.DiscretizedDomain.from_domain(
-# #         domain=pmmoto_domain,
-# #         voxels=domain_discretization["voxels"],
-# #     )
+    # Check slice in 0 direction
+    out = []
+    for y in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 0, {1: y, 2: 0}, forward=True)
+        )
 
-# #     pmmoto_decomposed_domain = (
-# #         pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
-# #             discretized_domain=pmmoto_discretized_domain,
-# #             subdomain_map=domain_decomposed["subdomain_map"],
-# #         )
-# #     )
+    np.testing.assert_equal(
+        out,
+        [
+            [0, 25, 50, 75, 100],
+            [5, 30, 55, 80, 105],
+            [10, 35, 60, 85, 110],
+            [15, 40, 65, 90, 115],
+            [20, 45, 70, 95, 120],
+        ],
+    )
 
-# #     for rank in range(pmmoto_decomposed_domain.num_subdomains):
-# #         pmmoto_subdomain = pmmoto.core.Subdomain(
-# #             rank=rank,
-# #             index=subdomains["index"][rank],
-# #             box=subdomains["box"][rank],
-# #             boundaries=subdomains["boundaries"][rank],
-# #             inlet=subdomains["inlet"][rank],
-# #             outlet=subdomains["outlet"][rank],
-# #             voxels=subdomains["voxels"][rank],
-# #             start=subdomains["start"][rank],
-# #             num_subdomains=pmmoto_decomposed_domain.num_subdomains,
-# #             domain_voxels=domain_discretization["voxels"],
-# #             neighbor_ranks=subdomains["neighbor_ranks"][rank],
-# #         )
+    # Check slice in 0 direction going backwards
+    out = []
+    for y in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 0, {1: y, 2: 0}, forward=False)
+        )
+    np.testing.assert_equal(
+        out,
+        [
+            [100, 75, 50, 25, 0],
+            [105, 80, 55, 30, 5],
+            [110, 85, 60, 35, 10],
+            [115, 90, 65, 40, 15],
+            [120, 95, 70, 45, 20],
+        ],
+    )
 
-# #         grid = np.zeros(pmmoto_subdomain.voxels, dtype=np.uint64)
+    # Check slice in 1 direction
+    out = []
+    for x in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 1, {0: x, 2: 0}, forward=True)
+        )
 
-# #         pmmoto.core.voxels.get_boundary_set_info_NEW(
-# #             subdomain=pmmoto_subdomain, img=grid, n_labels=1
-# #         )
+    np.testing.assert_equal(
+        out,
+        [
+            [0, 5, 10, 15, 20],
+            [25, 30, 35, 40, 45],
+            [50, 55, 60, 65, 70],
+            [75, 80, 85, 90, 95],
+            [100, 105, 110, 115, 120],
+        ],
+    )
 
-# # phase_label = pmmoto.core.voxels.get_label_phase_info(grid, label_grid)
-# # print(phase_label)
+    # Check slice in 1 direction going backwards
+    out = []
+    for x in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 1, {0: x, 2: 0}, forward=False)
+        )
+    np.testing.assert_equal(
+        out,
+        [
+            [20, 15, 10, 5, 0],
+            [45, 40, 35, 30, 25],
+            [70, 65, 60, 55, 50],
+            [95, 90, 85, 80, 75],
+            [120, 115, 110, 105, 100],
+        ],
+    )
 
-# # pmmoto.core.voxels.count_label_voxels(grid, map)
+    # Check slice in 2 direction
+    out = []
+    for x in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 2, {0: x, 1: x}, forward=True)
+        )
+
+    np.testing.assert_equal(
+        out,
+        [
+            [0, 1, 2, 3, 4],
+            [30, 31, 32, 33, 34],
+            [60, 61, 62, 63, 64],
+            [90, 91, 92, 93, 94],
+            [120, 121, 122, 123, 124],
+        ],
+    )
+
+    # Check slice in 2 direction going backwards
+    out = []
+    for x in range(n):
+        out.append(
+            pmmoto.core._voxels.extract_1d_slice(img, 2, {0: x, 1: x}, forward=False)
+        )
+    np.testing.assert_equal(
+        out,
+        [
+            [4, 3, 2, 1, 0],
+            [34, 33, 32, 31, 30],
+            [64, 63, 62, 61, 60],
+            [94, 93, 92, 91, 90],
+            [124, 123, 122, 121, 120],
+        ],
+    )
 
 
-# def test_boundary_voxel_info():
+def test_get_nearest_boundary_index_1d():
+    """
+    Test for ensuring get_nearest_boundary_index works. duh
+    """
+
+    # Example data
+    img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img, label=0, forward=True
+    )
+
+    assert index == 9
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img, label=0, forward=False
+    )
+
+    assert index == 12
+
+
+# def test_get_nearest_boundary_index(generate_subdomain):
 #     """
-#     Test  subdomain features
+#     Test for ensuring get_nearest_boundary_index works. duh
 #     """
 
-#     subdomains = [1, 1, 1]
-#     subdomains = [2, 2, 2]
+#     # Example data
+#     n = 5
+#     img = np.arange(n**3, dtype=np.uint8).reshape(n, n, n)
 
-#     voxels = (10, 10, 10)
+#     index = pmmoto.core._voxels.determine_index_nearest_boundary(
+#         img=img, label=0, dimension=0, location={0: 0, 1: 0, 2: 0}, forward=False
+#     )
 
-#     box = [[0, 10], [0, 10], [0, 10]]
-#     # boundary_types = [[0, 0], [0, 0], [0, 0]]
-#     # boundary_types = [[2, 2], [0, 0], [0, 0]]
-#     boundary_types = [[2, 2], [2, 2], [2, 2]]
-#     inlet = [[0, 0], [0, 0], [0, 0]]
-#     outlet = [[0, 0], [0, 0], [0, 0]]
-
-#     save_data = True
-
-#     sd = {}
-#     domain = {}
-#     grid = {}
-
-#     size = np.prod(subdomains)
-
-#     for rank in range(size):
-#         sd[rank], domain[rank] = pmmoto.initialize(
-#             box=box,
-#             subdomains=subdomains,
-#             voxels=voxels,
-#             boundary_types=boundary_types,
-#             inlet=inlet,
-#             outlet=outlet,
-#             rank=rank,
-#             mpi_size=size,
-#             reservoir_voxels=0,
-#         )
-
-#         grid = np.arange(np.prod(sd[rank].voxels), dtype=np.uint64).reshape(
-#             sd[rank].voxels
-#         )
-
-#         grid = pmmoto.core.communication.update_buffer(sd[rank], grid)
-
-#         data = pmmoto.core.voxels.get_boundary_voxels(
-#             subdomain=sd[rank],
-#             img=grid,
-#         )
-
-#         send_data, own_data = pmmoto.core.voxels.boundary_voxels_pack(sd[rank], data)
-
-#         if send_data:
-#             recv_data = pmmoto.core.communication.communicate_NEW(sd[rank], send_data)
-#             own_data.update(recv_data)
-
-#         matches = pmmoto.core.voxels.match_neighbor_boundary_voxels(
-#             sd[rank], data, own_data
-#         )
-
-#         pmmoto.core.voxels.match_global_boundary_voxels(sd[rank], matches)
-
-
-# def test_merge_matched_voxels():
-#     pass
-#     # all_match_data = [
-#     #     {
-#     #         (0, 0): {"neighbor": [(1, 0), (2, 0), (3, 0)]},
-#     #         (0, 1): {"neighbor": [(1, 1)]},
-#     #     },
-#     #     {(1, 0): {"neighbor": [(0, 0)]}, (1, 1): {"neighbor": [(0, 1)]}},
-#     #     {(2, 0): {"neighbor": [(0, 0)]}},
-#     #     {(3, 0): {"neighbor": [(0, 0)]}},
-#     # ]
-
-#     # pmmoto.core._voxels._merge_matched_voxels(all_match_data)
-
-#     # print(matches, merged_sets)
+#     print(index)
