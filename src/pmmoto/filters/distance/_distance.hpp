@@ -1,7 +1,6 @@
 #ifndef DISTANCE_H
 #define DISTANCE_H
 
-#include "threadpool.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
