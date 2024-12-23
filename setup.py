@@ -15,6 +15,16 @@ import sys
 #     sys.exit(1)
 
 
+extra_compile_args = []
+if sys.platform == "win32":
+    extra_compile_args += ["/std:c++17", "/O2"]
+else:
+    extra_compile_args += ["-std=c++17", "-O3", "-ffast-math", "-pthread"]
+
+if sys.platform == "darwin":
+    extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
+
+
 cmdclass = {}
 
 ext_modules = [
@@ -24,29 +34,36 @@ ext_modules = [
     #     include_dirs=["src/pmmoto/core"],
     #     language="c++",
     # ),
-    Extension(
-        "pmmoto.core._set",
-        ["src/pmmoto/core/_set.pyx"],
-        include_dirs=["src/pmmoto/core"],
-        language="c++",
-    ),
-    Extension(
-        "pmmoto.core._sets",
-        ["src/pmmoto/core/_sets.pyx"],
-        include_dirs=["src/pmmoto/core"],
-        language="c++",
-    ),
+    # Extension(
+    #     "pmmoto.core._set",
+    #     ["src/pmmoto/core/_set.pyx"],
+    #     include_dirs=["src/pmmoto/core"],
+    #     language="c++",
+    # ),
+    # Extension(
+    #     "pmmoto.core._sets",
+    #     ["src/pmmoto/core/_sets.pyx"],
+    #     include_dirs=["src/pmmoto/core"],
+    #     language="c++",
+    # ),
     Extension(
         "pmmoto.core._voxels",
         ["src/pmmoto/core/_voxels.pyx"],
         include_dirs=["src/pmmoto/core"],
         language="c++",
     ),
+    # Extension(
+    #     "pmmoto.core.nodes",
+    #     ["src/pmmoto/core/nodes.pyx"],
+    #     include_dirs=["src/pmmoto/core"],
+    #     language="c++",
+    # ),
     Extension(
-        "pmmoto.core.nodes",
-        ["src/pmmoto/core/nodes.pyx"],
-        include_dirs=["src/pmmoto/core"],
+        "pmmoto.filters.distance._distance",
+        ["src/pmmoto/filters/distance/_distance.pyx"],
+        include_dirs=["src/pmmoto/filters/distance", numpy.get_include()],
         language="c++",
+        extra_compile_args=extra_compile_args,
     ),
     # Extension(
     #     "pmmoto.analysis._minkowski",

@@ -2,6 +2,7 @@
 
 import numpy as np
 import pmmoto
+import pytest
 
 
 def test_voxls_get_id():
@@ -137,36 +138,106 @@ def test_1d_slice_extraction():
 
 def test_get_nearest_boundary_index_1d():
     """
-    Test for ensuring get_nearest_boundary_index works. duh
+    Test for ensuring get_nearest_boundary_index works in 1d. Same c++ function is called in 3d so simpler for testing.
     """
 
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
 
-    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
         img=img, label=0, forward=True
     )
 
     assert index == 9
 
-    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
         img=img, label=0, forward=False
     )
 
     assert index == 12
 
 
-# def test_get_nearest_boundary_index(generate_subdomain):
-#     """
-#     Test for ensuring get_nearest_boundary_index works. duh
-#     """
+def test_get_nearest_boundary_index():
+    """
+    Test for ensuring get_nearest_boundary_index works. duh
+    """
 
-#     # Example data
-#     n = 5
-#     img = np.arange(n**3, dtype=np.uint8).reshape(n, n, n)
+    # Example data
+    img = np.array(
+        [
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+            ],
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+            ],
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+            ],
+        ],
+        dtype=np.uint8,
+    )
 
-#     index = pmmoto.core._voxels.determine_index_nearest_boundary(
-#         img=img, label=0, dimension=0, location={0: 0, 1: 0, 2: 0}, forward=False
-#     )
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img, label=0, dimension=2, location={0: 0, 1: 0, 2: 0}, forward=True
+    )
 
-#     print(index)
+    assert index == 9
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img, label=0, dimension=2, location={0: 0, 1: 0, 2: 0}, forward=False
+    )
+
+    assert index == 12
+
+
+@pytest.mark.figures
+def test_get_nearest_boundary_index_figure(generate_subdomain):
+    """
+    Test for ensuring get_nearest_boundary_index works. duh
+    """
+
+    rank = 0
+    sd = generate_subdomain(rank)
+
+    # img = pmmoto.domain_generation.gen_random_binary_grid(shape, 0.01)
+    img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(sd.voxels, 0.5, 5.0)
+
+    boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
+        subdomain=sd,
+        img=img,
+        label=0,
+    )
+
+    img_out = np.ones_like(img)
+    for feature_id, index in boundary_index.items():
+        for nx in range(index.shape[0]):
+            for ny in range(index.shape[1]):
+                if feature_id[0] != 0:
+                    print(index[nx, ny])
+                    if index[nx, ny] > -1:
+                        img_out[int(index[nx, ny]), nx, ny] = 0
+                    else:
+                        img_out[0, nx, ny] = 255
+                if feature_id[1] != 0:
+                    print(index[nx, ny])
+                    if index[nx, ny] > -1:
+                        img_out[nx, int(index[nx, ny]), ny] = 0
+                    else:
+                        img_out[nx, 0, ny] = 255
+                if feature_id[2] != 0:
+                    print(index[nx, ny])
+                    if index[nx, ny] > -1:
+                        img_out[nx, ny, int(index[nx, ny])] = 0
+                    else:
+                        img_out[nx, ny, 0] = 255
+
+    pmmoto.io.output.save_grid(
+        "data_out/test_voxels_random", img, **{"img_out": img_out}
+    )

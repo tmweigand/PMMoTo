@@ -24,7 +24,7 @@ def renumber_image(img, conversion_map: dict):
     Renumbers an image using a provided mapping.
 
     Args:
-        img (Any): The image to be renumbered. Typically, this might be a 3D or 2D array-like structure.
+        img (Any): The image to be renumbered. Typically, this will be a 3D or 2D array-like structure.
         conversion_map (dict): A dictionary mapping current image IDs to new image IDs.
             Example: {1: 101, 2: 102, ...}
             Note: All IDs in `img` must be defined in `conversion_map`.
@@ -45,6 +45,29 @@ def renumber_image(img, conversion_map: dict):
     return _voxels._renumber_grid(img, conversion_map)
 
 
+def get_boundary_parabolic_envelope(subdomain, img, boundary_index=None):
+    """
+    Collect the parabolic envelop from non-ingeter img
+    Args:
+        subdomain (_type_): _description_
+        img (_type_): _description_
+    """
+    if boundary_index is None:
+        boundary_index = get_nearest_boundary_index(subdomain, img, 0)
+
+    feature_types = ["faces"]
+    for feature_type in feature_types:
+        for feature_id, feature in subdomain.features[feature_type].items():
+            _voxel.get_boundary_parabolic_envelope(
+                img=img,
+                boundary_grid=boundary_index[feature_id],
+                dimension=feature.info["argOrder"][0],
+                forward=feature.forward,
+            )
+
+    return boundary_index
+
+
 def get_nearest_boundary_index(subdomain, img, label):
     """
     Determines the index nearest each subdomain boundary face for a specified
@@ -58,19 +81,13 @@ def get_nearest_boundary_index(subdomain, img, label):
     feature_types = ["faces"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            _area_voxels = [
-                subdomain.voxels[feature.info["argOrder"][1]],
-                subdomain.voxels[feature.info["argOrder"][2]],
-            ]
-            index_array = np.zeros(_area_voxels, dtype=np.uint64)
-            boundary_index[feature_id] = _voxels.get_nearest_boundary_index(
-                img,
-                feature.info["argOrder"][0],
-                feature.forward,
-                label,
-                index_array,
-            )
-            # print(np.logical_not(feature_id))
+            boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=feature.info["argOrder"][0],
+                label=label,
+                forward=feature.forward,
+            ).astype(np.float32)
+    return boundary_index
 
 
 def get_boundary_voxels(subdomain, img):

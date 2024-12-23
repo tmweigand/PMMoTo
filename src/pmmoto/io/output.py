@@ -94,7 +94,7 @@ def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
     )
 
 
-def save_grid(file_name, grid):
+def save_grid(file_name, grid, **kwargs):
     """_summary_
 
     Args:
@@ -104,7 +104,9 @@ def save_grid(file_name, grid):
 
     io_utils.check_file_path(file_name)
 
-    point_data = {"grid": grid}
+    data = {"grid": grid}
+    for key, value in kwargs.items():
+        data[key] = value
 
     evtk.imageToVTK(
         path=file_name,
@@ -112,7 +114,7 @@ def save_grid(file_name, grid):
         start=(0, 0, 0),
         end=grid.shape,
         spacing=(1, 1, 1),
-        cellData=point_data,
+        cellData=data,
     )
 
 
