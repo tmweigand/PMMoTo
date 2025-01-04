@@ -14,7 +14,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy<2.0",
-    "cython ==3.0",
+    "cython==3.0",
     "mpi4py>=4.0.0",
     "edt>=2.3.1",
     "scipy>=1.9.3",
@@ -31,9 +31,10 @@ where = ["src"]
 include = ["pmmoto*"]
 
 [project.optional-dependencies]
-test = [
+dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
     "mypy>=1.0",
-    "tox>=3.24"
+    "tox>=3.24",
+    "pytest_benchmark>=5.1.0"
 ]

@@ -1,5 +1,5 @@
 # cython: profile=True
-# cython: linetrace=False
+# cython: linetrace=True
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: cdivision=True
@@ -13,9 +13,8 @@ from libcpp cimport bool
 from libcpp cimport tuple
 from libcpp.unordered_map cimport unordered_map
 
-from numpy cimport npy_intp, npy_int8, uint64_t, int64_t, uint8_t
+from numpy cimport npy_intp, uint64_t, int64_t, uint8_t
 
-# from . import orientation
 
 __all__ = [
     "get_start_indices",
@@ -36,21 +35,13 @@ cdef extern from "_voxel.hpp":
         const long int stride,
         bool forward
         ) nogil
-        
+
     cdef int64_t _get_nearest_boundary_index(
-        uint8_t *img, 
-        uint8_t label, 
+        uint8_t *img,
+        uint8_t label,
         const int n,
         const long int stride,
         bool forward) nogil
-    
-    cdef int64_t _determine_boundary_parabolic_envelope(
-            uint8_t *img,
-            const int n,
-            const long int stride,
-            bool forward                                        
-        ) nogil
-
 
 cdef struct match_test:
     npy_intp local_id
@@ -62,12 +53,13 @@ cdef struct match_test:
 
 def get_start_indices(int dimension, dict location={0: 0, 1: 0, 2: 0}):
     """
-    Helper function to compute the starting indices for slicing based on the given dimension
-    and location.
+    Helper function to compute the starting indices for slicing based
+    on the given dimensionand location.
 
     Parameters:
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates for the
+        other dimensions.
 
     Returns:
         A list of start indices for slicing.
@@ -79,14 +71,17 @@ def get_start_indices(int dimension, dict location={0: 0, 1: 0, 2: 0}):
 
     return start
 
+
 def get_start_indices_2d(int dimension, dict location={0: 0, 1: 0}):
     """
-    Helper function to compute the starting indices for slicing based on the given dimension
+    Helper function to compute the starting indices for slicing based
+        on the given dimension
     and location.
 
     Parameters:
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates
+            for the other dimensions.
 
     Returns:
         A list of start indices for slicing.
@@ -107,26 +102,31 @@ def normalized_strides(array):
         array (np.ndarray): Input NumPy array.
 
     Returns:
-        tuple: Normalized strides, where each stride is in units of the array's dtype size.
+        tuple: Normalized strides, where each stride is in units of
+            the array's dtype size.
     """
     # Size of the data type in bytes
     dtype_size = array.itemsize
-    
+
     # Normalize each stride by the dtype size
     normalized = tuple(s // dtype_size for s in array.strides)
     return normalized
 
-def extract_1d_slice(uint8_t[:, :, :] img,
-                     int dimension,
-                     dict location={0: 0, 1: 0, 2: 0},
-                     bool forward=True):
+
+def extract_1d_slice(
+    uint8_t[:, :, :] img,
+    int dimension,
+    dict location={0: 0, 1: 0, 2: 0},
+    bool forward=True
+):
     """
     Extract a 1D slice from a 3D image array along a specified dimension.
 
     Parameters:
         img: 3D NumPy array of uint8 type.
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates
+            for the other dimensions.
         forward: If True, iterate forward; otherwise, iterate backward.
 
     Returns:
@@ -135,11 +135,11 @@ def extract_1d_slice(uint8_t[:, :, :] img,
 
     # Determine the size of the output slice
     cdef size_t size = img.shape[dimension]
-    
+
     # Initialize the output array
     cdef np.ndarray[uint8_t, ndim=1] output = np.zeros(size, dtype=np.uint8)
     cdef int stride = normalized_strides(img)[dimension]
-    
+
     # Get the start indices for slicing
     cdef int[3] start = get_start_indices(dimension, location)
 
@@ -155,19 +155,23 @@ def extract_1d_slice(uint8_t[:, :, :] img,
     return output
 
 
-def determine_index_nearest_boundary(uint8_t[:, :, :] img,
-                     uint8_t label,
-                     int dimension,
-                     dict location={0: 0, 1: 0, 2: 0},
-                     bool forward=True):
+def determine_index_nearest_boundary(
+    uint8_t[:, :, :] img,
+    uint8_t label,
+    int dimension,
+    dict location={0: 0, 1: 0, 2: 0},
+    bool forward=True
+):
     """
-    Determine the index where img[index] = label from a 3D image array along a specified dimension.
+    Determine the index where img[index] = label from a 3D image array
+        along a specified dimension.
 
     Parameters:
         img: 3D NumPy array of uint8 type.
         label: img[count] = label
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates
+            for the other dimensions.
         forward: If True, iterate forward; otherwise, iterate backward.
 
     Returns:
@@ -176,7 +180,7 @@ def determine_index_nearest_boundary(uint8_t[:, :, :] img,
 
     # Determine the size of the output slice
     cdef size_t size = img.shape[dimension]
-    
+
     # Get the start indices for slicing
     cdef int[3] start = get_start_indices(dimension, location)
     cdef int stride = normalized_strides(img)[dimension]
@@ -185,26 +189,31 @@ def determine_index_nearest_boundary(uint8_t[:, :, :] img,
     index = _get_nearest_boundary_index(
         <uint8_t*>&img[start[0], start[1], start[2]],
         label,
-        size,                                          
-        stride,                       
-        forward                                        
+        size,
+        stride,
+        forward
     )
 
     return index
 
-def determine_index_nearest_boundary_2d(uint8_t[:, :] img,
-                     uint8_t label,
-                     int dimension,
-                     dict location={0: 0, 1: 0},
-                     bool forward=True):
+
+def determine_index_nearest_boundary_2d(
+    uint8_t[:, :] img,
+    uint8_t label,
+    int dimension,
+    dict location={0: 0, 1: 0},
+    bool forward=True
+):
     """
-    Determine the index where img[index] = label from a 3D image array along a specified dimension.
+    Determine the index where img[index] = label from a 3D image array
+        along a specified dimension.
 
     Parameters:
         img: 2D NumPy array of uint8 type.
         label: img[count] = label
         dimension: The axis (0 or 1) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates
+            for the other dimensions.
         forward: If True, iterate forward; otherwise, iterate backward.
 
     Returns:
@@ -213,7 +222,7 @@ def determine_index_nearest_boundary_2d(uint8_t[:, :] img,
 
     # Determine the size of the output slice
     cdef size_t size = img.shape[dimension]
-    
+
     # Get the start indices for slicing
     cdef int[2] start = get_start_indices_2d(dimension, location)
     cdef int stride = normalized_strides(img)[dimension]
@@ -222,25 +231,29 @@ def determine_index_nearest_boundary_2d(uint8_t[:, :] img,
     index = _get_nearest_boundary_index(
         <uint8_t*>&img[start[0], start[1]],
         label,
-        size,                                          
-        stride,                       
-        forward                                        
+        size,
+        stride,
+        forward
     )
 
     return index
 
 
-def determine_index_nearest_boundary_1d(uint8_t[:] img,
-                     uint8_t label,
-                     bool forward=True):
+def determine_index_nearest_boundary_1d(
+    uint8_t[:] img,
+    uint8_t label,
+    bool forward=True
+):
     """
-    Determine the index where img[index] = label from a 1D image array along a specified dimension.
+    Determine the index where img[index] = label from a 1D image array
+        along a specified dimension.
 
     Parameters:
         img: 3D NumPy array of uint8 type.
         label: img[count] = label
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the other dimensions.
+        location: A dictionary specifying the fixed coordinates
+            for the other dimensions.
         forward: If True, iterate forward; otherwise, iterate backward.
 
     Returns:
@@ -249,22 +262,21 @@ def determine_index_nearest_boundary_1d(uint8_t[:] img,
 
     # Determine the size of the output slice
     cdef size_t size = img.shape[0]
-    
+
     # Call the low-level function to get the nearest boundary index
     index = _get_nearest_boundary_index(
         <uint8_t*>&img[0],
         label,
-        size,                                          
-        1,                       
-        forward                                        
+        size,
+        1,
+        forward
     )
 
     return index
 
 
-
 def get_nearest_boundary_index_face(
-    uint8_t[:,:,:] img,
+    uint8_t[:, :, :] img,
     int dimension,
     bool forward,
     int label
@@ -275,7 +287,8 @@ def get_nearest_boundary_index_face(
     Parameters:
         img (uint8_t[:,:,:]): The 3D image array.
         dimension (int): The dimension to iterate through (0, 1, or 2).
-        direction (bool): The direction of iteration (True for forward, False for backward).
+        direction (bool): The direction of iteration
+            (True for forward, False for backward).
         label (int): The label to locate.
         index_array (uint64_t[:,:]): The output array to store indices for the label.
 
@@ -290,9 +303,8 @@ def get_nearest_boundary_index_face(
 
     # Dimensions of the output index array
     cdef size_t sx = img.shape[dim1]
-    cdef size_t sy = img.shape[dim2] 
-    
-    cdef np.ndarray[int64_t, ndim=2] index_array = np.zeros( (sy,sx), dtype=np.int64 )
+    cdef size_t sy = img.shape[dim2]
+    cdef np.ndarray[int64_t, ndim=2] index_array = np.zeros((sy, sx), dtype=np.int64)
 
     # Iterate through the 2D "face" for the given dimension
     location = {}
@@ -300,17 +312,19 @@ def get_nearest_boundary_index_face(
         location[dim1] = x
         for y in range(sy):
             location[dim2] = y
-            index_array[x,y] = determine_index_nearest_boundary(
-                img = img,
-                label = label, 
-                dimension=dimension, 
-                location = location,
-                forward=forward)
+            index_array[x, y] = determine_index_nearest_boundary(
+                img=img,
+                label=label,
+                dimension=dimension,
+                location=location,
+                forward=forward
+            )
 
     return index_array
 
+
 def get_nearest_boundary_index_face_2d(
-    uint8_t[:,:] img,
+    uint8_t[:, :] img,
     int dimension,
     bool forward,
     int label
@@ -321,7 +335,8 @@ def get_nearest_boundary_index_face_2d(
     Parameters:
         img (uint8_t[:,:]): The 2D image array.
         dimension (int): The dimension to iterate through (0 or 1).
-        direction (bool): The direction of iteration (True for forward, False for backward).
+        direction (bool): The direction of iteration
+            (True for forward, False for backward).
         label (int): The label to locate.
         index_array (uint64_t[:]): The output array to store indices for the label.
 
@@ -336,22 +351,20 @@ def get_nearest_boundary_index_face_2d(
 
     # Dimensions of the output index array
     cdef size_t s = img.shape[other_dim]
-    
-    cdef np.ndarray[int64_t, ndim=1] index_array = np.zeros( s, dtype=np.int64 )
+    cdef np.ndarray[int64_t, ndim=1] index_array = np.zeros(s, dtype=np.int64)
 
     # Iterate through the 2D "face" for the given dimension
     location = {}
-    for x in range(s): 
+    for x in range(s):
         location[other_dim] = x
         index_array[x] = determine_index_nearest_boundary_2d(
             img = img,
-            label = label, 
-            dimension = dimension, 
+            label = label,
+            dimension = dimension,
             location = location,
             forward = forward)
 
     return index_array
-
 
 
 def _merge_matched_voxels(all_match_data):
@@ -375,14 +388,14 @@ def _merge_matched_voxels(all_match_data):
         del matches_by_rank['label_count']
         boundary_counts.append(len(matches_by_rank.keys()))
 
-        for key,match in matches_by_rank.items():
+        for key, match in matches_by_rank.items():
             match['visited'] = False
             matches[key] = match
             local_global_map[key] = {}
 
     # Merge connected sets
     global_id = 0
-    for key,match in matches.items():
+    for key, match in matches.items():
         if match["visited"]:
             continue
 
@@ -409,15 +422,15 @@ def _merge_matched_voxels(all_match_data):
 
         global_id += 1 if connections else 0
 
-
-    for rank,_ in enumerate(local_counts):
+    for rank, _ in enumerate(local_counts):
         if rank == 0:
-            local_global_map[rank] = global_id 
+            local_global_map[rank] = global_id
         else:
             local_labels = local_counts[rank-1] - boundary_counts[rank-1] - 1
             local_global_map[rank] = local_global_map[rank-1] + local_labels
 
     return local_global_map
+
 
 cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
     """
@@ -440,43 +453,43 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
 
     return id
 
+
 def get_boundary_data(
-                np.uint64_t [:,:,:] grid,
-                int n_labels,
-                dict loop_dict,
-                tuple domain_voxels,
-                tuple index
-                ):
+    np.uint64_t [:, :, :] grid,
+    int n_labels,
+    dict loop_dict,
+    tuple domain_voxels,
+    tuple index
+):
     """
-    This function loops through the features of a subdomain and collects 
-    boundary information including whethere the label is on the boundary feature, 
-    and all voxels global ID 
+    This function loops through the features of a subdomain and collects
+    boundary information including whethere the label is on the boundary feature,
+    and all voxels global ID
     """
 
-    cdef: 
-        Py_ssize_t i,j,k
+    cdef:
+        Py_ssize_t i, j, k
         int label
         vector[bool] boundary
         unordered_map[int, vector[Py_ssize_t]] b_nodes
 
-        int64_t[:] _index = np.zeros(3,dtype=np.int64)
-        uint64_t[:] domain_nodes = np.array(domain_voxels,dtype = np.uint64)
-    for _ in range(0,n_labels):
+        int64_t[:] _index = np.zeros(3, dtype=np.int64)
+        uint64_t[:] domain_nodes = np.array(domain_voxels, dtype = np.uint64)
+    for _ in range(0, n_labels):
         boundary.push_back(False)
 
     for loop in loop_dict.values():
-        for i in range(loop[0][0],loop[0][1]):
-            for j in range(loop[1][0],loop[1][1]):
-                for k in range(loop[2][0],loop[2][1]):
-                    label = grid[i,j,k]
+        for i in range(loop[0][0], loop[0][1]):
+            for j in range(loop[1][0], loop[1][1]):
+                for k in range(loop[2][0], loop[2][1]):
+                    label = grid[i, j, k]
                     boundary[label] = True
                     _index[0] = i+index[0]
                     _index[1] = j+index[1]
                     _index[2] = k+index[2]
                     b_nodes[label].push_back(
-                        get_id(_index,domain_nodes)
-                        )
-    
+                        get_id(_index, domain_nodes)
+                    )
 
     output = {
         'boundary_voxels': b_nodes,
@@ -486,60 +499,62 @@ def get_boundary_data(
     return output
 
 
-
 def gen_grid_to_label_map(
-                uint8_t [:,:,:] grid,
-                uint64_t [:,:,:] labels):
+    uint8_t [:, :, :] grid,
+    uint64_t [:, :, :] labels
+):
     """
-    This function provides a mapping between two images. For our purposes, 
-    this would be the input (phases) and output (set ids) of a connected componented analysis. 
+    This function provides a mapping between two images. For our purposes,
+    this would be the input (phases) and output (set ids) of a connected
+    components analysis.
     """
 
-    cdef: 
-        Py_ssize_t i,j,k
-        unordered_map[int,int] grid_to_label_map
+    cdef:
+        Py_ssize_t i, j, k
+        unordered_map[int, int] grid_to_label_map
         Py_ssize_t sx = grid.shape[0]
         Py_ssize_t sy = grid.shape[1]
         Py_ssize_t sz = grid.shape[2]
-    
-    for i in range(0,sx):
-        for j in range(0,sy):
-            for k in range(0,sz):
-                grid_to_label_map[grid[i,j,k]] = labels[i,j,k]
+
+    for i in range(0, sx):
+        for j in range(0, sy):
+            for k in range(0, sz):
+                grid_to_label_map[grid[i, j, k]] = labels[i, j, k]
 
     return grid_to_label_map
 
 
-def _renumber_grid(uint64_t [:,:,:] grid, unordered_map[int, int] map):
+def _renumber_grid(uint64_t [:, :, :] grid, unordered_map[int, int] map):
     """
     Renumber a grid in-place based on map.
     """
-    cdef: 
-        Py_ssize_t i,j,k
+    cdef:
+        Py_ssize_t i, j, k
         Py_ssize_t sx = grid.shape[0]
         Py_ssize_t sy = grid.shape[1]
         Py_ssize_t sz = grid.shape[2]
 
-    for i in range(0,sx):
-        for j in range(0,sy):
-            for k in range(0,sz):
-                label = grid[i,j,k]
-                grid[i,j,k] = map[label]
+    for i in range(0, sx):
+        for j in range(0, sy):
+            for k in range(0, sz):
+                label = grid[i, j, k]
+                grid[i, j, k] = map[label]
 
-def count_label_voxels(uint64_t [:,:,:] grid, unordered_map[int, int] map):
+
+def count_label_voxels(uint64_t [:, :, :] grid, unordered_map[int, int] map):
     """
     Renumber a grid in-place based on map.
     """
-    cdef: 
-        Py_ssize_t i,j,k
+    cdef:
+        Py_ssize_t i, j, k
         Py_ssize_t sx = grid.shape[0]
         Py_ssize_t sy = grid.shape[1]
         Py_ssize_t sz = grid.shape[2]
 
-    for i in range(0,sx):
-        for j in range(0,sy):
-            for k in range(0,sz):
-                label = grid[i,j,k]
+    for i in range(0, sx):
+        for j in range(0, sy):
+            for k in range(0, sz):
+                label = grid[i, j, k]
                 map[label] += 1
 
     return map

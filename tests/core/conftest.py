@@ -7,7 +7,7 @@ import pmmoto
 @pytest.fixture
 def generate_subdomain():
     """
-    Generate a padded subdomain
+    Generate a un-padded subdomain
     THis allows rank to be passed as an argument
     """
 

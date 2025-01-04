@@ -1,6 +1,6 @@
 #distutils: language = c++
 #cython: cdivision=True
-#cython: boundscheck=False
+#cython: boundscheck=True
 #cython: nonecheck=False
 #cython: wraparound=False
 

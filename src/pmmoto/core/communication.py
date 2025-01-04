@@ -43,17 +43,20 @@ def gather(data):
 
 def update_buffer(subdomain, grid):
     """
-    Organize the communication to update the padding/buffer on subdomains account for periodic boundary conditions here
+    Organize the communication to update the padding/buffer on subdomains and account for periodic boundary conditions.
+
+    Args:
+        subdomain (object): The subdomain object containing features and neighbor information.
+        grid (numpy.ndarray): The grid data to be updated.
+
+    Returns:
+        numpy.ndarray: The updated grid with the buffer data.
     """
-    send_data, own_data = buffer_pack(subdomain, grid)
+    send_data = buffer_pack(subdomain, grid)
+    recv_data = communicate(subdomain, send_data)
+    grid = buffer_unpack(subdomain, grid, recv_data)
 
-    if send_data:
-        recv_data = communicate(subdomain, send_data)
-        own_data.update(recv_data)
-
-    buffer_grid = buffer_unpack(subdomain, grid, own_data)
-
-    return buffer_grid
+    return grid
 
 
 # def generate_halo(subdomain, grid, halo):
@@ -88,33 +91,28 @@ def update_buffer(subdomain, grid):
 
 def buffer_pack(subdomain, grid):
     """
-    Grab The Slices (based on Buffer Size [1,1,1]) to pack and send to Neighbors
-    for faces, edges and corners.
+    Packs the buffer data for communication.
+
+    Args:
+        subdomain (object): The subdomain object containing features.
+        grid (numpy.ndarray): The grid data to be packed.
+
+    Returns:
+        dict: A dictionary containing the packed buffer data.
     """
 
     buffer_data = {}
-    periodic_data = {}
-    # for feature, n_proc in subdomain.neighbor_ranks.items():
-    #     if n_proc > -1 and n_proc != subdomain.rank:
-    #         buffer_data[n_proc] = {"ID": {}}
-    #         buffer_data[n_proc]["ID"][feature] = None
-
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.neighbor_rank > -1 and feature.neighbor_rank != subdomain.rank:
+            if feature.neighbor_rank > -1:
                 buffer_data[feature_id] = grid[
                     feature.loop["own"][0][0] : feature.loop["own"][0][1],
                     feature.loop["own"][1][0] : feature.loop["own"][1][1],
                     feature.loop["own"][2][0] : feature.loop["own"][2][1],
                 ]
-            elif feature.neighbor_rank == subdomain.rank:
-                periodic_data[feature_id] = grid[
-                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
-                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
-                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
-                ]
-    return buffer_data, periodic_data
+
+    return buffer_data
 
 
 def buffer_unpack(subdomain, grid, features_recv):
@@ -446,12 +444,24 @@ def boundary_set_pack(subdomain, sets):
 #     return external_sets
 
 
-def communicate(subdomain, send_data, unpack=False):
+def communicate(subdomain, send_data, unpack=True, feature_types=None):
     """
     Send data between processes for faces, edges, and corners.
+
+    Args:
+        subdomain (object): The subdomain object containing rank and features information.
+        send_data (dict): The data to be sent to neighboring processes.
+        unpack (bool, optional): If True, unpack the received data. Defaults to False.
+        feature_types (list, optional): List of feature types to communicate. Defaults to ["faces", "edges", "corners"].
+
+    Returns:
+        dict: Received data from neighboring processes. If unpack is True, returns unpacked received data.
     """
     recv_data = {}
-    feature_types = ["faces", "edges", "corners"]
+
+    if feature_types is None:
+        feature_types = ["faces", "edges", "corners"]
+
     for feature in feature_types:
         recv_data[feature] = send_recv(
             subdomain.rank,
@@ -487,6 +497,8 @@ def send_recv(rank, features, send_data):
     recv_data = {}
 
     for feature_id, feature in features.items():
+
+        # Interprocess communication - send
         if (
             feature.neighbor_rank > -1
             and feature.neighbor_rank != rank
@@ -496,12 +508,21 @@ def send_recv(rank, features, send_data):
                 send_data[feature_id], dest=feature.neighbor_rank
             )
 
+        # Interprocess communication - send
         if (
             feature.neighbor_rank > -1
             and feature.neighbor_rank != rank
             and feature_id in send_data
         ):
             reqr[feature_id] = comm.recv(source=feature.neighbor_rank)
+
+        # Periodic boundary condition spanning single process
+        if (
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank == rank
+            and feature_id in send_data
+        ):
+            reqr[feature_id] = send_data[feature_id]
 
     # Wait for all sends to complete
     MPI.Request.waitall(list(reqs.values()))

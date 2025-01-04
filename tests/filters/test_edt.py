@@ -1,86 +1,32 @@
 """test_edt.py"""
 
+import scipy.ndimage
+import edt
 import numpy as np
 import pmmoto
-import pytest
-import edt
-
-
-def pretty_print_3d_array(array, slice_dimension=0):
-    """
-    Nicely prints a 3D array with aligned columns for each 2D slice.
-
-    :param array: 3D list or nested list to print
-    :param slice_dimension: The dimension along which to slice the 3D array (0, 1, or 2)
-    """
-
-    if slice_dimension == 0:
-        slices = array
-    elif slice_dimension == 1:
-        slices = [list(zip(*plane)) for plane in array]
-    elif slice_dimension == 2:
-        slices = [list(zip(*slice)) for slice in zip(*array)]
-    else:
-        raise ValueError("slice_dimension must be 0, 1, or 2")
-
-    for depth_index, slice_2d in enumerate(slices):
-        print(f"Slice {depth_index}:")
-
-        # Find the maximum width for each column in the current 2D slice
-        col_widths = [max(len(str(item)) for item in col) for col in zip(*slice_2d)]
-
-        # Print each row with formatted columns
-        for row in slice_2d:
-            print(
-                "  ".join(
-                    f"{str(item):{col_width}}"
-                    for item, col_width in zip(row, col_widths)
-                )
-            )
-
-        print()  # Add a blank line between slices
-
-
-def pretty_print_2d_array(array):
-    """
-    Nicely prints a 2D array with aligned columns.
-
-    :param array: 2D list or nested list to print
-    """
-
-    # Find the maximum width for each column
-    col_widths = [max(len(str(item)) for item in col) for col in zip(*array)]
-
-    # Print each row with formatted columns
-    for row in array:
-        print(
-            "  ".join(
-                f"{str(item):{col_width}}" for item, col_width in zip(row, col_widths)
-            )
-        )
-
-
-def test_edt_3d():
-    """
-    Test the Euclidean transform code for a single process
-    """
-    img = np.ones([4, 4, 4], dtype=np.uint8)
-    img[3, 3, 3] = 0
-
-    out = pmmoto.filters.distance.edt(img)
-    true = edt.edt(img)
-    np.testing.assert_array_almost_equal(out, true)
 
 
 def test_edt_2d():
     """
-    Test the Euclidean transform code for a single process
+    Test the Euclidean transform code for a single process and non-periodic domain
     """
 
     voxels = (10, 50)
     prob_zero = 0.1
     seed = 1
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    out = pmmoto.filters.distance.edt(img)
+    true = edt.edt(img)
+    np.testing.assert_array_almost_equal(out, true)
+
+
+def test_edt_3d():
+    """
+    Test the Euclidean transform code for a single process and non-periodic domain
+    """
+    img = np.ones([4, 4, 4], dtype=np.uint8)
+    img[3, 3, 3] = 0
+
     out = pmmoto.filters.distance.edt(img)
     true = edt.edt(img)
     np.testing.assert_array_almost_equal(out, true)
@@ -123,94 +69,31 @@ def test_initial_parabolic_envelope_correctors():
     )
 
 
-def test_edt_periodic_domains():
+def test_periodic_2d():
     """
     Tests for periodic domains
     """
 
-    ## Generate and test 2d periodic domain in 1-dimension
-    voxels = 5
-    prob_zero = 0.2
-    seed = 1
-    img = pmmoto.domain_generation.gen_random_binary_grid(
-        (voxels, voxels), prob_zero, seed
-    )
-    periodic_img = np.tile(img, 3)
-    np.testing.assert_array_equal(img, periodic_img[:, voxels : voxels * 2])
-
-    ## Ensure the edt of the img and periodic img are not equal
-    edt_img = edt.edt(img)
-    edt_periodic_img = edt.edt(periodic_img)
-    assert not np.array_equal(edt_img, edt_periodic_img[:, voxels : voxels * 2])
-
-    ## Collect correctors for left and right faces
-    left = pmmoto.core.voxels._voxels.get_nearest_boundary_index_face_2d(
-        img=img,
-        dimension=1,
-        label=0,
-        forward=True,
-    ).astype(np.float32)
-
-    right = pmmoto.core.voxels._voxels.get_nearest_boundary_index_face_2d(
-        img=img,
-        dimension=1,
-        label=0,
-        forward=False,
-    ).astype(np.float32)
-
-    ## Loop though rows and apply correctors
-    edt_corrected = np.zeros_like(img).astype(np.float32)
-    count = 0
-    for row, l_c, r_c in zip(img, left, right):
-        if l_c == -1:
-            l_c = np.inf
-        if r_c == -1:
-            r_c = np.inf
-        edt_corrected[count, :] = (
-            pmmoto.filters.distance._distance.determine_initial_envelope_1d(
-                img=row,
-                start=0,
-                size=len(row),
-                lower_corrector=voxels - r_c,  # swap left and right
-                upper_corrector=l_c + 1,  # swap left and right
-            )
-        )
-        count += 1
-
-    pmmoto.filters.distance._distance.get_parabolic_envelope_2d(
-        edt_corrected, dimension=0
-    )
-
-    edt_corrected = np.sqrt(edt_corrected)
-    np.testing.assert_array_almost_equal(
-        edt_corrected, edt_periodic_img[:, voxels : voxels * 2]
-    )
-
-
-def test_perioidic_2d():
-    """
-    Tests for periodic domains
-    """
+    import matplotlib.pyplot as plt
 
     ## Generate and test 2d periodic domain in 1-dimension
-    voxels = (6, 6)
+    voxels = (60, 60)
     prob_zero = 0.1
-    seed = 2
+    seed = 4
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
-    periodic_img = np.tile(img, (3, 3))
+    img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(
+        voxels, prob_zero, smoothness=1, seed=seed
+    ).astype(np.uint8)
+
+    periodic_img = np.tile(img, (3, 3)).astype(np.uint8)
 
     np.testing.assert_array_equal(
         img, periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
     )
 
-    ## Ensure the edt of the img and periodic img are not equal
-    edt_img = edt.edt(img)
     edt_periodic_img = edt.edt(periodic_img)
-    assert not np.array_equal(
-        edt_img, edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
-    )
 
-    edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=True)
+    edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=[True, True])
 
     np.testing.assert_array_almost_equal(
         edt_pmmoto,
@@ -218,7 +101,7 @@ def test_perioidic_2d():
     )
 
 
-def test_perioidic_2d_2():
+def test_periodic_2d_2():
     """
     Tests for periodic domains
     """
@@ -241,7 +124,39 @@ def test_perioidic_2d_2():
         edt_img, edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
     )
 
-    edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=True)
+    edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=[True, True])
+
+    np.testing.assert_array_almost_equal(
+        edt_pmmoto,
+        edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2],
+    )
+
+
+def test_periodic_2d_3():
+    """
+    Tests for periodic domains
+    """
+    import matplotlib.pyplot as plt
+
+    ## Generate and test 2d periodic domain in 1-dimension
+    voxels = (500, 500)
+    prob_zero = 0.2
+    seed = 286565
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    periodic_img = np.tile(img, (3, 3))
+
+    np.testing.assert_array_equal(
+        img, periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
+    )
+
+    ## Ensure the edt of the img and periodic img are not equal
+    edt_img = edt.edt(img)
+    edt_periodic_img = edt.edt(periodic_img)
+    assert not np.array_equal(
+        edt_img, edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
+    )
+
+    edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=[True, True])
 
     np.testing.assert_array_almost_equal(
         edt_pmmoto,
@@ -255,47 +170,77 @@ def test_boundary_hull_1d():
         [4, np.inf, 0, np.inf, np.inf, np.inf, 4, 6, 16],
         dtype=np.float32,
     )
-    values = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0], left=True
+    hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
+        img=img, start=0, end=img.shape[0], num_hull=2, left=True
     )
 
-    assert values == (0, 4.0)
+    assert hull[0]["height"] == 4.0
+    assert hull[0]["vertex"] == 0
+    assert hull[0]["range"] == -np.inf
 
-    values = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=1, end=img.shape[0], left=True
+    assert hull[1]["height"] == 0.0
+    assert hull[1]["vertex"] == 2
+    assert hull[1]["range"] == 0.0
+
+    hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
+        img=img, start=1, end=img.shape[0], num_hull=3, left=True
     )
 
-    assert values == (1, 0.0)
+    assert hull[0]["height"] == 0.0
+    assert hull[0]["vertex"] == 1
 
-    values = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0], left=False
+    hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
+        img=img, start=0, end=img.shape[0], num_hull=1, left=False
     )
 
-    assert values == (7, 6.0)
+    assert hull[0]["height"] == 16.0
+    assert hull[0]["vertex"] == 8
+    assert hull[0]["range"] == 12.5
 
-
-def test_boundary_hull_2d():
-    """_summary_"""
-    voxels = (6, 6)
-    prob_zero = 0.7
-    seed = 2
-    img = pmmoto.domain_generation.gen_random_binary_grid(
-        voxels, prob_zero, seed
-    ).astype(np.float32)
-    periodic_img = np.tile(img, (3, 3))
-
-    values = pmmoto.filters.distance._distance.get_boundary_hull_2d(
-        img=periodic_img, dimension=0
+    hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
+        img=img, start=0, end=img.shape[0], num_hull=4, left=False
     )
 
+    assert hull[0]["height"] == 16.0
+    assert hull[0]["vertex"] == 8
+    assert hull[0]["range"] == 12.5
 
-def test_perioidic_3d():
+    assert hull[1]["height"] == 6.0
+    assert hull[1]["vertex"] == 7
+    assert hull[1]["range"] == 7.5
+
+    assert hull[2]["height"] == 4.0
+    assert hull[2]["vertex"] == 6
+    assert hull[2]["range"] == 4.5
+
+    assert hull[3]["height"] == 0.0
+    assert hull[3]["vertex"] == 2
+    assert hull[3]["range"] == 0.0
+
+    hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
+        img=img, start=0, end=img.shape[0] - 1, num_hull=5, left=False
+    )
+
+    assert hull[0]["height"] == 6.0
+    assert hull[0]["vertex"] == 7
+    assert hull[0]["range"] == 7.5
+
+    assert hull[1]["height"] == 4.0
+    assert hull[1]["vertex"] == 6
+    assert hull[1]["range"] == 4.5
+
+    assert hull[2]["height"] == 0.0
+    assert hull[2]["vertex"] == 2
+    assert hull[2]["range"] == 0.0
+
+
+def test_periodic_3d():
     """
     Tests for periodic domains
     """
 
     ## Generate and test 2d periodic domain in 1-dimension
-    voxels = (6, 6, 6)
+    voxels = (50, 50, 50)
     prob_zero = 0.1
     seed = 1
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
@@ -322,7 +267,7 @@ def test_perioidic_3d():
         ],
     )
 
-    edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=True)
+    edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
 
     np.testing.assert_array_equal(
         edt_pmmoto,
@@ -330,5 +275,39 @@ def test_perioidic_3d():
             voxels[0] : voxels[0] * 2,
             voxels[1] : voxels[1] * 2,
             voxels[2] : voxels[2] * 2,
+        ],
+    )
+
+
+def test_pmmoto_3d(generate_simple_subdomain):
+    """
+    Tests EDT with pmmoto
+    """
+    sd = generate_simple_subdomain(0)
+    prob_zero = 0.2
+    seed = 124
+    img = pmmoto.domain_generation.gen_random_binary_grid(sd.voxels, prob_zero, seed)
+    periodic_img = np.tile(img, (3, 3, 3))
+
+    np.testing.assert_array_equal(
+        img,
+        periodic_img[
+            sd.voxels[0] : sd.voxels[0] * 2,
+            sd.voxels[1] : sd.voxels[1] * 2,
+            sd.voxels[2] : sd.voxels[2] * 2,
+        ],
+    )
+
+    pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd, img=img)
+    pmmoto_old_edt = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+    other_edt = edt.edt(periodic_img)
+    np.testing.assert_array_equal(pmmoto_old_edt, pmmoto_edt)
+
+    np.testing.assert_array_equal(
+        pmmoto_old_edt,
+        other_edt[
+            sd.voxels[0] : sd.voxels[0] * 2,
+            sd.voxels[1] : sd.voxels[1] * 2,
+            sd.voxels[2] : sd.voxels[2] * 2,
         ],
     )

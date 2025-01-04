@@ -45,30 +45,7 @@ def renumber_image(img, conversion_map: dict):
     return _voxels._renumber_grid(img, conversion_map)
 
 
-def get_boundary_parabolic_envelope(subdomain, img, boundary_index=None):
-    """
-    Collect the parabolic envelop from non-ingeter img
-    Args:
-        subdomain (_type_): _description_
-        img (_type_): _description_
-    """
-    if boundary_index is None:
-        boundary_index = get_nearest_boundary_index(subdomain, img, 0)
-
-    feature_types = ["faces"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            _voxel.get_boundary_parabolic_envelope(
-                img=img,
-                boundary_grid=boundary_index[feature_id],
-                dimension=feature.info["argOrder"][0],
-                forward=feature.forward,
-            )
-
-    return boundary_index
-
-
-def get_nearest_boundary_index(subdomain, img, label):
+def get_nearest_boundary_index(subdomain, img, label, dimension=None):
     """
     Determines the index nearest each subdomain boundary face for a specified
     label in img.
@@ -77,16 +54,22 @@ def get_nearest_boundary_index(subdomain, img, label):
         subdomain (_type_): _description_
         img (_type_): _description_
     """
+
+    if dimension is not None and dimension not in {0, 1, 2}:
+        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
+
     boundary_index = {}
     feature_types = ["faces"]
+
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-            boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
-                img=img,
-                dimension=feature.info["argOrder"][0],
-                label=label,
-                forward=feature.forward,
-            ).astype(np.float32)
+            if dimension is None or feature_id[dimension] != 0:
+                boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
+                    img=img,
+                    dimension=feature.info["argOrder"][0],
+                    label=label,
+                    forward=feature.forward,
+                ).astype(np.float32)
     return boundary_index
 
 

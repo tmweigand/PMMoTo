@@ -84,7 +84,9 @@ ext_modules = [
 setup(
     name="pmmoto",
     ext_modules=cythonize(
-        ext_modules, annotate=True, compiler_directives={"language_level": "3"}
+        ext_modules,
+        annotate=True,
+        compiler_directives={"language_level": "3"},
     ),
     include_dirs=numpy.get_include(),
 )

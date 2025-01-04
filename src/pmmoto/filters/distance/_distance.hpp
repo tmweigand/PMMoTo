@@ -12,6 +12,12 @@
 
 #define sq(x) (static_cast<float>(x) * static_cast<float>(x))
 
+struct Hull {
+  int vertex;
+  float height;
+  float range;
+};
+
 inline void to_finite(float *f, const size_t voxels) {
   for (size_t i = 0; i < voxels; i++) {
     if (f[i] == INFINITY) {
@@ -73,7 +79,6 @@ void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
                  float w2) {
 
   float s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k], w2);
-
   while (k > 0 && s <= ranges[k]) {
     k--;
     s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k], w2);
@@ -86,10 +91,10 @@ void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
   ranges[k + 1] = INFINITY;
 }
 
-void _determine_boundary_parabolic_envelope(
-    float *img, const int n, const long int stride, const int lower_vertex,
-    const float lower_f, const int upper_vertex, const float upper_f) {
-
+void _determine_boundary_parabolic_envelope(float *img, const int n,
+                                            const long int stride,
+                                            std::vector<Hull> lower_hull,
+                                            std::vector<Hull> upper_hull) {
   if (n == 0) {
     return;
   }
@@ -97,8 +102,8 @@ void _determine_boundary_parabolic_envelope(
   const float w2 = 1 * 1;
 
   std::vector<float> ff(n, 0);
-  std::vector<float> hull_height(n + 2, 0.);
-  std::vector<int> hull_vertices(n + 2, 0);
+  std::vector<float> hull_height(n + lower_hull.size() + upper_hull.size(), 0.);
+  std::vector<int> hull_vertices(n + lower_hull.size() + upper_hull.size(), 0);
 
   for (long int i = 0; i < n; i++) {
     ff[i] = img[i * stride];
@@ -106,31 +111,42 @@ void _determine_boundary_parabolic_envelope(
 
   long int loop_start = 1;
 
-  std::vector<float> ranges(n + 1, 0);
+  std::vector<float> ranges(n + lower_hull.size() + upper_hull.size() + 1, 0);
   ranges[0] = -INFINITY;
   ranges[1] = +INFINITY;
 
-  if (lower_vertex != std::numeric_limits<int>::max()) {
+  int k = 0;
+  if (lower_hull.size() > 0) {
     loop_start = 0;
-    hull_vertices[0] = lower_vertex - n;
-    hull_height[0] = lower_f;
+    for (auto it = lower_hull.rbegin(); it != lower_hull.rend(); ++it) {
+      const Hull &h = *it;
+      hull_vertices[k] = h.vertex - n;
+      hull_height[k] = h.height;
+      ranges[k] = h.range - n;
+      ranges[k + 1] = +INFINITY;
+      k++;
+    }
+    k--;
   } else {
     hull_vertices[0] = 0;
     hull_height[0] = ff[0];
   }
 
-  int k = 0;
-  float s;
   for (long int i = loop_start; i < n; i++) {
     update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
   }
 
-  if (upper_vertex != std::numeric_limits<int>::max()) {
-    update_hull(k, n + upper_vertex, upper_f, hull_vertices, hull_height,
-                ranges, 1);
+  // Upper corrector
+  if (upper_hull.size() > 0) {
+    for (const Hull &h : upper_hull) {
+      update_hull(k, (n + h.vertex), h.height, hull_vertices, hull_height,
+                  ranges, 1);
+    }
   }
 
   k = 0;
+  float envelope;
+
   for (long int i = 0; i < n; i++) {
     while (ranges[k + 1] < i) {
       k++;
@@ -142,8 +158,8 @@ void _determine_boundary_parabolic_envelope(
 }
 
 /**
- * @brief Computes the squared Euclidean distance transform (EDT) for a 1D array
- * with multiple segments.
+ * @brief Computes the squared Euclidean distance transform (EDT) for a 1D
+ * array with multiple segments.
  *
  * This function calculates the squared Euclidean distance transform for a
  * segmented 1D array. It processes segments independently, applying specified
@@ -155,12 +171,12 @@ void _determine_boundary_parabolic_envelope(
  * @param[out] d Pointer to the distance array, which will be updated with
  * squared distances.
  * @param[in] n Number of elements in the array.
- * @param[in] stride Stride value used for indexing into the arrays (useful for
- * multi-dimensional arrays).
+ * @param[in] stride Stride value used for indexing into the arrays (useful
+ * for multi-dimensional arrays).
  * @param[in] anistropy The anisotropy factor applied to distances between
  * elements.
- * @param[in] lower_corrector Distance correction factor for transitions into a
- * segment. Defaults to `INFINITY`.
+ * @param[in] lower_corrector Distance correction factor for transitions into
+ * a segment. Defaults to `INFINITY`.
  * @param[in] upper_corrector Maximum allowed distance value. Defaults to
  * `INFINITY`.
  */
@@ -169,7 +185,6 @@ void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
                                   const long int stride, const float anistropy,
                                   const float lower_corrector = INFINITY,
                                   const float upper_corrector = INFINITY) {
-
   long int i;
   T working_segid = segids[0];
   d[0] = working_segid == 0 ? 0 : lower_corrector;
@@ -200,13 +215,11 @@ void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
   }
 }
 
-void return_boundary_hull(float *img, const int n, const long int stride,
-                          int &hull_vertex, float &hull_f, bool left) {
-
+std::vector<Hull> return_boundary_hull(float *img, const int n,
+                                       const long int stride, uint8_t num_hull,
+                                       bool left) {
   to_finite(img, n);
-  if (n == 0) {
-    return;
-  }
+  std::vector<Hull> hull;
 
   const float w2 = 1 * 1;
   std::vector<float> ff(n, 0);
@@ -227,23 +240,34 @@ void return_boundary_hull(float *img, const int n, const long int stride,
     update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
   }
 
-  k = 0;
-  // Find the first valid range
+  if (num_hull > k)
+    num_hull = k;
+
   if (left) {
-    while (ranges[k + 1] < 0) {
-      ++k;
+    int kk = 0;
+    while (kk < num_hull) {
+      if (hull_height[kk] < 0.9) {
+        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
+        break;
+      } else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
+        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
+      }
+      kk++;
     }
-    hull_vertex = hull_vertices[k];
-    hull_f = hull_height[k];
   } else {
-    // Find the last valid range
-    while (ranges[k + 1] < n) {
-      ++k;
+    int kk = k;
+    while (kk > k - num_hull) {
+      if (hull_height[kk] < 0.9) {
+        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
+        break;
+      } else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
+        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
+      }
+      kk--;
     }
-    hull_vertex = hull_vertices[k];
-    hull_f = hull_height[k];
   }
-  return;
+
+  return hull;
 }
 
 #endif
