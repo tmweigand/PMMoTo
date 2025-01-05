@@ -11,12 +11,12 @@ def generate_subdomain():
     """
 
     def _create_subdomain(rank):
-        box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-        boundary_types = ((0, 0), (1, 1), (2, 2))
+        box = ((0, 1.0), (0, 1.0), (0, 1.0))
+        boundary_types = ((2, 2), (2, 2), (2, 2))
         inlet = ((1, 0), (0, 0), (0, 0))
         outlet = ((0, 1), (0, 0), (0, 0))
         voxels = (100, 100, 100)
-        subdomains = (3, 3, 3)
+        subdomains = (1, 1, 1)
         pad = (1, 1, 1)
         reservoir_voxels = 0
 
@@ -55,9 +55,12 @@ def generate_simple_subdomain():
     THis allows rank to be passed as an argument
     """
 
-    def _create_subdomain(rank):
+    def _create_subdomain(rank, periodic=True):
         box = ((0, 1.0), (0, 1.0), (0, 1.0))
-        boundary_types = ((2, 2), (2, 2), (2, 2))
+        if periodic:
+            boundary_types = ((2, 2), (2, 2), (2, 2))
+        else:
+            boundary_types = ((0, 0), (0, 0), (0, 0))
         inlet = ((1, 0), (0, 0), (0, 0))
         outlet = ((0, 1), (0, 0), (0, 0))
         voxels = (100, 100, 100)

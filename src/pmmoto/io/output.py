@@ -27,24 +27,46 @@ __all__ = [
 ]
 
 
-def save_grid_data_serial(file_name, subdomains, grid, **kwargs):
-    """_summary_
+def save_grid_data_serial(file_name: str, subdomains: dict, grid: dict, **kwargs):
+    """
+    Save grid data for multiple subdomains serially to a file.
+
+    This function processes subdomain and grid data and writes it to a file in a serialized manner.
+    It handles cases where `subdomains` and `grid` inputs are either dictionaries (multiple items)
+    or single objects by wrapping them in dictionaries with a single entry.
 
     Args:
-        file_name (_type_): _description_
-        subdomains (_type_): _description_
-        grid (_type_): _description_
+        file_name (str): The path to the output file where the grid data will be saved.
+        subdomains (dict or object): A dictionary mapping process IDs to subdomain objects.
+            If not a dictionary, a single subdomain object can be provided, which will be wrapped as `{0: subdomain}`.
+        grid (dict or object): A dictionary mapping process IDs to grid objects.
+            If not a dictionary, a single grid object can be provided, which will be wrapped as `{0: grid}`.
+        **kwargs: Additional keyword arguments to be passed to the `save_grid_data_proc` and
+            `write_parallel_VTK_grid` functions.
+
+    Raises:
+        ValueError: If the file path provided in `file_name` is invalid or inaccessible.
+        KeyError: If the provided `subdomains` or `grid` dictionaries are missing required keys.
+
+    Notes:
+        - This function relies on the `io_utils.check_file_path` to ensure that the file path is valid.
+        - It uses `save_grid_data_proc` to save individual grid data for each subdomain and grid.
+        - Finally, it invokes `write_parallel_VTK_grid` to write a combined VTK grid for the 0th subdomain and grid.
+
+    Example:
     """
+    if type(subdomains) is not dict:
+        subdomains = {0: subdomains}
+
+    if type(grid) is not dict:
+        grid = {0: grid}
 
     io_utils.check_file_path(file_name)
 
-    if type(subdomains) is not list:
-        subdomains = [subdomains]
+    for l_subdomain, l_grid in zip(subdomains.values(), grid.values()):
+        save_grid_data_proc(file_name, l_subdomain, l_grid, **kwargs)
 
-    for subdomain in subdomains:
-        save_grid_data_proc(file_name, subdomain, grid, **kwargs)
-
-    write_parallel_VTK_grid(file_name, subdomains[0], grid, **kwargs)
+    write_parallel_VTK_grid(file_name, subdomains[0], grid[0], **kwargs)
 
 
 def save_grid_data_parallel(file_name, subdomain, domain, grid, **kwargs):
@@ -83,6 +105,13 @@ def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
     for key, value in kwargs.items():
         point_data[key] = value
         point_data_info[key] = (value.dtype, 1)
+
+    print(
+        subdomain.rank,
+        subdomain.start,
+        subdomain.voxels,
+        [sum(x) for x in zip(subdomain.start, subdomain.voxels)],
+    )
 
     evtk.imageToVTK(
         path=file_proc + str(subdomain.rank),

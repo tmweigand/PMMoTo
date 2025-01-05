@@ -4,6 +4,8 @@ import scipy.ndimage
 import edt
 import numpy as np
 import pmmoto
+from mpi4py import MPI
+import pytest
 
 
 def test_edt_2d():
@@ -311,3 +313,66 @@ def test_pmmoto_3d(generate_simple_subdomain):
             sd.voxels[2] : sd.voxels[2] * 2,
         ],
     )
+
+
+def test_periodic_3d():
+    """
+    Tests for periodic domains
+    """
+
+    ## Generate and test 2d periodic domain in 1-dimension
+    voxels = (50, 50, 50)
+    prob_zero = 0.1
+    seed = 1
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    periodic_img = np.tile(img, (3, 3, 3))
+
+    np.testing.assert_array_equal(
+        img,
+        periodic_img[
+            voxels[0] : voxels[0] * 2,
+            voxels[1] : voxels[1] * 2,
+            voxels[2] : voxels[2] * 2,
+        ],
+    )
+
+    ## Ensure the edt of the img and periodic img are not equal
+    edt_img = edt.edt(img)
+    edt_periodic_img = edt.edt(periodic_img)
+    assert not np.array_equal(
+        edt_img,
+        edt_periodic_img[
+            voxels[0] : voxels[0] * 2,
+            voxels[1] : voxels[1] * 2,
+            voxels[2] : voxels[2] * 2,
+        ],
+    )
+
+    edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+
+    np.testing.assert_array_equal(
+        edt_pmmoto,
+        edt_periodic_img[
+            voxels[0] : voxels[0] * 2,
+            voxels[1] : voxels[1] * 2,
+            voxels[2] : voxels[2] * 2,
+        ],
+    )
+
+
+# @pytest.mark.mpi
+def test_pmmoto_3d_parallel(generate_subdomain, generate_simple_subdomain):
+    """
+    Tests EDT with pmmoto
+    """
+    sd = generate_simple_subdomain(0)
+    prob_zero = 0.2
+    seed = 124
+    img = pmmoto.domain_generation.gen_random_binary_grid(sd.voxels, prob_zero, seed)
+    pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd, img=img)
+    pmmoto_old_edt = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+    np.testing.assert_array_equal(pmmoto_old_edt, pmmoto_edt)
+
+    sd = generate_subdomain(0)
+    test = pmmoto.core.utils.deconstruct_grid(img)
+    print(test)

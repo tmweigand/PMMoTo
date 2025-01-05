@@ -1,13 +1,12 @@
-from . import utils
 from . import domain
 from . import domain_decompose
 from . import domain_discretization
-from . import subdomain
 from . import subdomain_padded
+from . import utils
 
-__all__ = [
-    "initialize",
-]
+import numpy as np
+
+__all__ = ["initialize", "deconstruct_grid"]
 
 
 def initialize(
@@ -52,3 +51,33 @@ def initialize(
     )
 
     return padded_subdomain
+
+
+def deconstruct_grid(subdomain, img, subdomains, pad=(1, 1, 1), reservoir_voxels=0):
+    """Deconstruct the grid from a single process to multiple subdomains and images"""
+
+    num_procs = np.prod(subdomains)
+    _domain = subdomain.domain
+
+    pmmoto_decomposed_domain = (
+        domain_decompose.DecomposedDomain.from_discretized_domain(
+            discretized_domain=_domain,
+            subdomains=subdomains,
+        )
+    )
+
+    padded_subdomain = {}
+    local_grid = {}
+    for n in range(0, num_procs):
+        padded_subdomain[n] = subdomain_padded.PaddedSubdomain(
+            rank=n,
+            decomposed_domain=pmmoto_decomposed_domain,
+            pad=pad,
+            reservoir_voxels=reservoir_voxels,
+        )
+
+        local_grid[n] = utils.decompose_img(
+            img=img, start=padded_subdomain[n].start, shape=padded_subdomain[n].voxels
+        )
+
+    return padded_subdomain, local_grid
