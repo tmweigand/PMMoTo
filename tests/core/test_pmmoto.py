@@ -1,23 +1,31 @@
 """test_pmmoto.py"""
 
 import pmmoto
+import pytest
+import numpy as np
 
 
+@pytest.mark.mpi(min_size=8)
 def test_deconstruct_grid(generate_single_subdomain):
     """Ensure expected behavior of deconstruct_grid"""
-    sd = generate_single_subdomain(0, periodic=False)
-    img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(
-        sd.voxels, p_zero=0.5, seed=1, smoothness=2
-    )
+    sd = generate_single_subdomain(0, periodic=True)
 
-    print(sd.voxels, img.shape)
+    n = sd.voxels[0]
+    linear_values = np.linspace(0, n - 1, n, endpoint=True)
+    img = np.ones(sd.voxels) * linear_values
 
     pmmoto.io.output.save_grid_data_serial("data_out/test_deconstruct_grid", sd, img)
 
     subdomains, local_img = pmmoto.core.pmmoto.deconstruct_grid(
-        sd, img, subdomains=(2, 2, 2)
+        sd, img, subdomains=(5, 5, 5)
     )
 
     pmmoto.io.output.save_grid_data_serial(
         "data_out/test_deconstruct_grid_reconstructed", subdomains, local_img
     )
+
+    subdomains, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+        sd, img, subdomains=(2, 2, 2), rank=2
+    )
+
+    print(subdomains.index, local_img.shape)

@@ -34,7 +34,12 @@ def test_1d_slice_extraction():
     out = []
     for y in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 0, {1: y, 2: 0}, forward=True)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=0,
+                start=np.array([0, y, 0], dtype=np.uint64),
+                forward=True,
+            )
         )
 
     np.testing.assert_equal(
@@ -52,7 +57,12 @@ def test_1d_slice_extraction():
     out = []
     for y in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 0, {1: y, 2: 0}, forward=False)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=0,
+                start=np.array([0, y, 0], dtype=np.uint64),
+                forward=False,
+            )
         )
     np.testing.assert_equal(
         out,
@@ -69,7 +79,12 @@ def test_1d_slice_extraction():
     out = []
     for x in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 1, {0: x, 2: 0}, forward=True)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=1,
+                start=np.array([x, 0, 0], dtype=np.uint64),
+                forward=True,
+            )
         )
 
     np.testing.assert_equal(
@@ -87,7 +102,12 @@ def test_1d_slice_extraction():
     out = []
     for x in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 1, {0: x, 2: 0}, forward=False)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=1,
+                start=np.array([x, 0, 0], dtype=np.uint64),
+                forward=False,
+            )
         )
     np.testing.assert_equal(
         out,
@@ -104,7 +124,12 @@ def test_1d_slice_extraction():
     out = []
     for x in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 2, {0: x, 1: x}, forward=True)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=2,
+                start=np.array([x, x, 0], dtype=np.uint64),
+                forward=True,
+            )
         )
 
     np.testing.assert_equal(
@@ -122,7 +147,12 @@ def test_1d_slice_extraction():
     out = []
     for x in range(n):
         out.append(
-            pmmoto.core._voxels.extract_1d_slice(img, 2, {0: x, 1: x}, forward=False)
+            pmmoto.core._voxels.extract_1d_slice(
+                img=img,
+                dimension=2,
+                start=np.array([x, x, 0], dtype=np.uint64),
+                forward=False,
+            )
         )
     np.testing.assert_equal(
         out,
@@ -157,6 +187,72 @@ def test_get_nearest_boundary_index_1d():
     assert index == 12
 
 
+def test_get_nearest_boundary_index_1d_pad():
+    """
+    Adding ability to "de"-pad the image for the 1d case
+    """
+
+    # Example data
+    img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=True, start=1, end=0
+    )
+
+    assert index == 8
+
+    img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1], dtype=np.uint8)
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=0, end=0
+    )
+    assert index == 12
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=1, end=0
+    )
+    assert index == 11
+
+    img = np.array([1, 1, 0, 0, 0, 0, 1, 1, 1, 0], dtype=np.uint8)
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=0, end=0
+    )
+    assert index == 9
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=1, end=0
+    )
+    assert index == 8
+
+    img = np.array([0, 1, 0, 0, 0, 0, 1, 1, 1, 0], dtype=np.uint8)
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=True, start=0, end=0
+    )
+    assert index == 0
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=True, start=1, end=0
+    )
+    assert index == 1
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=0, end=0
+    )
+    assert index == 9
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=0, end=1
+    )
+    assert index == 5
+
+    img = np.array([1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=np.uint8)
+    index = pmmoto.core._voxels.determine_index_nearest_boundary_1d(
+        img=img, label=0, forward=False, start=1, end=1
+    )
+    assert index == 9
+
+
 def test_get_nearest_boundary_index():
     """
     Test for ensuring get_nearest_boundary_index works. duh
@@ -185,59 +281,86 @@ def test_get_nearest_boundary_index():
     )
 
     index = pmmoto.core._voxels.determine_index_nearest_boundary(
-        img=img, label=0, dimension=2, location={0: 0, 1: 0, 2: 0}, forward=True
+        img=img,
+        label=0,
+        dimension=2,
+        start=np.array([0, 0, 0], dtype=np.uint64),
+        end=0,
+        forward=True,
     )
 
     assert index == 9
 
     index = pmmoto.core._voxels.determine_index_nearest_boundary(
-        img=img, label=0, dimension=2, location={0: 0, 1: 0, 2: 0}, forward=False
+        img=img,
+        label=0,
+        dimension=2,
+        start=np.array([0, 0, 0], dtype=np.uint64),
+        end=0,
+        forward=False,
     )
 
     assert index == 12
 
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img,
+        label=0,
+        dimension=2,
+        start=np.array([0, 0, 1], dtype=np.uint64),
+        end=0,
+        forward=True,
+    )
+
+    assert index == 8
+
+    index = pmmoto.core._voxels.determine_index_nearest_boundary(
+        img=img,
+        label=0,
+        dimension=2,
+        start=np.array([0, 0, 1], dtype=np.uint64),
+        end=0,
+        forward=False,
+    )
+
+    assert index == 11
+
 
 @pytest.mark.figures
-def test_get_nearest_boundary_index_figure(generate_subdomain):
+def test_get_nearest_boundary_index_figure(generate_padded_subdomain):
     """
     Test for ensuring get_nearest_boundary_index works. duh
     """
 
     rank = 0
-    sd = generate_subdomain(rank)
+    sd = generate_padded_subdomain(rank)
 
     # img = pmmoto.domain_generation.gen_random_binary_grid(shape, 0.01)
     img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(sd.voxels, 0.5, 5.0)
 
     boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
-        subdomain=sd,
-        img=img,
-        label=0,
+        subdomain=sd, img=img, label=0, own=True
     )
 
-    img_out = np.ones_like(img)
-    for feature_id, index in boundary_index.items():
-        for nx in range(index.shape[0]):
-            for ny in range(index.shape[1]):
-                if feature_id[0] != 0:
-                    print(index[nx, ny])
-                    if index[nx, ny] > -1:
-                        img_out[int(index[nx, ny]), nx, ny] = 0
-                    else:
-                        img_out[0, nx, ny] = 255
-                if feature_id[1] != 0:
-                    print(index[nx, ny])
-                    if index[nx, ny] > -1:
-                        img_out[nx, int(index[nx, ny]), ny] = 0
-                    else:
-                        img_out[nx, 0, ny] = 255
-                if feature_id[2] != 0:
-                    print(index[nx, ny])
-                    if index[nx, ny] > -1:
-                        img_out[nx, ny, int(index[nx, ny])] = 0
-                    else:
-                        img_out[nx, ny, 0] = 255
+    # img_out = np.ones_like(img)
+    # for feature_id, index in boundary_index.items():
+    #     for nx in range(index.shape[0]):
+    #         for ny in range(index.shape[1]):
+    #             if feature_id[0] != 0:
+    #                 if index[nx, ny] > -1:
+    #                     img_out[int(index[nx, ny]), nx, ny] = 0
+    #                 else:
+    #                     img_out[0, nx, ny] = 255
+    #             if feature_id[1] != 0:
+    #                 if index[nx, ny] > -1:
+    #                     img_out[nx, int(index[nx, ny]), ny] = 0
+    #                 else:
+    #                     img_out[nx, 0, ny] = 255
+    #             if feature_id[2] != 0:
+    #                 if index[nx, ny] > -1:
+    #                     img_out[nx, ny, int(index[nx, ny])] = 0
+    #                 else:
+    #                     img_out[nx, ny, 0] = 255
 
-    pmmoto.io.output.save_grid(
-        "data_out/test_voxels_random", img, **{"img_out": img_out}
-    )
+    # pmmoto.io.output.save_grid(
+    #     "data_out/test_voxels_random", img, **{"img_out": img_out}
+    # )

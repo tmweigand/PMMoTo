@@ -30,6 +30,17 @@ class Feature(object):
         self.extend = [[0, 0], [0, 0], [0, 0]]
         self.loop = None
 
+    def convert_feature_id(self, index=None):
+        """
+        Convert the feature if of type (int,int,int) -> int
+
+        Returns:
+            int: feature id
+        """
+        if index is None:
+            index = self.feature_id
+        return orientation.get_boundary_id(index)
+
 
 class Face(Feature):
     """

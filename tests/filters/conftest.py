@@ -60,10 +60,10 @@ def generate_simple_subdomain():
         if periodic:
             boundary_types = ((2, 2), (2, 2), (2, 2))
         else:
-            boundary_types = ((0, 0), (0, 0), (0, 0))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
-        voxels = (100, 100, 100)
+            boundary_types = ((1, 1), (1, 1), (1, 1))
+        inlet = ((0, 0), (0, 0), (0, 0))
+        outlet = ((0, 0), (0, 0), (0, 0))
+        voxels = (10, 10, 10)
         subdomains = (1, 1, 1)
         pad = (1, 1, 1)
         reservoir_voxels = 0

@@ -1,4 +1,5 @@
-tox==3.0.0
-pytest==6.2.5
-pytest-cov==2.12.1
-pytest_benchmark==5.1.0
+tox>=4.0.0
+pytest>=8.1
+pytest-cov>=2.12.1
+pytest_benchmark>=5.1.0
+pytest-mpi>=0.6

@@ -40,6 +40,6 @@ cdef extern from "_distance.hpp":
         float *img,
         const int n,
         const long int stride,
-        uint8_t num_hull,
+        int num_hull,
         bool left
         ) nogil

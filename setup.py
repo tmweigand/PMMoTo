@@ -29,12 +29,6 @@ cmdclass = {}
 
 ext_modules = [
     # Extension(
-    #     "pmmoto.core._Orientation",
-    #     ["src/pmmoto/core/_Orientation.pyx"],
-    #     include_dirs=["src/pmmoto/core"],
-    #     language="c++",
-    # ),
-    # Extension(
     #     "pmmoto.core._set",
     #     ["src/pmmoto/core/_set.pyx"],
     #     include_dirs=["src/pmmoto/core"],
@@ -52,12 +46,6 @@ ext_modules = [
         include_dirs=["src/pmmoto/core"],
         language="c++",
     ),
-    # Extension(
-    #     "pmmoto.core.nodes",
-    #     ["src/pmmoto/core/nodes.pyx"],
-    #     include_dirs=["src/pmmoto/core"],
-    #     language="c++",
-    # ),
     Extension(
         "pmmoto.filters.distance._distance",
         ["src/pmmoto/filters/distance/_distance.pyx"],

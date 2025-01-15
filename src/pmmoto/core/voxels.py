@@ -45,7 +45,9 @@ def renumber_image(img, conversion_map: dict):
     return _voxels._renumber_grid(img, conversion_map)
 
 
-def get_nearest_boundary_index(subdomain, img, label, dimension=None):
+def get_nearest_boundary_index(
+    subdomain, img, label, dimension=None, own=False, distance=False
+):
     """
     Determines the index nearest each subdomain boundary face for a specified
     label in img.
@@ -64,12 +66,33 @@ def get_nearest_boundary_index(subdomain, img, label, dimension=None):
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
             if dimension is None or feature_id[dimension] != 0:
+
+                pad = [0, 0]
+                if own and feature.forward:
+                    pad[0] = subdomain.pad[feature.info["argOrder"][0]][0]
+                elif own and not feature.forward:
+                    pad[1] = subdomain.pad[feature.info["argOrder"][0]][1]
+
                 boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
                     img=img,
                     dimension=feature.info["argOrder"][0],
                     label=label,
                     forward=feature.forward,
+                    lower_pad=pad[0],
+                    upper_pad=pad[1],
                 ).astype(np.float32)
+
+                # Switch so distance to boundary index for reverse
+                if distance and not feature.forward:
+                    boundary_index[feature_id] = np.where(
+                        boundary_index[feature_id] != -1,
+                        img.shape[feature.info["argOrder"][0]]
+                        - boundary_index[feature_id]
+                        - pad[1]
+                        - 1,
+                        boundary_index[feature_id],
+                    )
+
     return boundary_index
 
 

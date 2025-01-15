@@ -48,6 +48,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         """
         Add pad to boundaries of subdomain. Padding is applied to all boundaries
         except 'end' boundary type.
+        Padding must be equal on opposite feature!
         Args:
             pad (tuple[int, int, int]): _description_
 

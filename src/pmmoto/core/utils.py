@@ -8,7 +8,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
-__all__ = ["phase_exists"]
+__all__ = ["phase_exists", "constant_pad_img"]
 
 
 def raise_error():
@@ -153,17 +153,18 @@ def unpad(grid, pad):
     return np.ascontiguousarray(grid_out)
 
 
-def constant_pad(grid, pad, pad_value):
+def constant_pad_img(img, pad, pad_value):
     """
     Pad a grid with a constant value
     """
-    grid = np.pad(
-        grid,
-        ((pad[0], pad[1]), (pad[2], pad[3]), (pad[4], pad[5])),
+
+    img = np.pad(
+        img,
+        ((pad[0][0], pad[0][1]), (pad[1][0], pad[1][1]), (pad[2][0], pad[2][1])),
         "constant",
         constant_values=pad_value,
     )
-    return grid
+    return img
 
 
 def own_grid(grid, own):
@@ -195,7 +196,7 @@ def global_grid(grid, index, local_grid):
     return grid
 
 
-def decompose_img(img, start, shape):
+def decompose_img(img, start, shape, padded_img=False):
     """
     Decompose an image
 
@@ -207,17 +208,14 @@ def decompose_img(img, start, shape):
     Returns:
     - local_img: np.ndarray, the resulting wrapped slice.
     """
-    z_max, y_max, x_max = img.shape
-    dz, dy, dx = shape
-    start_z, start_y, start_x = start
 
     # Create indices with wrapping
-    z_indices = np.arange(start_z, start_z + dz) % z_max
-    y_indices = np.arange(start_y, start_y + dy) % y_max
-    x_indices = np.arange(start_x, start_x + dx) % x_max
+    index = [None, None, None]
+    for n, (_start, _shape) in enumerate(zip(start, shape)):
+        index[n] = np.arange(_start, _start + _shape) % img.shape[n]
 
     # Use advanced indexing to extract the slice
-    return np.ascontiguousarray(img[np.ix_(z_indices, y_indices, x_indices)])
+    return img[np.ix_(index[0], index[1], index[2])]
 
 
 # def reconstruct_grid_to_root(subdomain,grid):

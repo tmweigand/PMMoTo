@@ -461,6 +461,10 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
     recv_data = {}
     data_per_process = {}
 
+    # if subdomain.rank == 2:
+    #     for ket, value in send_data.items():
+    #         print("send_data", ket, value)
+
     if feature_types is None:
         feature_types = ["faces", "edges", "corners"]
 
@@ -482,10 +486,17 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
                     feature_id
                 ]
 
+    # if subdomain.rank == 2:
+    #     print("data per process", data_per_process)
+
     recv_data = send_recv(
         subdomain.rank,
         data_per_process,
     )
+
+    # if subdomain.rank == 0:
+    #     if 2 in recv_data.keys():
+    #         print("chawsivhweiogvhfnewriovhwiov", recv_data[2][(0, -1, 0)])
 
     if unpack:
         _recv_data = {}

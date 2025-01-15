@@ -6,6 +6,22 @@
 #include <limits>
 #include <memory>
 
+/**
+ * @brief Iterates through a 1D slice of an image and writes the values to an
+ * output array.
+ *
+ * This function traverses a 1D slice of an image based on the specified stride
+ * and direction, and copies the values into the output array. The first element
+ * in the output array is initialized to a specific value depending on the
+ * traversal direction.
+ *
+ * @param img Pointer to the 1D slice of the image.
+ * @param out Pointer to the output array where the values will be written.
+ * @param n The number of elements in the 1D slice.
+ * @param stride Memory stride between elements in the slice.
+ * @param forward Direction of traversal. If true, traverses forward; otherwise,
+ * traverses backward.
+ */
 void loop_through_slice(uint8_t *img, uint8_t *out, const int n,
                         const long int stride, bool forward = true) {
 
@@ -22,24 +38,25 @@ void loop_through_slice(uint8_t *img, uint8_t *out, const int n,
   }
 }
 
+/**
+ * @brief Finds the nearest occurrence of a label in a 1D slice of an image.
+ *
+ * This function searches for the nearest occurrence of the specified `label`
+ * in a 1D slice of the image. The search can be performed in either a forward
+ * or backward direction.
+ *
+ * @param img Pointer to the 1D slice of the image.
+ * @param label The label to find in the slice.
+ * @param n The number of elements in the 1D slice.
+ * @param stride Memory stride between elements in the slice.
+ * @param forward Search direction. If true, searches forward; otherwise,
+ * searches backward.
+ * @return The 0-based index of the nearest occurrence of `label`, or -1 if not
+ * found.
+ */
 int64_t _get_nearest_boundary_index(uint8_t *img, uint8_t label, const int n,
                                     const long int stride,
                                     bool forward = true) {
-  /*
-   Finds the nearest occurrence of `label` in the provided 1D slice of the
-   image.
-
-   Parameters:
-       img (uint8_t*): Pointer to the 1D slice of the image.
-       label (uint8_t): The label to find.
-       n (int): Number of elements in the 1D slice.
-       stride ( const long int): Memory stride between elements in the slice.
-       forward (bool): Search direction (true for forward, false for backward).
-
-   Returns:
-       int64_t: The index (0-based) of the nearest occurrence of `label`, or -1
-   if not found.
-  */
 
   // Determine iteration parameters based on direction
   int64_t start = forward ? 0 : (n - 1) * stride;

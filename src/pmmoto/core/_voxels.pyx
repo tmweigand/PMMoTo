@@ -17,7 +17,6 @@ from numpy cimport npy_intp, uint64_t, int64_t, uint8_t
 
 
 __all__ = [
-    "get_start_indices",
     "get_nearest_boundary_index",
     "get_nearest_boundary_index_face",
     "get_nearest_boundary_index_face_2d",
@@ -50,50 +49,6 @@ cdef struct match_test:
     npy_intp neighbor_rank
     npy_intp global_id
 
-
-def get_start_indices(int dimension, dict location={0: 0, 1: 0, 2: 0}):
-    """
-    Helper function to compute the starting indices for slicing based
-    on the given dimensionand location.
-
-    Parameters:
-        dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates for the
-        other dimensions.
-
-    Returns:
-        A list of start indices for slicing.
-    """
-    cdef int[3] start = [0, 0, 0]  # Initialize start indices
-    for n, d in enumerate([0, 1, 2]):
-        if d != dimension:
-            start[n] = location.get(d, 0)  # Default to 0 if the key is not in location
-
-    return start
-
-
-def get_start_indices_2d(int dimension, dict location={0: 0, 1: 0}):
-    """
-    Helper function to compute the starting indices for slicing based
-        on the given dimension
-    and location.
-
-    Parameters:
-        dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates
-            for the other dimensions.
-
-    Returns:
-        A list of start indices for slicing.
-    """
-    cdef int[2] start = [0, 0]  # Initialize start indices
-    for n, d in enumerate([0, 1]):
-        if d != dimension:
-            start[n] = location.get(d, 0)  # Default to 0 if the key is not in location
-
-    return start
-
-
 def normalized_strides(array):
     """
     Compute the strides of a NumPy array normalized by the size of its data type.
@@ -116,7 +71,7 @@ def normalized_strides(array):
 def extract_1d_slice(
     uint8_t[:, :, :] img,
     int dimension,
-    dict location={0: 0, 1: 0, 2: 0},
+    uint64_t[:] start,
     bool forward=True
 ):
     """
@@ -134,14 +89,11 @@ def extract_1d_slice(
     """
 
     # Determine the size of the output slice
-    cdef size_t size = img.shape[dimension]
+    cdef size_t size = img.shape[dimension] - start[dimension]
 
     # Initialize the output array
     cdef np.ndarray[uint8_t, ndim=1] output = np.zeros(size, dtype=np.uint8)
     cdef int stride = normalized_strides(img)[dimension]
-
-    # Get the start indices for slicing
-    cdef int[3] start = get_start_indices(dimension, location)
 
     # Call the low-level loop function
     loop_through_slice(
@@ -159,7 +111,8 @@ def determine_index_nearest_boundary(
     uint8_t[:, :, :] img,
     uint8_t label,
     int dimension,
-    dict location={0: 0, 1: 0, 2: 0},
+    uint64_t[:] start,
+    uint64_t end,
     bool forward=True
 ):
     """
@@ -179,10 +132,7 @@ def determine_index_nearest_boundary(
     """
 
     # Determine the size of the output slice
-    cdef size_t size = img.shape[dimension]
-
-    # Get the start indices for slicing
-    cdef int[3] start = get_start_indices(dimension, location)
+    cdef size_t size = img.shape[dimension] - start[dimension] - end
     cdef int stride = normalized_strides(img)[dimension]
 
     # Call the low-level function to get the nearest boundary index
@@ -201,7 +151,8 @@ def determine_index_nearest_boundary_2d(
     uint8_t[:, :] img,
     uint8_t label,
     int dimension,
-    dict location={0: 0, 1: 0},
+    uint64_t[:] start,
+    uint64_t end,
     bool forward=True
 ):
     """
@@ -221,10 +172,9 @@ def determine_index_nearest_boundary_2d(
     """
 
     # Determine the size of the output slice
-    cdef size_t size = img.shape[dimension]
+    cdef size_t size = img.shape[dimension] - start[dimension] - end
 
     # Get the start indices for slicing
-    cdef int[2] start = get_start_indices_2d(dimension, location)
     cdef int stride = normalized_strides(img)[dimension]
 
     # Call the low-level function to get the nearest boundary index
@@ -242,6 +192,8 @@ def determine_index_nearest_boundary_2d(
 def determine_index_nearest_boundary_1d(
     uint8_t[:] img,
     uint8_t label,
+    uint64_t start = 0,
+    uint64_t end = 0,
     bool forward=True
 ):
     """
@@ -252,8 +204,8 @@ def determine_index_nearest_boundary_1d(
         img: 3D NumPy array of uint8 type.
         label: img[count] = label
         dimension: The axis (0, 1, or 2) to extract the slice from.
-        location: A dictionary specifying the fixed coordinates
-            for the other dimensions.
+        start: An integer specifying the starting index. 
+               Assumed positive for forward=False. So counting from the right. 
         forward: If True, iterate forward; otherwise, iterate backward.
 
     Returns:
@@ -261,11 +213,11 @@ def determine_index_nearest_boundary_1d(
     """
 
     # Determine the size of the output slice
-    cdef size_t size = img.shape[0]
+    cdef size_t size = img.shape[0] - start - end
 
     # Call the low-level function to get the nearest boundary index
     index = _get_nearest_boundary_index(
-        <uint8_t*>&img[0],
+        <uint8_t*>&img[start],
         label,
         size,
         1,
@@ -279,7 +231,9 @@ def get_nearest_boundary_index_face(
     uint8_t[:, :, :] img,
     int dimension,
     bool forward,
-    int label
+    int label,
+    uint64_t lower_pad = 0,
+    uint64_t upper_pad = 0
 ):
     """
     Determine the nearest boundary index of a given label in the specified dimension.
@@ -304,19 +258,21 @@ def get_nearest_boundary_index_face(
     # Dimensions of the output index array
     cdef size_t sx = img.shape[dim1]
     cdef size_t sy = img.shape[dim2]
-    cdef np.ndarray[int64_t, ndim=2] index_array = np.zeros((sy, sx), dtype=np.int64)
+    cdef np.ndarray[int64_t, ndim=2] index_array = np.zeros((sx, sy), dtype=np.int64)
 
     # Iterate through the 2D "face" for the given dimension
-    location = {}
+    start = np.array([0, 0, 0], dtype=np.uint64)
+    start[dimension] = lower_pad
     for x in range(sx):
-        location[dim1] = x
+        start[dim1] = x
         for y in range(sy):
-            location[dim2] = y
+            start[dim2] = y
             index_array[x, y] = determine_index_nearest_boundary(
                 img=img,
                 label=label,
                 dimension=dimension,
-                location=location,
+                start=start,
+                end=upper_pad,
                 forward=forward
             )
 
@@ -327,7 +283,9 @@ def get_nearest_boundary_index_face_2d(
     uint8_t[:, :] img,
     int dimension,
     bool forward,
-    int label
+    int label,
+    uint64_t lower_pad = 0,
+    uint64_t upper_pad = 0,
 ):
     """
     Determine the nearest boundary index of a given label in the specified dimension.
@@ -354,14 +312,16 @@ def get_nearest_boundary_index_face_2d(
     cdef np.ndarray[int64_t, ndim=1] index_array = np.zeros(s, dtype=np.int64)
 
     # Iterate through the 2D "face" for the given dimension
-    location = {}
+    start = np.array([0, 0], dtype=np.uint64)
+    start[dimension] = lower_pad
     for x in range(s):
-        location[other_dim] = x
+        start[other_dim] = x
         index_array[x] = determine_index_nearest_boundary_2d(
             img = img,
             label = label,
             dimension = dimension,
-            location = location,
+            start = start,
+            end=upper_pad,
             forward = forward)
 
     return index_array

@@ -120,9 +120,14 @@ void _determine_boundary_parabolic_envelope(float *img, const int n,
     loop_start = 0;
     for (auto it = lower_hull.rbegin(); it != lower_hull.rend(); ++it) {
       const Hull &h = *it;
-      hull_vertices[k] = h.vertex - n;
+      // hull_vertices[k] = h.vertex - n;
+      // hull_height[k] = h.height;
+      // ranges[k] = h.range - n;
+
+      hull_vertices[k] = h.vertex;
       hull_height[k] = h.height;
-      ranges[k] = h.range - n;
+      ranges[k] = h.range;
+
       ranges[k + 1] = +INFINITY;
       k++;
     }
@@ -139,8 +144,9 @@ void _determine_boundary_parabolic_envelope(float *img, const int n,
   // Upper corrector
   if (upper_hull.size() > 0) {
     for (const Hull &h : upper_hull) {
-      update_hull(k, (n + h.vertex), h.height, hull_vertices, hull_height,
-                  ranges, 1);
+      update_hull(k, h.vertex, h.height, hull_vertices, hull_height, ranges, 1);
+      // update_hull(k, (n + h.vertex), h.height, hull_vertices, hull_height,
+      //             ranges, 1);
     }
   }
 
@@ -175,10 +181,8 @@ void _determine_boundary_parabolic_envelope(float *img, const int n,
  * for multi-dimensional arrays).
  * @param[in] anistropy The anisotropy factor applied to distances between
  * elements.
- * @param[in] lower_corrector Distance correction factor for transitions into
- * a segment. Defaults to `INFINITY`.
- * @param[in] upper_corrector Maximum allowed distance value. Defaults to
- * `INFINITY`.
+ * @param[in] lower_corrector Distance to lower solid. Defaults to `INFINITY`.
+ * @param[in] upper_corrector Distance to upper solid. Defaults to `INFINITY`.
  */
 template <typename T>
 void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
@@ -216,7 +220,7 @@ void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
 }
 
 std::vector<Hull> return_boundary_hull(float *img, const int n,
-                                       const long int stride, uint8_t num_hull,
+                                       const long int stride, int num_hull,
                                        bool left) {
   to_finite(img, n);
   std::vector<Hull> hull;
@@ -245,22 +249,28 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
 
   if (left) {
     int kk = 0;
-    while (kk < num_hull) {
+    while (hull.size() < num_hull && kk <= k) {
+      // img == 0 aka smallest parabola (hull) possible
       if (hull_height[kk] < 0.9) {
         hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
         break;
-      } else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
+      }
+      // if img != inf add to hull
+      else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
         hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
       }
       kk++;
     }
   } else {
     int kk = k;
-    while (kk > k - num_hull) {
+    while (hull.size() < num_hull && kk >= 0) {
+      // img == 0 aka smallest parabola (hull) possible
       if (hull_height[kk] < 0.9) {
         hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
         break;
-      } else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
+      }
+      // if img != inf add to hull
+      else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
         hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
       }
       kk--;

@@ -1,6 +1,7 @@
 import cProfile
 import pmmoto
 from functools import wraps
+import edt
 
 
 def profile(filename=None):
@@ -42,7 +43,8 @@ def test_edt_profile():
     prob_zero = 0.1
     seed = 1
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
-    edt = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+    _edt = pmmoto.filters.distance.edt3d(img, periodic=[False, False, False])
+    check_edt = edt.edt(img)
 
 
 if __name__ == "__main__":

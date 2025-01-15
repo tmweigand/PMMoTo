@@ -1,8 +1,9 @@
 # cython: profile=True
-# cython: linetrace=True
-# cython: boundscheck=True
+# cython: linetrace=False
+# cython: boundscheck=False
 # cython: wraparound=False
 # cython: cdivision=True
+# cython: nonecheck=False
 
 from libcpp cimport bool
 cimport numpy as np
@@ -57,11 +58,34 @@ def _tofinite_2d(
         size
     )
 
+def get_dimensions(int dimension):
+    """
+    Determines the two remaining dimensions after removing a given dimension.
+    
+    This function creates a set of dimensions {0, 1, 2}, removes the provided
+    dimension, and returns the two remaining dimensions as a tuple.
+
+    :param dimension: The dimension to remove (0, 1, or 2).
+    :return: A tuple of two integers representing the remaining dimensions.
+    """
+    # Create a set containing the dimensions 0, 1, and 2
+    dims = {0, 1, 2}
+    
+    # Remove the given dimension from the set
+    dims.remove(dimension)
+    
+    # Get the remaining dimensions (dim1 and dim2)
+    dim1, dim2 = dims
+    
+    # Return the tuple of dimensions
+    return dim1, dim2
 
 
 def get_parabolic_envelope(img, dimension, lower_hull = None, upper_hull=None):
     """
     Determine the parabolic envelop along the specified dimension
+    Require to update the entire image to avoid an extrac communication step.
+    The lower lower and upper hull must ensure the include start at own +- 1. 
     """
     # Identify the two dimensions to iterate over
     dims = {0, 1, 2}
@@ -81,17 +105,18 @@ def get_parabolic_envelope(img, dimension, lower_hull = None, upper_hull=None):
     if upper_hull is None:
         upper_hull = [[] for _ in range(s1*s2)]
 
-    location = {}
+    cdef np.ndarray[uint64_t, ndim=1] start = np.zeros(3, dtype=np.uint64)
+
     for x in range(s1):
-        location[dim1] = x
+        start[dim1] = x
         for y in range(s2):
-            location[dim2] = y
+            start[dim2] = y
             _get_parabolic_envelope(
                 img,
-                location,
                 dimension,
-                lower_hull[x*s1 + y],
-                upper_hull[x*s1 + y],
+                start,
+                lower_hull[x*s2 + y],
+                upper_hull[x*s2 + y],
             )
 
 def get_parabolic_envelope_2d(
@@ -99,6 +124,7 @@ def get_parabolic_envelope_2d(
     dimension,
     lower_hull,
     upper_hull,
+    pad = 0
 ):
     """
     Determine the parabolic envelop along the specified dimension
@@ -108,6 +134,9 @@ def get_parabolic_envelope_2d(
     other_dim.remove(dimension)
     other_dim = other_dim[0]
 
+    start = np.array([0, 0], dtype=np.uint64)
+    start[dimension] = pad
+
     # Dimensions of the output index array
     cdef size_t s = img.shape[other_dim]
 
@@ -116,13 +145,12 @@ def get_parabolic_envelope_2d(
     if upper_hull is None:
         upper_hull = [[] for _ in range(s)]
 
-    location = {}
     for x in range(s):
-        location[other_dim] = x
+        start[other_dim] = x
         _get_parabolic_envelope_2d(
             img,
-            location,
             dimension,
+            start,
             lower_hull[x],
             upper_hull[x],
         )
@@ -130,16 +158,15 @@ def get_parabolic_envelope_2d(
 
 def _get_parabolic_envelope(
     float[:, :, :] img,
-    dict location,
     int dimension,
+    uint64_t[:] start,
     vector[Hull] lower_hull,
     vector[Hull] upper_hull
 ):
     """
     """
 
-    cdef uint64_t end = img.shape[dimension]
-    cdef int[3] start = _voxels.get_start_indices(dimension, location)
+    cdef uint64_t end = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img)[dimension]
 
     # Call the low-level function to get the parabolic envelope
@@ -154,16 +181,15 @@ def _get_parabolic_envelope(
 
 def _get_parabolic_envelope_2d(
     float[:, :] img,
-    dict location,
     int dimension,
+    uint64_t[:] start,
     vector[Hull] lower_hull,
     vector[Hull] upper_hull,
 ):
     """
     """
 
-    cdef uint64_t end = img.shape[dimension]
-    cdef int[2] start = _voxels.get_start_indices_2d(dimension, location)
+    cdef uint64_t end = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img)[dimension]
 
     # Call the low-level function to get the parabolic envelope
@@ -244,34 +270,19 @@ def get_initial_envelope_correctors_2d(img, dimension):
     other_dim.remove(dimension)
     other_dim = other_dim[0]
 
-    # Collect nearest solid (or phase change of multi-label) index
-    nearest_index = np.zeros([img.shape[other_dim], 2])
-    nearest_index[:, 0] = _voxels.get_nearest_boundary_index_face_2d(
+    lower_correctors =  _voxels.get_nearest_boundary_index_face_2d(
         img=img,
         dimension=dimension,
         label=0,
         forward=True,
     ).astype(np.float32)
-    nearest_index[:, 1] = _voxels.get_nearest_boundary_index_face_2d(
+
+    upper_correctors = _voxels.get_nearest_boundary_index_face_2d(
         img=img,
         dimension=dimension,
         label=0,
         forward=False,
     ).astype(np.float32)
-
-    # initialize correctors
-    lower_correctors = np.zeros(img.shape[other_dim])
-    upper_correctors = np.zeros(img.shape[other_dim])
-
-    # correct indexes
-    lower_correctors = np.where(
-        nearest_index[:, 1] != -1,
-        img.shape[dimension] - nearest_index[:, 1],
-        np.inf)
-    upper_correctors = np.where(
-        nearest_index[:, 0] != -1,
-        nearest_index[:, 0] + 1,
-        np.inf)
 
     return lower_correctors, upper_correctors
 
@@ -280,6 +291,7 @@ def get_initial_envelope(
     img,
     img_out,
     dimension,
+    pad = 0,
     lower_boundary = None,
     upper_boundary = None
 ):
@@ -289,6 +301,9 @@ def get_initial_envelope(
     dims = {0, 1, 2}
     dims.remove(dimension)
     dim1, dim2 = dims
+
+    start = np.array([0, 0, 0], dtype=np.uint64)
+    start[dimension] = pad
 
     # Dimensions of the output index array
     cdef size_t s1 = img.shape[dim1]
@@ -300,16 +315,15 @@ def get_initial_envelope(
     if upper_boundary is None:
         upper_boundary = np.full((s1, s2), np.inf)
 
-    location = {}
     for x in range(s1):
-        location[dim1] = x
+        start[dim1] = x
         for y in range(s2):
-            location[dim2] = y
+            start[dim2] = y
             _get_initial_envelope(
                 img,
                 img_out,
-                location,
                 dimension,
+                start,
                 lower_boundary[x, y],
                 upper_boundary[x, y]
             )
@@ -323,6 +337,7 @@ def get_initial_envelope_2d(
     img,
     img_out,
     dimension,
+    pad = 0,
     lower_boundary = None,
     upper_boundary = None
 ):
@@ -333,6 +348,9 @@ def get_initial_envelope_2d(
     other_dim.remove(dimension)
     other_dim = other_dim[0]
 
+    start = np.array([0, 0], dtype=np.uint64)
+    start[dimension] = pad
+
     # Dimensions of the output index array
     cdef size_t s = img.shape[other_dim]
     cdef size_t sdim = img.shape[dimension]
@@ -342,14 +360,13 @@ def get_initial_envelope_2d(
     if upper_boundary is None:
         upper_boundary = np.full(s, np.inf)
 
-    location = {}
     for x in range(s):
-        location[other_dim] = x
+        start[other_dim] = x
         _get_initial_envelope_2d(
             img,
             img_out,
-            location,
             dimension,
+            start,
             lower_boundary[x],
             upper_boundary[x]
         )
@@ -418,8 +435,8 @@ def determine_initial_envelope_1d(
 def _get_initial_envelope(
     uint8_t[:, :, :] img,
     float[:, :, :] img_out,
-    dict location,
     int dimension,
+    uint64_t[:] start,
     float lower_corrector,
     float upper_corrector
 ):
@@ -456,9 +473,7 @@ def _get_initial_envelope(
     """
 
     # Determine the size of the output slice
-    cdef size_t _size = img.shape[dimension]
-
-    cdef int[3] start = _voxels.get_start_indices(dimension, location)
+    cdef size_t _size = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img)[dimension]
 
     squared_edt_1d_multi_seg_new(
@@ -477,8 +492,8 @@ def _get_initial_envelope(
 def _get_initial_envelope_2d(
     uint8_t[:, :] img,
     float[:, :] img_out,
-    dict location,
     int dimension,
+    uint64_t[:] start,
     float lower_corrector,
     float upper_corrector
 ):
@@ -486,9 +501,7 @@ def _get_initial_envelope_2d(
     """
 
     # Determine the size of the output slice
-    cdef size_t _size = img.shape[dimension]
-
-    cdef int[2] start = _voxels.get_start_indices_2d(dimension, location)
+    cdef size_t _size = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img)[dimension]
 
     squared_edt_1d_multi_seg_new(
@@ -507,39 +520,47 @@ def _get_initial_envelope_2d(
 def get_boundary_hull(
     float[:, :, :] img,
     int dimension,
-    uint8_t num_hull,
-    bool left = True
+    int num_hull,
+    bool left = True,
+    uint64_t lower_pad = 0,
+    uint64_t upper_pad = 0
 ):
     """
     Determine the initial and last parabola vertex and value for a given 3d array
     """
     # Identify the two dimensions to iterate over
-    dims = {0, 1, 2}
-    dims.remove(dimension)
-    dim1, dim2 = dims
+    # dims = {0, 1, 2}
+    # dims.remove(dimension)
+    # dim1, dim2 = dims
+    _dim1,_dim2 = get_dimensions(dimension)
+    cdef int dim1 = _dim1
+    cdef int dim2 = _dim2
+    cdef int x,y
 
+    # start = np.array([0, 0, 0], dtype=np.uint64)
+    cdef np.ndarray[uint64_t, ndim=1] start = np.zeros(3, dtype=np.uint64)
+    start[dimension] = lower_pad
 
     # Determine the size of the output slice
-    cdef size_t _size = img.shape[dimension]
+    cdef size_t _size = img.shape[dimension] - lower_pad - upper_pad
     cdef size_t s1 = img.shape[dim1]
     cdef size_t s2 = img.shape[dim2]
 
     cdef vector[vector[Hull]] hull
     hull = vector[vector[Hull]]()
+
     
     # Resize the outer vector and initialize each inner vector
     for _ in range(s1 * s2):
         hull.push_back(vector[Hull]())
 
-    cdef int[3] start
     cdef int stride = _voxels.normalized_strides(img)[dimension]
-    location = {}
+
     for x in range(s1):
-        location[dim1] = x
+        start[dim1] = x
         for y in range(s2):
-            location[dim2] = y
-            start = _voxels.get_start_indices(dimension, location)
-            hull[x*s1 + y] = return_boundary_hull(
+            start[dim2] = y
+            hull[x*s2 + y] = return_boundary_hull(
                 <float*>&img[start[0], start[1], start[2]],
                 _size,
                 stride,
@@ -553,7 +574,8 @@ def get_boundary_hull(
 def get_boundary_hull_2d(
     float[:, :] img,
     int dimension,
-    uint8_t num_hull
+    uint8_t num_hull,
+    uint64_t pad = 0
 ):
     """
     Determine the initial and last parabola vertex and value for a given 2d array
@@ -569,12 +591,13 @@ def get_boundary_hull_2d(
     cdef vector[vector[Hull]] l_hull = vector[vector[Hull]](s)
     cdef vector[vector[Hull]] r_hull = vector[vector[Hull]](s)
 
-    cdef int[2] start
     cdef int stride = _voxels.normalized_strides(img)[dimension]
-    location = {}
+    start = np.array([0, 0], dtype=np.uint64)
+    start[dimension] = pad
     for n in range(s):
-        location[other_dim] = n
-        start = _voxels.get_start_indices_2d(dimension, location)
+    
+        start[other_dim] = n
+
         l_hull[n] = return_boundary_hull(
             <float*>&img[start[0], start[1]],
             _size,

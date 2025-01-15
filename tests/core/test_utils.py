@@ -37,3 +37,34 @@ def test_decompose_img():
             ]
         ),
     )
+
+
+def test_decompose_img_2():
+    """Ensure expected behavior of decompose_img"""
+    n = 10
+    linear_values = np.linspace(0, n - 1, n, endpoint=True)
+    img = np.ones((n, n, n)) * linear_values
+    start = (-1, -1, -1)
+    shape = (4, 4, 4)
+
+    result = pmmoto.core.utils.decompose_img(img, start=start, shape=shape)
+    expected_result = np.tile(np.array([9.0, 0.0, 1.0, 2.0]), (4, 4, 1))
+
+    np.testing.assert_array_equal(result, expected_result)
+
+    start = (9, 9, 9)
+    shape = (4, 4, 4)
+
+    result = pmmoto.core.utils.decompose_img(img, start=start, shape=shape)
+
+    np.testing.assert_array_equal(result, expected_result)
+
+
+def test_constant_pad_img():
+    """
+    Test padding of an image to
+    """
+    n = 5
+    img = np.zeros((n, n, n))
+
+    pmmoto.core.utils.constant_pad_img()

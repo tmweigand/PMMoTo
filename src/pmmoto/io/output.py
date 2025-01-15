@@ -69,23 +69,23 @@ def save_grid_data_serial(file_name: str, subdomains: dict, grid: dict, **kwargs
     write_parallel_VTK_grid(file_name, subdomains[0], grid[0], **kwargs)
 
 
-def save_grid_data_parallel(file_name, subdomain, domain, grid, **kwargs):
+def save_grid_data_parallel(file_name, subdomain, img, **kwargs):
     """_summary_
 
     Args:
         file_name (_type_): _description_
         subdomain (_type_): _description_
-        grid (_type_): _description_
+        img (_type_): _description_
     """
 
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
     comm.barrier()
 
-    save_grid_data_proc(file_name, subdomain, grid, **kwargs)
+    save_grid_data_proc(file_name, subdomain, img, **kwargs)
 
     if subdomain.rank == 0:
-        write_parallel_VTK_grid(file_name, subdomain, domain, grid, **kwargs)
+        write_parallel_VTK_grid(file_name, subdomain, img, **kwargs)
 
 
 def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
@@ -105,13 +105,6 @@ def save_grid_data_proc(file_name, subdomain, grid, **kwargs):
     for key, value in kwargs.items():
         point_data[key] = value
         point_data_info[key] = (value.dtype, 1)
-
-    print(
-        subdomain.rank,
-        subdomain.start,
-        subdomain.voxels,
-        [sum(x) for x in zip(subdomain.start, subdomain.voxels)],
-    )
 
     evtk.imageToVTK(
         path=file_proc + str(subdomain.rank),
