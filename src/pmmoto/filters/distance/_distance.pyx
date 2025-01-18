@@ -636,6 +636,7 @@ def get_boundary_hull_2d(
                 start[dimension] = bound[n]
                 end = end - bound[n] - upper_skip
                 index_corrector = -end
+                print("check",end,start,index_corrector,img[start[0], start[1]])
 
         hull[n] = return_boundary_hull(
             img=<float*>&img[start[0], start[1]],

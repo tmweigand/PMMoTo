@@ -70,6 +70,7 @@ def edt2d(img, periodic=[False, False]):
     dimension = 1
     _lower_correctors = None
     _upper_correctors = None
+
     if periodic[dimension]:
         lower_correctors, upper_correctors = (
             _distance.get_initial_envelope_correctors_2d(img, dimension=dimension)
@@ -128,11 +129,15 @@ def edt2d(img, periodic=[False, False]):
 
         _upper = _distance.get_boundary_hull_2d(
             img=img_out,
-            bound=lower_vertex,
+            bound=upper_vertex,
             dimension=dimension,
             num_hull=num_hull,
             forward=False,
         )
+
+        print(upper_vertex)
+        for l in _upper:
+            print(l)
 
         # swap hulls
         lower_hull = _upper

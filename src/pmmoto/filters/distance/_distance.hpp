@@ -242,6 +242,11 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
   to_finite(img, n);
   std::vector<Hull> hull;
 
+  if (n == 1 && img[0] < std::numeric_limits<float>::max() - 1) {
+    hull.push_back({index_corrector, img[0], INFINITY});
+    return hull;
+  }
+
   const float w2 = 1 * 1;
   std::vector<float> ff(n, 0);
   std::vector<float> hull_height(n, 0);

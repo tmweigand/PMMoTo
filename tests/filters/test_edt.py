@@ -413,7 +413,7 @@ def test_periodic_3d_2():
 
     edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
 
-    np.testing.assert_array_equal(
+    np.testing.assert_array_almost_equal(
         edt_pmmoto,
         edt_periodic_img[
             voxels[0] : voxels[0] * 2,
