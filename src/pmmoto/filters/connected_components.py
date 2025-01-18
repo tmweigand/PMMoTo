@@ -1,7 +1,6 @@
 import numpy as np
 import cc3d
 from pmmoto.core import voxels
-from pmmoto.core import sets
 from pmmoto.core import communication
 
 

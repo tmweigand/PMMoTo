@@ -58,13 +58,3 @@ def test_decompose_img_2():
     result = pmmoto.core.utils.decompose_img(img, start=start, shape=shape)
 
     np.testing.assert_array_equal(result, expected_result)
-
-
-def test_constant_pad_img():
-    """
-    Test padding of an image to
-    """
-    n = 5
-    img = np.zeros((n, n, n))
-
-    pmmoto.core.utils.constant_pad_img()

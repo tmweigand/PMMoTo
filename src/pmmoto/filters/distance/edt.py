@@ -1,7 +1,9 @@
 import numpy as np
 from pmmoto.core import voxels
+from pmmoto.core import _voxels
 from pmmoto.core import communication
 from . import _distance
+
 
 __all__ = ["edt", "edt2d", "edt3d"]
 
@@ -20,7 +22,7 @@ def edt(img, subdomain=None):
 
             dimension = 0
             lower_correctors, upper_correctors = get_initial_correctors(
-                subdomain=subdomain, img=img, dimension=dimension, own=True
+                subdomain=subdomain, img=img, dimension=dimension
             )
 
             img_out = _distance.get_initial_envelope(
@@ -32,12 +34,11 @@ def edt(img, subdomain=None):
             )
 
             for dimension in [1, 2]:
-
                 lower_hull, upper_hull = get_boundary_hull(
                     subdomain=subdomain,
                     img=img_out,
+                    og_img=img,
                     dimension=dimension,
-                    own=True,
                 )
 
                 _distance.get_parabolic_envelope(
@@ -56,166 +57,6 @@ def edt(img, subdomain=None):
             img_out = edt2d(img)
 
     return img_out
-
-
-def adjust_vertex(vertex, size, pad=(0, 0), is_lower=True, distance=True):
-    """
-    Adjusts a vertex based on its type (lower or upper), size, padding, and distance flag.
-
-    Parameters:
-        vertex (int): The vertex location to adjust.
-        size (int): The size used for adjustment.
-        pad (tuple): A tuple containing padding values (pad_start, pad_end).
-        is_lower (bool): If True, adjust as a lower vertex; otherwise, as an upper vertex.
-        distance (bool): If True, adjust for distance; otherwise, adjust for size and padding.
-
-    Returns:
-        int: The adjusted vertex.
-    """
-    if is_lower:
-        if distance:
-            return vertex + 1
-        else:
-            return vertex + size
-    else:
-        if distance:
-            return size - vertex
-        else:
-            return vertex - size + pad[0] + pad[1]
-
-
-def adjust_hull(hull, size, pad=(0, 0), is_lower=True, distance=False):
-    """
-    Adjusts a hull (lower or upper) based on the size, padding, and distance flag.
-
-    Parameters:
-        hull (list): The hull to adjust.
-        size (int): The size used for adjustments.
-        pad (tuple): A tuple containing padding values (pad_start, pad_end).
-        is_lower (bool): If True, adjusts as a lower hull; otherwise, as an upper hull.
-        distance (bool): Distance flag for the adjustment.
-
-    Returns:
-        list: The adjusted hull.
-    """
-    adjusted_hull = []
-    for sub_hull in hull:
-        adjusted_sub_hull = []
-        for h in sub_hull:
-            adjusted_h = {
-                "vertex": adjust_vertex(h["vertex"], size, pad, is_lower, distance),
-                "range": adjust_vertex(h["range"], size, pad, is_lower, distance),
-                "height": h["height"],
-            }
-            adjusted_sub_hull.append(adjusted_h)
-        adjusted_hull.append(adjusted_sub_hull)
-    return adjusted_hull
-
-
-def adjust_hulls(
-    lower_hull, upper_hull, size, lower_distance=False, upper_distance=False, pad=(0, 0)
-):
-    """
-    Adjusts both lower and upper hulls based on the size, distance flags, and padding.
-
-    Parameters:
-        lower_hull (list): The lower hull to adjust.
-        upper_hull (list): The upper hull to adjust.
-        size (int): The size used for adjustments.
-        lower_distance (bool): Distance flag for the lower hull adjustment.
-        upper_distance (bool): Distance flag for the upper hull adjustment.
-        pad (tuple): A tuple containing padding values (pad_start, pad_end).
-
-    Returns:
-        tuple: A tuple containing the adjusted lower and upper hulls.
-    """
-    adjusted_lower_hull = adjust_hull(
-        lower_hull, size, pad, is_lower=True, distance=lower_distance
-    )
-    adjusted_upper_hull = adjust_hull(
-        upper_hull, size, pad, is_lower=False, distance=upper_distance
-    )
-    return adjusted_lower_hull, adjusted_upper_hull
-
-
-# def adjust_lower_vertex(lower, size, distance=True):
-#     """ """
-#     if distance:
-#         lower = lower + 1
-#     else:
-#         lower = lower + size
-
-#     return lower
-
-
-# def adjust_upper_vertex(upper, size, pad, distance=True):
-#     """ """
-#     if distance:
-#         upper = size - upper
-#     else:
-#         upper = upper - size + pad[0] + pad[1]
-
-#     return upper
-
-
-# def adjust_hulls(
-#     lower_hull, upper_hull, size, lower_distance=False, upper_distance=False, pad=(0, 0)
-# ):
-
-#     import copy
-
-#     _lower_hull = copy.deepcopy(lower_hull)
-#     _upper_hull = copy.deepcopy(upper_hull)
-
-#     for hull in _lower_hull:
-#         for h in hull:
-#             h["vertex"] = adjust_lower_vertex(
-#                 h["vertex"], size, distance=lower_distance
-#             )
-#             h["range"] = adjust_lower_vertex(h["range"], size, distance=lower_distance)
-
-#     for hull in _upper_hull:
-#         for h in hull:
-#             h["vertex"] = adjust_upper_vertex(
-#                 h["vertex"], size, pad=pad, distance=upper_distance
-#             )
-#             h["range"] = adjust_upper_vertex(
-#                 h["range"], size, pad=pad, distance=upper_distance
-#             )
-
-#     return _lower_hull, _upper_hull
-
-
-# def adjust_lower_hull(lower_hull, size, distance=False, pad=(0, 0)):
-
-#     import copy
-
-#     _lower_hull = copy.deepcopy(lower_hull)
-
-#     for hull in _lower_hull:
-#         for h in hull:
-#             h["vertex"] = adjust_lower_vertex(h["vertex"], size, distance=distance)
-#             h["range"] = adjust_lower_vertex(h["range"], size, distance=distance)
-
-#     return _lower_hull
-
-
-# def adjust_upper_hull(upper_hull, size, distance=False, pad=(0, 0)):
-
-#     import copy
-
-#     _upper_hull = copy.deepcopy(upper_hull)
-
-#     for hull in _upper_hull:
-#         for h in hull:
-#             h["vertex"] = adjust_upper_vertex(
-#                 h["vertex"], size, pad=pad, distance=distance
-#             )
-#             h["range"] = adjust_upper_vertex(
-#                 h["range"], size, pad=pad, distance=distance
-#             )
-
-#     return _upper_hull
 
 
 def edt2d(img, periodic=[False, False]):
@@ -257,12 +98,41 @@ def edt2d(img, periodic=[False, False]):
     lower_hull = None
     upper_hull = None
     if periodic[dimension]:
-        num_hull = 3
-        _lower, _upper = _distance.get_boundary_hull_2d(
-            img_out, dimension=dimension, num_hull=num_hull
+
+        lower_vertex = _voxels.get_nearest_boundary_index_face_2d(
+            img=img,
+            dimension=dimension,
+            forward=True,
+            label=0,
+            lower_skip=0,
+            upper_skip=0,
         )
 
-        _lower, _upper = adjust_hulls(_lower, _upper, img.shape[dimension])
+        upper_vertex = _voxels.get_nearest_boundary_index_face_2d(
+            img=img,
+            dimension=dimension,
+            forward=False,
+            label=0,
+            lower_skip=0,
+            upper_skip=0,
+        )
+
+        num_hull = 4
+        _lower = _distance.get_boundary_hull_2d(
+            img=img_out,
+            bound=lower_vertex,
+            dimension=dimension,
+            num_hull=num_hull,
+            forward=True,
+        )
+
+        _upper = _distance.get_boundary_hull_2d(
+            img=img_out,
+            bound=lower_vertex,
+            dimension=dimension,
+            num_hull=num_hull,
+            forward=False,
+        )
 
         # swap hulls
         lower_hull = _upper
@@ -280,7 +150,6 @@ def edt3d(img, periodic=[False, False, False]):
     Perform an exact Euclidean transform on a image
     For the first pass, collect all the solids (or transitions on all faces)
     The direction needs to be completed first. Then the off-direction need to be correct.
-    C
     """
     img_out = np.copy(img).astype(np.float32)
 
@@ -306,28 +175,148 @@ def edt3d(img, periodic=[False, False, False]):
 
         if periodic[dimension]:
 
+            lower_vertex = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=dimension,
+                label=0,
+                forward=True,
+                lower_skip=0,
+                upper_skip=0,
+            )
+
+            upper_vertex = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=dimension,
+                label=0,
+                forward=False,
+                lower_skip=0,
+                upper_skip=0,
+            )
+
             _lower = _distance.get_boundary_hull(
-                img_out, dimension=dimension, num_hull=4, left=True
+                img=img_out,
+                bound=lower_vertex,
+                dimension=dimension,
+                num_hull=4,
+                forward=True,
             )
 
             _upper = _distance.get_boundary_hull(
-                img_out, dimension=dimension, num_hull=4, left=False
+                img=img_out,
+                bound=upper_vertex,
+                dimension=dimension,
+                num_hull=4,
+                forward=False,
             )
-
-            _lower, _upper = adjust_hulls(_lower, _upper, img.shape[dimension])
 
             # swap hulls
             lower_hull = _upper
             upper_hull = _lower
 
         _distance.get_parabolic_envelope(
-            img_out, dimension=dimension, lower_hull=lower_hull, upper_hull=upper_hull
+            img_out,
+            dimension=dimension,
+            lower_hull=lower_hull,
+            upper_hull=upper_hull,
         )
 
-    return np.asarray(np.sqrt((img_out)))
+    return np.asarray(np.sqrt(img_out))
 
 
-def get_initial_correctors(subdomain, img, dimension=None, own=False):
+def get_nearest_boundary_distance(
+    subdomain,
+    img,
+    label,
+    dimension,
+    which_voxels="all",
+    distance_to="all",
+):
+    """
+    Determines the distance of the index nearest each subdomain boundary face for a specified
+    label in img. The start and end locations can be controlled but
+
+        which_voxels = "all" start = 0, end = 0
+        which_voxels = "own" start = pad[0], end = pad[1]
+        which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
+
+    Args:
+        subdomain (_type_): _description_
+        img (_type_): _description_
+        label (_type_): _description_
+        dimension (_type_): _description_
+        which_voxels (str, optional): _description_. Defaults to "all".
+        distance_to (str, optional): _description_. Defaults to "all".
+    """
+    if dimension is not None and dimension not in {0, 1, 2}:
+        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
+
+    lower_skip = 0
+    upper_skip = 0
+
+    lower_distance = 0
+    upper_distance = 0
+
+    boundary_distance = {}
+
+    for feature_id, feature in subdomain.features["faces"].items():
+        if dimension is None or feature_id[dimension] != 0:
+
+            if feature.forward:
+                if which_voxels == "own":
+                    lower_skip = subdomain.pad[feature.info["argOrder"][0]][0]
+                elif which_voxels == "pad":
+                    lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+
+                if distance_to == "own":
+                    lower_distance = subdomain.pad[feature.info["argOrder"][0]][0]
+                elif distance_to == "pad":
+                    lower_distance = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+                elif distance_to == "neighbor":
+                    lower_distance = -1
+
+            elif not feature.forward:
+                if which_voxels == "own":
+                    upper_skip = subdomain.pad[feature.info["argOrder"][0]][1]
+                elif which_voxels == "pad":
+                    upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+
+                if distance_to == "own":
+                    upper_distance = subdomain.pad[feature.info["argOrder"][0]][1]
+                elif distance_to == "pad":
+                    upper_distance = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+                elif distance_to == "neighbor":
+                    upper_distance = -1
+
+            boundary_distance[feature_id] = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=feature.info["argOrder"][0],
+                label=label,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            ).astype(np.float32)
+
+            if feature.forward:
+                boundary_distance[feature_id] = np.where(
+                    boundary_distance[feature_id] != -1,
+                    boundary_distance[feature_id] - lower_distance,
+                    np.inf,
+                )
+
+            else:
+                boundary_distance[feature_id] = np.where(
+                    boundary_distance[feature_id] != -1,
+                    img.shape[feature.info["argOrder"][0]]
+                    - boundary_distance[feature_id]
+                    - upper_distance
+                    - 1,
+                    np.inf,
+                )
+
+    return boundary_distance
+
+
+def get_initial_correctors(subdomain, img, dimension=None):
     """
     Get the initial correctors for a subdomain and image.
     The correctors is defined as the absolute distance to the nearest solid
@@ -342,21 +331,17 @@ def get_initial_correctors(subdomain, img, dimension=None, own=False):
     if dimension is not None and dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
-    dims = {0, 1, 2}
-    dims.remove(dimension)
-    dim1, dim2 = dims
-
-    boundary_solids = voxels.get_nearest_boundary_index(
+    boundary_distances = get_nearest_boundary_distance(
         subdomain=subdomain,
         img=img,
         label=0,
         dimension=dimension,
-        own=own,
-        distance=True,
+        which_voxels="pad",
+        distance_to="own",
     )
 
     recv_data = communication.communicate_features(
-        subdomain=subdomain, send_data=boundary_solids, feature_types=["faces"]
+        subdomain=subdomain, send_data=boundary_distances, feature_types=["faces"]
     )
 
     lower_dim_key = None
@@ -369,32 +354,19 @@ def get_initial_correctors(subdomain, img, dimension=None, own=False):
 
     # Collect correctors - communication already swapped
     if lower_dim_key is not None:
-        # initialize correctors
-        lower_correctors = np.zeros([img.shape[dim1], img.shape[dim2]])
-        # need to adjust flag
-        lower_correctors = np.where(
-            recv_data[lower_dim_key] != -1,
-            recv_data[lower_dim_key],
-            np.inf,
-        )
+        lower_correctors = recv_data[lower_dim_key]
     else:
         lower_correctors = None
 
-    # Collect correctors - communication already swapped
     if upper_dim_key is not None:
-        # initialize correctors
-        upper_correctors = np.zeros([img.shape[dim1], img.shape[dim2]])
-        # need to adjust flag
-        upper_correctors = np.where(
-            recv_data[upper_dim_key] != -1, recv_data[upper_dim_key], np.inf
-        )
+        upper_correctors = recv_data[upper_dim_key]
     else:
         upper_correctors = None
 
     return lower_correctors, upper_correctors
 
 
-def get_boundary_hull(subdomain, img, dimension, num_hull=4, own=False):
+def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
     """
     Get the boundary hull for a subdomain and image.
     Always pad the domain by 1 to allow for exact update of img.
@@ -403,7 +375,6 @@ def get_boundary_hull(subdomain, img, dimension, num_hull=4, own=False):
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
     boundary_hull = {}
-    feature_types = ["faces"]
 
     dim_key = [0, 0, 0]
     lower_dim_key = dim_key
@@ -414,46 +385,32 @@ def get_boundary_hull(subdomain, img, dimension, num_hull=4, own=False):
     upper_dim_key[dimension] = 1
     upper_dim_key = tuple(upper_dim_key)
 
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
+    for feature_id, feature in subdomain.features["faces"].items():
+        if feature_id[dimension] != 0:
+            lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+            upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
 
-            pad = [0, 0]
-            # times two to skip nodes on neighbor processes
-            if own and feature.forward:
-                pad[0] = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
-            if own and not feature.forward:
-                pad[1] = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+            nearest_zero = _voxels.get_nearest_boundary_index_face(
+                img=og_img,
+                dimension=dimension,
+                label=0,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            )
 
-            if feature_id[dimension] != 0:
-                boundary_hull[feature_id] = _distance.get_boundary_hull(
-                    img=img,
-                    dimension=feature.info["argOrder"][0],
-                    num_hull=num_hull,
-                    left=feature.forward,
-                    lower_pad=pad[0],
-                    upper_pad=pad[1],
-                )
-
-            if feature_id == lower_dim_key:
-                boundary_hull[feature_id] = adjust_hull(
-                    boundary_hull[feature_id],
-                    img.shape[dimension],
-                    pad=pad,
-                    is_lower=True,
-                    distance=True,
-                )
-
-            if feature_id == upper_dim_key:
-                boundary_hull[feature_id] = adjust_hull(
-                    boundary_hull[feature_id],
-                    img.shape[dimension],
-                    pad=pad,
-                    is_lower=False,
-                    distance=False,
-                )
+            boundary_hull[feature_id] = _distance.get_boundary_hull(
+                img=img,
+                bound=nearest_zero,
+                dimension=feature.info["argOrder"][0],
+                num_hull=num_hull,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            )
 
     recv_data = communication.communicate_features(
-        subdomain=subdomain, send_data=boundary_hull, feature_types=feature_types
+        subdomain=subdomain, send_data=boundary_hull, feature_types=["faces"]
     )
 
     if lower_dim_key in recv_data.keys():
@@ -463,7 +420,6 @@ def get_boundary_hull(subdomain, img, dimension, num_hull=4, own=False):
 
     if upper_dim_key in recv_data.keys():
         upper_hull = recv_data[upper_dim_key]
-        upper_hull = adjust_hull(upper_hull, img.shape[dimension] - 1, is_lower=True)
     else:
         upper_hull = None
 

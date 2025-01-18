@@ -1,7 +1,6 @@
 import cProfile
 import pmmoto
 from functools import wraps
-import edt
 
 
 def profile(filename=None):
@@ -30,7 +29,23 @@ def profile(filename=None):
     return prof_decorator
 
 
-@profile("profiling/edt.prof")
+@profile("profiling/edt_periodic.prof")
+def test_edt_periodic_profile():
+    """
+    Profiling for edt.
+    To run:
+        python profiling/edt_profiling.py
+    Note: Cannot be used on python 12!!!!
+    """
+
+    voxels = (600, 600, 600)
+    prob_zero = 0.5
+    seed = 1
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    _edt = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+
+
+@profile("profiling/edt_non_periodic.prof")
 def test_edt_profile():
     """
     Profiling for edt.
@@ -40,12 +55,12 @@ def test_edt_profile():
     """
 
     voxels = (600, 600, 600)
-    prob_zero = 0.1
+    prob_zero = 0.5
     seed = 1
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
     _edt = pmmoto.filters.distance.edt3d(img, periodic=[False, False, False])
-    check_edt = edt.edt(img)
 
 
 if __name__ == "__main__":
     test_edt_profile()
+    test_edt_periodic_profile()

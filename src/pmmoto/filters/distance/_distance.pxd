@@ -28,7 +28,7 @@ cdef extern from "_distance.hpp":
         const float upper_corrector
     ) nogil
 
-    cdef void _determine_boundary_parabolic_envelope(
+    cdef void determine_boundary_parabolic_envelope(
             float *img,
             const int n,
             const long int stride,
@@ -41,5 +41,11 @@ cdef extern from "_distance.hpp":
         const int n,
         const long int stride,
         int num_hull,
-        bool left
+        const int index_corrector,
+        bool forward
+        ) nogil
+
+    cdef void adjust_vertex(
+        vector[Hull] hull, 
+        int modify_vertex
         ) nogil

@@ -49,6 +49,8 @@ void loop_through_slice(uint8_t *img, uint8_t *out, const int n,
  * @param label The label to find in the slice.
  * @param n The number of elements in the 1D slice.
  * @param stride Memory stride between elements in the slice.
+ * @param index_corrector Same as img[start]. Ensures return wrt
+ * img.shape[dimension]
  * @param forward Search direction. If true, searches forward; otherwise,
  * searches backward.
  * @return The 0-based index of the nearest occurrence of `label`, or -1 if not
@@ -56,6 +58,7 @@ void loop_through_slice(uint8_t *img, uint8_t *out, const int n,
  */
 int64_t _get_nearest_boundary_index(uint8_t *img, uint8_t label, const int n,
                                     const long int stride,
+                                    const int index_corrector,
                                     bool forward = true) {
 
   // Determine iteration parameters based on direction
@@ -66,7 +69,8 @@ int64_t _get_nearest_boundary_index(uint8_t *img, uint8_t label, const int n,
   // Iterate through the slice to find the label
   for (int64_t i = start, count = 0; i != end; i += step, count++) {
     if (img[i] == label) {
-      return forward ? count : (n - 1) - count;
+      return forward ? count + index_corrector
+                     : (n - 1) - count + index_corrector;
     }
   }
 

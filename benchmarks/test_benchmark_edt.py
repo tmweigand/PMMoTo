@@ -1,12 +1,13 @@
 from pmmoto import domain_generation
 from pmmoto import filters
 import edt
-
+import pytest
 
 # def pmmoto_edt(img):
 #     return filters.distance.edt3d(img)
 
 
+@pytest.mark.benchmark
 def test_pmmoto_edt(benchmark):
     """ """
     voxels = (300, 300, 300)

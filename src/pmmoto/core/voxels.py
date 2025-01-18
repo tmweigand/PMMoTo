@@ -46,11 +46,18 @@ def renumber_image(img, conversion_map: dict):
 
 
 def get_nearest_boundary_index(
-    subdomain, img, label, dimension=None, own=False, distance=False
+    subdomain, img, label, dimension=None, which_voxels="all"
 ):
     """
     Determines the index nearest each subdomain boundary face for a specified
-    label in img.
+    label in img. The start and end locations can be controlled but
+
+        which_voxels = "all" start = 0, end = 0
+        which_voxels = "own" start = pad[0], end = pad[1]
+        which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
+
+    Note: The boundary index is always with respect to img.shape[dimension].
+    Start and end are used for searching.
 
     Args:
         subdomain (_type_): _description_
@@ -60,38 +67,33 @@ def get_nearest_boundary_index(
     if dimension is not None and dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
+    lower_skip = 0
+    upper_skip = 0
+
     boundary_index = {}
-    feature_types = ["faces"]
 
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if dimension is None or feature_id[dimension] != 0:
+    for feature_id, feature in subdomain.features["faces"].items():
+        if dimension is None or feature_id[dimension] != 0:
 
-                pad = [0, 0]
-                if own and feature.forward:
-                    pad[0] = subdomain.pad[feature.info["argOrder"][0]][0]
-                elif own and not feature.forward:
-                    pad[1] = subdomain.pad[feature.info["argOrder"][0]][1]
+            if feature.forward:
+                if which_voxels == "own":
+                    lower_skip = subdomain.pad[feature.info["argOrder"][0]][0]
+                elif which_voxels == "pad":
+                    lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+            elif not feature.forward:
+                if which_voxels == "own":
+                    upper_skip = subdomain.pad[feature.info["argOrder"][0]][1]
+                elif which_voxels == "pad":
+                    upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
 
-                boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
-                    img=img,
-                    dimension=feature.info["argOrder"][0],
-                    label=label,
-                    forward=feature.forward,
-                    lower_pad=pad[0],
-                    upper_pad=pad[1],
-                ).astype(np.float32)
-
-                # Switch so distance to boundary index for reverse
-                if distance and not feature.forward:
-                    boundary_index[feature_id] = np.where(
-                        boundary_index[feature_id] != -1,
-                        img.shape[feature.info["argOrder"][0]]
-                        - boundary_index[feature_id]
-                        - pad[1]
-                        - 1,
-                        boundary_index[feature_id],
-                    )
+            boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=feature.info["argOrder"][0],
+                label=label,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            ).astype(np.float32)
 
     return boundary_index
 
@@ -348,4 +350,5 @@ def gen_outlet_label_map(subdomain, label_grid):
                         feature.loop["own"][2][0] : feature.loop["own"][2][1],
                     ]
                 )[0]
+
     return outlet_labels

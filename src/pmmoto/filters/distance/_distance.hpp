@@ -91,78 +91,6 @@ void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
   ranges[k + 1] = INFINITY;
 }
 
-void _determine_boundary_parabolic_envelope(float *img, const int n,
-                                            const long int stride,
-                                            std::vector<Hull> lower_hull,
-                                            std::vector<Hull> upper_hull) {
-  if (n == 0) {
-    return;
-  }
-
-  const float w2 = 1 * 1;
-
-  std::vector<float> ff(n, 0);
-  std::vector<float> hull_height(n + lower_hull.size() + upper_hull.size(), 0.);
-  std::vector<int> hull_vertices(n + lower_hull.size() + upper_hull.size(), 0);
-
-  for (long int i = 0; i < n; i++) {
-    ff[i] = img[i * stride];
-  }
-
-  long int loop_start = 1;
-
-  std::vector<float> ranges(n + lower_hull.size() + upper_hull.size() + 1, 0);
-  ranges[0] = -INFINITY;
-  ranges[1] = +INFINITY;
-
-  int k = 0;
-  if (lower_hull.size() > 0) {
-    loop_start = 0;
-    for (auto it = lower_hull.rbegin(); it != lower_hull.rend(); ++it) {
-      const Hull &h = *it;
-      // hull_vertices[k] = h.vertex - n;
-      // hull_height[k] = h.height;
-      // ranges[k] = h.range - n;
-
-      hull_vertices[k] = h.vertex;
-      hull_height[k] = h.height;
-      ranges[k] = h.range;
-
-      ranges[k + 1] = +INFINITY;
-      k++;
-    }
-    k--;
-  } else {
-    hull_vertices[0] = 0;
-    hull_height[0] = ff[0];
-  }
-
-  for (long int i = loop_start; i < n; i++) {
-    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
-  }
-
-  // Upper corrector
-  if (upper_hull.size() > 0) {
-    for (const Hull &h : upper_hull) {
-      update_hull(k, h.vertex, h.height, hull_vertices, hull_height, ranges, 1);
-      // update_hull(k, (n + h.vertex), h.height, hull_vertices, hull_height,
-      //             ranges, 1);
-    }
-  }
-
-  k = 0;
-  float envelope;
-
-  for (long int i = 0; i < n; i++) {
-    while (ranges[k + 1] < i) {
-      k++;
-    }
-    img[i * stride] = w2 * sq(i - hull_vertices[k]) + hull_height[k];
-  }
-
-  return;
-}
-
 /**
  * @brief Computes the squared Euclidean distance transform (EDT) for a 1D
  * array with multiple segments.
@@ -219,9 +147,98 @@ void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
   }
 }
 
+void determine_boundary_parabolic_envelope(float *img, const int n,
+                                           const long int stride,
+                                           std::vector<Hull> lower_hull,
+                                           std::vector<Hull> upper_hull) {
+  if (n == 0) {
+    return;
+  }
+
+  const float w2 = 1 * 1;
+
+  std::vector<float> ff(n, 0);
+  std::vector<float> hull_height(n + lower_hull.size() + upper_hull.size(), 0.);
+  std::vector<int> hull_vertices(n + lower_hull.size() + upper_hull.size(), 0);
+
+  for (long int i = 0; i < n; i++) {
+    ff[i] = img[i * stride];
+  }
+
+  long int loop_start = 1;
+
+  std::vector<float> ranges(n + lower_hull.size() + upper_hull.size() + 1, 0);
+  ranges[0] = -INFINITY;
+  ranges[1] = +INFINITY;
+
+  int k = 0;
+  if (lower_hull.size() > 0) {
+    loop_start = 0;
+    for (auto it = lower_hull.rbegin(); it != lower_hull.rend(); ++it) {
+      const Hull &h = *it;
+      hull_vertices[k] = h.vertex;
+      hull_height[k] = h.height;
+      ranges[k] = h.range;
+      ranges[k + 1] = +INFINITY;
+      k++;
+    }
+    k--;
+  } else {
+    hull_vertices[0] = 0;
+    hull_height[0] = ff[0];
+  }
+
+  for (long int i = loop_start; i < n; i++) {
+    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
+  }
+
+  // Upper corrector - add n to upper vertices as they were passed in with
+  // relative locations
+  if (upper_hull.size() > 0) {
+    for (const Hull &h : upper_hull) {
+      update_hull(k, h.vertex + n, h.height, hull_vertices, hull_height, ranges,
+                  1);
+    }
+  }
+
+  k = 0;
+  float envelope;
+
+  for (long int i = 0; i < n; i++) {
+    while (ranges[k + 1] < i) {
+      k++;
+    }
+    img[i * stride] = w2 * sq(i - hull_vertices[k]) + hull_height[k];
+  }
+
+  return;
+}
+
+/**
+ * @brief Computes and returns a vector of boundary hulls based on the input
+ * image data.
+ *
+ *
+ * @param img Pointer to a 1D array of image data, representing pixel intensity
+ * values.
+ * @param n The number of elements (pixels) in the image data.
+ * @param stride The stride between consecutive elements in the image data
+ * array.
+ * @param num_hull The number of hulls to return. If this exceeds the calculated
+ * hulls, it is capped.
+ * @param left Boolean indicating the direction:
+ *             - `true`: Return leftmost hulls.
+ *             - `false`: Return rightmost hulls.
+ *
+ * @return A vector of `Hull` structures, each containing:
+ *         - `vertices`: Vertex index of the hull.
+ *         - `height`: Height of the hull at the vertex.
+ *         - `range`: Range of values covered by the hull.
+ */
 std::vector<Hull> return_boundary_hull(float *img, const int n,
                                        const long int stride, int num_hull,
-                                       bool left) {
+                                       const int index_corrector,
+                                       bool forward) {
   to_finite(img, n);
   std::vector<Hull> hull;
 
@@ -238,46 +255,49 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
   ranges[0] = -INFINITY;
   ranges[1] = +INFINITY;
 
-  float s;
-  int k = 0;
+  int k = 1;
   for (long int i = 1; i < n; i++) {
     update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
   }
 
-  if (num_hull > k)
-    num_hull = k;
+  num_hull = std::min(num_hull, k);
+  hull.reserve(num_hull); // Preallocate memory
 
-  if (left) {
-    int kk = 0;
-    while (hull.size() < num_hull && kk <= k) {
-      // img == 0 aka smallest parabola (hull) possible
-      if (hull_height[kk] < 0.9) {
-        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
-        break;
-      }
-      // if img != inf add to hull
-      else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
-        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
-      }
-      kk++;
+  // Select hulls
+  int kk = forward ? 0 : k;
+  int step = forward ? 1 : -1;
+
+  while (hull.size() <= num_hull && kk >= 0 && kk <= k) {
+    if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
+      hull.push_back({hull_vertices[kk] + index_corrector, hull_height[kk],
+                      ranges[kk] + index_corrector});
+      if (hull_height[kk] < 0.9f)
+        break; // Stop early for minimal parabolas
     }
-  } else {
-    int kk = k;
-    while (hull.size() < num_hull && kk >= 0) {
-      // img == 0 aka smallest parabola (hull) possible
-      if (hull_height[kk] < 0.9) {
-        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
-        break;
-      }
-      // if img != inf add to hull
-      else if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
-        hull.push_back({hull_vertices[kk], hull_height[kk], ranges[kk]});
-      }
-      kk--;
-    }
+    kk += step;
   }
 
   return hull;
+}
+
+/**
+ * @brief Modifies the vertex from Hull to allow for optimized
+ * collection of boundary hull
+ *
+ * @param hull Pointer to a std::vector<Hull>
+ * @param modify_vertex
+ * @return A vector of `Hull` structures, each containing:
+ *         - `vertices`: Vertex index of the hull.
+ *         - `height`: Height of the hull at the vertex.
+ *         - `range`: Range of values covered by the hull.
+ */
+void adjust_vertex(std::vector<Hull> &hull, int modify_vertex) {
+
+  for (Hull &h : hull) {
+    h.vertex += modify_vertex;
+    h.range += modify_vertex;
+  }
+  return;
 }
 
 #endif

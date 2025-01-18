@@ -362,6 +362,4 @@ def test_gen_smoothed_random_binary_grid():
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
 
-    import matplotlib.pyplot as plt
-
     pmmoto.io.output.save_grid("data_out/test_smoothed_random_binary_grid", img)

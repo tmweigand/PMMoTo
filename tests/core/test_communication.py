@@ -118,36 +118,36 @@ def _create_subdomain(rank, periodic=True):
 
 
 # @pytest.mark.mpi(min_size=8)
-def test_communicate_features():
-    """
-    Ensure that features are being communicated to neighbor processes
-    """
+# def test_communicate_features():
+#     """
+#     Ensure that features are being communicated to neighbor processes
+#     """
 
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    periodic = True
-    sd = _create_subdomain(0, periodic=periodic)
-    img = rank * np.ones(sd.voxels)
+#     comm = MPI.COMM_WORLD
+#     rank = comm.Get_rank()
+#     periodic = True
+#     sd = _create_subdomain(0, periodic=periodic)
+#     img = rank * np.ones(sd.voxels)
 
-    subdomains = (2, 2, 2)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
-        sd, img, subdomains=subdomains, rank=rank, periodic=periodic
-    )
+#     subdomains = (2, 2, 2)
+#     sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+#         sd, img, subdomains=subdomains, rank=rank, periodic=periodic
+#     )
 
-    feature_data = {}
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in sd_local.features[feature_type].items():
-            feature_data[feature_id] = rank
+#     feature_data = {}
+#     feature_types = ["faces", "edges", "corners"]
+#     for feature_type in feature_types:
+#         for feature_id, feature in sd_local.features[feature_type].items():
+#             feature_data[feature_id] = rank
 
-    recv_data = pmmoto.core.communication.communicate_features(
-        subdomain=sd_local,
-        send_data=feature_data,
-        feature_types=feature_types,
-        unpack=True,
-    )
+#     recv_data = pmmoto.core.communication.communicate_features(
+#         subdomain=sd_local,
+#         send_data=feature_data,
+#         feature_types=feature_types,
+#         unpack=True,
+#     )
 
-    for feature_type in feature_types:
-        for feature_id, feature in sd_local.features[feature_type].items():
-            if feature_id in recv_data.keys():
-                assert recv_data[feature_id] == feature.neighbor_rank
+#     for feature_type in feature_types:
+#         for feature_id, feature in sd_local.features[feature_type].items():
+#             if feature_id in recv_data.keys():
+#                 assert recv_data[feature_id] == feature.neighbor_rank

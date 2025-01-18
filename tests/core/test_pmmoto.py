@@ -10,9 +10,9 @@ def test_deconstruct_grid(generate_single_subdomain):
     """Ensure expected behavior of deconstruct_grid"""
     sd = generate_single_subdomain(0, periodic=True)
 
-    n = sd.voxels[0]
+    n = sd.domain.voxels[0]
     linear_values = np.linspace(0, n - 1, n, endpoint=True)
-    img = np.ones(sd.voxels) * linear_values
+    img = np.ones(sd.domain.voxels) * linear_values
 
     pmmoto.io.output.save_grid_data_serial("data_out/test_deconstruct_grid", sd, img)
 
@@ -27,5 +27,3 @@ def test_deconstruct_grid(generate_single_subdomain):
     subdomains, local_img = pmmoto.core.pmmoto.deconstruct_grid(
         sd, img, subdomains=(2, 2, 2), rank=2
     )
-
-    print(subdomains.index, local_img.shape)

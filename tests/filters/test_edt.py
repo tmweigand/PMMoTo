@@ -75,10 +75,6 @@ def test_periodic_2d():
     """
     Tests for periodic domains
     """
-
-    import matplotlib.pyplot as plt
-
-    ## Generate and test 2d periodic domain in 1-dimension
     voxels = (60, 60)
     prob_zero = 0.1
     seed = 4
@@ -138,9 +134,6 @@ def test_periodic_2d_3():
     """
     Tests for periodic domains
     """
-    import matplotlib.pyplot as plt
-
-    ## Generate and test 2d periodic domain in 1-dimension
     voxels = (500, 500)
     prob_zero = 0.2
     seed = 286565
@@ -173,7 +166,7 @@ def test_boundary_hull_1d():
         dtype=np.float32,
     )
     hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0], num_hull=2, left=True
+        img=img, start=0, end=img.shape[0], num_hull=2, forward=True
     )
 
     assert hull[0]["height"] == 4.0
@@ -185,14 +178,14 @@ def test_boundary_hull_1d():
     assert hull[1]["range"] == 0.0
 
     hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=1, end=img.shape[0], num_hull=3, left=True
+        img=img, start=1, end=img.shape[0], num_hull=3, forward=True
     )
 
     assert hull[0]["height"] == 0.0
-    assert hull[0]["vertex"] == 1
+    assert hull[0]["vertex"] == 2
 
     hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0], num_hull=1, left=False
+        img=img, start=0, end=img.shape[0], num_hull=1, forward=False
     )
 
     assert hull[0]["height"] == 16.0
@@ -200,7 +193,7 @@ def test_boundary_hull_1d():
     assert hull[0]["range"] == 12.5
 
     hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0], num_hull=4, left=False
+        img=img, start=0, end=img.shape[0], num_hull=4, forward=False
     )
 
     assert hull[0]["height"] == 16.0
@@ -220,7 +213,7 @@ def test_boundary_hull_1d():
     assert hull[3]["range"] == 0.0
 
     hull = pmmoto.filters.distance._distance.get_boundary_hull_1d(
-        img=img, start=0, end=img.shape[0] - 1, num_hull=5, left=False
+        img=img, start=0, end=img.shape[0] - 1, num_hull=5, forward=False
     )
 
     assert hull[0]["height"] == 6.0
@@ -273,6 +266,19 @@ def test_periodic_3d():
 
     edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
 
+    pmmoto.io.output.save_grid(
+        "data_out/test_periodic_3d",
+        img,
+        **{
+            "edt": edt_pmmoto
+            - edt_periodic_img[
+                voxels[0] : voxels[0] * 2,
+                voxels[1] : voxels[1] * 2,
+                voxels[2] : voxels[2] * 2,
+            ]
+        },
+    )
+
     np.testing.assert_array_equal(
         edt_pmmoto,
         edt_periodic_img[
@@ -281,40 +287,6 @@ def test_periodic_3d():
             voxels[2] : voxels[2] * 2,
         ],
     )
-
-
-# def test_pmmoto_3d(generate_simple_subdomain):
-#     """
-#     Tests EDT with pmmoto
-#     """
-#     sd = generate_simple_subdomain(0)
-#     prob_zero = 0.2
-#     seed = 124
-#     img = pmmoto.domain_generation.gen_random_binary_grid(sd.voxels, prob_zero, seed)
-#     periodic_img = np.tile(img, (3, 3, 3))
-
-#     np.testing.assert_array_equal(
-#         img,
-#         periodic_img[
-#             sd.voxels[0] : sd.voxels[0] * 2,
-#             sd.voxels[1] : sd.voxels[1] * 2,
-#             sd.voxels[2] : sd.voxels[2] * 2,
-#         ],
-#     )
-
-#     pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd, img=img)
-#     pmmoto_old_edt = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
-#     other_edt = edt.edt(periodic_img)
-#     np.testing.assert_array_equal(pmmoto_old_edt, pmmoto_edt)
-
-#     np.testing.assert_array_equal(
-#         pmmoto_old_edt,
-#         other_edt[
-#             sd.voxels[0] : sd.voxels[0] * 2,
-#             sd.voxels[1] : sd.voxels[1] * 2,
-#             sd.voxels[2] : sd.voxels[2] * 2,
-#         ],
-#     )
 
 
 def _create_subdomain(rank, periodic=True):
@@ -366,10 +338,11 @@ def test_pmmoto_3d_parallel():
     rank = comm.Get_rank()
     periodic = True
     sd = _create_subdomain(0, periodic=periodic)
+    img = np.ones(sd.domain.voxels, dtype=np.uint8)
     img = pmmoto.domain_generation.gen_random_binary_grid(
         sd.domain.voxels,
-        p_zero=0.5,
-        seed=142343,
+        p_zero=0.05,
+        seed=1,
     )
 
     subdomains = (2, 2, 2)
@@ -413,3 +386,38 @@ def test_pmmoto_3d_parallel():
     )
 
     np.testing.assert_array_equal(local_edt_img, pmmoto_edt)
+
+
+def test_periodic_3d_2():
+    """
+    Tests for periodic domains
+    """
+
+    voxels = (5, 5, 5)  # img = np.ones(voxels, dtype=np.uint8)
+    prob_zero = 0.2
+    seed = 1246
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    periodic_img = np.tile(img, (3, 3, 3))
+
+    np.testing.assert_array_equal(
+        img,
+        periodic_img[
+            voxels[0] : voxels[0] * 2,
+            voxels[1] : voxels[1] * 2,
+            voxels[2] : voxels[2] * 2,
+        ],
+    )
+
+    ## Ensure the edt of the img and periodic img are not equal
+    edt_periodic_img = edt.edt(periodic_img)
+
+    edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+
+    np.testing.assert_array_equal(
+        edt_pmmoto,
+        edt_periodic_img[
+            voxels[0] : voxels[0] * 2,
+            voxels[1] : voxels[1] * 2,
+            voxels[2] : voxels[2] * 2,
+        ],
+    )
