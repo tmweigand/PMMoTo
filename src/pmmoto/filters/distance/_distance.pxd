@@ -18,7 +18,7 @@ cdef extern from "_distance.hpp":
         float height
         float range
 
-    cdef void squared_edt_1d_multi_seg_new[T](
+    cdef void squared_edt_1d[T](
         T *labels,
         float *dest,
         int n,
@@ -28,9 +28,10 @@ cdef extern from "_distance.hpp":
         const float upper_corrector
     ) nogil
 
-    cdef void determine_boundary_parabolic_envelope(
+    cdef void squared_edt_1d_parabolic(
             float *img,
             const int n,
+            const float resolution,
             const long int stride,
             vector[Hull] lower_hull,
             vector[Hull] upper_hull
@@ -39,13 +40,9 @@ cdef extern from "_distance.hpp":
     cdef vector[Hull] return_boundary_hull(
         float *img,
         const int n,
+        const float resolution,
         const long int stride,
         int num_hull,
         const int index_corrector,
         bool forward
-        ) nogil
-
-    cdef void adjust_vertex(
-        vector[Hull] hull, 
-        int modify_vertex
         ) nogil

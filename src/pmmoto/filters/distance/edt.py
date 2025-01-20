@@ -29,6 +29,7 @@ def edt(img, subdomain=None):
                 img,
                 img_out,
                 dimension=dimension,
+                resolution=subdomain.domain.resolution[dimension],
                 lower_boundary=lower_correctors,
                 upper_boundary=upper_correctors,
             )
@@ -44,6 +45,7 @@ def edt(img, subdomain=None):
                 _distance.get_parabolic_envelope(
                     img_out,
                     dimension=dimension,
+                    resolution=subdomain.domain.resolution[dimension],
                     lower_hull=lower_hull,
                     upper_hull=upper_hull,
                 )
@@ -59,7 +61,7 @@ def edt(img, subdomain=None):
     return img_out
 
 
-def edt2d(img, periodic=[False, False]):
+def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
     """
     Perform an exact Euclidean transform on a image
     For the first pass, collect all the solids (or transitions on all faces)
@@ -91,6 +93,7 @@ def edt2d(img, periodic=[False, False]):
         img,
         img_out,
         dimension=dimension,
+        resolution=resolution[dimension],
         lower_boundary=_lower_correctors,
         upper_boundary=_upper_correctors,
     )
@@ -123,6 +126,7 @@ def edt2d(img, periodic=[False, False]):
             img=img_out,
             bound=lower_vertex,
             dimension=dimension,
+            resolution=resolution[dimension],
             num_hull=num_hull,
             forward=True,
         )
@@ -131,26 +135,27 @@ def edt2d(img, periodic=[False, False]):
             img=img_out,
             bound=upper_vertex,
             dimension=dimension,
+            resolution=resolution[dimension],
             num_hull=num_hull,
             forward=False,
         )
-
-        print(upper_vertex)
-        for l in _upper:
-            print(l)
 
         # swap hulls
         lower_hull = _upper
         upper_hull = _lower
 
     _distance.get_parabolic_envelope_2d(
-        img_out, dimension=dimension, lower_hull=lower_hull, upper_hull=upper_hull
+        img_out,
+        dimension=dimension,
+        lower_hull=lower_hull,
+        upper_hull=upper_hull,
+        resolution=resolution[dimension],
     )
 
     return np.asarray(np.sqrt(img_out))
 
 
-def edt3d(img, periodic=[False, False, False]):
+def edt3d(img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0)):
     """
     Perform an exact Euclidean transform on a image
     For the first pass, collect all the solids (or transitions on all faces)
@@ -161,6 +166,7 @@ def edt3d(img, periodic=[False, False, False]):
     dimension = 0
     lower_correctors = None
     upper_correctors = None
+
     if periodic[dimension]:
         lower_correctors, upper_correctors = _distance.get_initial_envelope_correctors(
             img=img, dimension=dimension
@@ -170,6 +176,7 @@ def edt3d(img, periodic=[False, False, False]):
         img,
         img_out,
         dimension=dimension,
+        resolution=resolution[dimension],
         lower_boundary=lower_correctors,
         upper_boundary=upper_correctors,
     )
@@ -202,6 +209,7 @@ def edt3d(img, periodic=[False, False, False]):
                 img=img_out,
                 bound=lower_vertex,
                 dimension=dimension,
+                resolution=resolution[dimension],
                 num_hull=4,
                 forward=True,
             )
@@ -210,6 +218,7 @@ def edt3d(img, periodic=[False, False, False]):
                 img=img_out,
                 bound=upper_vertex,
                 dimension=dimension,
+                resolution=resolution[dimension],
                 num_hull=4,
                 forward=False,
             )
@@ -219,8 +228,9 @@ def edt3d(img, periodic=[False, False, False]):
             upper_hull = _lower
 
         _distance.get_parabolic_envelope(
-            img_out,
+            img=img_out,
             dimension=dimension,
+            resolution=resolution[dimension],
             lower_hull=lower_hull,
             upper_hull=upper_hull,
         )
@@ -392,8 +402,13 @@ def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
 
     for feature_id, feature in subdomain.features["faces"].items():
         if feature_id[dimension] != 0:
-            lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
-            upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+
+            if feature.forward:
+                lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+                upper_skip = 0
+            else:
+                lower_skip = 0
+                upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
 
             nearest_zero = _voxels.get_nearest_boundary_index_face(
                 img=og_img,
@@ -408,6 +423,7 @@ def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
                 img=img,
                 bound=nearest_zero,
                 dimension=feature.info["argOrder"][0],
+                resolution=subdomain.domain.resolution[dimension],
                 num_hull=num_hull,
                 forward=feature.forward,
                 lower_skip=lower_skip,

@@ -67,8 +67,7 @@ inline float intersect_parabolas(const float f_r, const float r,
  * @param hull_vertices  Vector storing the indices of the convex hull
  *                       vertices.
  * @param ranges         Vector holding the ranges for each hull segment.
- * @param w2             Constant parameter for the `intersect_parabolas`
- *                       function.
+ * @param anisotropy_factor A factor to account for anisotropic scaling.
  *
  * This function computes the intersection of parabolas, updates the hull
  * structure by maintaining the convexity property, and adjusts the range
@@ -76,12 +75,14 @@ inline float intersect_parabolas(const float f_r, const float r,
  */
 void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
                  std::vector<float> &hull_height, std::vector<float> &ranges,
-                 float w2) {
+                 float anisotropy_factor) {
 
-  float s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k], w2);
+  float s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k],
+                                anisotropy_factor);
   while (k > 0 && s <= ranges[k]) {
     k--;
-    s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k], w2);
+    s = intersect_parabolas(ff, i, hull_height[k], hull_vertices[k],
+                            anisotropy_factor);
   }
 
   k++;
@@ -100,7 +101,7 @@ void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
  * anisotropy and correction factors.
  *
  * @tparam T Type of the segment identifiers.
- * @param[in] segids Pointer to the array of segment identifiers. A value of 0
+ * @param[in] img Pointer to the array of segment identifiers. A value of 0
  * indicates no segment.
  * @param[out] d Pointer to the distance array, which will be updated with
  * squared distances.
@@ -113,33 +114,33 @@ void update_hull(int &k, int i, float ff, std::vector<int> &hull_vertices,
  * @param[in] upper_corrector Distance to upper solid. Defaults to `INFINITY`.
  */
 template <typename T>
-void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
-                                  const long int stride, const float anistropy,
-                                  const float lower_corrector = INFINITY,
-                                  const float upper_corrector = INFINITY) {
+void squared_edt_1d(T *img, float *d, const int n, const long int stride,
+                    const float resolution,
+                    const float lower_corrector = INFINITY,
+                    const float upper_corrector = INFINITY) {
   long int i;
-  T working_segid = segids[0];
-  d[0] = working_segid == 0 ? 0 : lower_corrector;
+  T working_segid = img[0];
+  d[0] = working_segid == 0 ? 0 : lower_corrector * resolution;
 
   for (i = stride; i < n * stride; i += stride) {
 
-    if (segids[i] == 0) {
+    if (img[i] == 0) {
       d[i] = 0.0;
-    } else if (segids[i] == working_segid) {
-      d[i] = d[i - stride] + anistropy;
+    } else if (img[i] == working_segid) {
+      d[i] = d[i - stride] + resolution;
     } else {
-      d[i] = anistropy;
-      d[i - stride] = static_cast<float>(segids[i - stride] != 0) * anistropy;
-      working_segid = segids[i];
+      d[i] = resolution;
+      d[i - stride] = static_cast<float>(img[i - stride] != 0) * resolution;
+      working_segid = img[i];
     }
   }
 
-  if (d[(n - 1) * stride] > upper_corrector) {
-    d[(n - 1) * stride] = upper_corrector;
+  if (d[(n - 1) * stride] > upper_corrector * resolution) {
+    d[(n - 1) * stride] = upper_corrector * resolution;
   }
 
   for (i = (n - 2) * stride; i >= 0; i -= stride) {
-    d[i] = std::fminf(d[i], d[i + stride] + anistropy);
+    d[i] = std::fminf(d[i], d[i + stride] + resolution);
   }
 
   for (i = 0; i < n * stride; i += stride) {
@@ -147,15 +148,15 @@ void squared_edt_1d_multi_seg_new(T *segids, float *d, const int n,
   }
 }
 
-void determine_boundary_parabolic_envelope(float *img, const int n,
-                                           const long int stride,
-                                           std::vector<Hull> lower_hull,
-                                           std::vector<Hull> upper_hull) {
+void squared_edt_1d_parabolic(float *img, const int n, const float resolution,
+                              const long int stride,
+                              std::vector<Hull> lower_hull,
+                              std::vector<Hull> upper_hull) {
   if (n == 0) {
     return;
   }
 
-  const float w2 = 1 * 1;
+  const float anisotropy_factor = resolution * resolution;
 
   std::vector<float> ff(n, 0);
   std::vector<float> hull_height(n + lower_hull.size() + upper_hull.size(), 0.);
@@ -189,7 +190,8 @@ void determine_boundary_parabolic_envelope(float *img, const int n,
   }
 
   for (long int i = loop_start; i < n; i++) {
-    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
+    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges,
+                anisotropy_factor);
   }
 
   // Upper corrector - add n to upper vertices as they were passed in with
@@ -197,18 +199,18 @@ void determine_boundary_parabolic_envelope(float *img, const int n,
   if (upper_hull.size() > 0) {
     for (const Hull &h : upper_hull) {
       update_hull(k, h.vertex + n, h.height, hull_vertices, hull_height, ranges,
-                  1);
+                  anisotropy_factor);
     }
   }
 
   k = 0;
-  float envelope;
 
   for (long int i = 0; i < n; i++) {
     while (ranges[k + 1] < i) {
       k++;
     }
-    img[i * stride] = w2 * sq(i - hull_vertices[k]) + hull_height[k];
+    img[i * stride] =
+        anisotropy_factor * sq(i - hull_vertices[k]) + hull_height[k];
   }
 
   return;
@@ -221,6 +223,7 @@ void determine_boundary_parabolic_envelope(float *img, const int n,
  *
  * @param img Pointer to a 1D array of image data, representing pixel intensity
  * values.
+ * @param resolution The image resolution in dimension
  * @param n The number of elements (pixels) in the image data.
  * @param stride The stride between consecutive elements in the image data
  * array.
@@ -236,6 +239,7 @@ void determine_boundary_parabolic_envelope(float *img, const int n,
  *         - `range`: Range of values covered by the hull.
  */
 std::vector<Hull> return_boundary_hull(float *img, const int n,
+                                       const float resolution,
                                        const long int stride, int num_hull,
                                        const int index_corrector,
                                        bool forward) {
@@ -247,7 +251,7 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
     return hull;
   }
 
-  const float w2 = 1 * 1;
+  const float anisotropy_factor = resolution * resolution;
   std::vector<float> ff(n, 0);
   std::vector<float> hull_height(n, 0);
   std::vector<int> hull_vertices(n, 0);
@@ -262,7 +266,8 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
 
   int k = 1;
   for (long int i = 1; i < n; i++) {
-    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges, 1);
+    update_hull(k, i, ff[i], hull_vertices, hull_height, ranges,
+                anisotropy_factor);
   }
 
   num_hull = std::min(num_hull, k);
@@ -276,33 +281,13 @@ std::vector<Hull> return_boundary_hull(float *img, const int n,
     if (hull_height[kk] < (std::numeric_limits<float>::max() - 1)) {
       hull.push_back({hull_vertices[kk] + index_corrector, hull_height[kk],
                       ranges[kk] + index_corrector});
-      if (hull_height[kk] < 0.9f)
+      if (hull_height[kk] == 0.9f)
         break; // Stop early for minimal parabolas
     }
     kk += step;
   }
 
   return hull;
-}
-
-/**
- * @brief Modifies the vertex from Hull to allow for optimized
- * collection of boundary hull
- *
- * @param hull Pointer to a std::vector<Hull>
- * @param modify_vertex
- * @return A vector of `Hull` structures, each containing:
- *         - `vertices`: Vertex index of the hull.
- *         - `height`: Height of the hull at the vertex.
- *         - `range`: Range of values covered by the hull.
- */
-void adjust_vertex(std::vector<Hull> &hull, int modify_vertex) {
-
-  for (Hull &h : hull) {
-    h.vertex += modify_vertex;
-    h.range += modify_vertex;
-  }
-  return;
 }
 
 #endif

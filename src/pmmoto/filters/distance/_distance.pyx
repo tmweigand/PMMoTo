@@ -83,7 +83,13 @@ def get_dimensions(int dimension):
     return dim1, dim2
 
 
-def get_parabolic_envelope(img, dimension, lower_hull=None, upper_hull=None):
+def get_parabolic_envelope(
+    img,
+    dimension,
+    resolution,
+    lower_hull=None,
+    upper_hull=None
+    ):
     """
     Determine the parabolic envelop along the specified dimension
     Require to update the entire image to avoid an extrac communication step.
@@ -97,8 +103,7 @@ def get_parabolic_envelope(img, dimension, lower_hull=None, upper_hull=None):
     cdef size_t s1 = img.shape[dim1]
     cdef size_t s2 = img.shape[dim2]
 
-    cdef int x
-    cdef int y
+    cdef int x, y
 
     if lower_hull is None:
         lower_hull = [[] for _ in range(s1*s2)]
@@ -113,11 +118,12 @@ def get_parabolic_envelope(img, dimension, lower_hull=None, upper_hull=None):
         for y in range(s2):
             start[dim2] = y
             _get_parabolic_envelope(
-                img,
-                dimension,
-                start,
-                lower_hull[x*s2 + y],
-                upper_hull[x*s2 + y],
+                img=img,
+                dimension=dimension,
+                resolution=resolution,
+                start=start,
+                lower_hull=lower_hull[x*s2 + y],
+                upper_hull=upper_hull[x*s2 + y],
             )
 
 
@@ -126,6 +132,7 @@ def get_parabolic_envelope_2d(
     dimension,
     lower_hull,
     upper_hull,
+    resolution = 1.0,
     pad = 0
 ):
     """
@@ -152,6 +159,7 @@ def get_parabolic_envelope_2d(
         _get_parabolic_envelope_2d(
             img,
             dimension,
+            resolution,
             start,
             lower_hull[x],
             upper_hull[x],
@@ -161,6 +169,7 @@ def get_parabolic_envelope_2d(
 def _get_parabolic_envelope(
     float[:, :, :] img,
     int dimension,
+    float resolution,
     uint64_t[:] start,
     vector[Hull] lower_hull,
     vector[Hull] upper_hull
@@ -172,9 +181,10 @@ def _get_parabolic_envelope(
     cdef uint64_t end = img.shape[dimension]
     cdef int stride = _voxels.normalized_strides(img.itemsize, img.strides[dimension])
 
-    determine_boundary_parabolic_envelope(
+    squared_edt_1d_parabolic(
         <float*>&img[start[0], start[1], start[2]],
         end,
+        resolution,
         stride,
         lower_hull,
         upper_hull
@@ -184,6 +194,7 @@ def _get_parabolic_envelope(
 def _get_parabolic_envelope_2d(
     float[:, :] img,
     int dimension,
+    float resolution,
     uint64_t[:] start,
     vector[Hull] lower_hull,
     vector[Hull] upper_hull,
@@ -195,9 +206,10 @@ def _get_parabolic_envelope_2d(
     cdef int stride = _voxels.normalized_strides(img.itemsize, img.strides[dimension])
 
     # Call the low-level function to get the parabolic envelope
-    determine_boundary_parabolic_envelope(
+    squared_edt_1d_parabolic(
         <float*>&img[start[0], start[1]],
         end,
+        resolution,
         stride,
         lower_hull,
         upper_hull
@@ -206,6 +218,7 @@ def _get_parabolic_envelope_2d(
 
 def determine_parabolic_envelope_1d(
     float[:] img,
+    float resolution,
     uint64_t start,
     uint64_t end,
     vector[Hull] lower_hull,
@@ -214,9 +227,10 @@ def determine_parabolic_envelope_1d(
     """
     """
     # Call the low-level function to get the nearest boundary index
-    determine_boundary_parabolic_envelope(
+    squared_edt_1d_parabolic(
         <float*>&img[start],
         end,
+        resolution,
         1,  # stride
         lower_hull,
         upper_hull,
@@ -240,6 +254,7 @@ def get_initial_envelope_correctors(img, dimension):
         label=0,
         forward=True,
     ).astype(np.float32)
+
     nearest_index[:, :, 1] = _voxels.get_nearest_boundary_index_face(
         img=img,
         dimension=dimension,
@@ -250,6 +265,7 @@ def get_initial_envelope_correctors(img, dimension):
     # initialize correctors
     lower_correctors = np.zeros([img.shape[dim1], img.shape[dim2]])
     upper_correctors = np.zeros([img.shape[dim1], img.shape[dim2]])
+    
     # correct indexes
     lower_correctors = np.where(
         nearest_index[:, :, 1] != -1,
@@ -294,6 +310,7 @@ def get_initial_envelope(
     img_out,
     dimension,
     pad = 0,
+    resolution = 1,
     lower_boundary = None,
     upper_boundary = None
 ):
@@ -322,12 +339,13 @@ def get_initial_envelope(
         for y in range(s2):
             start[dim2] = y
             _get_initial_envelope(
-                img,
-                img_out,
-                dimension,
-                start,
-                lower_boundary[x, y],
-                upper_boundary[x, y]
+                img=img,
+                img_out=img_out,
+                dimension=dimension,
+                resolution=resolution,
+                start=start,
+                lower_corrector=lower_boundary[x, y],
+                upper_corrector=upper_boundary[x, y]
             )
 
     _tofinite(img_out, s1*s2*sdim)
@@ -340,6 +358,7 @@ def get_initial_envelope_2d(
     img_out,
     dimension,
     pad = 0,
+    resolution = 1,
     lower_boundary = None,
     upper_boundary = None
 ):
@@ -365,12 +384,13 @@ def get_initial_envelope_2d(
     for x in range(s):
         start[other_dim] = x
         _get_initial_envelope_2d(
-            img,
-            img_out,
-            dimension,
-            start,
-            lower_boundary[x],
-            upper_boundary[x]
+            img=img,
+            img_out=img_out,
+            dimension=dimension,
+            resolution=resolution,
+            start=start,
+            lower_corrector=lower_boundary[x],
+            upper_corrector=upper_boundary[x]
         )
 
     _tofinite_2d(img_out, s*sdim)
@@ -389,7 +409,7 @@ def determine_initial_envelope_1d(
     Perform a distance transform to compute an initial envelope in 1D.
 
     This function computes a distance transform on a 1D image array using
-    the `squared_edt_1d_multi_seg_new` method. It applies corrections to
+    the `squared_edt_1d` method. It applies corrections to
     adjust the lower and upper bounds during the transformation.
 
     Parameters:
@@ -413,7 +433,7 @@ def determine_initial_envelope_1d(
     Notes:
         - The function uses Cython for performance, leveraging pointers
           to directly manipulate memory.
-        - The `squared_edt_1d_multi_seg_new` function is assumed to handle
+        - The `squared_edt_1d` function is assumed to handle
           the core computation, efficiently updating the `output` array
           in place.
     """
@@ -421,7 +441,7 @@ def determine_initial_envelope_1d(
     cdef np.ndarray[float, ndim=1] output = np.zeros((voxels, ), dtype=np.float32)
     cdef float[:] outputview = output
 
-    squared_edt_1d_multi_seg_new(
+    squared_edt_1d(
         <uint8_t*>&img[start],
         <float*>&outputview[start],
         size,
@@ -438,6 +458,7 @@ def _get_initial_envelope(
     uint8_t[:, :, :] img,
     float[:, :, :] img_out,
     int dimension,
+    float resolution,
     uint64_t[:] start,
     float lower_corrector,
     float upper_corrector
@@ -478,12 +499,12 @@ def _get_initial_envelope(
     cdef size_t _size = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img.itemsize, img.strides[dimension])
 
-    squared_edt_1d_multi_seg_new(
+    squared_edt_1d(
         <uint8_t*>&img[start[0], start[1], start[2]],
         <float*>&img_out[start[0], start[1], start[2]],
         _size,
         stride,
-        1,
+        resolution,
         lower_corrector,
         upper_corrector
     )
@@ -495,6 +516,7 @@ def _get_initial_envelope_2d(
     uint8_t[:, :] img,
     float[:, :] img_out,
     int dimension,
+    float resolution,
     uint64_t[:] start,
     float lower_corrector,
     float upper_corrector
@@ -506,12 +528,12 @@ def _get_initial_envelope_2d(
     cdef size_t _size = img.shape[dimension] - start[dimension]
     cdef int stride = _voxels.normalized_strides(img.itemsize, img.strides[dimension])
 
-    squared_edt_1d_multi_seg_new(
+    squared_edt_1d(
         <uint8_t*>&img[start[0], start[1]],
         <float*>&img_out[start[0], start[1]],
         _size,
         stride,
-        1,
+        resolution,
         lower_corrector,
         upper_corrector
     )
@@ -523,6 +545,7 @@ def get_boundary_hull(
     float[:, :, :] img,
     int64_t[:, :] bound,
     int dimension,
+    float resolution,
     int num_hull,
     bool forward = True,
     int lower_skip = 0,
@@ -583,6 +606,7 @@ def get_boundary_hull(
             hull[x*s2 + y] = return_boundary_hull(
                 img=<float*>&img[start[0], start[1], start[2]],
                 n=end,
+                resolution=resolution,
                 stride=stride,
                 num_hull=num_hull,
                 index_corrector=index_corrector,
@@ -596,6 +620,7 @@ def get_boundary_hull_2d(
     float[:, :] img,
     int64_t[:] bound,
     int dimension,
+    float resolution,
     int num_hull,
     bool forward = True,
     int lower_skip = 0,
@@ -636,11 +661,11 @@ def get_boundary_hull_2d(
                 start[dimension] = bound[n]
                 end = end - bound[n] - upper_skip
                 index_corrector = -end
-                print("check",end,start,index_corrector,img[start[0], start[1]])
 
         hull[n] = return_boundary_hull(
             img=<float*>&img[start[0], start[1]],
             n=end,
+            resolution=resolution,
             stride=stride,
             num_hull=num_hull,
             index_corrector=index_corrector,
@@ -654,6 +679,7 @@ def get_boundary_hull_1d(
     float[:] img,
     uint64_t start,
     uint64_t end,
+    float resolution,
     uint8_t num_hull,
     bool forward = True
 ):
@@ -665,6 +691,7 @@ def get_boundary_hull_1d(
     hull = return_boundary_hull(
         img=<float*>&img[start],
         n=end,
+        resolution=resolution,
         stride=1,
         num_hull=num_hull,
         index_corrector=start,
