@@ -1,5 +1,6 @@
 """test_rdf.py"""
 
+import pytest
 import numpy as np
 import pmmoto
 
@@ -335,3 +336,30 @@ def test_gen_periodic_atoms(padded_subdomain):
     np.testing.assert_allclose(
         atom_types, [0, 1, 12, 0, 0, 0, 0, 1, 1, 1, 1, 12, 12, 12, 12]
     )
+
+
+@pytest.mark.figures
+def test_gen_random_binary_grid():
+    """
+    Test domain generation of a random binary grid
+    """
+    voxels = (50, 50, 50)
+
+    img = pmmoto.domain_generation.domain_generation.gen_random_binary_grid(
+        voxels, p_zero=0.2, seed=1
+    )
+    pmmoto.io.output.save_grid("data_out/test_random_binary_grid", img)
+
+
+@pytest.mark.figures
+def test_gen_smoothed_random_binary_grid():
+    """
+    Test domain generation of a random binary grid
+    """
+    voxels = (100, 100, 100)
+
+    img = pmmoto.domain_generation.domain_generation.gen_smoothed_random_binary_grid(
+        voxels, p_zero=0.5, smoothness=2.0, seed=1
+    )
+
+    pmmoto.io.output.save_grid("data_out/test_smoothed_random_binary_grid", img)

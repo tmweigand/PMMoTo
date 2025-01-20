@@ -8,7 +8,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
-__all__ = ["phase_exists"]
+__all__ = ["phase_exists", "constant_pad_img"]
 
 
 def raise_error():
@@ -153,17 +153,18 @@ def unpad(grid, pad):
     return np.ascontiguousarray(grid_out)
 
 
-def constant_pad(grid, pad, pad_value):
+def constant_pad_img(img, pad, pad_value):
     """
     Pad a grid with a constant value
     """
-    grid = np.pad(
-        grid,
-        ((pad[0], pad[1]), (pad[2], pad[3]), (pad[4], pad[5])),
+
+    img = np.pad(
+        img,
+        ((pad[0][0], pad[0][1]), (pad[1][0], pad[1][1]), (pad[2][0], pad[2][1])),
         "constant",
         constant_values=pad_value,
     )
-    return grid
+    return img
 
 
 def own_grid(grid, own):
@@ -195,76 +196,26 @@ def global_grid(grid, index, local_grid):
     return grid
 
 
-def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
+def decompose_img(img, start, shape, padded_img=False):
     """
-    Trim solids to minimize communication and reduce KD Tree. Identify on Surfaces, Edges, and Corners
-    Keep all face solids, and use extend factor to query which solids to include for edges and corners
+    Decompose an image
+
+    Parameters:
+    - img: np.ndarray, the input array.
+    - start: tuple, the starting index for the slice.
+    - shape: tuple, the shape of the slice.
+
+    Returns:
+    - local_img: np.ndarray, the resulting wrapped slice.
     """
-    from . import orientation
 
-    face_solids = [[] for _ in range(len(orientation.faces))]
-    edge_solids = [[] for _ in range(len(orientation.edges))]
-    corner_solids = [[] for _ in range(len(orientation.corners))]
+    # Create indices with wrapping
+    index = [None, None, None]
+    for n, (_start, _shape) in enumerate(zip(start, shape)):
+        index[n] = np.arange(_start, _start + _shape) % img.shape[n]
 
-    length = subdomain.get_length()
-    extend = [extend_factor * x for x in length]
-    coords = subdomain.coords
-
-    ### Faces ###
-    for fIndex in orientation.faces:
-        pointsXYZ = []
-        points = solids[
-            np.where(
-                (solids[:, 0] > -1)
-                & (solids[:, 1] > -1)
-                & (solids[:, 2] > -1)
-                & (solids[:, 3] == fIndex)
-            )
-        ][:, 0:3]
-        for x, y, z in points:
-            pointsXYZ.append([coords[0][x], coords[1][y], coords[2][z]])
-        face_solids[fIndex] = np.asarray(pointsXYZ)
-
-    ### Edges ###
-    for edge in subdomain.features["edges"]:
-        edge.get_extension(extend, subdomain.box)
-        for f, d in zip(
-            edge.info["faceIndex"], reversed(edge.info["dir"])
-        ):  # Flip dir for correct nodes
-            f_solids = face_solids[f]
-            values = (edge.extend[d][0] <= f_solids[:, d]) & (
-                f_solids[:, d] <= edge.extend[d][1]
-            )
-            if len(edge_solids[edge.ID]) == 0:
-                edge_solids[edge.ID] = f_solids[np.where(values)]
-            else:
-                edge_solids[edge.ID] = np.append(
-                    edge_solids[edge.ID], f_solids[np.where(values)], axis=0
-                )
-        edge_solids[edge.ID] = np.unique(edge_solids[edge.ID], axis=0)
-
-    ### Corners ###
-    iterates = [[1, 2], [0, 2], [0, 1]]
-    for corner in subdomain.features["corners"]:
-        corner.get_extension(extend, subdomain.box)
-        values = [None, None]
-        for it, f in zip(iterates, corner.info["faceIndex"]):
-            f_solids = face_solids[f]
-            for n, i in enumerate(it):
-                values[n] = (corner.extend[i][0] <= f_solids[:, i]) & (
-                    f_solids[:, i] <= corner.extend[i][1]
-                )
-            if len(corner_solids[corner.ID]) == 0:
-                corner_solids[corner.ID] = f_solids[np.where(values[0] & values[1])]
-            else:
-                corner_solids[corner.ID] = np.append(
-                    corner_solids[corner.ID],
-                    f_solids[np.where(values[0] & values[1])],
-                    axis=0,
-                )
-        corner_solids[corner.ID] = np.unique(corner_solids[corner.ID], axis=0)
-
-    return face_solids, edge_solids, corner_solids
+    # Use advanced indexing to extract the slice
+    return img[np.ix_(index[0], index[1], index[2])]
 
 
 # def reconstruct_grid_to_root(subdomain,grid):
@@ -293,38 +244,3 @@ def partition_boundary_solids(subdomain, solids, extend_factor=0.7):
 #         return grid_out
 
 #     return 0
-
-
-def deconstruct_grid(subdomain, grid, procs):
-    """Deconstruct the grid from a single process to multiple grids"""
-
-    num_procs = np.prod(procs)
-    _domain = Domain.Domain(
-        nodes=subdomain.domain.nodes,
-        subdomains=procs,
-        size_domain=subdomain.domain.size_domain,
-        boundaries=subdomain.domain.boundaries,
-        inlet=subdomain.domain.inlet,
-        outlet=subdomain.domain.outlet,
-    )
-
-    _domain.get_subdomain_nodes()
-    _domain.get_voxel_size()
-
-    sd_all = np.empty((num_procs), dtype=object)
-    local_grid = np.empty((num_procs), dtype=object)
-    for n in range(0, num_procs):
-        sd_all[n] = Subdomain.Subdomain(domain=_domain, ID=n, subdomains=procs)
-        sd_all[n].get_info()
-        sd_all[n].gather_cube_info()
-        sd_all[n].get_coordinates()
-
-        local_grid[n] = grid[
-            sd_all[n].index_start[0] : sd_all[n].index_start[0] + sd_all[n].nodes[0],
-            sd_all[n].index_start[1] : sd_all[n].index_start[1] + sd_all[n].nodes[1],
-            sd_all[n].index_start[2] : sd_all[n].index_start[2] + sd_all[n].nodes[2],
-        ]
-
-        local_grid[n] = np.ascontiguousarray(local_grid[n])
-
-    return sd_all, local_grid

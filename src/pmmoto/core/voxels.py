@@ -7,6 +7,7 @@ from . import communication
 
 __all__ = [
     "renumber_image",
+    "get_nearest_boundary_index",
     "get_id",
     "get_boundary_voxels",
     "gen_grid_to_label_map",
@@ -18,18 +19,91 @@ __all__ = [
 ]
 
 
-def renumber_image(img, conversion_map):
-    """_summary_
+def renumber_image(img, conversion_map: dict):
+    """
+    Renumbers an image using a provided mapping.
 
     Args:
-        img (_type_): _description_
-        conversion_map (_type_): _description_
+        img (Any): The image to be renumbered. Typically, this will be a 3D or 2D array-like structure.
+        conversion_map (dict): A dictionary mapping current image IDs to new image IDs.
+            Example: {1: 101, 2: 102, ...}
+            Note: All IDs in `img` must be defined in `conversion_map`.
+
+    Returns:
+        Any: The renumbered image, with IDs replaced based on the mapping.
+
+    Note:
+        This function assumes all required IDs are present in the `conversion_map`.
+        No error handling is performed for missing or invalid keys.
+
+    Example:
+        img = [[1, 2], [2, 1]]
+        conversion_map = {1: 101, 2: 102}
+        renumber_image(img, conversion_map)
+        # Output: [[101, 102], [102, 101]]
     """
     return _voxels._renumber_grid(img, conversion_map)
 
 
+def get_nearest_boundary_index(
+    subdomain, img, label, dimension=None, which_voxels="all"
+):
+    """
+    Determines the index nearest each subdomain boundary face for a specified
+    label in img. The start and end locations can be controlled but
+
+        which_voxels = "all" start = 0, end = 0
+        which_voxels = "own" start = pad[0], end = pad[1]
+        which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
+
+    Note: The boundary index is always with respect to img.shape[dimension].
+    Start and end are used for searching.
+
+    Args:
+        subdomain (_type_): _description_
+        img (_type_): _description_
+    """
+
+    if dimension is not None and dimension not in {0, 1, 2}:
+        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
+
+    lower_skip = 0
+    upper_skip = 0
+
+    boundary_index = {}
+
+    for feature_id, feature in subdomain.features["faces"].items():
+        if dimension is None or feature_id[dimension] != 0:
+
+            if feature.forward:
+                if which_voxels == "own":
+                    lower_skip = subdomain.pad[feature.info["argOrder"][0]][0]
+                elif which_voxels == "pad":
+                    lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+            elif not feature.forward:
+                if which_voxels == "own":
+                    upper_skip = subdomain.pad[feature.info["argOrder"][0]][1]
+                elif which_voxels == "pad":
+                    upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+
+            boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=feature.info["argOrder"][0],
+                label=label,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            ).astype(np.float32)
+
+    return boundary_index
+
+
 def get_boundary_voxels(subdomain, img):
-    """_summary_
+    """
+    This function returns the values on the boundary features.
+    The features are divided into
+        own: feature voxels owned by subdomain
+        neighbor: feature voxels owned by a neighbor subdomain
 
     Args:
         subdomain (_type_): _description_
@@ -276,4 +350,5 @@ def gen_outlet_label_map(subdomain, label_grid):
                         feature.loop["own"][2][0] : feature.loop["own"][2][1],
                     ]
                 )[0]
+
     return outlet_labels

@@ -16,7 +16,8 @@ __all__ = [
 
 
 def read_sphere_pack_xyzr_domain(input_file):
-    """Read in sphere pack given in x,y,z,radius order including domain size
+    """
+    Read in sphere pack given in x,y,z,radius order including domain bounding box
 
     Input File Format:
         x_min x_max
@@ -53,12 +54,14 @@ def read_sphere_pack_xyzr_domain(input_file):
 
     domain_file.close()
 
+    domain_data = tuple(map(tuple, domain_data))
+
     return sphere_data, domain_data
 
 
 def read_r_lookup_file(input_file, power=1):
     """
-    Read in the radius lookup file for lammps simulations
+    Read in the radius lookup file for LAMMPS simulations
 
     Actually reading in sigma
 

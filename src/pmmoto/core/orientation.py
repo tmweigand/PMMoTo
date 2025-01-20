@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["get_boundary_id"]
+
 
 def get_boundary_id(boundary_index):
     """

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from ..core import communication
 from ..core import utils
@@ -7,6 +8,8 @@ from ..core import subdomain_features
 
 
 __all__ = [
+    "gen_random_binary_grid",
+    "gen_smoothed_random_binary_grid",
     "gen_pm_spheres_domain",
     "gen_pm_atom_domain",
     "gen_pm_verlet_spheres_domain",
@@ -22,17 +25,75 @@ __all__ = [
 ]
 
 
+def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
+    """
+    Generate a binary grid of the provided shape where
+    each voxel is a random selection (0 or 1), with a specified probability.
+
+    Args:
+        shape (tuple): Shape of the binary grid (e.g., (depth, rows, columns)).
+        p_zero (float): Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.
+        seed (int, optional): Seed for the random number generator. If None, the results are not reproducible.
+
+    Returns:
+        np.ndarray: A NumPy array with the specified shape, containing random 0s and 1s.
+    """
+    if not (0 <= p_zero <= 1):
+        raise ValueError("Probability p_zero must be between 0 and 1.")
+
+    # Create a random number generator with the given seed
+    rng = np.random.default_rng(seed)
+
+    return rng.choice([0, 1], size=shape, p=[p_zero, 1 - p_zero]).astype(np.uint8)
+
+
+def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None):
+    """
+    Generate a smoothed binary grid of the provided shape where
+    each voxel is a random selection (0 or 1), with a specified probability.
+
+    Args:
+        shape (tuple): Shape of the binary grid (e.g., (depth, rows, columns)).
+        p_zero (float): Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.
+        smoothness (float): Controls the smoothness of the output grid. Higher values
+                            result in smoother transitions between 0 and 1.
+
+    Returns:
+        np.ndarray: A NumPy array with the specified shape, containing smoothed random 0s and 1s.
+    """
+    if not (0 <= p_zero <= 1):
+        raise ValueError("Probability p_zero must be between 0 and 1.")
+    if smoothness < 0:
+        raise ValueError("Smoothness must be a non-negative value.")
+
+    # Create a random number generator with the given seed
+    rng = np.random.default_rng(seed)
+
+    # Generate a random binary grid
+    random_grid = rng.choice([0, 1], size=shape, p=[p_zero, 1 - p_zero]).astype(
+        np.float32
+    )
+
+    # Apply Gaussian filter to smooth the grid
+    smoothed_grid = gaussian_filter(random_grid, sigma=smoothness)
+
+    # Threshold the smoothed grid to return binary values
+    binary_grid = (smoothed_grid > 0.5).astype(np.uint8)
+
+    return binary_grid
+
+
 def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     """
     Generate binary domain (pm) from sphere data that contains radii
     """
-    _grid = _domain_generation.gen_pm_sphere(
+    _img = _domain_generation.gen_pm_sphere(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -41,7 +102,7 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
     """
     Generate binary domain (pm) from atom data, types and cutoff
     """
-    _grid = _domain_generation.gen_pm_atom(
+    _img = _domain_generation.gen_pm_atom(
         subdomain.coords[0],
         subdomain.coords[1],
         subdomain.coords[2],
@@ -50,10 +111,10 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
         atom_cutoff,
     )
 
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -63,13 +124,13 @@ def gen_pm_verlet_spheres_domain(subdomain, spheres, verlet=[1, 1, 1], res_size=
     Generate binary domain (pm) from sphere data that contains radii
        using verlet domains
     """
-    _grid = _domain_generation.gen_pm_verlet_sphere(
+    _img = _domain_generation.gen_pm_verlet_sphere(
         verlet, subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -81,7 +142,7 @@ def gen_pm_verlet_atom_domain(
     Generate binary domain (pm) from atom data, types and cutoff
        using verlet domains
     """
-    _grid = _domain_generation.gen_pm_verlet_atom(
+    _img = _domain_generation.gen_pm_verlet_atom(
         verlet,
         subdomain.coords[0],
         subdomain.coords[1],
@@ -91,10 +152,10 @@ def gen_pm_verlet_atom_domain(
         atom_cutoff,
     )
 
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -102,12 +163,12 @@ def gen_pm_verlet_atom_domain(
 def gen_pm_inkbottle(subdomain, domain_data, res_size=0):
     """ """
     subdomain.update_domain_size(domain_data)
-    _grid = _domain_generation.gen_pm_inkbottle(
+    _img = _domain_generation.gen_pm_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    utils.check_grid(subdomain, pm.grid)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    utils.check_grid(subdomain, pm.img)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
     return pm
 
