@@ -6,9 +6,9 @@ class PorousMedia:
     Porous media class
     """
 
-    def __init__(self, subdomain, grid):
+    def __init__(self, subdomain, img):
         self.subdomain = subdomain
-        self.grid = grid
+        self.img = img
         self.porosity = None
 
         # Set solid phase inlet/outlet to zeros
@@ -25,17 +25,17 @@ class PorousMedia:
         If wall boundary conditions are specified, force solid on external boundaries
         """
         if self.subdomain.boundaries[0] == 1:
-            self.grid[0, :, :] = 0
+            self.img[0, :, :] = 0
         if self.subdomain.boundaries[1] == 1:
-            self.grid[-1, :, :] = 0
+            self.img[-1, :, :] = 0
         if self.subdomain.boundaries[2] == 1:
-            self.grid[:, 0, :] = 0
+            self.img[:, 0, :] = 0
         if self.subdomain.boundaries[3] == 1:
-            self.grid[:, -1, :] = 0
+            self.img[:, -1, :] = 0
         if self.subdomain.boundaries[4] == 1:
-            self.grid[:, :, 0] = 0
+            self.img[:, :, 0] = 0
         if self.subdomain.boundaries[5] == 1:
-            self.grid[:, :, -1] = 0
+            self.img[:, :, -1] = 0
 
     # def get_porosity(self):
     #     """
@@ -44,11 +44,11 @@ class PorousMedia:
     #     self.porosity = 1.0 - stats.get_volume_fraction(self.subdomain, self.grid, 0)
 
 
-def gen_pm(subdomain, grid, res_size=0):
+def gen_pm(subdomain, img, res_size=0):
     """
     Initialize the porousmedia class and set inlet/outlet/wall bcs
     Gather loop_info for efficient looping
     """
-    pm = PorousMedia(subdomain=subdomain, grid=grid)
+    pm = PorousMedia(subdomain=subdomain, img=img)
 
     return pm

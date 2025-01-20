@@ -73,8 +73,6 @@ def test_update_buffer():
 
     updated_grid = pmmoto.core.communication.update_buffer(sd, grid)
 
-    print(updated_grid)
-
     np.testing.assert_array_almost_equal(updated_grid, solution)
 
 

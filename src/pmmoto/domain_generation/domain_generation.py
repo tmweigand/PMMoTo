@@ -87,13 +87,13 @@ def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     """
     Generate binary domain (pm) from sphere data that contains radii
     """
-    _grid = _domain_generation.gen_pm_sphere(
+    _img = _domain_generation.gen_pm_sphere(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -102,7 +102,7 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
     """
     Generate binary domain (pm) from atom data, types and cutoff
     """
-    _grid = _domain_generation.gen_pm_atom(
+    _img = _domain_generation.gen_pm_atom(
         subdomain.coords[0],
         subdomain.coords[1],
         subdomain.coords[2],
@@ -111,10 +111,10 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff, res_s
         atom_cutoff,
     )
 
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -124,13 +124,13 @@ def gen_pm_verlet_spheres_domain(subdomain, spheres, verlet=[1, 1, 1], res_size=
     Generate binary domain (pm) from sphere data that contains radii
        using verlet domains
     """
-    _grid = _domain_generation.gen_pm_verlet_sphere(
+    _img = _domain_generation.gen_pm_verlet_sphere(
         verlet, subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -142,7 +142,7 @@ def gen_pm_verlet_atom_domain(
     Generate binary domain (pm) from atom data, types and cutoff
        using verlet domains
     """
-    _grid = _domain_generation.gen_pm_verlet_atom(
+    _img = _domain_generation.gen_pm_verlet_atom(
         verlet,
         subdomain.coords[0],
         subdomain.coords[1],
@@ -152,10 +152,10 @@ def gen_pm_verlet_atom_domain(
         atom_cutoff,
     )
 
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.grid)
+    utils.check_grid(subdomain, pm.img)
 
     return pm
 
@@ -163,12 +163,12 @@ def gen_pm_verlet_atom_domain(
 def gen_pm_inkbottle(subdomain, domain_data, res_size=0):
     """ """
     subdomain.update_domain_size(domain_data)
-    _grid = _domain_generation.gen_pm_inkbottle(
+    _img = _domain_generation.gen_pm_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
-    pm = porousmedia.gen_pm(subdomain, _grid, res_size)
-    utils.check_grid(subdomain, pm.grid)
-    pm.grid = communication.update_buffer(subdomain, pm.grid)
+    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    utils.check_grid(subdomain, pm.img)
+    pm.img = communication.update_buffer(subdomain, pm.img)
 
     return pm
 

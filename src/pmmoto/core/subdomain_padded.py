@@ -98,8 +98,12 @@ class PaddedSubdomain(subdomain.Subdomain):
         is constant
         """
         box = []
-        for dim, ind in enumerate(self.index):
-            length = self.voxels[dim] * self.domain.resolution[dim]
+        for dim, (ind, pad, r_pad) in enumerate(
+            zip(self.index, self.pad, self.reservoir_pad)
+        ):
+            length = (
+                self.voxels[dim] - (pad[0] + pad[1] + r_pad[0] + r_pad[1])
+            ) * self.domain.resolution[dim]
             lower = self.domain.box[dim][0] + length * ind
             if ind == self.domain.subdomains[dim] - 1:
                 lower = self.domain.box[dim][1] - length

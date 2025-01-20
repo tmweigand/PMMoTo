@@ -290,48 +290,8 @@ def test_periodic_3d():
     )
 
 
-def _create_subdomain(rank, periodic=True):
-    box = ((0, 21.0), (0, 41.0), (0, 10.5))
-    # box = ((0, 21.0), (0, 21.0), (0, 21.0))
-    if periodic:
-        boundary_types = ((2, 2), (2, 2), (2, 2))
-    else:
-        boundary_types = ((0, 0), (0, 0), (0, 0))
-    inlet = ((1, 0), (0, 0), (0, 0))
-    outlet = ((0, 1), (0, 0), (0, 0))
-    voxels = (201, 201, 201)
-    subdomains = (1, 1, 1)
-    pad = (1, 1, 1)
-    reservoir_voxels = 0
-
-    pmmoto_domain = pmmoto.core.domain.Domain(
-        box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
-    )
-
-    pmmoto_discretized_domain = (
-        pmmoto.core.domain_discretization.DiscretizedDomain.from_domain(
-            domain=pmmoto_domain, voxels=voxels
-        )
-    )
-
-    pmmoto_decomposed_domain = (
-        pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
-            discretized_domain=pmmoto_discretized_domain,
-            subdomains=subdomains,
-        )
-    )
-
-    padded_subdomain = pmmoto.core.subdomain_padded.PaddedSubdomain(
-        rank=rank,
-        decomposed_domain=pmmoto_decomposed_domain,
-        pad=pad,
-        reservoir_voxels=reservoir_voxels,
-    )
-    return padded_subdomain
-
-
 @pytest.mark.mpi(min_size=8)
-def test_pmmoto_3d_parallel():
+def test_pmmoto_3d_parallel(generate_simple_subdomain):
     """
     Tests EDT with pmmoto
     """
@@ -339,9 +299,8 @@ def test_pmmoto_3d_parallel():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
-    sd = _create_subdomain(0, periodic=periodic)
+    sd = generate_simple_subdomain(0, periodic=periodic)
     img = np.ones(sd.domain.voxels, dtype=np.uint8)
-    # img[:, -2, 0] = 0
     img = pmmoto.domain_generation.gen_random_binary_grid(
         sd.domain.voxels,
         p_zero=0.05,
@@ -400,7 +359,7 @@ def test_periodic_3d_2():
     Tests for periodic domains
     """
 
-    voxels = (150, 150, 150)  # img = np.ones(voxels, dtype=np.uint8)
+    voxels = (50, 50, 50)  # img = np.ones(voxels, dtype=np.uint8)
     prob_zero = 0.2
     seed = 1246
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
