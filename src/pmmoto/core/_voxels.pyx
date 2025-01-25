@@ -11,6 +11,7 @@ cimport numpy as np
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libcpp cimport tuple
+from libcpp.pair cimport pair
 from libcpp.unordered_map cimport unordered_map
 from numpy cimport npy_intp, uint64_t, int64_t, uint8_t
 
@@ -20,27 +21,12 @@ __all__ = [
     "get_nearest_boundary_index_face",
     "get_nearest_boundary_index_face_2d",
     "determine_index_nearest_boundary_1d",
-    "_merge_matched_voxels",
+    "merge_matched_voxels",
+    "renumber_grid",
     "get_id",
     "gen_grid_to_label_map"
 ]
 
-cdef extern from "_voxel.hpp":
-    cdef void loop_through_slice(
-        uint8_t *segids,
-        uint8_t *out,
-        const int n,
-        const long int stride,
-        bool forward
-        ) nogil
-
-    cdef int64_t _get_nearest_boundary_index(
-        uint8_t *img,
-        uint8_t label,
-        const int n,
-        const long int stride,
-        const int index_corrector,
-        bool forward) nogil
 
 cdef struct match_test:
     npy_intp local_id
@@ -323,7 +309,7 @@ def get_nearest_boundary_index_face_2d(
     return index_array
 
 
-def _merge_matched_voxels(all_match_data):
+def merge_matched_voxels(all_match_data):
     """
     Connect all matched voxels from the entire domain.
 
@@ -334,58 +320,60 @@ def _merge_matched_voxels(all_match_data):
         tuple: (List of all matches with updated connections, total merged sets).
     """
     matches = {}
-    local_counts = []
-    boundary_counts = []
+    # local_counts = []
+    # boundary_counts = []
     local_global_map = {}
 
-    # Flatten matched sets by rank and initialize `local_global_map`
+    # Flatten matched sets and initialize visited flags
     for matches_by_rank in all_match_data:
-        local_counts.append(matches_by_rank['label_count'])
-        del matches_by_rank['label_count']
-        boundary_counts.append(len(matches_by_rank.keys()))
-
+        # local_counts.append(matches_by_rank['label_count'])
+        # boundary_counts.append(len(matches_by_rank.keys()))
+        
         for key, match in matches_by_rank.items():
+            if key == 'label_count':
+                continue
             match['visited'] = False
             matches[key] = match
             local_global_map[key] = {}
 
     # Merge connected sets
     global_id = 0
-    for key, match in matches.items():
+    for key, match in matches.items(): # key is (rank,local label)
         if match["visited"]:
             continue
 
-        match["visited"] = True
+        # BFS to find all connected components
         queue = [key]
         connections = []
 
         # Traverse connected matches
         while queue:
             current_id = queue.pop()
-            current_match = matches[current_id]
+            if matches[current_id]['visited']:
+                continue
+            matches[current_id]['visited'] = True
             connections.append(current_id)
 
-            for neighbor_id in current_match["neighbor"]:
-                neighbor_match = matches[neighbor_id]
-                if not neighbor_match["visited"]:
-                    neighbor_match["visited"] = True
+            for neighbor_id in matches[current_id]['neighbor_matches']:
+                if not matches[neighbor_id]['visited']:
                     queue.append(neighbor_id)
 
-        # Update global IDs for all connected matches
+        # Assign global IDs to connected components
         for conn_id in connections:
-            # all_matches[conn_id]["neighbor"] = connections
             local_global_map[conn_id]["global_id"] = global_id
 
         global_id += 1 if connections else 0
 
-    for rank, _ in enumerate(local_counts):
-        if rank == 0:
-            local_global_map[rank] = global_id
-        else:
-            local_labels = local_counts[rank-1] - boundary_counts[rank-1] - 1
-            local_global_map[rank] = local_global_map[rank-1] + local_labels
 
-    return local_global_map
+    # Determine unique global labels
+    # for rank, _ in enumerate(local_counts):
+    #     if rank == 0:
+    #         local_global_map[rank] = global_id
+    #     else:
+    #         local_labels = local_counts[rank-1] - boundary_counts[rank-1] - 1
+    #         local_global_map[rank] = local_global_map[rank-1] + local_labels
+
+    return local_global_map, global_id
 
 
 cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
@@ -480,7 +468,7 @@ def gen_grid_to_label_map(
     return grid_to_label_map
 
 
-def _renumber_grid(uint64_t [:, :, :] grid, unordered_map[int, int] map):
+def renumber_grid(uint64_t [:, :, :] grid, unordered_map[int, int] map):
     """
     Renumber a grid in-place based on map.
     """
@@ -495,6 +483,8 @@ def _renumber_grid(uint64_t [:, :, :] grid, unordered_map[int, int] map):
             for k in range(0, sz):
                 label = grid[i, j, k]
                 grid[i, j, k] = map[label]
+
+    return grid
 
 
 def count_label_voxels(uint64_t [:, :, :] grid, unordered_map[int, int] map):
@@ -514,3 +504,69 @@ def count_label_voxels(uint64_t [:, :, :] grid, unordered_map[int, int] map):
                 map[label] += 1
 
     return map
+
+
+def find_unique_pairs(unsigned long[:,:] pairs):
+    """
+    Compute unique pairs using the C++ function.
+
+    Parameters
+    ----------
+    pairs : numpy.ndarray
+        A N x 2 array of integers.
+
+    Returns
+    -------
+    numpy.ndarray
+        A M x 2 array of unique pairs.
+    """
+    cdef:
+        size_t nrows
+        vector[pair[unsigned long,unsigned long]] result_cpp
+        Py_ssize_t i, result_size
+
+    nrows = pairs.shape[0]
+
+    # Call the C++ function
+    result_cpp = unique_pairs(<unsigned long*> &pairs[0, 0], nrows)
+    result_size = result_cpp.size()
+    result_np = np.zeros((result_size, 2), dtype=np.uint64)
+    for i in range(result_size):
+        result_np[i, 0] = result_cpp[i].first
+        result_np[i, 1] = result_cpp[i].second
+
+    return result_np
+
+
+def process_matches_by_feature(
+    unsigned long[:,:] matches,  # List of match tuples
+    unique_matches: dict,  # Dictionary to store unique matches
+    subdomain_rank: int,  # Subdomain rank
+    feature_neighbor_rank: int  # Neighbor rank
+):
+    cdef:
+        int i
+        size_t n
+        tuple match_tuple, neighbor_tuple
+        list neighbors
+    
+    n = matches.shape[0]
+
+    for i in range(n):
+        # Access match elements directly as integers
+        match_0 = matches[i, 0] #own
+        match_1 = matches[i, 1] #neighbor
+        
+        # Create tuples
+        match_tuple = (subdomain_rank, match_0)
+        neighbor_tuple = (feature_neighbor_rank, match_1)
+
+        # Check if match_tuple exists
+        if match_tuple not in unique_matches:
+            unique_matches[match_tuple] = {"neighbor_matches": [neighbor_tuple]}
+        else:
+            # Retrieve neighbors list and check membership
+            if neighbor_tuple not in unique_matches[match_tuple]["neighbor_matches"]:
+                unique_matches[match_tuple]["neighbor_matches"].append(neighbor_tuple)
+
+    return unique_matches

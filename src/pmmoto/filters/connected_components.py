@@ -1,8 +1,8 @@
 import numpy as np
 import cc3d
+from collections import defaultdict
 from pmmoto.core import voxels
 from pmmoto.core import communication
-
 
 __all__ = [
     "connect_components",
@@ -13,32 +13,27 @@ __all__ = [
 ]
 
 
-def _connect_components(grid):
+def connect_components(img, subdomain, return_label_count=True):
     """
-    Perform a connected components analysis of the given grid
+    Create sets for all phases in img.
+
+    Zero is considered background and will not join to any other voxel.
     """
-    label_grid, label_count = cc3d.connected_components(
-        grid, return_N=True, out_dtype=np.uint64
+
+    label_img, label_count = cc3d.connected_components(
+        img, return_N=True, out_dtype=np.uint64
     )
     label_count += 1
 
-    return label_grid, label_count
+    if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
+        label_img, label_count = connect_subdomain_boundaries(
+            subdomain, label_img, label_count
+        )
 
-
-def connect_components(
-    grid,
-    subdomain,
-):
-    """
-    Create sets for all phases in grid
-    """
-
-    label_grid, label_count = _connect_components(grid)
-
-    if subdomain.domain.num_subdomains > 1:
-        connect_subdomain_boundaries(subdomain, label_grid, label_count)
-
-    return label_grid
+    if return_label_count:
+        return label_img, label_count
+    else:
+        return label_img
 
 
 def connect_subdomain_boundaries(subdomain, label_grid, label_count):
@@ -49,25 +44,26 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
         label_grid (_type_): _description_
         label_count (_type_): _description_
     """
-    data = voxels.get_boundary_voxels(
+    boundary_labels = voxels.get_boundary_voxels(
         subdomain=subdomain,
         img=label_grid,
     )
 
-    send_data, own_data = voxels.boundary_voxels_pack(subdomain, data)
+    recv_data = communication.communicate_features(
+        subdomain=subdomain, send_data=boundary_labels
+    )
 
-    if own_data or send_data:
-        if send_data:
-            recv_data = communication.communicate(subdomain, send_data, unpack=True)
-            own_data.update(recv_data)
+    matches = voxels.match_neighbor_boundary_voxels(
+        subdomain, boundary_labels, recv_data
+    )
 
-        matches = voxels.match_neighbor_boundary_voxels(subdomain, data, own_data)
+    local_global_map, global_label_count = voxels.match_global_boundary_voxels(
+        subdomain, matches, label_count
+    )
 
-        local_global_map = voxels.match_global_boundary_voxels(
-            subdomain, matches, label_count
-        )
+    label_grid = voxels.renumber_image(label_grid, local_global_map)
 
-        voxels.renumber_image(label_grid, local_global_map)
+    return label_grid, global_label_count
 
 
 def gen_grid_to_label_map(grid, label_grid):
@@ -96,20 +92,34 @@ def phase_count(phase_map):
 
 
 def gen_inlet_label_map(subdomain, label_grid):
-    """_summary_
-
-    Args:
-        subdomain (_type_): _description_
-        lables (_type_): _description_
-    """
+    """ """
     return voxels.gen_inlet_label_map(subdomain, label_grid)
 
 
 def gen_outlet_label_map(subdomain, label_grid):
-    """_summary_
-
-    Args:
-        subdomain (_type_): _description_
-        lables (_type_): _description_
-    """
+    """ """
     return voxels.gen_outlet_label_map(subdomain, label_grid)
+
+
+def inlet_outlet_labels(subdomain, label_grid):
+    """
+    Collect the labels that are on the inlet and outlet!
+    """
+    inlet = gen_inlet_label_map(subdomain, label_grid)
+    outlet = gen_outlet_label_map(subdomain, label_grid)
+
+    global_data = communication.all_gather({"inlet": inlet, "outlet": outlet})
+
+    connected = defaultdict(lambda: {"inlet": False, "outlet": False})
+    for rank_data in global_data:
+        for label in rank_data["inlet"]:
+            connected[label]["inlet"] = True
+        for label in rank_data["outlet"]:
+            connected[label]["outlet"] = True
+
+    connections = []
+    for label_id, label in connected.items():
+        if label["inlet"] and label["outlet"]:
+            connections.append(label_id)
+
+    return connections

@@ -2,6 +2,7 @@
 
 import numpy as np
 from . import domain_discretization
+from . import orientation
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
@@ -65,7 +66,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         """
         Determine the neighbor process rank
         """
-        from . import orientation
 
         neighbor_ranks = {}
         feature_types = ["faces", "edges", "corners"]
@@ -91,6 +91,6 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         for n in range(self.dims):
             index.append(feature_index[n] + sd_index[n] + 1)
 
-        rank = self.map[index[0], index[1], index[2]]
+        rank = int(self.map[index[0], index[1], index[2]])
 
         return rank

@@ -42,7 +42,10 @@ def renumber_image(img, conversion_map: dict):
         renumber_image(img, conversion_map)
         # Output: [[101, 102], [102, 101]]
     """
-    return _voxels._renumber_grid(img, conversion_map)
+
+    img = _voxels.renumber_grid(img, conversion_map)
+
+    return np.ascontiguousarray(img)
 
 
 def get_nearest_boundary_index(
@@ -98,7 +101,7 @@ def get_nearest_boundary_index(
     return boundary_index
 
 
-def get_boundary_voxels(subdomain, img):
+def get_boundary_voxels(subdomain, img, neighbors_only=False):
     """
     This function returns the values on the boundary features.
     The features are divided into
@@ -115,6 +118,8 @@ def get_boundary_voxels(subdomain, img):
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
+            if neighbors_only and feature.neighbor_rank < -1:
+                continue
             out_voxels[feature_id] = {}
             for kind in boundary_types:
                 out_voxels[feature_id][kind] = img[
@@ -229,7 +234,7 @@ def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
 
     Returns:
         dict: Unique matches in the format
-        key:(subdomain rank, own voxel)
+        key: (subdomain rank, own voxel)
         neighbor: list[neighbor rank, neighbor voxel)]
     """
     unique_matches = {}
@@ -255,23 +260,10 @@ def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
                     ],
                     axis=1,
                 )
-
-                for match in np.unique(to_match, axis=0):
-                    match_tuple = (subdomain.rank, match[0])
-                    neighbor_tuple = (
-                        recv_data[feature_id]["rank"],
-                        match[1],
-                    )
-                    if match_tuple not in unique_matches.keys():
-                        unique_matches[match_tuple] = {"neighbor": [neighbor_tuple]}
-                    else:
-                        if (
-                            neighbor_tuple
-                            not in unique_matches[match_tuple]["neighbor"]
-                        ):
-                            unique_matches[match_tuple]["neighbor"].append(
-                                neighbor_tuple
-                            )
+                matches = _voxels.find_unique_pairs(to_match)
+                unique_matches = _voxels.process_matches_by_feature(
+                    matches, unique_matches, subdomain.rank, feature.neighbor_rank
+                )
 
     return unique_matches
 
@@ -289,20 +281,51 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
     all_matches = communication.all_gather(matches)
 
     ### Generate the local-global label map
-    local_global_map = _voxels._merge_matched_voxels(all_matches)
+    local_global_map, boundary_label_count = _voxels.merge_matched_voxels(all_matches)
+
+    final_map, global_label_count = local_to_global_labeling(
+        all_matches, local_global_map, boundary_label_count, own=subdomain.rank
+    )
+
+    return final_map, global_label_count
+
+
+def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, own=None):
+    """ """
+
+    local_counts = [matches["label_count"] for matches in all_matches]
+    boundary_counts = [len(matches) for matches in all_matches]
+
+    # Determine unique global labels relative
+    local_starts = {}
+    for rank, _ in enumerate(local_counts):
+        if rank == 0:
+            local_starts[rank] = boundary_label_count
+        else:
+            local_labels = local_counts[rank - 1] - boundary_counts[rank - 1] - 1
+            local_starts[rank] = local_starts[rank - 1] + local_labels
 
     ### Generate the global id for non-boundary labels as well
     final_map = {}
-    local_start = local_global_map[subdomain.rank]
-    count = 0
-    for n in range(label_count):
-        if (subdomain.rank, n) in local_global_map:
-            final_map[n] = local_global_map[(subdomain.rank, n)]["global_id"]
-        else:
-            final_map[n] = local_start + count
-            count += 1
+    label_count = 0
+    for rank, match in enumerate(all_matches):
+        local_start = local_starts[rank]
+        final_map[rank] = {}
+        count = 0
+        for n in range(match["label_count"]):
+            if (rank, n) in boundary_map:
+                final_map[rank][n] = boundary_map[(rank, n)]["global_id"]
+            else:
+                final_map[rank][n] = local_start + count
+                count += 1
+                label_count += 1
 
-    return final_map
+    label_count += label_count + boundary_label_count
+
+    if own is not None and own in final_map:
+        return final_map[own], label_count
+    else:
+        return final_map, label_count
 
 
 def gen_inlet_label_map(subdomain, label_grid):
@@ -314,18 +337,16 @@ def gen_inlet_label_map(subdomain, label_grid):
         subdomain (_type_): _description_
         label_grid (_type_): _description_
     """
-    inlet_labels = None
-    feature_types = ["faces"]  # only faces can be an inlet
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.inlet:
-                inlet_labels = np.unique(
-                    label_grid[
-                        feature.loop["own"][0][0] : feature.loop["own"][0][1],
-                        feature.loop["own"][1][0] : feature.loop["own"][1][1],
-                        feature.loop["own"][2][0] : feature.loop["own"][2][1],
-                    ]
-                )[0]
+    inlet_labels = []
+    for feature_id, feature in subdomain.features["faces"].items():
+        if feature.inlet:
+            inlet_labels = np.unique(
+                label_grid[
+                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                ]
+            )
     return inlet_labels
 
 
@@ -338,17 +359,15 @@ def gen_outlet_label_map(subdomain, label_grid):
         subdomain (_type_): _description_
         label_grid (_type_): _description_
     """
-    outlet_labels = None
-    feature_types = ["faces"]  # only faces can be an inlet
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.outlet:
-                inlet_labels = np.unique(
-                    label_grid[
-                        feature.loop["own"][0][0] : feature.loop["own"][0][1],
-                        feature.loop["own"][1][0] : feature.loop["own"][1][1],
-                        feature.loop["own"][2][0] : feature.loop["own"][2][1],
-                    ]
-                )[0]
+    outlet_labels = []
+    for feature_id, feature in subdomain.features["faces"].items():
+        if feature.outlet:
+            outlet_labels = np.unique(
+                label_grid[
+                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
+                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
+                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                ]
+            )
 
     return outlet_labels

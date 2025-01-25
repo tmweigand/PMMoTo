@@ -15,7 +15,7 @@ import sys
 #     sys.exit(1)
 
 
-extra_compile_args = []
+extra_compile_args = ["-std=c++17"]
 if sys.platform == "win32":
     extra_compile_args += ["/std:c++17", "/O2"]
 else:
@@ -45,6 +45,7 @@ ext_modules = [
         ["src/pmmoto/core/_voxels.pyx"],
         include_dirs=["src/pmmoto/core"],
         language="c++",
+        extra_compile_args=extra_compile_args,
     ),
     Extension(
         "pmmoto.filters.distance._distance",

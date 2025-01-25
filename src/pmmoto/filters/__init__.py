@@ -1,4 +1,4 @@
-from .morphology import *
-from .connected_components import *
+from . import morphology
+from . import connected_components
 from . import distance
 from . import medialAxis

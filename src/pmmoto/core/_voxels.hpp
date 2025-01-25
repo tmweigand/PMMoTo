@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <unordered_set>
 
 /**
  * @brief Iterates through a 1D slice of an image and writes the values to an
@@ -75,4 +76,50 @@ int64_t _get_nearest_boundary_index(uint8_t *img, uint8_t label, const int n,
   }
 
   return -1; // Return -1 if the label is not found
+}
+
+/**
+ * @brief Computes the unique pairs from a given array of pairs.
+ *
+ * This function takes an input array of pairs represented as a flat array
+ * (alternating elements correspond to the first and second elements of each
+ * pair) and returns a vector of unique pairs. The pairs are deduplicated using
+ * a hash-based approach for efficiency.
+ *
+ * @param data Pointer to a flat array of uint64_t integers containing the
+ * pairs. Each pair consists of two consecutive integers in the array.
+ * @param nrows The number of pairs in the input array.
+ *              This corresponds to half the size of the `data` array.
+ * @return A `std::vector` of unique pairs represented as `std::pair<uint64_t,
+ * uint64_t>`.
+ *
+ * @note
+ * The input array should contain exactly `2 * nrows` elements.
+ * The function uses an `std::unordered_set` for efficient deduplication.
+ *
+ * @example
+ * uint64_t data[] = {1, 2, 2, 3, 1, 2, 3, 4};
+ * size_t nrows = 4;
+ * auto result = unique_pairs(data, nrows);
+ * // Result: {{1, 2}, {2, 3}, {3, 4}}
+ */
+std::vector<std::pair<unsigned long, unsigned long>>
+unique_pairs(unsigned long *data, size_t nrows) {
+  std::unordered_set<unsigned long> unique_set;
+  std::vector<std::pair<unsigned long, unsigned long>> result;
+
+  // Encode each pair into a single 64-bit integer for uniqueness
+  for (size_t i = 0; i < nrows; ++i) {
+    unsigned long encoded = (data[2 * i] << 32) | data[2 * i + 1];
+    unique_set.insert(encoded);
+  }
+
+  // Decode back into pairs
+  for (unsigned long encoded : unique_set) {
+    unsigned long first = encoded >> 32;         // Extract first element
+    unsigned long second = encoded & 0xFFFFFFFF; // Extract second element
+    result.emplace_back(first, second);
+  }
+
+  return result;
 }
