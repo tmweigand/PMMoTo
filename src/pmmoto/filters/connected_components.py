@@ -60,9 +60,6 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
         subdomain, matches, label_count
     )
 
-    if subdomain.rank == 0:
-        print(local_global_map, global_label_count)
-
     label_grid = voxels.renumber_image(label_grid, local_global_map)
 
     return label_grid, global_label_count
