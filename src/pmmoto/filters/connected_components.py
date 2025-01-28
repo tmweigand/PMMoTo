@@ -112,11 +112,12 @@ def inlet_outlet_labels(subdomain, label_grid):
     connected = defaultdict(lambda: {"inlet": False, "outlet": False})
     for rank_data in global_data:
         for label in rank_data["inlet"]:
-            connected[label]["inlet"] = True
+            if label > 0:
+                connected[label]["inlet"] = True
         for label in rank_data["outlet"]:
-            connected[label]["outlet"] = True
+            if label > 0:
+                connected[label]["outlet"] = True
 
-    # print(connected)
     connections = []
     for label_id, label in connected.items():
         if label["inlet"] and label["outlet"]:
