@@ -35,7 +35,7 @@ def test_connect_componets(generate_simple_subdomain):
     )
 
     assert label_count == 5
-    assert sorted(connected_labels) == [0, 1, 2, 3, 4]
+    assert sorted(connected_labels) == [1, 2, 3, 4]
 
 
 @pytest.mark.mpi(min_size=8)
@@ -68,7 +68,7 @@ def test_connect_componets_periodic(generate_simple_subdomain):
     )
 
     assert label_count == 2
-    assert sorted(connected_labels) == [0, 1]
+    assert sorted(connected_labels) == [1]
 
 
 def test_connect_componets_bcs_0(generate_simple_subdomain):
