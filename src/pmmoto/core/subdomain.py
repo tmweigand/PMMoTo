@@ -131,6 +131,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
                         _boundary_type.append(boundary_types[1])
 
                 _boundary_type.sort()
+
                 if _boundary_type[0] == 0:
                     boundary_type[feature] = "end"
                 elif _boundary_type[0] == 1:

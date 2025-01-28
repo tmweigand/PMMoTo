@@ -17,13 +17,13 @@ def connect_components(img, subdomain, return_label_count=True):
     """
     Create sets for all phases in img.
 
-    Zero is considered background and will not join to any other voxel.
+    Zero is background and will not join to any other voxel.
     """
 
+    # max_label = label_count
     label_img, label_count = cc3d.connected_components(
         img, return_N=True, out_dtype=np.uint64
     )
-    label_count += 1
 
     if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
         label_img, label_count = connect_subdomain_boundaries(
@@ -45,8 +45,7 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
         label_count (_type_): _description_
     """
     boundary_labels = voxels.get_boundary_voxels(
-        subdomain=subdomain,
-        img=label_grid,
+        subdomain=subdomain, img=label_grid, neighbors_only=True
     )
 
     recv_data = communication.communicate_features(
@@ -54,7 +53,7 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
     )
 
     matches = voxels.match_neighbor_boundary_voxels(
-        subdomain, boundary_labels, recv_data
+        subdomain, boundary_labels, recv_data, skip_zero=True
     )
 
     local_global_map, global_label_count = voxels.match_global_boundary_voxels(
@@ -113,9 +112,11 @@ def inlet_outlet_labels(subdomain, label_grid):
     connected = defaultdict(lambda: {"inlet": False, "outlet": False})
     for rank_data in global_data:
         for label in rank_data["inlet"]:
-            connected[label]["inlet"] = True
+            if label > 0:
+                connected[label]["inlet"] = True
         for label in rank_data["outlet"]:
-            connected[label]["outlet"] = True
+            if label > 0:
+                connected[label]["outlet"] = True
 
     connections = []
     for label_id, label in connected.items():

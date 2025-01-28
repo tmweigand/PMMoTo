@@ -12,6 +12,8 @@ def test_rdf():
 
     atom_map, atom_data = pmmoto.io.data_read.read_rdf(atom_folder)
 
+    print(atom_map)
+
     assert atom_map == {"BC1": 1, "COOH_C": 12}
 
     rdf = pmmoto.domain_generation.rdf.RDF(

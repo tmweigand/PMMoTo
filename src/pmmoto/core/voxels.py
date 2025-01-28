@@ -223,7 +223,9 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
     return data_out
 
 
-def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
+def match_neighbor_boundary_voxels(
+    subdomain, boundary_voxels, recv_data, skip_zero=False
+):
     """
     Matches boundary voxels of the subdomain with neighboring voxels and returns unique matches.
 
@@ -231,6 +233,8 @@ def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
         subdomain (object): Subdomain object containing feature information.
         boundary_voxels (dict): Dictionary with 'own' and 'neighbor' boundary voxel data.
         recv_data (dict): Received data containing neighbor voxel information.
+        skip_zero (bool): Determines if matches with label of 0 should be added.
+                         Useful for connnected componentes.
 
     Returns:
         dict: Unique matches in the format
@@ -260,7 +264,12 @@ def match_neighbor_boundary_voxels(subdomain, boundary_voxels, recv_data):
                     ],
                     axis=1,
                 )
+
                 matches = _voxels.find_unique_pairs(to_match)
+
+                if skip_zero:
+                    matches = matches[~np.any(matches == 0, axis=1)]
+
                 unique_matches = _voxels.process_matches_by_feature(
                     matches, unique_matches, subdomain.rank, feature.neighbor_rank
                 )
@@ -296,36 +305,43 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
     local_counts = [matches["label_count"] for matches in all_matches]
     boundary_counts = [len(matches) for matches in all_matches]
 
-    # Determine unique global labels relative
+    num_ranks = len(local_counts)
+
+    # Determine unique global labels relative so expect negative!
     local_starts = {}
-    for rank, _ in enumerate(local_counts):
+    for rank in range(num_ranks):
         if rank == 0:
             local_starts[rank] = boundary_label_count
         else:
-            local_labels = local_counts[rank - 1] - boundary_counts[rank - 1] - 1
-            local_starts[rank] = local_starts[rank - 1] + local_labels
+            local_starts[rank] = (
+                local_starts[rank - 1]
+                + local_counts[rank - 1]
+                - boundary_counts[rank - 1]
+                + 1
+            )
 
     ### Generate the global id for non-boundary labels as well
     final_map = {}
     label_count = 0
     for rank, match in enumerate(all_matches):
-        local_start = local_starts[rank]
-        final_map[rank] = {}
+        final_map[rank] = {0: 0}
         count = 0
-        for n in range(match["label_count"]):
+        for n in range(1, match["label_count"] + 1):
             if (rank, n) in boundary_map:
                 final_map[rank][n] = boundary_map[(rank, n)]["global_id"]
             else:
-                final_map[rank][n] = local_start + count
+                final_map[rank][n] = local_starts[rank] + count
                 count += 1
-                label_count += 1
+        label_count = count
 
-    label_count += label_count + boundary_label_count
+    max_label = label_count + local_starts[num_ranks - 1]
+    if max_label < 1:
+        max_label = boundary_label_count
 
     if own is not None and own in final_map:
-        return final_map[own], label_count
+        return final_map[own], max_label
     else:
-        return final_map, label_count
+        return final_map, max_label
 
 
 def gen_inlet_label_map(subdomain, label_grid):
