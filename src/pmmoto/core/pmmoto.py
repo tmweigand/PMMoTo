@@ -60,7 +60,6 @@ def deconstruct_grid(
     rank=None,
     pad=(1, 1, 1),
     reservoir_voxels=0,
-    periodic=False,
 ):
     """Deconstruct the grid from a single process to multiple subdomains and images"""
 

@@ -10,9 +10,11 @@ def generate_subdomain():
     THis allows rank to be passed as an argument
     """
 
-    def _create_subdomain(rank, periodic):
+    def _create_subdomain(rank, periodic=True, specified_types=None):
         box = ((0, 1.0), (0, 1.0), (0, 1.0))
-        if periodic:
+        if specified_types is not None:
+            boundary_types = specified_types
+        elif periodic:
             boundary_types = ((2, 2), (2, 2), (2, 2))
         else:
             boundary_types = ((0, 0), (0, 0), (0, 0))
@@ -58,9 +60,11 @@ def generate_simple_subdomain():
     THis allows rank to be passed as an argument
     """
 
-    def _create_subdomain(rank, periodic=True):
+    def _create_subdomain(rank, periodic=True, specified_types=None):
         box = ((0, 1.0), (0, 1.0), (0, 1.0))
-        if periodic:
+        if specified_types is not None:
+            boundary_types = specified_types
+        elif periodic:
             boundary_types = ((2, 2), (2, 2), (2, 2))
         else:
             boundary_types = ((0, 0), (0, 0), (0, 0))

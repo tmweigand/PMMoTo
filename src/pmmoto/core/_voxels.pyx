@@ -320,14 +320,9 @@ def merge_matched_voxels(all_match_data):
         tuple: (List of all matches with updated connections, total merged sets).
     """
     matches = {}
-    # local_counts = []
-    # boundary_counts = []
     local_global_map = {}
 
-    # Flatten matched sets and initialize visited flags
     for matches_by_rank in all_match_data:
-        # local_counts.append(matches_by_rank['label_count'])
-        # boundary_counts.append(len(matches_by_rank.keys()))
         
         for key, match in matches_by_rank.items():
             if key == 'label_count':
@@ -337,7 +332,7 @@ def merge_matched_voxels(all_match_data):
             local_global_map[key] = {}
 
     # Merge connected sets
-    global_id = 0
+    global_id = 1
     for key, match in matches.items(): # key is (rank,local label)
         if match["visited"]:
             continue
@@ -363,15 +358,6 @@ def merge_matched_voxels(all_match_data):
             local_global_map[conn_id]["global_id"] = global_id
 
         global_id += 1 if connections else 0
-
-
-    # Determine unique global labels
-    # for rank, _ in enumerate(local_counts):
-    #     if rank == 0:
-    #         local_global_map[rank] = global_id
-    #     else:
-    #         local_labels = local_counts[rank-1] - boundary_counts[rank-1] - 1
-    #         local_global_map[rank] = local_global_map[rank-1] + local_labels
 
     return local_global_map, global_id
 
@@ -444,7 +430,7 @@ def get_boundary_data(
 
 
 def gen_grid_to_label_map(
-    uint8_t [:, :, :] grid,
+    uint8_t [:, :, :] img,
     uint64_t [:, :, :] labels
 ):
     """
@@ -456,14 +442,14 @@ def gen_grid_to_label_map(
     cdef:
         Py_ssize_t i, j, k
         unordered_map[int, int] grid_to_label_map
-        Py_ssize_t sx = grid.shape[0]
-        Py_ssize_t sy = grid.shape[1]
-        Py_ssize_t sz = grid.shape[2]
+        Py_ssize_t sx = img.shape[0]
+        Py_ssize_t sy = img.shape[1]
+        Py_ssize_t sz = img.shape[2]
 
     for i in range(0, sx):
         for j in range(0, sy):
             for k in range(0, sz):
-                grid_to_label_map[grid[i, j, k]] = labels[i, j, k]
+                grid_to_label_map[labels[i, j, k]] = img[i, j, k]
 
     return grid_to_label_map
 
@@ -530,7 +516,7 @@ def find_unique_pairs(unsigned long[:,:] pairs):
     # Call the C++ function
     result_cpp = unique_pairs(<unsigned long*> &pairs[0, 0], nrows)
     result_size = result_cpp.size()
-    result_np = np.zeros((result_size, 2), dtype=np.uint64)
+    result_np = np.zeros([result_size, 2], dtype=np.uint64)
     for i in range(result_size):
         result_np[i, 0] = result_cpp[i].first
         result_np[i, 1] = result_cpp[i].second
