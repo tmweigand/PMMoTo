@@ -102,7 +102,7 @@ def test_subdomain_2():
     assert index == (2, 2, 2)
 
     sd_pad = sd.get_padding(pad)
-    np.testing.assert_array_equal(sd_pad, ((2, 0), (2, 2), (2, 2)))
+    np.testing.assert_array_equal(sd_pad, ((2, 0), (2, 1), (2, 2)))
 
     sd_voxels = sd.get_voxels()
     assert sd_voxels == (36, 38, 38)

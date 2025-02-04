@@ -44,21 +44,27 @@ class PaddedSubdomain(subdomain.Subdomain):
             self.reservoir_pad,
         )
 
-    def get_padding(self, pad: tuple[int, int, int]) -> tuple[tuple[int, int], ...]:
+    def get_padding(self, pad: tuple[int, ...]) -> tuple[tuple[int, int], ...]:
         """
         Add pad to boundaries of subdomain. Padding is applied to all boundaries
-        except 'end' boundary type.
+        except 'end' boundary type and 'wall' boundary type, where pad is limited to 1.
+        Check is performed for wall boundary conditions if trying to extend an image which this function is used for.
         Padding must be equal on opposite feature!
         Args:
-            pad (tuple[int, int, int]): _description_
+            pad (tuple[int, ...]): pad length for each dimension
 
         Returns:
-            tuple[int, int, int]: _description_
+             tuple[tuple[int, int], ...]: list of length == dim
         """
         _pad = [[0, 0], [0, 0], [0, 0]]
         for dim, ind in enumerate(self.index):
             if ind == 0 and self.domain.boundary_types[dim][0] == 0:
                 _pad[dim][0] = 0
+            elif ind == 0 and self.domain.boundary_types[dim][0] == 1:
+                if hasattr(self, "pad") and self.pad[dim][0] == 1:
+                    _pad[dim][0] = 0
+                else:
+                    _pad[dim][0] = 1
             else:
                 _pad[dim][0] = pad[dim]
             if (
@@ -66,6 +72,14 @@ class PaddedSubdomain(subdomain.Subdomain):
                 and self.domain.boundary_types[dim][1] == 0
             ):
                 _pad[dim][1] = 0
+            elif (
+                ind == self.domain.subdomains[dim] - 1
+                and self.domain.boundary_types[dim][1] == 1
+            ):
+                if hasattr(self, "pad") and self.pad[dim][1] == 1:
+                    _pad[dim][1] = 0
+                else:
+                    _pad[dim][1] = 1
             else:
                 _pad[dim][1] = pad[dim]
 

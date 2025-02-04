@@ -1,5 +1,8 @@
+"""test_communication.py"""
+
 import numpy as np
 from mpi4py import MPI
+import pytest
 import pmmoto
 
 
@@ -65,87 +68,85 @@ def test_update_buffer():
         reservoir_voxels=0,
     )
 
-    grid = np.zeros(sd.voxels)
+    img = np.zeros(sd.voxels)
     own_nodes = [sd.voxels[0] - 2, sd.voxels[1] - 2, sd.voxels[2] - 2]
-    grid[1:-1, 1:-1, 1:-1] = np.arange(
+    img[1:-1, 1:-1, 1:-1] = np.arange(
         own_nodes[0] * own_nodes[1] * own_nodes[2]
     ).reshape(own_nodes)
 
-    updated_grid = pmmoto.core.communication.update_buffer(sd, grid)
+    updated_grid = pmmoto.core.communication.update_buffer(sd, img)
 
     np.testing.assert_array_almost_equal(updated_grid, solution)
 
 
-def _create_subdomain(rank, periodic=True):
-    box = ((0, 1.0), (0, 1.0), (0, 1.0))
-    if periodic:
-        boundary_types = ((2, 2), (2, 2), (2, 2))
-    else:
-        boundary_types = ((0, 0), (0, 0), (0, 0))
-    inlet = ((1, 0), (0, 0), (0, 0))
-    outlet = ((0, 1), (0, 0), (0, 0))
-    voxels = (100, 100, 100)
-    subdomains = (1, 1, 1)
-    pad = (1, 1, 1)
-    reservoir_voxels = 0
+@pytest.mark.mpi(min_size=8)
+def test_communicate_features():
+    """
+    Ensure that features are being communicated to neighbor processes
+    """
 
-    pmmoto_domain = pmmoto.core.domain.Domain(
-        box=box, boundary_types=boundary_types, inlet=inlet, outlet=outlet
-    )
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
 
-    pmmoto_discretized_domain = (
-        pmmoto.core.domain_discretization.DiscretizedDomain.from_domain(
-            domain=pmmoto_domain, voxels=voxels
-        )
-    )
-
-    pmmoto_decomposed_domain = (
-        pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain(
-            discretized_domain=pmmoto_discretized_domain,
-            subdomains=subdomains,
-        )
-    )
-
-    padded_subdomain = pmmoto.core.subdomain_padded.PaddedSubdomain(
+    sd = pmmoto.initialize(
+        box=((0, 1), (0, 1), (0, 1)),
+        subdomains=(2, 2, 2),
+        voxels=(10, 10, 10),
+        boundary_types=((2, 2), (2, 2), (2, 2)),
         rank=rank,
-        decomposed_domain=pmmoto_decomposed_domain,
-        pad=pad,
-        reservoir_voxels=reservoir_voxels,
     )
-    return padded_subdomain
+
+    feature_data = {}
+    feature_types = ["faces", "edges", "corners"]
+    for feature_type in feature_types:
+        for feature_id, feature in sd.features[feature_type].items():
+            feature_data[feature_id] = rank
+
+    recv_data = pmmoto.core.communication.communicate_features(
+        subdomain=sd,
+        send_data=feature_data,
+        feature_types=feature_types,
+        unpack=True,
+    )
+
+    for feature_type in feature_types:
+        for feature_id, feature in sd.features[feature_type].items():
+            if feature_id in recv_data.keys():
+                assert recv_data[feature_id] == feature.neighbor_rank
 
 
-# @pytest.mark.mpi(min_size=8)
-# def test_communicate_features():
-#     """
-#     Ensure that features are being communicated to neighbor processes
-#     """
+@pytest.mark.mpi(min_size=8)
+def test_update_buffer_with_buffer():
+    """
+    Ensure that features are being communicated to neighbor processes
+    """
 
-#     comm = MPI.COMM_WORLD
-#     rank = comm.Get_rank()
-#     periodic = True
-#     sd = _create_subdomain(0, periodic=periodic)
-#     img = rank * np.ones(sd.voxels)
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
 
-#     subdomains = (2, 2, 2)
-#     sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
-#         sd, img, subdomains=subdomains, rank=rank, periodic=periodic
-#     )
+    sd = pmmoto.initialize(
+        box=((0, 1), (0, 1), (0, 1)),
+        subdomains=(2, 2, 2),
+        voxels=(100, 100, 100),
+        # boundary_types=((2, 2), (2, 2), (2, 2)),
+        boundary_types=((1, 1), (1, 1), (1, 1)),
+        # boundary_types=((0, 0), (0, 0), (0, 0)),
+        rank=rank,
+        pad=(1, 1, 1),
+    )
 
-#     feature_data = {}
-#     feature_types = ["faces", "edges", "corners"]
-#     for feature_type in feature_types:
-#         for feature_id, feature in sd_local.features[feature_type].items():
-#             feature_data[feature_id] = rank
+    img = rank * np.ones(sd.voxels)
 
-#     recv_data = pmmoto.core.communication.communicate_features(
-#         subdomain=sd_local,
-#         send_data=feature_data,
-#         feature_types=feature_types,
-#         unpack=True,
-#     )
+    buffer = (2, 2, 2)
 
-#     for feature_type in feature_types:
-#         for feature_id, feature in sd_local.features[feature_type].items():
-#             if feature_id in recv_data.keys():
-#                 assert recv_data[feature_id] == feature.neighbor_rank
+    update_img, halo = pmmoto.core.communication.update_buffer(
+        subdomain=sd,
+        img=img,
+        buffer=buffer,
+    )
+
+    pmmoto.io.output.save_img_data_parallel("data_out/test_comm_buffer", sd, img)
+
+    pmmoto.io.output.save_extended_img_data_parallel(
+        "data_out/test_comm_buffer_extended", sd, update_img
+    )

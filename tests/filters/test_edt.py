@@ -267,7 +267,7 @@ def test_periodic_3d():
 
     edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
 
-    pmmoto.io.output.save_grid(
+    pmmoto.io.output.save_img(
         "data_out/test_periodic_3d",
         img,
         **{
@@ -326,7 +326,7 @@ def test_pmmoto_3d_parallel(generate_simple_subdomain):
     pmmoto.core.communication.update_buffer(sd, img)
     assert np.min(img) > -1
     if rank == 0:
-        pmmoto.io.output.save_grid_data_proc(
+        pmmoto.io.output.save_img_data_proc(
             "data_out/test_edt_single",
             sd,
             img,
@@ -338,7 +338,7 @@ def test_pmmoto_3d_parallel(generate_simple_subdomain):
 
     pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd_local, img=local_img)
 
-    pmmoto.io.output.save_grid_data_parallel(
+    pmmoto.io.output.save_img_data_parallel(
         "data_out/test_edt",
         subdomain=sd_local,
         img=local_img,

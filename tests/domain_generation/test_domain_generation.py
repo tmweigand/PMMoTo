@@ -348,7 +348,7 @@ def test_gen_random_binary_grid():
     img = pmmoto.domain_generation.domain_generation.gen_random_binary_grid(
         voxels, p_zero=0.2, seed=1
     )
-    pmmoto.io.output.save_grid("data_out/test_random_binary_grid", img)
+    pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
 
 
 @pytest.mark.figures
@@ -362,4 +362,4 @@ def test_gen_smoothed_random_binary_grid():
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
 
-    pmmoto.io.output.save_grid("data_out/test_smoothed_random_binary_grid", img)
+    pmmoto.io.output.save_img("data_out/test_smoothed_random_binary_grid", img)
