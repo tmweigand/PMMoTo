@@ -8,8 +8,8 @@ def setup():
     """
     Setup for for benchmarking morphological operators
     """
-    voxels = (300, 300, 300)
-    prob_zero = 0.1
+    voxels = (600, 600, 600)
+    prob_zero = 0.3
     seed = 1
     sd = initialize(voxels)
     img = domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)

@@ -66,6 +66,7 @@ class Face(Feature):
         self.outlet = self.is_outlet(outlet)
         self.periodic_correction = self.get_periodic_correction()
         self.forward = self.get_direction()
+        self.slice = self.get_slice()
 
     def is_inlet(self, inlet) -> bool:
         """Determine if the face is on the inlet
@@ -146,6 +147,23 @@ class Face(Feature):
                 entry[dim][0] = value
 
         return entry
+
+    def get_slice(self):
+        """
+        For some situations, like with wall boundary types, it is convenient to operate
+        on the entire slice of the img as opposed to being broken down by edges and corner.
+
+        Returns:
+            list[slices]
+        """
+        face_slice = [slice(None) for _ in range(3)]
+        for dim, f_id in enumerate(self.feature_id):
+            if f_id == -1:
+                face_slice[dim] = 0
+            elif f_id == 1:
+                face_slice[dim] = -1
+
+        return tuple(face_slice)
 
 
 class Edge(Feature):
@@ -285,7 +303,9 @@ def collect_features(
             inlet=inlet[index],
             outlet=outlet[index],
         )
-        faces[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        faces[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     ### Edges
     for feature in orientation.edges.keys():
@@ -295,7 +315,9 @@ def collect_features(
             boundary_type=boundary_types[feature],
             global_boundary=global_boundary[feature],
         )
-        edges[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        edges[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     ### Corners
     for feature in orientation.corners.keys():
@@ -305,14 +327,16 @@ def collect_features(
             boundary_type=boundary_types[feature],
             global_boundary=global_boundary[feature],
         )
-        corners[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        corners[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     data_out = {"faces": faces, "edges": edges, "corners": corners}
 
     return data_out
 
 
-def get_feature_voxels(feature_id, voxels, pad=None):
+def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
     """
     Compute feature-specific voxel ranges with optional padding.
 
@@ -342,6 +366,7 @@ def get_feature_voxels(feature_id, voxels, pad=None):
           - -1: Specifies the start of the axis.
           - 0: Includes the entire range (or adjusted range if padding exists).
           - 1: Specifies the end of the axis.
+        - For wall boundary conditions, the walls are stores as neighbor.
     """
 
     # Determine if padding is active
@@ -357,23 +382,36 @@ def get_feature_voxels(feature_id, voxels, pad=None):
         loop["neighbor"] = np.zeros((len(voxels), 2), dtype=np.uint64)
 
     for n, length in enumerate(voxels):
+
         if feature_id[n] == -1:
             lower_pad = pad[n][0]
             if lower_pad != 0:
-                loop["own"][n] = [lower_pad, lower_pad * 2]
+                if boundary_type == "wall":
+                    loop["own"][n] = [1, 2]
+                else:
+                    loop["own"][n] = [lower_pad, lower_pad * 2]
             else:
                 loop["own"][n] = [0, 1]
             if "neighbor" in loop:
-                loop["neighbor"][n] = [0, lower_pad]
+                if boundary_type == "wall":
+                    loop["neighbor"][n] = [0, 1]
+                else:
+                    loop["neighbor"][n] = [0, lower_pad]
 
         elif feature_id[n] == 1:
             upper_pad = pad[n][1]
             if upper_pad != 0:
-                loop["own"][n] = [length - upper_pad * 2, length - upper_pad]
+                if boundary_type == "wall":
+                    loop["own"][n] = [length - 2, length - 1]
+                else:
+                    loop["own"][n] = [length - upper_pad * 2, length - upper_pad]
             else:
                 loop["own"][n] = [length - 1, length]
             if "neighbor" in loop:
-                loop["neighbor"][n] = [length - upper_pad, length]
+                if boundary_type == "wall":
+                    loop["neighbor"][n] = [length - 1, length]
+                else:
+                    loop["neighbor"][n] = [length - upper_pad, length]
 
         else:
             if padded:
@@ -384,34 +422,6 @@ def get_feature_voxels(feature_id, voxels, pad=None):
                 loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
 
     return loop
-
-
-# def extend_feature_voxels(feature_id, voxels, loop, pad_extend):
-#     """
-#     This functions takes the output and extends based on an additional pad.
-#     own is for the original sized image,
-#     neighbor is for the extended image.
-
-#     """
-#     extended_loop = dict(loop)
-
-#     for n, length in enumerate(voxels):
-#         if feature_id[n] == -1:
-#             extended_loop["own"][n][1] += pad_extend[n][0]
-#             extended_loop["neighbor"][n][1] += pad_extend[n][0]
-#         elif feature_id[n] == 1:
-#             extended_loop["own"][n][0] -= pad_extend[n][1]
-#             extended_loop["neighbor"][n][0] += pad_extend[n][0]
-#             extended_loop["neighbor"][n][1] += pad_extend[n][1] + pad_extend[n][0]
-#         else:
-#             extended_loop["neighbor"][n][0] += pad_extend[n][0]
-#             extended_loop["neighbor"][n][1] += pad_extend[n][0] + pad_extend[n][1]
-
-#         assert (extended_loop["neighbor"][n][1] - extended_loop["neighbor"][n][0]) == (
-#             extended_loop["own"][n][1] - extended_loop["own"][n][0]
-#         )
-
-#     return extended_loop
 
 
 def collect_periodic_features(features):

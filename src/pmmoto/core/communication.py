@@ -53,14 +53,25 @@ def update_buffer(subdomain, img, buffer=None):
     Returns:
         numpy.ndarray: The updated grid with the buffer data.
     """
-    send_data = buffer_pack(subdomain, img, buffer)
+
+    if buffer is not None:
+        pad, extended_loop = subdomain.extend_padding(buffer)
+        _img = utils.constant_pad_img(img.copy(), pad, 255)
+    else:
+        extended_loop = None
+        _img = img
+
+    send_data = buffer_pack(subdomain, _img, extended_loop)
     recv_data = communicate_features(subdomain, send_data)
-    updated_img = buffer_unpack(subdomain, img, recv_data, buffer)
+    updated_img = buffer_unpack(subdomain, _img, recv_data, extended_loop)
+
+    if buffer is not None:
+        return updated_img, pad
 
     return updated_img
 
 
-def buffer_pack(subdomain, img, pad_extend=None):
+def buffer_pack(subdomain, img, extended_loop=None):
     """
     Packs the buffer data for communication.
 
@@ -72,31 +83,25 @@ def buffer_pack(subdomain, img, pad_extend=None):
         dict: A dictionary containing the packed buffer data.
     """
 
-    assert not np.any(img == 255)
-
     # Check if img can be extended based on boundary conditions
+    # if pad_extend is not None:
+    #     _pad_extend = subdomain.extend_padding(pad_extend)
+    #     summed_pad = [
+    #         (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
+    #     ]
+    #     voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
 
-    if pad_extend is not None:
-        _pad_extend = subdomain.get_padding(pad_extend)
-        summed_pad = [
-            (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
-        ]
-        voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
-        img = utils.constant_pad_img(img.copy(), _pad_extend, 255)
+    #     img = utils.constant_pad_img(img.copy(), _pad_extend, 255)
 
     buffer_data = {}
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
-
             if feature.neighbor_rank > -1:
-                loop = feature.loop
-                if pad_extend is not None:
-                    loop = subdomain_features.get_feature_voxels(
-                        feature_id=feature_id,
-                        voxels=voxels,
-                        pad=summed_pad,
-                    )
+                if extended_loop is not None:
+                    loop = extended_loop[feature_id]
+                else:
+                    loop = feature.loop
 
                 buffer_data[feature_id] = img[
                     loop["own"][0][0] : loop["own"][0][1],
@@ -107,7 +112,7 @@ def buffer_pack(subdomain, img, pad_extend=None):
     return buffer_data
 
 
-def buffer_unpack(subdomain, img, features_recv, pad_extend=None):
+def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
     """
     This function updates the padding of a subdomain.
     Alternatively, if pad_extend is a tuple of pad size like: ((1, 1), (1, 1), (1, 1)),
@@ -116,26 +121,25 @@ def buffer_unpack(subdomain, img, features_recv, pad_extend=None):
     buffered_img = img.copy()
 
     # Check if img can be extended based on boundary conditions
-    if pad_extend is not None:
-        _pad_extend = subdomain.get_padding(pad_extend)
+    # if pad_extend is not None:
+    #     _pad_extend = subdomain.extend_padding(pad_extend)
 
-        summed_pad = [
-            (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
-        ]
-        voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
-        buffered_img = utils.constant_pad_img(buffered_img, _pad_extend, 255)
+    #     summed_pad = [
+    #         (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
+    #     ]
+    #     voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
+
+    #     buffered_img = utils.constant_pad_img(buffered_img, _pad_extend, 255)
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
         for feature_id, feature in subdomain.features[feature_type].items():
             if feature_id in features_recv:
-                loop = feature.loop
-                if pad_extend is not None:
-                    loop = subdomain_features.get_feature_voxels(
-                        feature_id=feature_id,
-                        voxels=voxels,
-                        pad=summed_pad,
-                    )
+
+                if extended_loop is not None:
+                    loop = extended_loop[feature_id]
+                else:
+                    loop = feature.loop
 
                 buffered_img[
                     loop["neighbor"][0][0] : loop["neighbor"][0][1],
@@ -143,54 +147,10 @@ def buffer_unpack(subdomain, img, features_recv, pad_extend=None):
                     loop["neighbor"][2][0] : loop["neighbor"][2][1],
                 ] = features_recv[feature_id]
 
-    # assert not np.any(buffered_img == 255)
+    buffered_img = subdomain.set_wall_bcs(buffered_img)
+    assert not np.any(buffered_img == 255)
 
-    if pad_extend is not None:
-        return buffered_img, _pad_extend
-    else:
-        return buffered_img
-
-
-# def halo_pack(subdomain, img, pad):
-#     """
-#     Grab The Slices (based on Size) to pack and send to Neighbors
-#     for faces, edges and corners
-#     """
-
-#     buffer_data = {}
-#     feature_types = ["faces", "edges", "corners"]
-#     for feature_type in feature_types:
-#         for feature_id, feature in subdomain.features[feature_type].items():
-#             if feature.neighbor_rank > -1:
-#                 loop = subdomain_features.get_feature_voxels(
-#                     feature_id, subdomain.voxels, pad
-#                 )
-#                 buffer_data[feature_id] = img[
-#                     loop["own"][0][0] : loop["own"][0][1],
-#                     loop["own"][1][0] : loop["own"][1][1],
-#                     loop["own"][2][0] : loop["own"][2][1],
-#                 ]
-
-#     return buffer_data
-
-
-# def halo_unpack(subdomain, img, pad, features_recv):
-#     """ """
-#     buffer_data = {}
-#     feature_types = ["faces", "edges", "corners"]
-#     for feature_type in feature_types:
-#         for feature_id, feature in subdomain.features[feature_type].items():
-#             if feature.neighbor_rank > -1:
-#                 loop = subdomain_features.get_feature_voxels(
-#                     feature_id, subdomain.voxels, pad
-#                 )
-#                 img[
-#                     loop["neighbor"][0][0] : loop["neighbor"][0][1],
-#                     loop["neighbor"][1][0] : loop["neighbor"][1][1],
-#                     loop["neighbor"][2][0] : loop["neighbor"][2][1],
-#                 ] = features_recv[feature_id]
-
-#     return buffer_data
+    return buffered_img
 
 
 def communicate_features(subdomain, send_data, unpack=True, feature_types=None):

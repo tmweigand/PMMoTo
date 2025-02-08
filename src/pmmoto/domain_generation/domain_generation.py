@@ -106,9 +106,9 @@ def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     _img = _domain_generation.gen_pm_sphere(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    print(spheres)
-    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm = porousmedia.gen_pm(subdomain, _img)
     pm.img = communication.update_buffer(subdomain, pm.img)
+    pm.img = subdomain.set_wall_bcs(pm.img)
 
     utils.check_grid(subdomain, pm.img)
 

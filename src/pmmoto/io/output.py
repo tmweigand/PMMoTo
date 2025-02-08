@@ -69,9 +69,9 @@ def save_extended_img_data_parallel(
         io_utils.check_file_path(file_name)
     comm.barrier()
 
-    extension = [
-        ((i - s) / 2, (i - s) / 2) for i, s in zip(img.shape, subdomain.voxels)
-    ]
+    # extension = [
+    #     ((i - s) / 2, (i - s) / 2) for i, s in zip(img.shape, subdomain.voxels)
+    # ]
 
     save_extended_img_data_proc(file_name, subdomain, img, extension)
 
@@ -142,15 +142,12 @@ def save_extended_img_data_proc(file_name, subdomain, img, extension):
     point_data_info = {"img": (img.dtype, 1)}
 
     origin = (0, 0, 0)
-    # origin = (-extension[0][0], -extension[1][0], extension[2][0])
+    # origin = (-extension[0][0], -extension[1][0], -extension[2][0])
 
     start = [s - e[0] for s, e in zip(subdomain.start, extension)]
     end = [
         s + v + e[1] for s, v, e in zip(subdomain.start, subdomain.voxels, extension)
     ]
-
-    if subdomain.rank == 0:
-        print(start, end)
 
     evtk.imageToVTK(
         path=file_proc + str(subdomain.rank),

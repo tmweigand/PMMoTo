@@ -61,9 +61,13 @@ def generate_simple_subdomain():
     """
 
     def _create_subdomain(
-        rank, periodic=True, specified_types=None, voxels_in=(10, 10, 10)
+        rank,
+        box=((0, 1.0), (0, 1.0), (0, 1.0)),
+        periodic=True,
+        specified_types=None,
+        voxels_in=(10, 10, 10),
     ):
-        box = ((0, 1.0), (0, 1.0), (0, 1.0))
+
         if specified_types is not None:
             boundary_types = specified_types
         elif periodic:

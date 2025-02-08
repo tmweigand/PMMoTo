@@ -127,15 +127,16 @@ def test_update_buffer_with_buffer():
     sd = pmmoto.initialize(
         box=((0, 1), (0, 1), (0, 1)),
         subdomains=(2, 2, 2),
-        voxels=(100, 100, 100),
+        voxels=(10, 10, 10),
         # boundary_types=((2, 2), (2, 2), (2, 2)),
-        boundary_types=((1, 1), (1, 1), (1, 1)),
-        # boundary_types=((0, 0), (0, 0), (0, 0)),
+        # boundary_types=((1, 1), (1, 1), (1, 1)),
+        boundary_types=((0, 0), (0, 0), (0, 0)),
         rank=rank,
         pad=(1, 1, 1),
     )
 
-    img = rank * np.ones(sd.voxels)
+    img = (rank + 1) * np.ones(sd.voxels)
+    img = sd.set_wall_bcs(img)
 
     buffer = (2, 2, 2)
 
@@ -145,8 +146,10 @@ def test_update_buffer_with_buffer():
         buffer=buffer,
     )
 
-    pmmoto.io.output.save_img_data_parallel("data_out/test_comm_buffer", sd, img)
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
+    )
 
     pmmoto.io.output.save_extended_img_data_parallel(
-        "data_out/test_comm_buffer_extended", sd, update_img
+        "data_out/test_comm_buffer_extended", sd, update_img, halo
     )

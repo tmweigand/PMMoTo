@@ -1,5 +1,6 @@
 """subdomain_padded.py"""
 
+import warnings
 import numpy as np
 from ..core import subdomain
 from ..core import subdomain_features
@@ -27,10 +28,12 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.voxels = self.get_voxels()
         self.box = self.get_box()
         self.global_boundary = self.get_global_boundary()
-        self.boundary_types = self.get_boundary_types(self.global_boundary)
+        self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
+        self.boundary_types = self.get_boundary_types(
+            self.global_boundary, self.neighbor_ranks
+        )
         self.outlet = self.get_outlet()
         self.start = self.get_start()
-        self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
         self.features = subdomain_features.collect_features(
@@ -56,6 +59,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         Returns:
              tuple[tuple[int, int], ...]: list of length == dim
         """
+
         _pad = [[0, 0], [0, 0], [0, 0]]
         for dim, ind in enumerate(self.index):
             if ind == 0 and self.domain.boundary_types[dim][0] == 0:
@@ -76,14 +80,56 @@ class PaddedSubdomain(subdomain.Subdomain):
                 ind == self.domain.subdomains[dim] - 1
                 and self.domain.boundary_types[dim][1] == 1
             ):
-                if hasattr(self, "pad") and self.pad[dim][1] == 1:
-                    _pad[dim][1] = 0
-                else:
-                    _pad[dim][1] = 1
+                _pad[dim][1] = 1
             else:
                 _pad[dim][1] = pad[dim]
 
         return tuple(tuple(sublist) for sublist in _pad)
+
+    def extend_padding(self, pad: tuple[int, ...]):
+        """
+        Extend pad to boundaries of subdomain. Padding is applied to all boundaries
+        except 'end' boundary type and 'wall' boundary type, where pad is limited to 1.
+        Check is performed for wall boundary conditions if trying to extend an image which this function is used for.
+        Padding must be equal on opposite feature!
+        Args:
+            pad (tuple[int, ...]): pad length for each dimension
+
+        Returns:
+             dict:
+        """
+
+        _pad = [[0, 0], [0, 0], [0, 0]]
+        for dim, ind in enumerate(self.index):
+            if ind == 0 and self.domain.boundary_types[dim][0] in {0, 1}:
+                _pad[dim][0] = 0
+            else:
+                _pad[dim][0] = pad[dim]
+            if ind == self.domain.subdomains[dim] - 1 and self.domain.boundary_types[
+                dim
+            ][1] in {0, 1}:
+                _pad[dim][1] = 0
+
+            else:
+                _pad[dim][1] = pad[dim]
+
+        total_pad = [(s[0] + p[0], s[1] + p[1]) for s, p in zip(self.pad, _pad)]
+        voxels = [v + p[0] + p[1] for v, p in zip(self.voxels, _pad)]
+        pad = tuple(tuple(sublist) for sublist in _pad)
+
+        # get loop for extended img
+        loop = {}
+        feature_types = ["faces", "edges", "corners"]
+        for feature_type in feature_types:
+            for feature_id, feature in self.features[feature_type].items():
+                if feature.neighbor_rank > -1:
+                    loop[feature_id] = subdomain_features.get_feature_voxels(
+                        feature_id=feature_id,
+                        voxels=voxels,
+                        pad=total_pad,
+                    )
+
+        return pad, loop
 
     def get_voxels(self) -> tuple[int, ...]:
         """

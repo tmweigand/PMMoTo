@@ -13,53 +13,44 @@ __all__ = [
 ]
 
 
-def _connect_components(img):
+def connect_components(img, subdomain, return_label_count=True):
     """
-    Perform a connected components analysis of the given img
+    Create sets for all phases in img.
+
+    Zero is background and will not join to any other voxel.
     """
+
+    # max_label = label_count
     label_img, label_count = cc3d.connected_components(
         img, return_N=True, out_dtype=np.uint64
     )
-    label_count += 1
 
-    return label_img, label_count
+    if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
+        label_img, label_count = connect_subdomain_boundaries(
+            subdomain, label_img, label_count
+        )
 
-
-def connect_components(
-    img,
-    subdomain,
-):
-    """
-    Create sets for all phases in img
-    """
-
-    label_img, label_count = _connect_components(img)
-
-    if subdomain.domain.num_subdomains > 1:
-        connect_subdomain_boundaries(subdomain, label_img, label_count)
-
-    return label_img
+    if return_label_count:
+        return label_img, label_count
+    else:
+        return label_img
 
 
-def connect_subdomain_boundaries(subdomain, label_img, label_count):
+def connect_subdomain_boundaries(subdomain, label_grid, label_count):
     """_summary_
 
     Args:
         subdomain (_type_): _description_
-        label_img (_type_): _description_
+        label_grid (_type_): _description_
         label_count (_type_): _description_
     """
-    data = voxels.get_boundary_voxels(
-        subdomain=subdomain,
-        img=label_img,
+    boundary_labels = voxels.get_boundary_voxels(
+        subdomain=subdomain, img=label_grid, neighbors_only=True
     )
 
-    send_data, own_data = voxels.boundary_voxels_pack(subdomain, data)
-
-    if own_data or send_data:
-        if send_data:
-            recv_data = communication.communicate(subdomain, send_data, unpack=True)
-            own_data.update(recv_data)
+    recv_data = communication.communicate_features(
+        subdomain=subdomain, send_data=boundary_labels
+    )
 
     matches = voxels.match_neighbor_boundary_voxels(
         subdomain, boundary_labels, recv_data, skip_zero=True
@@ -69,7 +60,9 @@ def connect_subdomain_boundaries(subdomain, label_img, label_count):
         subdomain, matches, label_count
     )
 
-    voxels.renumber_image(label_img, local_global_map)
+    label_grid = voxels.renumber_image(label_grid, local_global_map)
+
+    return label_grid, global_label_count
 
 
 def gen_grid_to_label_map(grid, label_grid):

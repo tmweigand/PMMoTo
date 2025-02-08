@@ -325,29 +325,12 @@ def test_pmmoto_3d_parallel(generate_simple_subdomain):
     img = pmmoto.core.utils.constant_pad_img(img, sd.pad, -1)
     pmmoto.core.communication.update_buffer(sd, img)
     assert np.min(img) > -1
-    if rank == 0:
-        pmmoto.io.output.save_img_data_proc(
-            "data_out/test_edt_single",
-            sd,
-            img,
-        )
 
     _, local_edt_img = pmmoto.core.pmmoto.deconstruct_grid(
         sd, pmmoto_old_edt, subdomains=subdomains, rank=rank
     )
 
     pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd_local, img=local_img)
-
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_edt",
-        subdomain=sd_local,
-        img=local_img,
-        **{
-            "edt": pmmoto_edt,
-            "true_edt": local_edt_img,
-            "error": np.abs(local_edt_img - pmmoto_edt),
-        },
-    )
 
     np.testing.assert_array_almost_equal(
         local_edt_img * local_edt_img, pmmoto_edt * pmmoto_edt

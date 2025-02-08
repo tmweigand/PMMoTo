@@ -75,7 +75,7 @@ def gen_struct_element(resolution, radius):
 
 def addition(subdomain, img, radius, fft=False):
     """
-    Perform a morphological dilation on a multiphase domain
+    Perform a morphological dilation on a binary domain
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
@@ -102,8 +102,7 @@ def addition(subdomain, img, radius, fft=False):
 
     grid_out = utils.unpad(_grid_out, halo)
 
-    if np.sum(halo) == 0:
-        np.testing.assert_array_equal(grid_out, _grid_out)
+    grid_out = subdomain.set_wall_bcs(grid_out)
 
     return grid_out
 
@@ -150,6 +149,7 @@ def subtraction(subdomain, img, radius, fft=False):
         _grid_out = np.where((_grid_distance <= radius * radius), 0, 1).astype(np.uint8)
 
     grid_out = utils.unpad(_grid_out, halo)
+    grid_out = subdomain.set_wall_bcs(grid_out)
 
     return grid_out
 

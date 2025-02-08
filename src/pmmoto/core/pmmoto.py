@@ -95,6 +95,8 @@ def deconstruct_grid(
             shape=padded_subdomain.voxels,
         )
 
+        local_grid = padded_subdomain.set_wall_bcs(local_grid)
+
     else:
         padded_subdomain = {}
         local_grid = {}
@@ -111,5 +113,7 @@ def deconstruct_grid(
                 start=padded_subdomain[n].start,
                 shape=padded_subdomain[n].voxels,
             )
+
+            local_grid[n] = padded_subdomain[n].set_wall_bcs(local_grid[n])
 
     return padded_subdomain, local_grid

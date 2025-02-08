@@ -15,68 +15,63 @@ def setup():
 
 
 @profiling_utils.profile("profiling/morph_addition_fft_small_r.prof")
-def test_morp_addition_fft_small_r():
+def test_morp_addition_fft_small_r(sd, img, radius):
     """
-    Profiling for edt.
-    To run:
-        python profiling/edt_profiling.py
-    Note: Cannot be used on python 12!!!!
+    Wrapper to addition
     """
-    radius = 0.004
-    fft = True
-    sd, img = setup()
+
     morp_addition_fft = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
         img=img,
         radius=radius,
-        fft=fft,
+        fft=True,
     )
 
 
 @profiling_utils.profile("profiling/morph_addition_fft_large_r.prof")
-def test_morp_addition_fft_large_r():
-    """ """
-    radius = 0.1
-    fft = True
-    sd, img = setup()
+def test_morp_addition_fft_large_r(sd, img, radius):
+    """
+    Wrapper to addition
+    """
     morp_addition_fft = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
         img=img,
         radius=radius,
-        fft=fft,
+        fft=True,
     )
 
 
 @profiling_utils.profile("profiling/morph_addition_edt_small_r.prof")
-def test_morp_addition_edt_small_r():
-    """ """
-    radius = 0.004
-    fft = False
-    sd, img = setup()
+def test_morp_addition_edt_small_r(sd, img, radius):
+    """
+    Wrapper to addition
+    """
     morp_addition_edt = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
         img=img,
         radius=radius,
-        fft=fft,
+        fft=False,
     )
 
 
 @profiling_utils.profile("profiling/morph_addition_edt_large_r.prof")
-def test_morp_addition_edt_large_r():
-    """ """
-    radius = 0.1
-    fft = False
-    sd, img = setup()
+def test_morp_addition_edt_large_r(sd, img, radius):
+    """
+    Wrapper to addition
+    """
     morp_addition_edt = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
         img=img,
         radius=radius,
-        fft=fft,
+        fft=False,
     )
 
 
 if __name__ == "__main__":
-    test_morp_addition_fft_small_r()
-    test_morp_addition_fft_large_r()
-    test_morp_addition_edt_small_r()
-    test_morp_addition_edt_large_r()
+    small_radius = 0.004
+    large_radius = 0.1
+    sd, img = setup()
+    test_morp_addition_fft_small_r(sd, img, small_radius)
+    test_morp_addition_fft_large_r(sd, img, large_radius)
+    test_morp_addition_edt_small_r(sd, img, small_radius)
+    test_morp_addition_edt_large_r(sd, img, large_radius)
