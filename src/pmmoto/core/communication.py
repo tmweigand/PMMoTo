@@ -1,9 +1,6 @@
 """communication.py"""
 
-# from . import orientation
-from . import subdomain_features
 from . import utils
-import copy
 
 import numpy as np
 from mpi4py import MPI
@@ -83,16 +80,6 @@ def buffer_pack(subdomain, img, extended_loop=None):
         dict: A dictionary containing the packed buffer data.
     """
 
-    # Check if img can be extended based on boundary conditions
-    # if pad_extend is not None:
-    #     _pad_extend = subdomain.extend_padding(pad_extend)
-    #     summed_pad = [
-    #         (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
-    #     ]
-    #     voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
-
-    #     img = utils.constant_pad_img(img.copy(), _pad_extend, 255)
-
     buffer_data = {}
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
@@ -119,17 +106,6 @@ def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
     a new image is returned. Boundary conditions are applied to the extended image.
     """
     buffered_img = img.copy()
-
-    # Check if img can be extended based on boundary conditions
-    # if pad_extend is not None:
-    #     _pad_extend = subdomain.extend_padding(pad_extend)
-
-    #     summed_pad = [
-    #         (s[0] + p[0], s[1] + p[1]) for s, p in zip(subdomain.pad, _pad_extend)
-    #     ]
-    #     voxels = [v + p[0] + p[1] for v, p in zip(subdomain.voxels, _pad_extend)]
-
-    #     buffered_img = utils.constant_pad_img(buffered_img, _pad_extend, 255)
 
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
