@@ -1,5 +1,7 @@
 import numpy as np
 
+from . import communication
+
 
 class PorousMedia:
     """
@@ -10,6 +12,7 @@ class PorousMedia:
         self.subdomain = subdomain
         self.img = img
         self.porosity = None
+        self.set_wall_bcs()
 
         # Set solid phase inlet/outlet to zeros
         _inlet = np.zeros([2, 3 * 2], dtype=np.uint8)
@@ -22,20 +25,20 @@ class PorousMedia:
 
     def set_wall_bcs(self):
         """
-        If wall boundary conditions are specified, force solid on external boundaries
+        If wall boundary conditions are specified, force solid on external boundaries.
+        For wall boundary conditions, the walls are stores as neighbor.
         """
-        if self.subdomain.boundaries[0] == 1:
-            self.img[0, :, :] = 0
-        if self.subdomain.boundaries[1] == 1:
-            self.img[-1, :, :] = 0
-        if self.subdomain.boundaries[2] == 1:
-            self.img[:, 0, :] = 0
-        if self.subdomain.boundaries[3] == 1:
-            self.img[:, -1, :] = 0
-        if self.subdomain.boundaries[4] == 1:
-            self.img[:, :, 0] = 0
-        if self.subdomain.boundaries[5] == 1:
-            self.img[:, :, -1] = 0
+        feature_types = ["faces", "edges", "corners"]
+        for feature_type in feature_types:
+            for feature_id, feature in self.subdomain.features[feature_type].items():
+                if feature.boundary_type == "wall":
+                    self.img[
+                        feature.loop["neighbor"][0][0] : feature.loop["neighbor"][0][1],
+                        feature.loop["neighbor"][1][0] : feature.loop["neighbor"][1][1],
+                        feature.loop["neighbor"][2][0] : feature.loop["neighbor"][2][1],
+                    ] = 0
+
+        self.img = communication.update_buffer(self.subdomain, self.img)
 
     # def get_porosity(self):
     #     """
@@ -44,7 +47,7 @@ class PorousMedia:
     #     self.porosity = 1.0 - stats.get_volume_fraction(self.subdomain, self.grid, 0)
 
 
-def gen_pm(subdomain, img, res_size=0):
+def gen_pm(subdomain, img):
     """
     Initialize the porousmedia class and set inlet/outlet/wall bcs
     Gather loop_info for efficient looping

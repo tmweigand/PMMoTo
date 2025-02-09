@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from . import communication
 from . import orientation
 from ..core import domain_discretization
 from ..core import subdomain_features
@@ -23,11 +24,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.voxels = self.get_voxels()
         self.box = self.get_box()
         self.global_boundary = self.get_global_boundary()
-        self.boundary_types = self.get_boundary_types(self.global_boundary)
+        self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
+        self.boundary_types = self.get_boundary_types(
+            self.global_boundary, self.neighbor_ranks
+        )
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
         self.start = self.get_start()
-        self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
         self.features = subdomain_features.collect_features(
@@ -81,7 +84,11 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     def get_global_boundary(self):
         """
-        Determine if the features are on the domain boundary
+        Determine if the features are on the domain boundary.
+        For a feature to be on a domain boundary, the following must be true:
+
+            subdomain index must contain either 0 or number of subdomains
+
         """
 
         global_boundary = {}
@@ -108,16 +115,27 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return global_boundary
 
-    def get_boundary_types(self, global_boundary):
-        """_summary_
+    def get_boundary_types(self, global_boundary, neighbor_ranks):
+        """
+        Determines the boundary type for each feature in the computational domain.
+
+        Args:
+            global_boundary (dict): A dictionary mapping features to boolean values indicating
+                                    whether they belong to the global boundary.
+            neighbor_ranks (dict): A dictionary mapping features to the neighbor process rank.
 
         Returns:
-            _type_: _description_
+            dict: A dictionary mapping each feature to its corresponding boundary type.
+                Possible values: "end", "wall", "periodic", or "internal".
+
+        Raises:
+            Exception: If an unexpected boundary type is encountered.
         """
+
         boundary_type = {}
         features = orientation.get_features()
         for feature in features:
-            if global_boundary[feature]:
+            if global_boundary.get(feature, False) or neighbor_ranks[feature] < 0:
                 _boundary_type = []
                 for ind, f_id, subdomains, boundary_types in zip(
                     self.index,
@@ -192,3 +210,16 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             _start[dim] = sd_voxels * _index
 
         return tuple(_start)
+
+    def set_wall_bcs(self, img):
+        """
+        If wall boundary conditions are specified, force solid on external boundaries.
+
+        """
+        feature_types = ["faces"]
+        for feature_type in feature_types:
+            for feature_id, feature in self.features[feature_type].items():
+                if feature.boundary_type == "wall":
+                    img[feature.slice] = 0
+
+        return img

@@ -10,9 +10,9 @@ __all__ = ["initialize", "deconstruct_grid"]
 
 
 def initialize(
-    box,
-    subdomains,
     voxels,
+    box=((0, 1.0), (0, 1.0), (0, 1)),
+    subdomains=(1, 1, 1),
     boundary_types=((0, 0), (0, 0), (0, 0)),
     inlet=((0, 0), (0, 0), (0, 0)),
     outlet=((0, 0), (0, 0), (0, 0)),
@@ -61,7 +61,11 @@ def deconstruct_grid(
     pad=(1, 1, 1),
     reservoir_voxels=0,
 ):
-    """Deconstruct the grid from a single process to multiple subdomains and images"""
+    """
+    Deconstruct the grid from a single process to multiple subdomains and images
+
+    The shape of the img must equal subdomain.domain.voxels!
+    """
 
     num_procs = np.prod(subdomains)
     _domain = subdomain.domain
@@ -91,6 +95,8 @@ def deconstruct_grid(
             shape=padded_subdomain.voxels,
         )
 
+        local_grid = padded_subdomain.set_wall_bcs(local_grid)
+
     else:
         padded_subdomain = {}
         local_grid = {}
@@ -107,5 +113,7 @@ def deconstruct_grid(
                 start=padded_subdomain[n].start,
                 shape=padded_subdomain[n].voxels,
             )
+
+            local_grid[n] = padded_subdomain[n].set_wall_bcs(local_grid[n])
 
     return padded_subdomain, local_grid

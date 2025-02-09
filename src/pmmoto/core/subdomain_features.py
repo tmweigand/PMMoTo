@@ -66,6 +66,7 @@ class Face(Feature):
         self.outlet = self.is_outlet(outlet)
         self.periodic_correction = self.get_periodic_correction()
         self.forward = self.get_direction()
+        self.slice = self.get_slice()
 
     def is_inlet(self, inlet) -> bool:
         """Determine if the face is on the inlet
@@ -134,6 +135,36 @@ class Face(Feature):
                 forward = False
         return forward
 
+    def index_to_entry(self, entry, value):
+        """
+        Use the feature id to set a value of a list:
+            ((n,n),(n,n),(n,n))
+        """
+        for dim, f_id in enumerate(self.feature_id):
+            if f_id > 0:
+                entry[dim][1] = value
+            elif f_id < 0:
+                entry[dim][0] = value
+
+        return entry
+
+    def get_slice(self):
+        """
+        For some situations, like with wall boundary types, it is convenient to operate
+        on the entire slice of the img as opposed to being broken down by edges and corner.
+
+        Returns:
+            list[slices]
+        """
+        face_slice = [slice(None) for _ in range(3)]
+        for dim, f_id in enumerate(self.feature_id):
+            if f_id == -1:
+                face_slice[dim] = 0
+            elif f_id == 1:
+                face_slice[dim] = -1
+
+        return tuple(face_slice)
+
 
 class Edge(Feature):
     """
@@ -186,22 +217,6 @@ class Edge(Feature):
 
         return global_boundary
 
-    # def get_extension(self, extend_domain, bounds):
-    #     """
-    #     Determine the span of the feature based on extend
-    #     """
-    #     _faces = orientation.edges[self.feature_id]["ID"]
-    #     for n, f in enumerate(_faces):
-    #         if f > 0:
-    #             self.extend[n][0] = bounds[n][-1] - extend_domain[n]
-    #             self.extend[n][1] = bounds[n][-1]
-    #         elif f < 0:
-    #             self.extend[n][0] = bounds[n][0]
-    #             self.extend[n][1] = bounds[n][0] + extend_domain[n]
-    #         else:
-    #             self.extend[n][0] = 0
-    #             self.extend[n][1] = 0
-
 
 class Corner(Feature):
     """
@@ -252,22 +267,6 @@ class Corner(Feature):
 
         return global_boundary
 
-    # def get_extension(self, extend_domain, bounds):
-    #     """
-    #     Determine the span of the feature based on extend
-    #     """
-    #     faces = orientation.corners[self.feature_id]["ID"]
-    #     for n, f in enumerate(faces):
-    #         if f > 0:
-    #             self.extend[n][0] = bounds[n][-1] - extend_domain[n]
-    #             self.extend[n][1] = bounds[n][-1]
-    #         elif f < 0:
-    #             self.extend[n][0] = bounds[n][0]
-    #             self.extend[n][1] = bounds[n][0] + extend_domain[n]
-    #         else:
-    #             self.extend[n][0] = 0
-    #             self.extend[n][1] = 0
-
 
 def collect_features(
     neighbor_ranks,
@@ -304,7 +303,9 @@ def collect_features(
             inlet=inlet[index],
             outlet=outlet[index],
         )
-        faces[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        faces[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     ### Edges
     for feature in orientation.edges.keys():
@@ -314,7 +315,9 @@ def collect_features(
             boundary_type=boundary_types[feature],
             global_boundary=global_boundary[feature],
         )
-        edges[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        edges[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     ### Corners
     for feature in orientation.corners.keys():
@@ -324,51 +327,92 @@ def collect_features(
             boundary_type=boundary_types[feature],
             global_boundary=global_boundary[feature],
         )
-        corners[feature].loop = get_feature_voxels(feature, voxels, pad=pad)
+        corners[feature].loop = get_feature_voxels(
+            feature, voxels, boundary_type=boundary_types[feature], pad=pad
+        )
 
     data_out = {"faces": faces, "edges": edges, "corners": corners}
 
     return data_out
 
 
-def get_feature_voxels(feature_id, voxels, pad=None):
-    """_summary_
+def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
+    """
+    Compute feature-specific voxel ranges with optional padding.
+
+    This function generates voxel ranges for a given feature based on the `feature_id`,
+    `voxels`, and an optional `pad` parameter. It returns a dictionary with ranges for
+    "own" voxels and, if applicable, "neighbor" voxels.
 
     Args:
-        grid (_type_): _description_
-        pad (_type_, optional): _description_. Defaults to None.
+        feature_id (list[int]): A list of feature identifiers, where each value
+                                specifies the direction or category (-1, 0, or 1).
+        voxels (list[int]): A list of integers representing the lengths of the voxel
+                            dimensions along each axis.
+        pad (list[list[int]], optional): A 2D list specifying the padding for each axis.
+                                         Each inner list contains two integers:
+                                         [padding_start, padding_end]. Defaults to None.
 
     Returns:
-        _type_: _description_
+        dict: A dictionary with keys:
+              - "own": A NumPy array of shape (3, 2) containing voxel ranges for the
+                feature's own voxels along each axis.
+              - "neighbor" (optional): A NumPy array of shape (3, 2) containing voxel ranges
+                for neighboring voxels along each axis if padding is specified.
+
+    Notes:
+        - If `pad` is not provided or contains only zeros, the function assumes no padding.
+        - The `feature_id` determines how voxel ranges are computed for each axis:
+          - -1: Specifies the start of the axis.
+          - 0: Includes the entire range (or adjusted range if padding exists).
+          - 1: Specifies the end of the axis.
+        - For wall boundary conditions, the walls are stores as neighbor.
     """
-    padded = True
-    if pad is None or np.sum(pad) == 0:
-        padded = False
-        pad = [[0, 0], [0, 0], [0, 0]]
-        loop = {
-            "own": np.zeros([3, 2], dtype=np.uint64),
-        }
-    else:
-        loop = {
-            "own": np.zeros([3, 2], dtype=np.uint64),
-            "neighbor": np.zeros([3, 2], dtype=np.uint64),
-        }
+
+    # Determine if padding is active
+    padded = pad is not None and np.any(pad)
+
+    # Default pad values
+    if not padded:
+        pad = np.zeros((len(voxels), 2), dtype=int)
+
+    # Initialize loop dictionary
+    loop = {"own": np.zeros((len(voxels), 2), dtype=np.uint64)}
+    if padded:
+        loop["neighbor"] = np.zeros((len(voxels), 2), dtype=np.uint64)
 
     for n, length in enumerate(voxels):
+
         if feature_id[n] == -1:
-            if pad[n][0] != 0:
-                loop["own"][n] = [pad[n][0], pad[n][0] * 2]
+            lower_pad = pad[n][0]
+            if lower_pad != 0:
+                if boundary_type == "wall":
+                    loop["own"][n] = [1, 2]
+                else:
+                    loop["own"][n] = [lower_pad, lower_pad * 2]
             else:
                 loop["own"][n] = [0, 1]
             if "neighbor" in loop:
-                loop["neighbor"][n] = [0, pad[n][0]]
+                if boundary_type == "wall":
+                    loop["neighbor"][n] = [0, 1]
+                else:
+                    loop["neighbor"][n] = [0, lower_pad]
+
         elif feature_id[n] == 1:
-            if pad[n][1] != 0:
-                loop["own"][n] = [length - pad[n][1] * 2, length - pad[n][1]]
+            upper_pad = pad[n][1]
+            if upper_pad != 0:
+                if boundary_type == "wall":
+                    loop["own"][n] = [length - 2, length - 1]
+                else:
+                    loop["own"][n] = [length - upper_pad * 2, length - upper_pad]
             else:
                 loop["own"][n] = [length - 1, length]
             if "neighbor" in loop:
-                loop["neighbor"][n] = [length - pad[n][1], length]
+                if boundary_type == "wall":
+                    loop["neighbor"][n] = [length - 1, length]
+                else:
+                    loop["neighbor"][n] = [length - upper_pad, length]
+
         else:
             if padded:
                 loop["own"][n] = [pad[n][0], length - pad[n][1]]

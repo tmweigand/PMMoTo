@@ -1,5 +1,5 @@
-import pmmoto
 import profiling_utils
+import pmmoto
 
 
 @profiling_utils.profile("profiling/edt_periodic.prof")
