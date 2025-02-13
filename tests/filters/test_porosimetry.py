@@ -23,7 +23,7 @@ def test_porosimetry_sizes():
     values = pmmoto.filters.porosimetry.get_sizes(
         min_log_value, max_value, num_values, "log"
     )
-    print(values)
+    # print(values)
     # log test
     np.testing.assert_array_almost_equal(values, [10.0, 4.64158883, 2.15443469, 1.0])
 
@@ -36,6 +36,16 @@ def test_porosimetry_sizes_input_fail():
 
     values = pmmoto.filters.porosimetry.get_sizes(5, 1, 5)
     values = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
+
+
+def test_extract_subsection():
+    """
+    Check that extract subsection extracts from img correctly
+    """
+    img = np.random.rand(100, 100)
+    shape = (50, 50)
+    result = pmmoto.filters.porosimetry.extract_subsection(img, shape)
+    assert result.shape == (50, 50), f"Expected shape (50, 50), got {result.shape}"
 
 
 def test_porosimetry(generate_simple_subdomain):
@@ -71,6 +81,11 @@ def test_porosimetry(generate_simple_subdomain):
     morph_subtract = pmmoto.filters.morphological_operators.subtraction(
         subdomain=sd, img=pm.img, radius=radius, fft=False
     )
+
+    # Test mio mode
+    sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
+    mio = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "mio")
+    print(mio)
 
     # Visualize the data
     pmmoto.io.output.save_img_data_parallel(
