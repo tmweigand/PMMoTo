@@ -17,16 +17,15 @@ def test_porosimetry_sizes():
     )
 
     # linear test
-    np.testing.assert_array_almost_equal(values, [0, 3.33333333, 6.66666667, 10])
+    np.testing.assert_array_almost_equal(values, [10.0, 6.666667, 3.333333, 0.0])
 
+    min_log_value = 1
     values = pmmoto.filters.porosimetry.get_sizes(
-        min_value, max_value, num_values, "log"
+        min_log_value, max_value, num_values, "log"
     )
-
+    print(values)
     # log test
-    # np.testing.assert_array_almost_equal_nulp(
-    #     values, [1.000000e00, 2.154435e03, 4.641589e06, 1.000000e10]
-    # )
+    np.testing.assert_array_almost_equal(values, [10.0, 4.64158883, 2.15443469, 1.0])
 
 
 @pytest.mark.xfail
