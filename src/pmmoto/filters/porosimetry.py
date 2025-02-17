@@ -75,7 +75,9 @@ def extract_subsection(img, shape):
 
 def porosimetry(sd, img, sizes, mode: Literal["hybrid", "dt", "mio"] = "hybrid"):
     """
-    pm = pmmoto domain generation
+
+    sd = subdomain
+    img = image
     sizes = list of pore sizes from get_sizes() function
     mode = must be either "hybrid", "dt", or "mio"
     """
@@ -87,8 +89,38 @@ def porosimetry(sd, img, sizes, mode: Literal["hybrid", "dt", "mio"] = "hybrid")
             imgtemp = pmmoto.filters.morphological_operators.subtraction(
                 subdomain=sd, img=img, radius=radius, fft=False
             )
+
+            imgtemp = pmmoto.filters.morphological_operators.addition(
+                subdomain=sd, img=img, radius=radius, fft=False
+            )
+
         if np.any(imgtemp):
             imgresults[(imgresults == 0) * imgtemp] = radius
 
         imgresults = extract_subsection(imgresults, shape=img.shape)
+
+    elif mode == "dt":
+        imgresults = np.zeros(np.shape(img))
+        for radius in sizes:
+            dt = pmmoto.filters.distance.edt(img=img, subdomain=sd)
+            imgtemp = dt >= radius
+
+            if np.any(imgtemp):
+                imgtemp = pmmoto.filters.distance.edt(~imgtemp) < radius
+                imgresults[(imgresults == 0) * imgtemp] = radius
+
+    elif mode == "hybrid":
+        imgresults = np.zeros(np.shape(img))
+        for radius in sizes:
+            dt = pmmoto.filters.distance.edt(img=img, subdomain=sd)
+            imgtemp = dt >= radius
+
+            if np.any(imgtemp):
+                imgtemp = pmmoto.filters.morphological_operators.addition(
+                    subdomain=sd, img=img, radius=radius, fft=False
+                )
+        imgresults[(imgresults == 0) * imgtemp] = radius
+    else:
+        raise Exception("Unrecognized mode" + mode)
+
     return imgresults
