@@ -100,7 +100,7 @@ def test_modes(generate_simple_subdomain):
     """
     Test mio mode
     """
-    radius = 0.1
+    radius = 0.03
     spheres, domain_data = pmmoto.io.data_read.read_sphere_pack_xyzr_domain(
         "tests/test_domains/bcc.in"
     )
@@ -111,7 +111,14 @@ def test_modes(generate_simple_subdomain):
         voxels_in=(100, 100, 100),
     )
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
-    sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
-    mio = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "mio")
-    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "dt")
-    hybrid = mio = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "hybrid")
+    # sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
+    morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
+    # dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "dt")
+    # hybrid = mio = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "hybrid")
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/test_modes",
+        sd,
+        pm.img,
+        additional_img={"morph": morph},
+    )

@@ -73,54 +73,53 @@ def extract_subsection(img, shape):
     return img[tuple(s_img)]
 
 
-def porosimetry(sd, img, sizes, mode: Literal["hybrid", "dt", "mio"] = "hybrid"):
+def porosimetry(
+    subdomain, img, sizes, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
+):
     """
-
     sd = subdomain
     img = image
     sizes = list of pore sizes from get_sizes() function
-    mode = must be either "hybrid", "dt", or "mio"
+    mode = must be either "hybrid", "dt", or "morph"
     """
+    if not isinstance(sizes, list):
+        sizes = [sizes]
 
-    if mode == "mio":
-        imgresults = np.zeros(np.shape(img))
-        print(imgresults)
+    img_results = np.zeros_like(img, dtype=np.double)
+
+    if mode == "morph":
         for radius in sizes:
-            imgtemp = pmmoto.filters.morphological_operators.subtraction(
-                subdomain=sd, img=img, radius=radius, fft=False
+            img_temp = pmmoto.filters.morphological_operators.subtraction(
+                subdomain=subdomain, img=img, radius=radius, fft=False
             )
 
-            imgtemp = pmmoto.filters.morphological_operators.addition(
-                subdomain=sd, img=img, radius=radius, fft=False
+            img_temp = pmmoto.filters.morphological_operators.addition(
+                subdomain=subdomain, img=img_temp, radius=radius, fft=False
             )
 
-        if np.any(imgtemp):
-            imgresults[(imgresults == 0) * imgtemp] = radius
-
-        imgresults = extract_subsection(imgresults, shape=img.shape)
+            if np.any(img_temp):
+                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
     elif mode == "dt":
-        imgresults = np.zeros(np.shape(img))
         for radius in sizes:
-            dt = pmmoto.filters.distance.edt(img=img, subdomain=sd)
-            imgtemp = dt >= radius
+            dt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
+            img_temp = dt >= radius
 
-            if np.any(imgtemp):
-                imgtemp = pmmoto.filters.distance.edt(~imgtemp) < radius
-                imgresults[(imgresults == 0) * imgtemp] = radius
+            if np.any(img_temp):
+                img_temp = pmmoto.filters.distance.edt(~img_temp) < radius
+                img_results[(img_results == 0) * img_temp] = radius
 
     elif mode == "hybrid":
-        imgresults = np.zeros(np.shape(img))
         for radius in sizes:
-            dt = pmmoto.filters.distance.edt(img=img, subdomain=sd)
-            imgtemp = dt >= radius
+            dt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
+            img_temp = dt >= radius
 
-            if np.any(imgtemp):
-                imgtemp = pmmoto.filters.morphological_operators.addition(
+            if np.any(img_temp):
+                img_temp = pmmoto.filters.morphological_operators.addition(
                     subdomain=sd, img=img, radius=radius, fft=False
                 )
-        imgresults[(imgresults == 0) * imgtemp] = radius
+        img_results[(img_results == 0) * img_temp] = radius
     else:
         raise Exception("Unrecognized mode" + mode)
 
-    return imgresults
+    return img_results
