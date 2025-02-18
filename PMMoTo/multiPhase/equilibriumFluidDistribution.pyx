@@ -216,7 +216,7 @@ def calcDrainage(pc,mP):
             eqDist.getDiameter(p)
 
             # Step 1 - Reservoirs are not contained in mdGrid or grid but rather added when needed so this step is unnecessary
-            
+
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
             #fileName = "dataOut/test/Step2"
@@ -295,7 +295,8 @@ def calcDrainage(pc,mP):
                 # Step 4
                 sw = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
                 if mP.subDomain.ID == 0:
-                    print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
+                    #print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
+                    print("%e %e" %(p,sw))
                     result.append(sw)
 
             if save:
@@ -463,8 +464,8 @@ def calcDrainageSchulzCA(pc,mP,CA):
         print("Running drainage with Schulz CA control and with capillary pressure targets")
     
     ###add error and do not run (or switch to sw targets) if radius target (determined from pc) would not fit in the domain
-    fileName = "dataOut/test/inputgrid"
-    dataOutput.saveGrid(fileName,mP.subDomain,mP.porousMedia.grid)
+    #fileName = "dataOut/test/inputgrid"
+    #dataOutput.saveGrid(fileName,mP.subDomain,mP.porousMedia.grid)
     
     ### Get Distance from Solid to Pore Space (Ignore Fluid Phases)
     poreSpaceDist = distance.calcEDT(mP.subDomain,mP.porousMedia.grid)
@@ -484,8 +485,8 @@ def calcDrainageSchulzCA(pc,mP,CA):
     # fileName = "dataOut/test/distCSV"
     # dataOutput.saveGridcsv(fileName,mP.subDomain,mP.subDomain.x,mP.subDomain.y,mP.subDomain.z,poreSpaceDist,removeHalo = True)
 
-    fileName = "dataOut/test/dist"
-    dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
+    #fileName = "dataOut/test/dist"
+    #dataOutput.saveGrid(fileName,mP.subDomain,poreSpaceDist)
 
     # setSaveDict = {'inlet': 'inlet',
     #                'outlet':'outlet',
@@ -508,16 +509,17 @@ def calcDrainageSchulzCA(pc,mP,CA):
             
             # Step 2 - Dilate Solid Phase with CA scaled radius and Flag Allowable Fluid Voxes as 1 
             rad = eqDist.probeR
-   
-            dilateRad = (rad * math.cos(np.deg2rad(CA)))/2
+            #rad = 2./p
+            dilateRad = (rad * math.cos(np.deg2rad(CA)))
+
             ind = np.where( (poreSpaceDist >= dilateRad) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
-            fileName = "dataOut/test/Step2"
-            dataOutput.saveGrid(fileName,mP.subDomain,ind)
+            #fileName = "dataOut/test/Step2"
+            #dataOutput.saveGrid(fileName,mP.subDomain,ind)
     
             # Step 3 - Check if Points were Marked
             continueFlag = eqDist.checkPoints(ind,1,True)
-            if  mP.subDomain.ID == 0:
-                print(p,rad,continueFlag)
+            #if  mP.subDomain.ID == 0:
+            #    print(p,rad,continueFlag)
             if continueFlag:
 
                 # Step 3a and 3d - Check if NW Phases Exists then Collect NW Sets
@@ -565,8 +567,8 @@ def calcDrainageSchulzCA(pc,mP,CA):
                 # Steb 3c and 3d - Already checked at Step 3 so Collect Sets with ID = 1
                 indSets,indSetCount = sets.collectSets(ind,1,mP.inlet[mP.nwID],mP.outlet[mP.nwID],mP.loopInfo[mP.nwID],mP.subDomain)
                 ind2 = eqDist.getInletConnectedNodes(indSets,1)
-                fileName = "dataOut/test/Step3c"
-                dataOutput.saveGrid(fileName,mP.subDomain,ind2)
+                #fileName = "dataOut/test/Step3c"
+                #dataOutput.saveGrid(fileName,mP.subDomain,ind2)
             
                 # Step 3e - no Step 3e ha. 
 
@@ -578,8 +580,8 @@ def calcDrainageSchulzCA(pc,mP,CA):
                     morph = morphology.morph(ind2,mP.subDomain,eqDist.probeR)
 
                 # Step 3g
-                fileName = "dataOut/test/Step3g"
-                dataOutput.saveGrid(fileName,mP.subDomain,morph)
+                #fileName = "dataOut/test/Step3g"
+                #dataOutput.saveGrid(fileName,mP.subDomain,morph)
             
                 ## Turn wetting films on or off here
                 mP.mpGrid = np.where( (morph == 1) & (wGrid == 1),mP.nwID,mP.mpGrid)  ### films off
@@ -588,7 +590,8 @@ def calcDrainageSchulzCA(pc,mP,CA):
                 # Step 4
                 sw = eqDist.calcSaturation(mP.mpGrid,mP.nwID)
                 if mP.subDomain.ID == 0:
-                    print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
+                    #print("Capillary pressure: %e Wetting Phase Saturation: %e" %(p,sw))
+                    print("%e %e" %(p,sw))
                     result.append(sw)
 
             if save:
