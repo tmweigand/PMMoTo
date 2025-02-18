@@ -219,8 +219,8 @@ def calcDrainage(pc,mP):
             
             # Step 2 - Dilate Solid Phase and Flag Allowable Fluid Voxes as 1 
             ind = np.where( (poreSpaceDist >= eqDist.probeR) & (mP.porousMedia.grid == 1),1,0).astype(np.uint8)
-            fileName = "dataOut/test/Step2"
-            dataOutput.saveGrid(fileName,mP.subDomain,ind)
+            #fileName = "dataOut/test/Step2"
+            #dataOutput.saveGrid(fileName,mP.subDomain,ind)
     
             # Step 3 - Check if Points were Marked
             continueFlag = eqDist.checkPoints(ind,1,True)

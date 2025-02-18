@@ -3,6 +3,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
+from .domainGeneration import domainGenEllINK
 from .domainGeneration import domainGenINKCA
 from .domainGeneration import domainGenCapTube
 from .domainGeneration import domainGen
@@ -44,6 +45,10 @@ class porousMedia(object):
 
     def genDomainInkBottle(self):
         self.grid = domainGenINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
+        self.gridCheck()
+        
+    def genDomainEllInkBottle(self):
+        self.grid = domainGenEllINK(self.subDomain.x,self.subDomain.y,self.subDomain.z)
         self.gridCheck()
         
     def genDomainInkBottleCA(self):
@@ -127,8 +132,10 @@ def genPorousMedia(subDomain,dataFormat,sphereData=None, resSize = 0):
 
     if dataFormat == "Sphere":
         pM.genDomainSphereData(sphereData)
-    if dataFormat == "InkBotle":
+    if dataFormat == "InkBottle":
         pM.genDomainInkBottle()
+    if dataFormat == "EllInkBottle":
+        pM.genDomainEllInkBottle()
     if dataFormat == "CapTube":
         pM.genDomainCapTube()
     pM.setInletOutlet(resSize)
@@ -148,7 +155,7 @@ def genPorousMediaCA(subDomain,dataFormat,sphereData=None, resSize = 0):
 
     if dataFormat == "Sphere":
         pM.genDomainSphereDataCA(sphereData)
-    if dataFormat == "InkBotle":
+    if dataFormat == "InkBottle":
         pM.genDomainInkBottleCA()
         
     pM.setInletOutlet(resSize)

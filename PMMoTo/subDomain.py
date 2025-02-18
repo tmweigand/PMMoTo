@@ -3,6 +3,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 from .domainGeneration import domainGenINK
+from .domainGeneration import domainGenEllINK
 from .domainGeneration import domainGenCapTube
 from .domainGeneration import domainGen
 from .domainGeneration import domainGenCA
@@ -279,7 +280,10 @@ def genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,dataFo
         else:
             domainSize,sphereData = dataRead(file,dataReadkwargs)
     if file is None:
-        domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
+        if dataFormat == "InkBottle":
+            domainSize = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
+        else:
+            domainSize = np.array([[0.,14.],[-1.5,1.5],[-3.0,3.0]])
     domain = Domain.Domain(nodes = nodes, domainSize = domainSize, subDomains = subDomains, boundaries = boundaries, inlet=inlet, outlet=outlet)
     domain.getdXYZ()
     domain.getSubNodes()

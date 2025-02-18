@@ -98,6 +98,32 @@ def domainGenINK(double[:] x, double[:] y, double[:] z):
 
     return _grid
 
+def domainGenEllINK(double[:] x, double[:] y, double[:] z):
+
+    cdef int NX = x.shape[0]
+    cdef int NY = y.shape[0]
+    cdef int NZ = z.shape[0]
+    cdef int i, j, k
+    cdef double r
+    cdef double radiusY = 1.0
+    cdef double radiusZ = 2.0
+
+    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] grid
+
+    grid = _grid
+
+    for i in range(0,NX):
+      for j in range(0,NY):
+        for k in range(0,NZ):
+          r = (0.01*math.cos(0.01*x[i]) + 0.5*math.sin(x[i]) + 0.75)
+          rY = r*radiusY
+          rz = r*radiusZ
+          if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
+            grid[i,j,k] = 1
+
+    return _grid
+
 def domainGenINKCA(double[:] x, double[:] y, double[:] z):
 
     print("WARNING: THIS FXN IS HARD CODED FOR 8 SUBDOMAINS")

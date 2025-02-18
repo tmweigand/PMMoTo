@@ -29,7 +29,7 @@ def my_function():
     
     ############################################################################################################################################
     ### get CAgrid for LVCA/Liu method
-    # domain,sDL,pML = PMMoTo.genDomainSubDomainCA(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
+    # domain,sDL,pML = PMMoTo.genDomainSubDomainCA(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBottle",None,None)
     # numFluidPhases = 2
     # twoPhase = PMMoTo.multiPhase.multiPhase(pML,numFluidPhases)
 
@@ -48,7 +48,7 @@ def my_function():
     # CAgrid = np.copy(twoPhase.porousMedia.grid)
     ###############################################################################################################################################
     
-    # domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBotle",None,None)
+    # domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"InkBottle",None,None)
     domain,sDL,pML = PMMoTo.genDomainSubDomain(rank,size,subDomains,nodes,boundaries,inlet,outlet,"CapTube",None,None)
 
     numFluidPhases = 2
