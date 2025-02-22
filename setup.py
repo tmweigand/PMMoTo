@@ -68,6 +68,7 @@ ext_modules = [
         ["src/pmmoto/domain_generation/_domain_generation.pyx"],
         include_dirs=["src/pmmoto/domain_generation"],
         language="c++",
+        extra_compile_args=extra_compile_args,
     ),
 ]
 setup(

@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from . import communication
 from . import orientation
 from ..core import domain_discretization
 from ..core import subdomain_features
@@ -20,8 +19,10 @@ class Subdomain(domain_discretization.DiscretizedDomain):
     ):
         self.rank = rank
         self.domain = decomposed_domain
-        self.index = self.get_index()
-        self.voxels = self.get_voxels()
+        self.index = self.get_index(self.rank, self.domain.subdomains)
+        self.voxels = self.get_voxels(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
         self.box = self.get_box()
         self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
@@ -42,23 +43,23 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             self.outlet,
         )
 
-    def get_index(self) -> tuple[np.intp, ...]:
+    @staticmethod
+    def get_index(rank, subdomains) -> tuple[np.intp, ...]:
         """
         Determine the index of the subdomain
         """
-        return np.unravel_index(self.rank, self.domain.subdomains)
+        return np.unravel_index(rank, subdomains)
 
-    def get_voxels(self) -> tuple[int, ...]:
+    @staticmethod
+    def get_voxels(index, domain_voxels, subdomains) -> tuple[int, ...]:
         """
         Calculate number of voxels in each subdomain.
         This can be very bad when voxels ~= ranks or something like that
         """
         voxels = [0, 0, 0]
-        for dim, ind in enumerate(self.index):
-            sd_voxels, rem_sd_voxels = divmod(
-                self.domain.voxels[dim], self.domain.subdomains[dim]
-            )
-            if ind == self.domain.subdomains[dim] - 1:
+        for dim, ind in enumerate(index):
+            sd_voxels, rem_sd_voxels = divmod(domain_voxels[dim], subdomains[dim])
+            if ind == subdomains[dim] - 1:
                 voxels[dim] = sd_voxels + rem_sd_voxels
             else:
                 voxels[dim] = sd_voxels
@@ -223,3 +224,24 @@ class Subdomain(domain_discretization.DiscretizedDomain):
                     img[feature.slice] = 0
 
         return img
+
+    def get_centroid(self):
+        """
+        Determine the centroid of a subdomain
+        """
+        centroid = np.zeros(3, dtype=np.double)
+        for dim, side in enumerate(self.box):
+            centroid[dim] = 0.5 * (side[1] - side[0])
+
+        return centroid
+
+    def get_radius(self):
+        """
+        Determine the centroid of a subdomain
+        """
+        diameter = 0
+        for dim, side in enumerate(self.box):
+            length = side[1] - side[0]
+            diameter += length * length
+
+        return np.sqrt(diameter) / 2

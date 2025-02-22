@@ -2,6 +2,7 @@ from . import domain_decompose
 from . import domain
 from . import domain_discretization
 from . import subdomain_padded
+from . import subdomain_verlet
 from . import utils
 
 import numpy as np
@@ -20,6 +21,7 @@ def initialize(
     rank=0,
     mpi_size=1,
     pad=(1, 1, 1),
+    verlet_domains=(1, 1, 1),
 ):
     """
     Initialize PMMoTo domain and subdomain classes and check for valid inputs.
@@ -43,14 +45,15 @@ def initialize(
         )
     )
 
-    padded_subdomain = subdomain_padded.PaddedSubdomain(
+    verlet_subdomain = subdomain_verlet.VerletSubdomain.from_subdomain(
         rank=rank,
         decomposed_domain=pmmoto_decomposed_domain,
         pad=pad,
         reservoir_voxels=reservoir_voxels,
+        verlet_domains=verlet_domains,
     )
 
-    return padded_subdomain
+    return verlet_subdomain
 
 
 def deconstruct_grid(

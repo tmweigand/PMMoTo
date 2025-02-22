@@ -31,7 +31,7 @@ def test_gen_struct_element():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_morphological_addition(generate_simple_subdomain):
+def test_morphological_addition():
     """
     Generate a spherical/circular structuring element
     """
@@ -48,10 +48,10 @@ def test_morphological_addition(generate_simple_subdomain):
 
     for boundary_type in [0, 1, 2]:
         boundary = ((boundary_type, boundary_type),) * 3
-        sd = generate_simple_subdomain(
+        sd = pmmoto.initialize(
             rank=0,
-            specified_types=boundary,
-            voxels_in=(100, 100, 100),
+            boundary_types=boundary,
+            voxels=(100, 100, 100),
         )
 
         pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
@@ -69,7 +69,7 @@ def test_morphological_addition(generate_simple_subdomain):
 
 
 @pytest.mark.mpi(min_size=8)
-def test_morphological_subtraction(generate_simple_subdomain):
+def test_morphological_subtraction():
     """
     Generate a spherical/circular structuring element
     """
@@ -86,11 +86,11 @@ def test_morphological_subtraction(generate_simple_subdomain):
 
     for boundary_type in [0, 1, 2]:
         boundary = ((boundary_type, boundary_type),) * 3
-        sd = generate_simple_subdomain(
+        sd = pmmoto.initialize(
             rank=0,
             box=domain_data,
-            specified_types=boundary,
-            voxels_in=(100, 100, 100),
+            boundary_types=boundary,
+            voxels=(100, 100, 100),
         )
 
         pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)

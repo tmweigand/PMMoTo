@@ -1,4 +1,4 @@
-"""test_rdf.py"""
+"""test_domain_generation.py"""
 
 import pytest
 import numpy as np
@@ -11,13 +11,11 @@ def test_pm_sphere():
     Sphere data is [x_i, y_i, z_i, r_i]
     where x,y,z is the center of the sphere and r is the radius
     """
-    x = np.linspace(0, 1, 10)
-    y = np.linspace(0, 1, 10)
-    z = np.linspace(0, 1, 10)
+    sd = pmmoto.initialize(voxels=(10, 10, 10))
     sphere = np.array([[0.5, 0.5, 0.5, 0.25]])
 
-    grid = pmmoto.domain_generation._domain_generation.gen_pm_sphere(x, x, x, sphere)
-    assert np.sum(grid) == 944
+    img = pmmoto.domain_generation.gen_pm_sphere(sd, sphere)
+    assert np.sum(img) == 944
 
 
 def test_pm_sphere_verlet():
@@ -26,18 +24,11 @@ def test_pm_sphere_verlet():
     Sphere data is [x_i, y_i, z_i, r_i]
     where x,y,z is the center of the sphere and r is the radius
     """
-    x = np.linspace(0, 1, 10)
-    y = np.linspace(0, 1, 10)
-    z = np.linspace(0, 1, 10)
-
+    sd = pmmoto.initialize(voxels=(10, 10, 10), verlet_domains=(3, 3, 3))
     sphere = np.array([[0.5, 0.5, 0.5, 0.25]])
+    img = pmmoto.domain_generation.gen_pm_sphere(sd, sphere)
 
-    verlet = [3, 3, 3]
-
-    grid = pmmoto.domain_generation._domain_generation.gen_pm_verlet_sphere(
-        verlet, x, y, z, sphere
-    )
-    assert np.sum(grid) == 944
+    assert np.sum(img) == 944
 
 
 def test_pm_atom():
@@ -48,10 +39,7 @@ def test_pm_atom():
     Atom Cutoff is map that contains the cutoff distance for each atom type.
 
     """
-    x = np.linspace(0, 1, 10)
-    y = np.linspace(0, 1, 10)
-    z = np.linspace(0, 1, 10)
-
+    sd = pmmoto.initialize(voxels=(10, 10, 10))
     atom_locations = np.array([[0.5, 0.5, 0.5]])
 
     atom_types = np.array([0, 0], dtype=np.int64)
@@ -65,7 +53,7 @@ def test_pm_atom():
     np.testing.assert_array_equal(spheres, [[0.5, 0.5, 0.5, 0.25]])
 
     grid = pmmoto.domain_generation._domain_generation.gen_pm_atom(
-        x, y, z, atom_locations, atom_types, atom_cutoff
+        sd, atom_locations, atom_types, atom_cutoff
     )
     assert np.sum(grid) == 944
 
@@ -78,11 +66,7 @@ def test_pm_atom_verlet():
     Atom Cutoff is map that contains the cutoff distance for each atom type.
 
     """
-    x = np.linspace(0, 1, 10)
-    y = np.linspace(0, 1, 10)
-    z = np.linspace(0, 1, 10)
-
-    verlet = [1, 1, 1]
+    sd = pmmoto.initialize(voxels=(10, 10, 10))
 
     atom_locations = np.array([[0.5, 0.5, 0.5]])
 
@@ -96,10 +80,11 @@ def test_pm_atom_verlet():
 
     np.testing.assert_array_equal(spheres, [[0.5, 0.5, 0.5, 0.25]])
 
-    grid = pmmoto.domain_generation._domain_generation.gen_pm_verlet_atom(
-        verlet, x, y, z, atom_locations, atom_types, atom_cutoff
+    img = pmmoto.domain_generation._domain_generation.gen_pm_atom(
+        sd, atom_locations, atom_types, atom_cutoff
     )
-    assert np.sum(grid) == 944
+
+    assert np.sum(img) == 944
 
 
 def test_is_inside_domain():

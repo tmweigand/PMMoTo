@@ -206,12 +206,20 @@ def write_parallel_VTK_img(
     for n in range(0, subdomain.domain.num_subdomains):
         _sd = subdomain_padded.PaddedSubdomain(n, subdomain.domain)
         name[n] = name[n] + str(n) + ".vti"
-        _index = _sd.get_index()
+        _index = _sd.get_index(rank=n, subdomains=subdomain.domain.subdomains)
         # starts[n] = _sd.get_start()
         starts[n] = [s - e[0] for s, e in zip(_sd.get_start(), extension)]
         ends[n] = [
             s + v + e[1]
-            for s, v, e in zip(_sd.get_start(), _sd.get_voxels(), extension)
+            for s, v, e in zip(
+                _sd.get_start(),
+                _sd.get_voxels(
+                    index=_index,
+                    domain_voxels=subdomain.domain.voxels,
+                    subdomains=subdomain.domain.subdomains,
+                ),
+                extension,
+            )
         ]
         # ends[n] = [sum(x) for x in zip(starts[n], _sd.get_voxels())]
 
