@@ -2,6 +2,10 @@
 
 import numpy as np
 
+__all__ = ["g_rdf"]
+
+from . import _rdf
+
 
 class RDF:
     """
@@ -104,3 +108,13 @@ class Bounded_RDF(RDF):
         Note! This only works for bounded RDFs
         """
         return np.interp(g, self.g_data, self.r_data)
+
+
+def g_rdf(subdomain, probe_atom, radius, atom_list, num_bins):
+    """
+    Finds the atoms that are within a radius of probe atom
+    """
+
+    rdf = _rdf.generate_rdf(subdomain, atom_list, probe_atom, radius, num_bins)
+
+    return rdf

@@ -34,13 +34,13 @@ struct Verlet {
  */
 void brute_force(uint8_t *img, const std::vector<double> voxel,
                  const std::vector<size_t> &strides,
-                 const std::unique_ptr<SphereList> &sphere_list,
+                 const std::shared_ptr<SphereList> &sphere_list,
                  const std::vector<size_t> &verlet_spheres, size_t i, size_t j,
                  size_t k) {
 
   for (size_t index : verlet_spheres) {
     const Sphere &sphere = (*sphere_list)[index];
-    if (in_sphere(voxel, sphere, sphere.radius_squared)) {
+    if (in_sphere(voxel, sphere.coordinates, sphere.radius_squared)) {
       size_t stride = i * strides[0] + j * strides[1] + k;
       img[stride] = 0;
       break;
@@ -56,7 +56,7 @@ void brute_force(uint8_t *img, const std::vector<double> voxel,
  */
 void gen_sphere_img_brute_force(
     uint8_t *img, const Grid &grid, Verlet verlet,
-    const std::unique_ptr<SphereList> &sphere_list) {
+    const std::shared_ptr<SphereList> &sphere_list) {
 
   std::vector<double> voxel(3);
 
@@ -83,14 +83,14 @@ void gen_sphere_img_brute_force(
  * @brief kd approach
  */
 void kd_method(uint8_t *img, const std::vector<double> &voxel, double radius,
-               const std::unique_ptr<SphereList> &sphere_list,
+               const std::shared_ptr<SphereList> &sphere_list,
                const std::vector<size_t> &strides, size_t i, size_t j,
                size_t k) {
 
-  std::vector<size_t> indices = sphere_list->collect_kd_spheres(voxel, radius);
+  std::vector<size_t> indices = sphere_list->collect_kd_indices(voxel, radius);
   for (const auto &index : indices) {
     const Sphere &sphere = (*sphere_list)[index];
-    if (in_sphere(voxel, sphere, sphere.radius_squared)) {
+    if (in_sphere(voxel, sphere.coordinates, sphere.radius_squared)) {
       size_t stride = i * strides[0] + j * strides[1] + k;
       img[stride] = 0;
       return;
@@ -105,7 +105,7 @@ void kd_method(uint8_t *img, const std::vector<double> &voxel, double radius,
  * otherwise).
  */
 void gen_sphere_img_kd_method(uint8_t *img, const Grid &grid, Verlet verlet,
-                              const std::unique_ptr<SphereList> &sphere_list) {
+                              const std::shared_ptr<SphereList> &sphere_list) {
 
   auto samples = sphere_list->getAllCoordinates();
 

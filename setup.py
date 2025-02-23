@@ -28,18 +28,6 @@ if sys.platform == "darwin":
 cmdclass = {}
 
 ext_modules = [
-    # Extension(
-    #     "pmmoto.core._set",
-    #     ["src/pmmoto/core/_set.pyx"],
-    #     include_dirs=["src/pmmoto/core"],
-    #     language="c++",
-    # ),
-    # Extension(
-    #     "pmmoto.core._sets",
-    #     ["src/pmmoto/core/_sets.pyx"],
-    #     include_dirs=["src/pmmoto/core"],
-    #     language="c++",
-    # ),
     Extension(
         "pmmoto.core._voxels",
         ["src/pmmoto/core/_voxels.pyx"],
@@ -54,19 +42,26 @@ ext_modules = [
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
-    # Extension(
-    #     "pmmoto.analysis._minkowski",
-    #     [
-    #         "src/pmmoto/analysis/_minkowski.pyx",
-    #         "src/pmmoto/analysis/quantimpyc.c",
-    #         "src/pmmoto/analysis/minkowskic.c",
-    #     ],
-    #     include_dirs=["pmmoto/analysis"],
-    # ),
+    Extension(
+        "pmmoto.analysis._minkowski",
+        [
+            "src/pmmoto/analysis/_minkowski.pyx",
+            "src/pmmoto/analysis/quantimpyc.c",
+            "src/pmmoto/analysis/minkowskic.c",
+        ],
+        include_dirs=["pmmoto/analysis"],
+    ),
     Extension(
         "pmmoto.domain_generation._domain_generation",
         ["src/pmmoto/domain_generation/_domain_generation.pyx"],
-        include_dirs=["src/pmmoto/domain_generation"],
+        include_dirs=["src/pmmoto/domain_generation/"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+    ),
+    Extension(
+        "pmmoto.domain_generation._rdf",
+        ["src/pmmoto/domain_generation/_rdf.pyx"],
+        include_dirs=["src/pmmoto/domain_generation/"],
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
