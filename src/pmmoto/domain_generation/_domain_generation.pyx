@@ -10,16 +10,22 @@ cimport numpy as cnp
 from numpy cimport uint8_t
 from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map
-from libcpp.memory cimport unique_ptr,make_unique
+from libcpp.memory cimport shared_ptr
 from libc.math cimport sin, cos
 cnp.import_array()
+
+from .sphere_pack cimport Sphere
+from .sphere_pack cimport SphereList
+from .sphere_pack cimport initialize_list
+from .sphere_pack cimport trim_sphere_list_spheres
+
 
 __all__ = [
     "gen_pm_sphere",
     "gen_pm_atom",
     "gen_pm_inkbottle",
     "convert_atoms_to_spheres",
-    "trim_list"
+    # "trim_list"
 ]
 
 def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
@@ -55,9 +61,7 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         sd_radius = subdomain.get_radius()
         radius = sd_radius + np.max(spheres[:,3])
 
-    # cdef unique_ptr[SphereList] all_spheres = make_unique[SphereList](spheres_c,True)
-
-    cdef unique_ptr[SphereList] all_spheres = initialize_sphere_list(spheres_c,point,radius,kd,trim)
+    cdef shared_ptr[SphereList] all_spheres = initialize_list[SphereList,Sphere](spheres_c,point,radius,kd,trim)
 
     # Convert Verlet info
     verlet_c.num_verlet = subdomain.num_verlet
@@ -140,35 +144,35 @@ def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
     return img
 
 
-def trim_list(subdomain, spheres, kd_tree = False):
-    """
-    Trim a list. This is useful in input is not on subdomain basis.
-    """
-    cdef:
-        vector[vector[double]] spheres_in
-        vector[Sphere] spheres_out
-        vector[double] point
-        double radius
-        unique_ptr[SphereList] sphere_list
+# def trim_list(subdomain, spheres, kd_tree = False):
+#     """
+#     Trim a list. This is useful in input is not on subdomain basis.
+#     """
+#     cdef:
+#         vector[vector[double]] spheres_in
+#         vector[Sphere] spheres_out
+#         vector[double] point
+#         double radius
+#         unique_ptr[SphereList] sphere_list
 
-    spheres_in = spheres
-    point = subdomain.get_centroid()
-    sd_radius = subdomain.get_radius()
+#     spheres_in = spheres
+#     point = subdomain.get_centroid()
+#     sd_radius = subdomain.get_radius()
 
-    # Add maximum sphere radius to account for spheres where centroids are outside
-    radius = sd_radius + np.max(spheres[:,3])
+#     # Add maximum sphere radius to account for spheres where centroids are outside
+#     radius = sd_radius + np.max(spheres[:,3])
 
-    spheres_out = trim_sphere_list_spheres(spheres_in,point,radius, kd_tree)
+#     spheres_out = trim_sphere_list_spheres(spheres_in,point,radius, kd_tree)
 
-    cdef cnp.ndarray[cnp.double_t, ndim=2] spheres_result = np.empty((spheres_out.size(), 4), dtype=np.double)
+#     cdef cnp.ndarray[cnp.double_t, ndim=2] spheres_result = np.empty((spheres_out.size(), 4), dtype=np.double)
     
-    # Fill the array with data from the spheres_out vector
-    for i in range(spheres_out.size()):
-        # sphere = spheres_out[i]
-        spheres_result[i, 0] = spheres_out[i].coordinates.x
-        spheres_result[i, 1] = spheres_out[i].coordinates.y
-        spheres_result[i, 2] = spheres_out[i].coordinates.z
-        spheres_result[i, 3] = spheres_out[i].radius
+#     # Fill the array with data from the spheres_out vector
+#     for i in range(spheres_out.size()):
+#         # sphere = spheres_out[i]
+#         spheres_result[i, 0] = spheres_out[i].coordinates.x
+#         spheres_result[i, 1] = spheres_out[i].coordinates.y
+#         spheres_result[i, 2] = spheres_out[i].coordinates.z
+#         spheres_result[i, 3] = spheres_out[i].radius
 
 
-    return spheres_result
+#     return spheres_result

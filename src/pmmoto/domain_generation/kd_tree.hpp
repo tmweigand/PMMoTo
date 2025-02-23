@@ -1,6 +1,7 @@
 #ifndef KDTREE_H
 #define KDTREE_H
 
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -26,8 +27,8 @@ public:
       throw std::runtime_error("Cannot create KD-tree with empty input.");
     }
 
-    data_ref = data; // Store shared pointer
-
+    // Store shared pointer
+    data_ref = data;
     // Create KD-tree and assign it to the member variable
     tree = std::make_unique<KDTreeType>(3 /*dim*/, *data_ref, max_leaf_size);
   }
@@ -36,10 +37,7 @@ public:
     return tree.get(); // Provide access to the tree
   }
 
-  // Collect indices and/or distance for points in radius
-  std::vector<size_t> radius_search_indices(const std::vector<double> &voxel,
-                                            double radius) {
-
+  void check_tree() {
     if (!tree) {
       throw std::runtime_error(
           "KDTree is not initialized. Call initialize_kd() first.");
@@ -48,6 +46,13 @@ public:
     if (!tree->index) {
       throw std::runtime_error("KDTree index is not initialized.");
     }
+  }
+
+  // Collect indices and/or distance for points in radius
+  std::vector<size_t> radius_search_indices(const std::vector<double> &voxel,
+                                            double radius) {
+
+    check_tree();
 
     std::vector<nanoflann::ResultItem<size_t, double>> ret_matches;
     const size_t nMatches =
@@ -60,6 +65,25 @@ public:
     }
 
     return indices;
+  }
+
+  // Collect indices and/or distance for points in radius
+  std::vector<double> radius_search_distances(const std::vector<double> &voxel,
+                                              double radius) {
+
+    check_tree();
+
+    std::vector<nanoflann::ResultItem<size_t, double>> ret_matches;
+    const size_t nMatches =
+        tree->index->radiusSearch(&voxel[0], radius, ret_matches);
+
+    std::vector<double> distances;
+    distances.reserve(nMatches);
+    for (const auto &match : ret_matches) {
+      distances.emplace_back(match.second);
+    }
+
+    return distances;
   }
 };
 
