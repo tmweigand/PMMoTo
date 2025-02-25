@@ -18,39 +18,42 @@ def edt(img, subdomain=None):
     """
     img_out = np.copy(img).astype(np.float32)
     if subdomain is not None:
-        if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
 
-            dimension = 0
-            lower_correctors, upper_correctors = get_initial_correctors(
-                subdomain=subdomain, img=img, dimension=dimension
+        # resolution = subdomain.domain.resolution
+
+        # if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
+
+        dimension = 0
+        lower_correctors, upper_correctors = get_initial_correctors(
+            subdomain=subdomain, img=img, dimension=dimension
+        )
+
+        img_out = _distance.get_initial_envelope(
+            img,
+            img_out,
+            dimension=dimension,
+            resolution=subdomain.domain.resolution[dimension],
+            lower_boundary=lower_correctors,
+            upper_boundary=upper_correctors,
+        )
+
+        for dimension in [1, 2]:
+            lower_hull, upper_hull = get_boundary_hull(
+                subdomain=subdomain,
+                img=img_out,
+                og_img=img,
+                dimension=dimension,
             )
 
-            img_out = _distance.get_initial_envelope(
-                img,
+            _distance.get_parabolic_envelope(
                 img_out,
                 dimension=dimension,
                 resolution=subdomain.domain.resolution[dimension],
-                lower_boundary=lower_correctors,
-                upper_boundary=upper_correctors,
+                lower_hull=lower_hull,
+                upper_hull=upper_hull,
             )
 
-            for dimension in [1, 2]:
-                lower_hull, upper_hull = get_boundary_hull(
-                    subdomain=subdomain,
-                    img=img_out,
-                    og_img=img,
-                    dimension=dimension,
-                )
-
-                _distance.get_parabolic_envelope(
-                    img_out,
-                    dimension=dimension,
-                    resolution=subdomain.domain.resolution[dimension],
-                    lower_hull=lower_hull,
-                    upper_hull=upper_hull,
-                )
-
-            img_out = np.asarray(np.sqrt(img_out))
+        img_out = np.asarray(np.sqrt(img_out))
 
     else:  # Simply perform the edt with no corrections
         if len(img.shape) == 3:

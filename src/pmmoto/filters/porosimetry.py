@@ -90,35 +90,39 @@ def porosimetry(
     if mode == "morph":
         for radius in sizes:
             img_temp = pmmoto.filters.morphological_operators.subtraction(
-                subdomain=subdomain, img=img, radius=radius, fft=False
+                subdomain=subdomain, img=img, radius=radius, fft=True
             )
 
             img_temp = pmmoto.filters.morphological_operators.addition(
-                subdomain=subdomain, img=img_temp, radius=radius, fft=False
+                subdomain=subdomain, img=img_temp, radius=radius, fft=True
             )
 
             if np.any(img_temp):
+                # what about multiphase systems
                 img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
-    elif mode == "dt":
+    elif mode == "dt":  # Close, but need to fix to match morph
+        edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
         for radius in sizes:
-            dt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
-            img_temp = dt >= radius
+            img_temp = edt >= radius
 
             if np.any(img_temp):
-                img_temp = pmmoto.filters.distance.edt(~img_temp) < radius
-                img_results[(img_results == 0) * img_temp] = radius
+                edt_inverse = pmmoto.filters.distance.edt(
+                    img=~img_temp, subdomain=subdomain
+                )
+                img_temp = edt_inverse < radius
+                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
     elif mode == "hybrid":
+        edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
         for radius in sizes:
-            dt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
-            img_temp = dt >= radius
+            img_temp = edt >= radius
 
             if np.any(img_temp):
                 img_temp = pmmoto.filters.morphological_operators.addition(
-                    subdomain=sd, img=img, radius=radius, fft=False
+                    subdomain=subdomain, img=img_temp, radius=radius, fft=False
                 )
-        img_results[(img_results == 0) * img_temp] = radius
+                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
     else:
         raise Exception("Unrecognized mode" + mode)
 

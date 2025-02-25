@@ -96,29 +96,40 @@ def test_porosimetry(generate_simple_subdomain):
     )
 
 
-def test_modes(generate_simple_subdomain):
+def test_modes():
     """
     Test mio mode
     """
-    radius = 0.03
+    radius = 0.030001
     spheres, domain_data = pmmoto.io.data_read.read_sphere_pack_xyzr_domain(
         "tests/test_domains/bcc.in"
     )
-    sd = generate_simple_subdomain(
+    sd = pmmoto.initialize(
         rank=0,
         box=domain_data,
-        specified_types=((2, 2), (2, 2), (2, 2)),
-        voxels_in=(100, 100, 100),
+        boundary_types=((0, 0), (0, 0), (0, 0)),
+        voxels=(100, 100, 100),
     )
+
+    print(sd.domain.resolution)
+
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
     # sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
     morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
-    # dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "dt")
-    # hybrid = mio = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, sizes, "hybrid")
+    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "dt")
+    hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "hybrid")
+    edt = pmmoto.filters.distance.edt(img=pm.img, subdomain=sd)
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_modes",
         sd,
         pm.img,
-        additional_img={"morph": morph},
+        additional_img={
+            "morph": morph,
+            "dt_mode": dt_mode,
+            "hybrid": hybrid,
+            "edt": edt,
+        },
     )
+
+    # np.testing.assert_array_almost_equal(morph, dt_mode)
