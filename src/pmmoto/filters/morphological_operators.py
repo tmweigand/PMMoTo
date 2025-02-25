@@ -65,6 +65,7 @@ def gen_struct_element(resolution, radius):
         np.linspace(-r * res, r * res, r * 2 + 1)
         for r, res in zip(struct_ratio, resolution)
     ]
+
     _xg, _yg, _zg = np.meshgrid(*grids, indexing="ij")
 
     # Compute structuring element
@@ -123,6 +124,7 @@ def subtraction(subdomain, img, radius, fft=False):
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
     )
+    print(struct_ratio, struct_element)
 
     halo_img, halo = communication.update_buffer(
         subdomain=subdomain,
