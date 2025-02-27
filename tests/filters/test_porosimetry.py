@@ -38,16 +38,6 @@ def test_porosimetry_sizes_input_fail():
     values = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
 
 
-def test_extract_subsection():
-    """
-    Check that extract subsection extracts from img correctly
-    """
-    img = np.random.rand(100, 100)
-    shape = (50, 50)
-    result = pmmoto.filters.porosimetry.extract_subsection(img, shape)
-    assert result.shape == (50, 50), f"Expected shape (50, 50), got {result.shape}"
-
-
 def test_porosimetry(generate_simple_subdomain):
     """
     Single process test for porosimetry
@@ -98,7 +88,8 @@ def test_porosimetry(generate_simple_subdomain):
 
 def test_modes():
     """
-    Test mio mode
+    Test morph, dt, and hybrid porosimetry modes.
+    Expected output is all should be equal to eachother.
     """
     radius = 0.030001
     spheres, domain_data = pmmoto.io.data_read.read_sphere_pack_xyzr_domain(
@@ -111,14 +102,11 @@ def test_modes():
         voxels=(100, 100, 100),
     )
 
-    print(sd.domain.resolution)
-
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
     # sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
     morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
     dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "dt")
     hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "hybrid")
-    edt = pmmoto.filters.distance.edt(img=pm.img, subdomain=sd)
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_modes",
@@ -128,8 +116,21 @@ def test_modes():
             "morph": morph,
             "dt_mode": dt_mode,
             "hybrid": hybrid,
-            "edt": edt,
         },
     )
 
-    # np.testing.assert_array_almost_equal(morph, dt_mode)
+    np.testing.assert_array_almost_equal(morph, dt_mode)
+    np.testing.assert_array_almost_equal(morph, hybrid)
+
+
+def test_get_radii():
+    """Test if capillary pressures are converting to radii correctly"""
+    p_c = 1
+    gamma = 1
+    radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
+    assert radii == 1.0
+    p_c = [1, 2, 4]
+    radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
+    print(radii)
+    expected_result = [1.0, 0.5, 0.25]
+    assert np.allclose(radii, expected_result)

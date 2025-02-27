@@ -4,7 +4,7 @@ from typing import Literal
 import numpy as np
 import pmmoto
 
-__all__ = ["get_sizes", "porosimetry", "extract_subsection"]
+__all__ = ["get_sizes", "porosimetry"]
 
 
 def get_sizes(min_value, max_value, num_values, spacing="linear"):
@@ -42,88 +42,85 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
     return values
 
 
-def extract_subsection(img, shape):
+def get_radii(p_c, gamma):
     """
-    Extract a defined subsection
-    Parameters
-    ----------
-    im : ndarray
-        Image from which to extract the subsection
-    shape : array_like
-        Can either specify the size of the extracted section or the fractional
-        size of the image to extact.
-
-    Returns
-    -------
-    image : ndarray
-        An ndarray of size given by the ``shape`` argument, taken from the
-        center of the image.
-
+    Given list of capillary pressures return a list of radii.
+    p_c = list of capillary pressures
+    gamma = surface tension
     """
-    shape = np.array(shape)
-    if shape[0] < 1:
-        shape = np.array(img.shape) * shape
-    center = np.array(img.shape) / 2
-    s_img = []
-    for dim in range(img.ndim):
-        r = shape[dim] / 2
-        lower_img = np.amax((center[dim] - r, 0))
-        upper_img = np.amin((center[dim] + r, img.shape[dim]))
-        s_img.append(slice(int(lower_img), int(upper_img)))
-    return img[tuple(s_img)]
+    if not isinstance(p_c, list):
+        p_c = [p_c]
+
+    radii = np.zeros_like(p_c, dtype=float)
+    for i, p in enumerate(p_c):
+        diam = (2 * gamma) / p
+        r = diam / 2
+        radii[i] = r
+
+    return radii
 
 
 def porosimetry(
-    subdomain, img, sizes, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
+    subdomain, img, radius, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
 ):
     """
     sd = subdomain
     img = image
-    sizes = list of pore sizes from get_sizes() function
+    radii = number
     mode = must be either "hybrid", "dt", or "morph"
     """
-    if not isinstance(sizes, list):
-        sizes = [sizes]
 
     img_results = np.zeros_like(img, dtype=np.double)
 
     if mode == "morph":
-        for radius in sizes:
-            img_temp = pmmoto.filters.morphological_operators.subtraction(
-                subdomain=subdomain, img=img, radius=radius, fft=True
-            )
+        img_results = pmmoto.filters.morphological_operators.subtraction(
+            subdomain=subdomain, img=img, radius=radius, fft=True
+        )
 
-            img_temp = pmmoto.filters.morphological_operators.addition(
-                subdomain=subdomain, img=img_temp, radius=radius, fft=True
-            )
-
-            if np.any(img_temp):
-                # what about multiphase systems
-                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
+        img_results = pmmoto.filters.morphological_operators.addition(
+            subdomain=subdomain, img=img_results, radius=radius, fft=True
+        )
 
     elif mode == "dt":  # Close, but need to fix to match morph
         edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
-        for radius in sizes:
-            img_temp = edt >= radius
+        img_results = edt >= radius
 
-            if np.any(img_temp):
-                edt_inverse = pmmoto.filters.distance.edt(
-                    img=~img_temp, subdomain=subdomain
-                )
-                img_temp = edt_inverse < radius
-                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
+        if np.any(img_results):
+            edt_inverse = pmmoto.filters.distance.edt(
+                img=~img_results, subdomain=subdomain
+            )
+            img_results = edt_inverse < radius
 
     elif mode == "hybrid":
         edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
-        for radius in sizes:
-            img_temp = edt >= radius
+        img_results = edt >= radius
 
-            if np.any(img_temp):
-                img_temp = pmmoto.filters.morphological_operators.addition(
-                    subdomain=subdomain, img=img_temp, radius=radius, fft=False
-                )
-                img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
+        if np.any(img_results):
+            img_results = pmmoto.filters.morphological_operators.addition(
+                subdomain=subdomain, img=img_results, radius=radius, fft=False
+            )
     else:
         raise Exception("Unrecognized mode" + mode)
+
+    return img_results.astype(np.double)
+
+
+def pore_size_distribution(
+    subdomain, img, radii, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
+):
+    """
+    Calls porosimetry function with single size and returns img_results.
+    img
+    """
+    if not isinstance(radii, list):
+        radii = [radii]
+
+    img_results = np.zeros_like(img, dtype=np.double)
+    for radius in radii:
+        img_temp = porosimetry(subdomain=subdomain, img=img, radius=radius, mode=mode)
+
+        if np.any(img_temp):
+            # what about multiphase systems
+            img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
     return img_results
