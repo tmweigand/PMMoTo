@@ -110,7 +110,6 @@ def pore_size_distribution(
 ):
     """
     Calls porosimetry function with single size and returns img_results.
-    img
     """
     if not isinstance(radii, list):
         radii = [radii]

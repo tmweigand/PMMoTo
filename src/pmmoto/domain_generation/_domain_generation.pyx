@@ -16,7 +16,7 @@ __all__ = [
     "gen_pm_atom",
     "gen_pm_verlet_sphere",
     "gen_pm_verlet_atom",
-    "gen_pm_inkbottle",
+    "gen_inkbottle",
     "convert_atoms_to_spheres"
 ]
 
@@ -331,7 +331,7 @@ def convert_atoms_to_spheres(
     return spheres
 
 
-def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
+def gen_inkbottle(double[:] x, double[:] y, double[:] z):
     """
     Generate pm for inkbottle test case. See Miller_Bruning_etal_2019
     """
@@ -350,7 +350,7 @@ def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
         for j in range(0,sy):
             for k in range(0,sz):
                 r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-                if y[j]*y[j] + z[k]*z[k] <= r*r:
+                if (y[j]*y[j] + z[k]*z[k]) <= r*r:
                     _grid[i,j,k] = 1
 
     return grid

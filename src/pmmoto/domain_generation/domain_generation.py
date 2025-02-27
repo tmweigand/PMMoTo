@@ -177,13 +177,13 @@ def gen_pm_verlet_atom_domain(
     return pm
 
 
-def gen_pm_inkbottle(subdomain, domain_data, res_size=0):
+def gen_pm_inkbottle(subdomain):
     """ """
-    subdomain.update_domain_size(domain_data)
-    _img = _domain_generation.gen_pm_inkbottle(
+
+    _img = _domain_generation.gen_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
-    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm = porousmedia.gen_pm(subdomain, _img)
     utils.check_grid(subdomain, pm.img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 

@@ -30,18 +30,6 @@ def test_gen_struct_element():
     assert np.sum(struct_element) == 123
 
 
-def test_gen_struct_element_2():
-    """
-    Generate a spherical/circular structuring element
-    """
-
-    struct_ratio, struct_element = (
-        pmmoto.filters.morphological_operators.gen_struct_element(
-            resolution=[0.01, 0.01, 0.01], radius=0.03
-        )
-    )
-
-
 @pytest.mark.mpi(min_size=8)
 def test_morphological_addition(generate_simple_subdomain):
     """

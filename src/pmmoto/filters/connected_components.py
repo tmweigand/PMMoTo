@@ -6,7 +6,7 @@ from pmmoto.core import communication
 
 __all__ = [
     "connect_components",
-    "gen_grid_to_label_map",
+    "gen_img_to_label_map",
     "gen_inlet_label_map",
     "gen_outlet_label_map",
     "phase_count",
@@ -17,7 +17,7 @@ def connect_components(img, subdomain, return_label_count=True):
     """
     Create sets for all phases in img.
 
-    Zero is background and will not join to any other voxel.
+    Note: Zero is background and will not join to any other voxel!
     """
 
     # max_label = label_count
@@ -65,13 +65,13 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
     return label_grid, global_label_count
 
 
-def gen_grid_to_label_map(grid, label_grid):
+def gen_img_to_label_map(img, labeled_img):
     """
     Collect the label to phase mapping for all labels
     """
     return voxels.gen_grid_to_label_map(
-        grid,
-        label_grid,
+        img,
+        labeled_img,
     )
 
 
@@ -90,22 +90,26 @@ def phase_count(phase_map):
     return phase_count
 
 
-def gen_inlet_label_map(subdomain, label_grid):
-    """ """
-    return voxels.gen_inlet_label_map(subdomain, label_grid)
+def gen_inlet_label_map(subdomain, labeled_img):
+    """
+    Determine the labels that are on the inlet
+    """
+    return voxels.gen_inlet_label_map(subdomain, labeled_img)
 
 
-def gen_outlet_label_map(subdomain, label_grid):
-    """ """
-    return voxels.gen_outlet_label_map(subdomain, label_grid)
+def gen_outlet_label_map(subdomain, labeled_img):
+    """
+    Determine the labels that are on the outlet
+    """
+    return voxels.gen_outlet_label_map(subdomain, labeled_img)
 
 
-def inlet_outlet_labels(subdomain, label_grid):
+def inlet_outlet_labels(subdomain, labeled_img):
     """
     Collect the labels that are on the inlet and outlet!
     """
-    inlet = gen_inlet_label_map(subdomain, label_grid)
-    outlet = gen_outlet_label_map(subdomain, label_grid)
+    inlet = gen_inlet_label_map(subdomain, labeled_img)
+    outlet = gen_outlet_label_map(subdomain, labeled_img)
 
     global_data = communication.all_gather({"inlet": inlet, "outlet": outlet})
 
@@ -124,3 +128,24 @@ def inlet_outlet_labels(subdomain, label_grid):
             connections.append(label_id)
 
     return connections
+
+
+def inlet_connected_img(subdomain, img):
+    """
+    This function return an img where all voxels are connected to the inlet
+    """
+    labeled_img = connect_components(img, subdomain, return_label_count=False)
+    inlet_labels = gen_inlet_label_map(subdomain, labeled_img)
+
+    inlet_img = np.zeros_like(img)
+    if inlet_labels.shape[0] == 0:
+        return inlet_img
+    else:
+        inlet_phase_map = gen_img_to_label_map(img, labeled_img)
+        for label in inlet_phase_map.keys():
+            if label not in inlet_labels:
+                inlet_phase_map[label] = 0
+
+        inlet_img = voxels.renumber_image(labeled_img, inlet_phase_map)
+
+    return inlet_img

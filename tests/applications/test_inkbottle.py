@@ -1,52 +1,56 @@
 import numpy as np
-from mpi4py import MPI
 import pmmoto
+
 
 def my_function():
 
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
+    voxels = [140, 30, 30]  # Total Number of Nodes in Domain
+    box = np.array([[0.0, 14.0], [-1.5, 1.5], [-1.5, 1.5]])
+    sd = pmmoto.initialize(voxels, box=box)
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
 
-    subdomains = [1,1,1] # Specifies how Domain is broken among procs
-    nodes = [140,30,30] # Total Number of Nodes in Domain
+    capillary_pressure = [
+        1.58965,
+        1.59430,
+        1.60194,
+        1.61322,
+        1.62893,
+        1.65002,
+        1.67755,
+        1.7127,
+        1.75678,
+        1.81122,
+        1.87764,
+        1.95783,
+        2.05388,
+        2.16814,
+        2.30332,
+        2.46250,
+        2.64914,
+        2.86704,
+        3.12024,
+        3.41274,
+        3.74806,
+        4.12854,
+        4.55421,
+        5.02123,
+        5.52008,
+        6.03352,
+        6.53538,
+        6.99090,
+        7.36005,
+        7.60403,
+        7.69393,
+        8.0,
+    ]
 
-    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[0,0]]
-    outlet = [[0,0],[0,0],[0,0]]
+    radii = pmmoto.filters.porosimetry.get_radii(capillary_pressure, gamma=1)
 
-    domain_size = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
-    sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
-    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd,domain_size,res_size = 0)
-
-    # Multiphase parameters
-    num_fluid_phases = 2
-
-    w_inlet  = [[1,0],[0,0],[0,0]]
-    nw_inlet = [[0,1],[0,0],[0,0]]
-    mp_inlets = {1:w_inlet,
-                 2:nw_inlet}
-
-    w_outlet  = [[0,0],[0,0],[0,0]]
-    nw_outlet = [[0,0],[0,0],[0,0]]
-    mp_outlets = {1:w_outlet,
-                  2:nw_outlet}
-
-    # Initalize multiphase grid
-    mp = pmmoto.initialize_mp(pm,num_fluid_phases,mp_inlets,mp_outlets,res_size = 10)
-    mp = pmmoto.domain_generation.gen_mp_constant(mp,2)
-
-    print(sd.index_own_nodes,mp.index_own_nodes)
-
-    pc = [2.46250]
-    gamma = 1.
-    pmmoto.filters.multiPhase.calc_drainage(mp,pc,gamma)
-
+    print(radii)
 
     ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    pmmoto.io.save_grid_data("dataOut/test_inkbottle",sd,pm.grid,mp = mp.grid)
+    # pmmoto.io.save_img_data_parallel("data_out/test_inkbottle", sd, pm.img)
+
 
 if __name__ == "__main__":
     my_function()
-    MPI.Finalize()
