@@ -872,6 +872,7 @@ def writeParallelVTKGrid(
     sources,
     spacing,
     ghostlevel=0,
+    lower_extent=(0, 0, 0),
     cellData=None,
     pointData=None,
 ):
@@ -926,9 +927,11 @@ def writeParallelVTKGrid(
         raise ValueError("This functions is meant to work only with ")
 
     w = VtkParallelFile(path, ftype)
-    start = (0, 0, 0)
-    (s_x, s_y, s_z), dtype = coordsData
-    end = s_x, s_y, s_z
+    start = lower_extent
+    size, dtype = coordsData
+    end = [
+        s + e for s, e in zip(size, lower_extent)
+    ]  # already flipped signs of lower_extent
 
     if ftype is not VtkPImageData:
         w.openGrid(start=start, end=end, ghostlevel=ghostlevel)

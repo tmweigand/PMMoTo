@@ -10,6 +10,7 @@ from ..core import subdomain_features
 __all__ = [
     "gen_random_binary_grid",
     "gen_smoothed_random_binary_grid",
+    "gen_linear_img",
     "gen_pm_spheres_domain",
     "gen_pm_atom_domain",
     "gen_pm_verlet_spheres_domain",
@@ -83,6 +84,21 @@ def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None
     return binary_grid
 
 
+def gen_linear_img(shape, dim):
+    """
+    Generates an image that varies from 0-N-1 along dim
+    """
+    n = shape[dim]
+    linear_values = np.linspace(0, n - 1, n, endpoint=True)
+
+    # Reshape for broadcasting
+    shape_expanded = [1, 1, 1]  # Start with a single value for each axis
+    shape_expanded[dim] = shape[dim]  # Expand only the chosen axis
+    linear_values = linear_values.reshape(shape_expanded)
+
+    return linear_values * np.ones(shape)
+
+
 def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     """
     Generate binary domain (pm) from sphere data that contains radii
@@ -90,8 +106,9 @@ def gen_pm_spheres_domain(subdomain, spheres, res_size=0):
     _img = _domain_generation.gen_pm_sphere(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], spheres
     )
-    pm = porousmedia.gen_pm(subdomain, _img, res_size)
+    pm = porousmedia.gen_pm(subdomain, _img)
     pm.img = communication.update_buffer(subdomain, pm.img)
+    pm.img = subdomain.set_wall_bcs(pm.img)
 
     utils.check_grid(subdomain, pm.img)
 

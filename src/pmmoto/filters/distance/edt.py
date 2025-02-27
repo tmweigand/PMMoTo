@@ -155,7 +155,9 @@ def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
     return np.asarray(np.sqrt(img_out))
 
 
-def edt3d(img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0)):
+def edt3d(
+    img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0), squared=False
+):
     """
     Perform an exact Euclidean transform on a image
     For the first pass, collect all the solids (or transitions on all faces)
@@ -234,6 +236,9 @@ def edt3d(img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0)):
             lower_hull=lower_hull,
             upper_hull=upper_hull,
         )
+
+    if squared:
+        return np.asarray(img_out)
 
     return np.asarray(np.sqrt(img_out))
 

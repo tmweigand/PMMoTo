@@ -58,3 +58,22 @@ def test_decompose_img_2():
     result = pmmoto.core.utils.decompose_img(img, start=start, shape=shape)
 
     np.testing.assert_array_equal(result, expected_result)
+
+
+def test_pad():
+    """
+    Test of padding and un-padding an array
+    """
+    voxels = (25, 25, 25)
+
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels)
+
+    pad = ((3, 3), (3, 3), (3, 3))
+    pad_img = pmmoto.core.utils.constant_pad_img(img, pad, 8)
+    unpad_img = pmmoto.core.utils.unpad(pad_img, pad)
+    np.testing.assert_array_equal(img, unpad_img)
+
+    pad = ((0, 3), (0, 0), (3, 0))
+    pad_img = pmmoto.core.utils.constant_pad_img(img, pad, 8)
+    unpad_img = pmmoto.core.utils.unpad(pad_img, pad)
+    np.testing.assert_array_equal(img, unpad_img)

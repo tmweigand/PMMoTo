@@ -8,7 +8,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
-__all__ = ["phase_exists", "constant_pad_img"]
+__all__ = ["phase_exists", "constant_pad_img", "unpad"]
 
 
 def raise_error():
@@ -142,15 +142,19 @@ def check_padding(mpi_size, boundaries) -> bool:
     return pad
 
 
-def unpad(grid, pad):
+def unpad(img, pad):
     """
-    Unpad a padded array
+    Removes padding from a NumPy array.
+
+    Parameters:
+        img (np.ndarray): The padded array.
+        pad (list or tuple): Padding amounts in the format [[before_0, after_0], [before_1, after_1], ...].
+
+    Returns:
+        np.ndarray: The unpadded array.
     """
-    _dim = grid.shape
-    grid_out = grid[
-        pad[0] : _dim[0] - pad[1], pad[2] : _dim[1] - pad[3], pad[4] : _dim[2] - pad[5]
-    ]
-    return np.ascontiguousarray(grid_out)
+    slices = tuple(slice(p[0], img.shape[i] - p[1]) for i, p in enumerate(pad))
+    return np.ascontiguousarray(img[slices])
 
 
 def constant_pad_img(img, pad, pad_value):
