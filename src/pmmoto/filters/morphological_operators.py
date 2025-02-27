@@ -25,6 +25,7 @@ __all__ = [
 def gen_struct_ratio(resolution, radius):
     """
     Generate the structuring element dimensions for halo communication
+    https://www.iwaenc.org/proceedings/1997/nsip97/pdf/scan/ns970226.pdf
     """
 
     if len(resolution) not in {2, 3}:
@@ -59,17 +60,18 @@ def gen_struct_element(resolution, radius):
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list or tuple of length 2 or 3.")
 
+    if resolution[0] != resolution[1] != resolution[2]:
+        raise ValueError("Resolution must be isotropic for morphological methods.")
+
     struct_ratio = gen_struct_ratio(resolution, radius)
 
-    grids = [
-        np.linspace(-r * res, r * res, r * 2 + 1)
-        for r, res in zip(struct_ratio, resolution)
-    ]
-
+    grids = [np.linspace(-r, r, r * 2 + 1) for r, res in zip(struct_ratio, resolution)]
     _xg, _yg, _zg = np.meshgrid(*grids, indexing="ij")
 
     # Compute structuring element
-    struct_element = np.array(_xg**2 + _yg**2 + _zg**2 <= radius**2, dtype=np.uint8)
+    s = _xg**2 + _yg**2 + _zg**2
+    _radius = radius / resolution[0]
+    struct_element = np.array(s <= _radius * _radius, dtype=np.uint8)
 
     return struct_ratio, struct_element
 

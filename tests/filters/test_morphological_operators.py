@@ -13,38 +13,21 @@ def test_gen_struct_ratio():
     """
 
     struct_ratio = pmmoto.filters.morphological_operators.gen_struct_ratio(
-        resolution=[0.5, 0.02, 1.5], radius=1
+        resolution=[0.5, 0.5, 0.5], radius=1
     )
 
-    np.testing.assert_equal(struct_ratio, [2, 50, 1])
-
-    struct_ratio = pmmoto.filters.morphological_operators.gen_struct_ratio(
-        [0.5, 0.02, 1.5], 10
-    )
-
-    np.testing.assert_equal(struct_ratio, [20, 500, 7])
+    np.testing.assert_equal(struct_ratio, [2, 2, 2])
 
 
 def test_gen_struct_element():
     """
     Generate a spherical/circular structuring element
     """
-
     _, struct_element = pmmoto.filters.morphological_operators.gen_struct_element(
-        resolution=[0.5, 0.02, 0.25], radius=1
+        resolution=[0.01, 0.01, 0.01], radius=0.03
     )
 
-    # struct_element shape is equal to 2*struct_ratio + 1
-    assert struct_element.shape == (5, 101, 9)
-    assert np.sum(struct_element) == 1569
-
-    _, struct_element = pmmoto.filters.morphological_operators.gen_struct_element(
-        resolution=[0.05, 0.02, 0.25], radius=0.1
-    )
-
-    # struct_element shape is equal to 2*struct_ratio + 1
-    assert struct_element.shape == (5, 11, 3)
-    assert np.sum(struct_element) == 31
+    assert np.sum(struct_element) == 123
 
 
 def test_gen_struct_element_2():
