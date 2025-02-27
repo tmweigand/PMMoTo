@@ -16,17 +16,44 @@ def edt(img, subdomain=None):
         subdomain (_type_): _description_
         img (numpy array): _description_
     """
-    img_out = np.copy(img).astype(np.float32)
+    # img_out = np.copy(img).astype(np.float32)
     if subdomain is not None:
 
         # resolution = subdomain.domain.resolution
 
         # if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
+        if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
+            img_out = corrected_edt(img, subdomain)
+        else:
+            img_out = edt3d(img, resolution=subdomain.domain.resolution)
+
+    else:  # Simply perform the edt with no corrections
+        if len(img.shape) == 3:
+            img_out = edt3d(img)
+        elif len(img.shape) == 2:
+            img_out = edt2d(img)
+        else:
+            raise ValueError(f"Wrong img dimension {img.shape}")
+
+    return img_out
+
+
+def corrected_edt(img, subdomain):
+    """
+    This performs an edt with correctors, meaning this can run with periodic
+    boundary conditions and distributed memory. The correct pass information along each dimension
+    to correct the algorithm.
+    """
+    img_out = np.copy(img).astype(np.float32)
 
         dimension = 0
         lower_correctors, upper_correctors = get_initial_correctors(
             subdomain=subdomain, img=img, dimension=dimension
         )
+    dimension = 0
+    lower_correctors, upper_correctors = get_initial_correctors(
+        subdomain=subdomain, img=img, dimension=dimension
+    )
 
         img_out = _distance.get_initial_envelope(
             img,
@@ -36,6 +63,14 @@ def edt(img, subdomain=None):
             lower_boundary=lower_correctors,
             upper_boundary=upper_correctors,
         )
+    img_out = _distance.get_initial_envelope(
+        img,
+        img_out,
+        dimension=dimension,
+        resolution=subdomain.domain.resolution[dimension],
+        lower_boundary=lower_correctors,
+        upper_boundary=upper_correctors,
+    )
 
         for dimension in [1, 2]:
             lower_hull, upper_hull = get_boundary_hull(
@@ -44,6 +79,13 @@ def edt(img, subdomain=None):
                 og_img=img,
                 dimension=dimension,
             )
+    for dimension in [1, 2]:
+        lower_hull, upper_hull = get_boundary_hull(
+            subdomain=subdomain,
+            img=img_out,
+            og_img=img,
+            dimension=dimension,
+        )
 
             _distance.get_parabolic_envelope(
                 img_out,
@@ -52,6 +94,13 @@ def edt(img, subdomain=None):
                 lower_hull=lower_hull,
                 upper_hull=upper_hull,
             )
+        _distance.get_parabolic_envelope(
+            img_out,
+            dimension=dimension,
+            resolution=subdomain.domain.resolution[dimension],
+            lower_hull=lower_hull,
+            upper_hull=upper_hull,
+        )
 
         img_out = np.asarray(np.sqrt(img_out))
 
@@ -62,6 +111,7 @@ def edt(img, subdomain=None):
             img_out = edt2d(img)
 
     return img_out
+    return np.asarray(np.sqrt(img_out))
 
 
 def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
