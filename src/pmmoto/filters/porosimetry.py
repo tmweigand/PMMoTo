@@ -2,7 +2,9 @@
 
 from typing import Literal
 import numpy as np
-import pmmoto
+from . import morphological_operators
+from . import distance
+from . import connected_components
 
 __all__ = ["get_sizes", "porosimetry"]
 
@@ -61,54 +63,72 @@ def get_radii(p_c, gamma):
 
 
 def porosimetry(
-    subdomain, img, radius, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
+    subdomain,
+    img,
+    radius,
+    inlet=False,
+    mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
     """
-    sd = subdomain
-    img = image
-    radii = number
-    mode = must be either "hybrid", "dt", or "morph"
+    Perform a morphological erosion followed by a morphological dilation.
+    If inlet, the foreground voxels must be connected to the inlet
     """
 
     img_results = np.zeros_like(img, dtype=np.double)
 
     if mode == "morph":
-        img_results = pmmoto.filters.morphological_operators.subtraction(
+        img_results = morphological_operators.subtraction(
             subdomain=subdomain, img=img, radius=radius, fft=True
         )
 
-        img_results = pmmoto.filters.morphological_operators.addition(
+        if inlet:
+            img_results = connected_components.inlet_connected_img(
+                subdomain, img_results
+            )
+
+        img_results = morphological_operators.addition(
             subdomain=subdomain, img=img_results, radius=radius, fft=True
         )
 
-    elif mode == "dt":  # Close, but need to fix to match morph
-        edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
+    elif mode == "distance":  # Close, but need to fix to match morph
+        edt = distance.edt(img=img, subdomain=subdomain)
         img_results = edt >= radius
 
-        if np.any(img_results):
-            edt_inverse = pmmoto.filters.distance.edt(
-                img=~img_results, subdomain=subdomain
+        if inlet:
+            img_results = connected_components.inlet_connected_img(
+                subdomain, img_results
             )
+
+        if np.any(img_results):
+            edt_inverse = distance.edt(img=~img_results, subdomain=subdomain)
             img_results = edt_inverse < radius
 
     elif mode == "hybrid":
-        edt = pmmoto.filters.distance.edt(img=img, subdomain=subdomain)
+        edt = distance.edt(img=img, subdomain=subdomain)
         img_results = edt >= radius
 
+        if inlet:
+            img_results = connected_components.inlet_connected_img(
+                subdomain, img_results
+            )
+
         if np.any(img_results):
-            img_results = pmmoto.filters.morphological_operators.addition(
+            img_results = morphological_operators.addition(
                 subdomain=subdomain, img=img_results, radius=radius, fft=False
             )
-    else:
-        raise Exception("Unrecognized mode" + mode)
 
     return img_results.astype(np.double)
 
 
 def pore_size_distribution(
-    subdomain, img, radii, mode: Literal["hybrid", "dt", "morph"] = "hybrid"
+    subdomain,
+    img,
+    radii,
+    inlet=False,
+    mode: Literal["hybrid", "dt", "morph"] = "hybrid",
 ):
     """
+    Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
     Calls porosimetry function with single size and returns img_results.
     """
     if not isinstance(radii, list):
@@ -116,10 +136,11 @@ def pore_size_distribution(
 
     img_results = np.zeros_like(img, dtype=np.double)
     for radius in radii:
-        img_temp = porosimetry(subdomain=subdomain, img=img, radius=radius, mode=mode)
+        img_temp = porosimetry(
+            subdomain=subdomain, img=img, radius=radius, inlet=inlet, mode=mode
+        )
 
         if np.any(img_temp):
-            # what about multiphase systems
             img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
     return img_results

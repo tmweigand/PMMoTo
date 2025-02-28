@@ -353,7 +353,7 @@ def gen_inlet_label_map(subdomain, label_grid):
         subdomain (_type_): _description_
         label_grid (_type_): _description_
     """
-    inlet_labels = []
+    inlet_labels = np.empty(0)
     for feature_id, feature in subdomain.features["faces"].items():
         if feature.inlet:
             inlet_labels = np.unique(

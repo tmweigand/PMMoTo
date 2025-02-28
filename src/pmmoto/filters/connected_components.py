@@ -10,6 +10,7 @@ __all__ = [
     "gen_inlet_label_map",
     "gen_outlet_label_map",
     "phase_count",
+    "inlet_connected_img",
 ]
 
 

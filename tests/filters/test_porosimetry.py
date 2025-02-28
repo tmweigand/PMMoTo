@@ -103,7 +103,6 @@ def test_modes():
     )
 
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
-    # sizes = pmmoto.filters.porosimetry.get_sizes(0, 10, 4, "linear")
     morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
     dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "dt")
     hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "hybrid")
@@ -124,13 +123,48 @@ def test_modes():
 
 
 def test_get_radii():
-    """Test if capillary pressures are converting to radii correctly"""
+    """
+    Test if capillary pressures are converting to radii correctly
+    """
+
     p_c = 1
     gamma = 1
     radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
     assert radii == 1.0
+
     p_c = [1, 2, 4]
     radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
-    print(radii)
-    expected_result = [1.0, 0.5, 0.25]
-    assert np.allclose(radii, expected_result)
+    assert np.allclose(radii, [1.0, 0.5, 0.25])
+
+
+def test_porosimetry_inlet():
+    """
+    Ensure when inlet = True, that only voxels connected in inlet are > 0
+    """
+
+    radius = 0.02
+    voxels = (100, 100, 100)
+    inlet = ((1, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels=voxels, inlet=inlet)
+
+    img = np.zeros(sd.voxels)
+    img[0:10, 5:10, 5:10] = 1
+    img[12:35, 12:35, 12:35] = 1
+
+    morph_no_inlet = pmmoto.filters.porosimetry.porosimetry(
+        subdomain=sd, img=img, radius=radius, mode="morph", inlet=False
+    )
+
+    morph_inlet = pmmoto.filters.porosimetry.porosimetry(
+        subdomain=sd, img=img, radius=radius, mode="morph", inlet=True
+    )
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/test_morph_inlet",
+        sd,
+        img,
+        additional_img={
+            "morph_no_inlet": morph_no_inlet,
+            "morph_inlet": morph_inlet,
+        },
+    )
