@@ -24,8 +24,17 @@ cdef extern from "sphere_pack.hpp":
 
 	cdef shared_ptr[SphereList] initialize_list[SphereList,Sphere](
 		vector[vector[double]] data,
-		vector[double] point,
-		double radius,
-		bool kd_tree,
-		bool trim
+		vector[vector[double]] domain_box,
+		vector[vector[double]] subdomain_box,
+		bool add_periodic
+	)
+
+	cdef vector[vector[double]] return_particles[SphereList](
+		shared_ptr[SphereList],
+		bool return_own
+	)
+
+	cdef void set_own_particles[SphereList](
+		shared_ptr[SphereList],
+		vector[vector[double]] subdomain_box,
 	)

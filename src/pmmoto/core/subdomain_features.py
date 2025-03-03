@@ -186,8 +186,7 @@ class Edge(Feature):
         self.periodic = self.is_periodic(boundary_type)
         self.opp_info = orientation.edges[feature_id]["opp"]
         self.global_boundary = self.get_global_boundary(global_boundary)
-        #
-        # self.periodic_correction = self.get_periodic_correction(boundary_type)
+        self.periodic_correction = self.get_periodic_correction()
 
     def is_periodic(self, boundary_type) -> bool:
         """Determine if an edge is a periodic edge

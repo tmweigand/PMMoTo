@@ -114,7 +114,68 @@ def g_rdf(subdomain, probe_atom, radius, atom_list, num_bins):
     """
     Finds the atoms that are within a radius of probe atom
     """
+    if len(probe_atom.shape) == 1:
+        probe_atom = probe_atom[np.newaxis, :]
 
-    rdf = _rdf.generate_rdf(subdomain, atom_list, probe_atom, radius, num_bins)
+    # binned_distances = _rdf.generate_rdf(
+    #     subdomain, atom_list, probe_atom, radius, num_bins
+    # )
 
-    return rdf
+    atoms = _rdf.generate_rdf(subdomain, atom_list, probe_atom, radius, num_bins)
+
+    # # If probe_atom in atom_list
+    # binned_distances[0] = binned_distances[0] - probe_atom.shape[0]
+
+    # # probe_radius = probe_atom[0, 3]
+    # num_atoms = atom_list.shape[0]
+    # num_probe_atoms = probe_atom.shape[0]
+    # bin_width = radius / num_bins
+    # bin_centers = np.linspace(bin_width / 2, bin_width / 2 + radius, num_bins)
+
+    # shell_volumes = (
+    #     (4 / 3)
+    #     * np.pi
+    #     * ((bin_centers + bin_width / 2) ** 3 - (bin_centers - bin_width / 2) ** 3)
+    # )
+
+    # # Normalize RDF
+    # number_density = num_probe_atoms / subdomain.domain.volume
+
+    # g_r = binned_distances / (number_density * shell_volumes * num_probe_atoms)
+
+    return atoms
+
+
+def sphere_volume(radius):
+    return (4.0 / 3.0) * np.pi * radius * radius * radius
+
+
+def local_rdf(subdomain, probe_atom, radius, atom_list, num_bins):
+    """
+    Finds the atoms that are within a radius of probe atom
+    """
+    if len(probe_atom.shape) == 1:
+        probe_atom = probe_atom[np.newaxis, :]
+
+    binned_distances = _rdf.generate_rdf(
+        subdomain, atom_list, probe_atom, radius, num_bins
+    )
+
+    # If probe_atom in atom_list
+    binned_distances[0] = binned_distances[0] - probe_atom.shape[0]
+
+    # probe_radius = probe_atom[0, 3]
+    num_atoms = atom_list.shape[0]
+    num_probe_atoms = probe_atom.shape[0]
+    bin_width = radius / num_bins
+    bin_centers = np.linspace(bin_width / 2, bin_width / 2 + radius, num_bins)
+
+    shell_volumes = sphere_volume(bin_centers + bin_width / 2) - sphere_volume(
+        bin_centers - bin_width / 2
+    )
+
+    # Normalize RDF
+    number_density = num_probe_atoms / subdomain.domain.volume
+    g_r = np.asarray(binned_distances) / (np.sum(binned_distances))
+
+    return g_r, bin_centers

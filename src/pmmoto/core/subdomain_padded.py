@@ -25,8 +25,12 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.inlet = self.get_inlet()
 
         self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
+        self.own_voxels = self.get_voxels(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
+        self.own_box = self.get_box(self.own_voxels)
         self.voxels = self.get_padded_voxels()
-        self.box = self.get_box()
+        self.box = self.get_padded_box()
         self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
         self.boundary_types = self.get_boundary_types(
@@ -146,7 +150,7 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return tuple(voxels)
 
-    def get_box(self):
+    def get_padded_box(self):
         """
         Determine the bounding box for each subdomain.
         Note: subdomains are divided such that voxel spacing
@@ -211,7 +215,7 @@ class PaddedSubdomain(subdomain.Subdomain):
 
     def get_own_voxels(self, subdomain_pad, start, subdomain_voxels):
         """
-        Determine the index for the voxels owned by this subdomaion
+        Determine the index for the voxels owned by this subdomain
 
         Returns:
             _type_: _description_

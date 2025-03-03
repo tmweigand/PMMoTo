@@ -14,10 +14,10 @@ from libcpp.memory cimport shared_ptr
 from libc.math cimport sin, cos
 cnp.import_array()
 
-from .sphere_pack cimport Sphere
-from .sphere_pack cimport SphereList
-from .sphere_pack cimport initialize_list
-from .sphere_pack cimport trim_sphere_list_spheres
+from .particles.sphere_pack cimport Sphere
+from .particles.sphere_pack cimport SphereList
+from .particles.sphere_pack cimport initialize_list
+from .particles.sphere_pack cimport trim_sphere_list_spheres
 
 
 __all__ = [
@@ -36,9 +36,8 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         cnp.uint8_t [:, :, :] _img
         Grid grid_c
         Verlet verlet_c
-        vector[double] point = {0.,0.,0.}
-        double radius = 0
         vector[vector[double]] spheres_c
+        vector[vector[double]] domain_box,subdomain_box
 
     # Initialize img
     img = np.ones(subdomain.voxels, dtype=np.uint8)
@@ -61,7 +60,10 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         sd_radius = subdomain.get_radius()
         radius = sd_radius + np.max(spheres[:,3])
 
-    cdef shared_ptr[SphereList] all_spheres = initialize_list[SphereList,Sphere](spheres_c,point,radius,kd,trim)
+    domain_box = subdomain.domain.box
+    subdomain_box = subdomain.own_box
+
+    cdef shared_ptr[SphereList] all_spheres = initialize_list[SphereList,Sphere](spheres_c,domain_box,subdomain_box)
 
     # Convert Verlet info
     verlet_c.num_verlet = subdomain.num_verlet

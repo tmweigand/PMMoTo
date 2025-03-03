@@ -871,6 +871,7 @@ def writeParallelVTKGrid(
     ends,
     sources,
     spacing,
+    origin=(0, 0, 0),
     ghostlevel=0,
     lower_extent=(0, 0, 0),
     cellData=None,
@@ -939,7 +940,109 @@ def writeParallelVTKGrid(
         w.openGrid(
             start=start,
             end=end,
-            origin=(0, 0, 0),
+            origin=origin,
+            spacing=spacing,
+            ghostlevel=ghostlevel,
+        )
+
+    _addDataToParallelFile(w, cellData=cellData, pointData=pointData)
+
+    if is_Rect:
+        w.openElement("PCoordinates")
+        w.addHeader("x_coordinates", dtype=dtype, ncomp=1)
+        w.addHeader("y_coordinates", dtype=dtype, ncomp=1)
+        w.addHeader("z_coordinates", dtype=dtype, ncomp=1)
+        w.closeElement("PCoordinates")
+    else:
+        w.openElement("PPoints")
+        w.addHeader("points", dtype=dtype, ncomp=3)
+        w.closeElement("PPoints")
+
+    for start_source, end_source, source in zip(starts, ends, sources):
+        w.addPiece(start_source, end_source, source)
+
+    w.closeGrid()
+    w.save()
+    return w.getFileName()
+
+
+def writeParallelPoints(
+    path,
+    coordsData,
+    starts,
+    ends,
+    sources,
+    spacing,
+    origin=(0, 0, 0),
+    ghostlevel=0,
+    lower_extent=(0, 0, 0),
+    cellData=None,
+    pointData=None,
+):
+    """
+    Writes a parallel vtk file from grid-like data:
+    VTKStructuredGrid or VTKRectilinearGrid
+
+    Parameters
+    ----------
+    path : str
+        name of the file without extension.
+    coordsData : tuple
+        2-tuple (shape, dtype) where shape is the
+        shape of the coordinates of the full mesh
+        and dtype is the dtype of the coordinates.
+    starts : list
+        list of 3-tuple representing where each source file starts
+        in each dimension
+    source : list
+        list of the relative paths of the source files where the actual data is found
+    ghostlevel : int, optional
+        Number of ghost-levels by which
+        the extents in the individual source files overlap.
+    pointData : dict
+        dictionnary containing the information about the arrays
+        containing node centered data.
+        Keys shoud be the names of the arrays.
+        Values are (dtype, number of components)
+    cellData :
+        dictionnary containing the information about the arrays
+        containing cell centered data.
+        Keys shoud be the names of the arrays.
+        Values are (dtype, number of components)
+    """
+    # Check that every source as a start and an end
+    assert len(starts) == len(ends) == len(sources)
+
+    # Get the extension + check that it's consistent accros all source files
+    common_ext = sources[0].split(".")[-1]
+    assert all(s.split(".")[-1] == common_ext for s in sources)
+
+    if common_ext == "vts":
+        ftype = VtkPStructuredGrid
+        is_Rect = False
+    elif common_ext == "vtr":
+        ftype = VtkPRectilinearGrid
+        is_Rect = True
+    elif common_ext == "vti":
+        ftype = VtkPImageData
+        is_Rect = False
+    else:
+        raise ValueError("This functions is meant to work only with ")
+
+    w = VtkParallelFile(path, ftype)
+    start = lower_extent
+    size, dtype = coordsData
+    end = [
+        s + e for s, e in zip(size, lower_extent)
+    ]  # already flipped signs of lower_extent
+
+    if ftype is not VtkPImageData:
+        w.openGrid(start=start, end=end, ghostlevel=ghostlevel)
+    else:
+        w.openGrid(
+            start=start,
+            end=end,
+            origin=origin,
             spacing=spacing,
             ghostlevel=ghostlevel,
         )
