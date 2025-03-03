@@ -20,13 +20,17 @@ class PaddedSubdomain(subdomain.Subdomain):
     ):
         self.rank = rank
         self.domain = decomposed_domain
-        self.index = self.get_index()
+        self.index = self.get_index(self.rank, self.domain.subdomains)
         self.pad = self.get_padding(pad)
         self.inlet = self.get_inlet()
 
         self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
-        self.voxels = self.get_voxels()
-        self.box = self.get_box()
+        self.own_voxels = self.get_voxels(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
+        self.own_box = self.get_box(self.own_voxels)
+        self.voxels = self.get_padded_voxels()
+        self.box = self.get_padded_box()
         self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
         self.boundary_types = self.get_boundary_types(
@@ -131,27 +135,22 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return pad, loop
 
-    def get_voxels(self) -> tuple[int, ...]:
+    def get_padded_voxels(self) -> tuple[int, ...]:
         """
         Calculate number of voxels in each subdomain.
         This can be very bad when voxels ~= ranks or something like that
         """
         voxels = [0, 0, 0]
-        for dim, ind in enumerate(self.index):
-            sd_voxels, rem_sd_voxels = divmod(
-                self.domain.voxels[dim], self.domain.subdomains[dim]
-            )
-            if ind == self.domain.subdomains[dim] - 1:
-                voxels[dim] = sd_voxels + rem_sd_voxels
-            else:
-                voxels[dim] = sd_voxels
+        _voxels = self.get_voxels(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
 
         for n, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
-            voxels[n] = voxels[n] + pad[0] + pad[1] + r_pad[0] + r_pad[1]
+            voxels[n] = _voxels[n] + pad[0] + pad[1] + r_pad[0] + r_pad[1]
 
         return tuple(voxels)
 
-    def get_box(self):
+    def get_padded_box(self):
         """
         Determine the bounding box for each subdomain.
         Note: subdomains are divided such that voxel spacing
@@ -216,7 +215,7 @@ class PaddedSubdomain(subdomain.Subdomain):
 
     def get_own_voxels(self, subdomain_pad, start, subdomain_voxels):
         """
-        Determine the index for the voxels owned by this subdomaion
+        Determine the index for the voxels owned by this subdomain
 
         Returns:
             _type_: _description_
