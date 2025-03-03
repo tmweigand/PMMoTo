@@ -14,10 +14,9 @@ from libcpp.memory cimport shared_ptr
 
 from .rdf cimport _generate_rdf
 
-from .atoms cimport Atom
-from .atoms cimport AtomList
-from .atoms cimport initialize_list
-
+from .particles.atoms cimport Atom
+from .particles.atoms cimport AtomList
+from .particles.atoms cimport initialize_list
 
 __all__ = ["generate_rdf"]
 
@@ -30,10 +29,11 @@ def generate_rdf(subdomain, atoms, probe_atoms, radius_in, num_bins):
     # calculate the distance
     # bin distance counts
     cdef: 
-        vector[double] point = {0.,0.,0.}
+        vector[double] point
         double radius = 0
         vector[vector[double]] atoms_c, probe_atoms_c
         vector[long int] rdf
+        vector[vector[double]] box
         bool trim = False
         bool kd = True
 
@@ -45,10 +45,20 @@ def generate_rdf(subdomain, atoms, probe_atoms, radius_in, num_bins):
         sd_radius = subdomain.get_radius()
         radius = sd_radius + radius_in
         trim = True
+    else:
+        point = [0,0,0]
+        trim = False
 
-    cdef shared_ptr[AtomList] all_spheres = initialize_list[AtomList,Atom](atoms_c,point,radius,kd,trim)
-    cdef shared_ptr[AtomList] probe_spheres = initialize_list[AtomList,Atom](probe_atoms_c,point,radius,kd,trim)
-    radius = radius_in
-    rdf = _generate_rdf(probe_spheres,all_spheres,radius,num_bins)
+    box = subdomain.own_box
 
-    return rdf
+    # cdef shared_ptr[AtomList] atom_list = initialize_list[AtomList,Atom](atoms_c,point,radius,box,kd,trim)
+    # cdef shared_ptr[AtomList] probe_list = initialize_list[AtomList,Atom](probe_atoms_c,point,radius,box,kd,trim)
+    
+    # radius = radius_in
+    # rdf = _generate_rdf(probe_list,atom_list,radius,num_bins)
+
+    # cdef vector[vector[double]] check_atoms_c = return_particles(atom_list)
+
+    # check_atoms = check_atoms_c
+
+    return 0

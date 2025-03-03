@@ -7,8 +7,6 @@
 #include <iostream>
 #include <vector>
 
-#include "KDTreeVectorOfVectorsAdaptor.h"
-#include "nanoflann.hpp"
 #include "sphere_pack.hpp"
 
 /**
@@ -28,6 +26,7 @@ struct Verlet {
   std::vector<double> diameters;
   std::vector<std::vector<std::vector<size_t>>> loops;
 };
+
 /**
  * @brief Brute force approach
  * otherwise).
@@ -62,8 +61,8 @@ void gen_sphere_img_brute_force(
 
   for (size_t n = 0; n < verlet.num_verlet; ++n) {
     std::vector<std::vector<size_t>> loop = verlet.loops[n];
-    std::vector<size_t> verlet_spheres = sphere_list->collect_verlet_spheres(
-        verlet.diameters[n], verlet.centroids[n]);
+    std::vector<size_t> verlet_spheres = sphere_list->collect_verlet_indices(
+        verlet.centroids[n], verlet.diameters[n]);
 
     for (size_t i = loop[0][0]; i < loop[0][1]; ++i) {
       voxel[0] = grid.x[i];
@@ -117,8 +116,8 @@ void gen_sphere_img_kd_method(uint8_t *img, const Grid &grid, Verlet verlet,
 
   for (size_t n = 0; n < verlet.num_verlet; ++n) {
     loop = verlet.loops[n];
-    verlet_spheres = sphere_list->collect_verlet_spheres(verlet.diameters[n],
-                                                         verlet.centroids[n]);
+    verlet_spheres = sphere_list->collect_verlet_indices(verlet.centroids[n],
+                                                         verlet.diameters[n]);
 
     for (size_t i = loop[0][0]; i < loop[0][1]; ++i) {
       voxel[0] = grid.x[i];

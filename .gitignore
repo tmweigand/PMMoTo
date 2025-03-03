@@ -2,7 +2,6 @@
 .vscode
 .DS_Store
 *.so
-*.workspace
 *.cpp
 *.html
 profile_out.*

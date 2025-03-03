@@ -10,16 +10,46 @@ from . import evtk
 comm = MPI.COMM_WORLD
 
 __all__ = [
+    "save_particle_data",
     "save_img_data_serial",
     "save_img_data_parallel",
     "save_extended_img_data_parallel",
-    "save_img_data_proc",
     "save_img",
 ]
 
 
+def save_particle_data(file_name: str, subdomain: dict, particles, **kwargs):
+    """
+    Save particle data as VTK PolyData
+    """
+    io_utils.check_file_path(file_name)
+
+    data_length = particles.shape[1]
+    data = {}
+    if data_length > 3:
+        radius = np.ascontiguousarray(particles[:, 3])
+        data["radius"] = radius
+    if data_length > 4:
+        own = np.ascontiguousarray(particles[:, 4])
+        data["own"] = own
+
+    file_proc = (
+        file_name + "/" + file_name.split("/")[-1] + "Proc." + str(subdomain.rank)
+    )
+
+    evtk.pointsToVTK(
+        file_proc,
+        np.ascontiguousarray(particles[:, 0]),
+        np.ascontiguousarray(particles[:, 1]),
+        np.ascontiguousarray(particles[:, 2]),
+        data=data,
+    )
+
+
 def save_img_data_serial(file_name: str, subdomains: dict, img: dict, **kwargs):
-    """ """
+    """
+    This functions saves a decomposed image that is one a single process
+    """
     if type(subdomains) is not dict:
         subdomains = {0: subdomains}
 
@@ -53,6 +83,30 @@ def save_img_data_parallel(file_name, subdomain, img, additional_img=None):
         write_parallel_VTK_img(file_name, subdomain, img, additional_img)
 
 
+def save_img(file_name, img, resolution=None, **kwargs):
+    """
+    Save an image as is.
+    """
+
+    io_utils.check_file_path(file_name)
+
+    if resolution is None:
+        resolution = (1, 1, 1)
+
+    data = {"img": img}
+    for key, value in kwargs.items():
+        data[key] = value
+
+    evtk.imageToVTK(
+        path=file_name,
+        origin=(0, 0, 0),
+        start=(0, 0, 0),
+        end=img.shape,
+        spacing=resolution,
+        cellData=data,
+    )
+
+
 def save_extended_img_data_parallel(
     file_name, subdomain, img, extension=((0, 0), (0, 0), (0, 0)), additional_img=None
 ):
@@ -69,12 +123,7 @@ def save_extended_img_data_parallel(
         io_utils.check_file_path(file_name)
     comm.barrier()
 
-    # extension = [
-    #     ((i - s) / 2, (i - s) / 2) for i, s in zip(img.shape, subdomain.voxels)
-    # ]
-
     save_extended_img_data_proc(file_name, subdomain, img, extension)
-
     if subdomain.rank == 0:
         write_parallel_VTK_img(file_name, subdomain, img, additional_img, extension)
 
@@ -100,10 +149,17 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
         )
 
     io_utils.check_file_path(file_name)
-    file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
+    file_proc = (
+        file_name + "/" + file_name.split("/")[-1] + "Proc." + str(subdomain.rank)
+    )
 
     point_data = {"img": img}
     point_data_info = {"img": (img.dtype, 1)}
+    origin = [
+        subdomain.domain.box[0][0],
+        subdomain.domain.box[1][0],
+        subdomain.domain.box[2][0],
+    ]
 
     # grab additional images
     if additional_img is not None:
@@ -123,12 +179,12 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
             point_data_info[key] = (value.dtype, 1)
 
     evtk.imageToVTK(
-        path=file_proc + str(subdomain.rank),
-        origin=(0, 0, 0),
-        start=subdomain.start,
-        end=[sum(x) for x in zip(subdomain.start, subdomain.voxels)],
+        path=file_proc,
         spacing=subdomain.domain.resolution,
         cellData=point_data,
+        origin=origin,
+        start=subdomain.start,
+        end=[sum(s) for s in zip(subdomain.start, subdomain.voxels)],
     )
 
 
@@ -159,30 +215,6 @@ def save_extended_img_data_proc(file_name, subdomain, img, extension):
     )
 
 
-def save_img(file_name, img, resolution=None, **kwargs):
-    """
-    Save an image as is.
-    """
-
-    io_utils.check_file_path(file_name)
-
-    if resolution is None:
-        resolution = (1, 1, 1)
-
-    data = {"img": img}
-    for key, value in kwargs.items():
-        data[key] = value
-
-    evtk.imageToVTK(
-        path=file_name,
-        origin=(0, 0, 0),
-        start=(0, 0, 0),
-        end=img.shape,
-        spacing=resolution,
-        cellData=data,
-    )
-
-
 def write_parallel_VTK_img(
     file_name, subdomain, img, additional_img=None, extension=((0, 0), (0, 0), (0, 0))
 ):
@@ -202,6 +234,11 @@ def write_parallel_VTK_img(
     name = [local_file_proc] * subdomain.domain.num_subdomains
     starts = [[0, 0, 0] for _ in range(subdomain.domain.num_subdomains)]
     ends = [[0, 0, 0] for _ in range(subdomain.domain.num_subdomains)]
+    origin = [
+        subdomain.domain.box[0][0],
+        subdomain.domain.box[1][0],
+        subdomain.domain.box[2][0],
+    ]
 
     for n in range(0, subdomain.domain.num_subdomains):
         _sd = subdomain_padded.PaddedSubdomain(n, subdomain.domain)
@@ -231,6 +268,7 @@ def write_parallel_VTK_img(
             voxels,
             subdomain.coords[0].dtype,
         ),
+        origin=origin,
         starts=starts,
         ends=ends,
         sources=name,

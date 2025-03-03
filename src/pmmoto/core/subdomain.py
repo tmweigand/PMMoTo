@@ -23,7 +23,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         self.voxels = self.get_voxels(
             self.index, self.domain.voxels, self.domain.subdomains
         )
-        self.box = self.get_box()
+        self.box = self.get_box(self.voxels)
         self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
         self.boundary_types = self.get_boundary_types(
@@ -66,7 +66,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(voxels)
 
-    def get_box(self):
+    def get_box(self, voxels):
         """
         Determine the bounding box for each subdomain.
         Note: subdomains are divided such that voxel spacing
@@ -74,7 +74,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         """
         box = []
         for dim, ind in enumerate(self.index):
-            length = self.voxels[dim] * self.domain.resolution[dim]
+            length = voxels[dim] * self.domain.resolution[dim]
             lower = self.domain.box[dim][0] + length * ind
             if ind == self.domain.subdomains[dim] - 1:
                 lower = self.domain.box[dim][1] - length
@@ -231,7 +231,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         """
         centroid = np.zeros(3, dtype=np.double)
         for dim, side in enumerate(self.box):
-            centroid[dim] = 0.5 * (side[1] - side[0])
+            centroid[dim] = side[0] + 0.5 * (side[1] - side[0])
 
         return centroid
 

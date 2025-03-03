@@ -9,12 +9,12 @@ cdef extern from "atoms.hpp":
 	cdef cppclass Atom
 
 	cdef cppclass AtomList:
-		vector[Atom] atoms
+		
 		AtomList(
 			const vector[vector[double]]& atom_data, 
 			bool build_kd
 			)
-		size_t size()
+
 		vector[double] collect_kd_distances(
 			vector[double] point,
 			double radius
@@ -22,8 +22,18 @@ cdef extern from "atoms.hpp":
 
 	cdef shared_ptr[AtomList] initialize_list[AtomList,Atom](
 		vector[vector[double]] data,
-		vector[double] point,
-		double radius,
-		bool kd_tree,
-		bool trim
+		vector[vector[double]] domain_box,
+		vector[vector[double]] subdomain_box,
+		bool add_periodic
 	)
+
+	cdef vector[vector[double]] return_particles[AtomList](
+		shared_ptr[AtomList],
+		bool return_own
+	)
+
+	cdef void set_own_particles[AtomList](
+		shared_ptr[AtomList],
+		vector[vector[double]] subdomain_box,
+	)
+

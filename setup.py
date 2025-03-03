@@ -65,6 +65,13 @@ ext_modules = [
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
+    Extension(
+        "pmmoto.domain_generation._particles",
+        ["src/pmmoto/domain_generation/_particles.pyx"],
+        include_dirs=["src/pmmoto/domain_generation/"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+    ),
 ]
 setup(
     name="pmmoto",

@@ -8,7 +8,7 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 
-from .sphere_pack cimport SphereList
+from .particles.sphere_pack cimport SphereList
 
 cdef extern from "domain_generation.hpp":
 	cdef struct Grid:

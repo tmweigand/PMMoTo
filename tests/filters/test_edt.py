@@ -1,11 +1,10 @@
 """test_edt.py"""
 
-import scipy.ndimage
 import edt
 import numpy as np
-import pmmoto
 from mpi4py import MPI
 import pytest
+import pmmoto
 
 
 def test_edt_2d():
