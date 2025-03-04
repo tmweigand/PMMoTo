@@ -349,8 +349,38 @@ def gen_inkbottle(double[:] x, double[:] y, double[:] z):
     for i in range(0,sx):
         for j in range(0,sy):
             for k in range(0,sz):
-                r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-                if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+                if x[i] < 0: # TMW Hack for reservoirs
                     _grid[i,j,k] = 1
+                else:
+                    r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+                    if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+                        _grid[i,j,k] = 1
 
     return grid
+
+
+def domainGenEllINK(double[:] x, double[:] y, double[:] z):
+
+    cdef int NX = x.shape[0]
+    cdef int NY = y.shape[0]
+    cdef int NZ = z.shape[0]
+    cdef int i, j, k
+    cdef double r
+    cdef double radiusY = 1.0
+    cdef double radiusZ = 2.0
+
+    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] grid
+
+    grid = _grid
+
+    for i in range(0,NX):
+      for j in range(0,NY):
+        for k in range(0,NZ):
+          r = (0.01*math.cos(0.01*x[i]) + 0.5*math.sin(x[i]) + 0.75)
+          rY = r*radiusY
+          rz = r*radiusZ
+          if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
+            grid[i,j,k] = 1
+
+    return _grid

@@ -1,6 +1,7 @@
 import numpy as np
 
 from . import communication
+from . import utils
 
 
 class PorousMedia:
@@ -11,45 +12,36 @@ class PorousMedia:
     def __init__(self, subdomain, img):
         self.subdomain = subdomain
         self.img = img
-        self.porosity = None
-        self.set_wall_bcs()
+        self._porosity = None
 
-        # Set solid phase inlet/outlet to zeros
-        _inlet = np.zeros([2, 3 * 2], dtype=np.uint8)
-        _inlet[1, :] = subdomain.inlet.reshape([1, 6])
-        self.inlet = _inlet
-
-        _outlet = np.zeros([2, 3 * 2], dtype=np.uint8)
-        _outlet[1, :] = subdomain.outlet.reshape([1, 6])
-        self.outlet = _outlet
-
-    def set_wall_bcs(self):
+    @property
+    def porosity(self):
         """
-        If wall boundary conditions are specified, force solid on external boundaries.
-        For wall boundary conditions, the walls are stores as neighbor.
+        Getter for porosity, calculates if None.
         """
-        feature_types = ["faces", "edges", "corners"]
-        for feature_type in feature_types:
-            for feature_id, feature in self.subdomain.features[feature_type].items():
-                if feature.boundary_type == "wall":
-                    self.img[
-                        feature.loop["neighbor"][0][0] : feature.loop["neighbor"][0][1],
-                        feature.loop["neighbor"][1][0] : feature.loop["neighbor"][1][1],
-                        feature.loop["neighbor"][2][0] : feature.loop["neighbor"][2][1],
-                    ] = 0
+        if self._porosity is None:
+            self.set_porosity()
+        return self._porosity
 
-        self.img = communication.update_buffer(self.subdomain, self.img)
+    def set_porosity(self):
+        """
+        Calculate the porosity of porous media
+        """
+        own_grid = utils.own_grid(self.img, self.subdomain.get_own_voxels())
 
-    # def get_porosity(self):
-    #     """
-    #     Calalcaute the porosity of porous media grid
-    #     """
-    #     self.porosity = 1.0 - stats.get_volume_fraction(self.subdomain, self.grid, 0)
+        local_pore_voxels = np.count_nonzero(own_grid == 1)  # One is pore space
+
+        if self.subdomain.domain.num_subdomains > 1:
+            global_pore_voxels = communication.all_reduce(local_pore_voxels)
+        else:
+            global_pore_voxels = local_pore_voxels
+
+        self._porosity = global_pore_voxels / np.prod(self.subdomain.domain.voxels)
 
 
 def gen_pm(subdomain, img):
     """
-    Initialize the porousmedia class and set inlet/outlet/wall bcs
+    Initialize the porous media class and set inlet/outlet/wall bcs
     Gather loop_info for efficient looping
     """
     pm = PorousMedia(subdomain=subdomain, img=img)

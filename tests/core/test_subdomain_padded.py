@@ -195,3 +195,36 @@ def test_subdomain_3():
 
     own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
     np.testing.assert_array_equal(own_voxels, [-3, 34, 0, 35, 0, 35])
+
+
+def test_own_voxels():
+    """
+    Ensures that walls are correctly added to a porous media img
+    """
+    boundary_types = ((1, 1), (1, 1), (1, 1))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=boundary_types,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
+
+    # # Boundary Conditions must be 0 for reservoir check
+    inlet = ((1, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=((1, 1), (1, 1), (1, 1)),
+        inlet=inlet,
+        reservoir_voxels=10,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
+
+    # Now test reservoir
+    inlet = ((1, 0), (0, 0), (0, 0))
+    boundary_types = ((0, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=boundary_types,
+        reservoir_voxels=10,
+        inlet=inlet,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [10, 20, 0, 10, 0, 10])

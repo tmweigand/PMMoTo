@@ -7,6 +7,7 @@ from mpi4py import MPI
 
 __all__ = [
     "all_gather",
+    "all_reduce",
     "gather",
     "update_buffer",
     "communicate_features",
@@ -17,10 +18,8 @@ comm = MPI.COMM_WORLD
 
 
 def all_gather(data):
-    """_summary_
-
-    Args:
-        data (_type_): _description_
+    """
+    Wrapper to allgather
     """
     all_data = comm.allgather(data)
 
@@ -28,12 +27,19 @@ def all_gather(data):
 
 
 def gather(data):
-    """_summary_
-
-    Args:
-        data (_type_): _description_
+    """
+    Wrapper to gather
     """
     all_data = comm.gather(data, root=0)
+
+    return all_data
+
+
+def all_reduce(data):
+    """
+    Wrapper to allreduce
+    """
+    all_data = comm.allreduce(data, op=MPI.SUM)
 
     return all_data
 

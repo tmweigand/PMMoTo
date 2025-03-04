@@ -44,24 +44,6 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
     return values
 
 
-def get_radii(p_c, gamma):
-    """
-    Given list of capillary pressures return a list of radii.
-    p_c = list of capillary pressures
-    gamma = surface tension
-    """
-    if not isinstance(p_c, list):
-        p_c = [p_c]
-
-    radii = np.zeros_like(p_c, dtype=float)
-    for i, p in enumerate(p_c):
-        diam = (2 * gamma) / p
-        r = diam / 2
-        radii[i] = r
-
-    return radii
-
-
 def porosimetry(
     subdomain,
     img,

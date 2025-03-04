@@ -1,94 +1,70 @@
 """multiphase.py"""
 
 import numpy as np
-from . import porousmedia
-
-# from pmmoto.analysis import stats
-
-__all__ = ["get_probe_radius", "get_pc", "initialize_multiphase"]
+from . import communication
+from . import utils
 
 
-def get_probe_radius(pc, gamma):
-    """
-    Return the probe radius givena capillary pressure and surface tension
-    """
-    if pc == 0:
-        r_probe = 0
-    else:
-        r_probe = 2.0 * gamma / pc
-    return r_probe
-
-
-def get_pc(radius, gamma):
-    """
-    Return the capillary pressure given a surface tension and radius
-    """
-    return 2.0 * gamma / radius
-
-
-class Multiphase(porousmedia.PorousMedia):
+class Multiphase:
     """Multiphase Class"""
 
-    def __init__(self, pm_grid, loop_info, num_phases: int, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, porous_media, img, num_phases: int):
+        if porous_media.img is None:
+            raise ValueError("Error: The porous_media image (img) is None.")
+        self.porous_media = porous_media
+        self.subdomain = porous_media.subdomain
         self.num_phases = num_phases
-        self.pm_grid = pm_grid
-        self.loop_info = loop_info
+        self.img = img
         self.fluids = list(range(1, num_phases + 1))
-        self.inlet = np.zeros(
-            [self.num_phases + 1, self.subdomain.dims * 2], dtype=np.uint8
-        )
-        self.outlet = np.zeros(
-            [self.num_phases + 1, self.subdomain.dims * 2], dtype=np.uint8
-        )
 
-    @classmethod
-    def from_porous_media(cls, porous_media, num_phases):
-        return cls(
-            subdomain=porous_media.subdomain,
-            grid=None,
-            pm_grid=porous_media.grid,
-            loop_info=porous_media.loop_info,
-            num_phases=num_phases,
-        )
-
-    def set_inlet_outlet(self, inlets, outlets):
+    def update_img(self, img):
         """
-        Determine Inlet/Outlet for each fluid phase
+        Update the multiphase img
         """
-        for fluid in self.fluids:
-            for n in range(0, self.subdomain.dims):
+        self.img = img
 
-                if self.subdomain.inlet[n * 2] and inlets[fluid - 1][n][0]:
-                    self.inlet[fluid][n * 2] = True
-                if self.subdomain.inlet[n * 2 + 1] and inlets[fluid - 1][n][1]:
-                    self.inlet[fluid][n * 2 + 1] = True
+    def get_volume_fraction(self, phase: int) -> float:
+        """
+        Calculate the volume fraction of a given phase in a multiphase image.
 
-                if self.subdomain.outlet[n * 2] and outlets[fluid - 1][n][0]:
-                    self.outlet[fluid][n * 2] = True
-                if self.subdomain.outlet[n * 2 + 1] and outlets[fluid - 1][n][1]:
-                    self.outlet[fluid][n * 2 + 1] = True
+        Parameters:
+            phase (int): The phase ID to compute the volume fraction for.
 
-    # def get_saturation(self, phase):
-    #     """
-    #     Calalcaute the saturation of a given phase
-    #     """
-    #     return stats.get_saturation(self.subdomain, self.grid, phase)
+        Returns:
+            float: The volume fraction of the specified phase.
+        """
+        local_grid = utils.own_grid(self.img, self.subdomain.get_own_voxels())
+        local_voxel_count = np.count_nonzero(local_grid == phase)
 
+        total_voxel_count = (
+            communication.all_reduce(local_voxel_count)
+            if self.subdomain.domain.num_subdomains > 1
+            else local_voxel_count
+        )
 
-def initialize_multiphase(
-    porous_media,
-    num_phases,
-    inlets,
-    outlets,
-):
-    """
-    Initialize the multiphase class and set inlet/outlet reservoirs
-    """
-    mp = Multiphase.from_porous_media(
-        porous_media=porous_media,
-        num_phases=num_phases,
-    )
-    mp.set_inlet_outlet(inlets, outlets)
+        total_voxels = np.prod(self.subdomain.domain.voxels)
+        return total_voxel_count / total_voxels if total_voxels > 0 else 0.0
 
-    return mp
+    def get_saturation(self, phase):
+        """
+        Calculate the saturation of a multiphase image
+        """
+        return self.get_volume_fraction(phase) / self.porous_media.porosity
+
+    @staticmethod
+    def get_probe_radius(pc, gamma=1):
+        """
+        Return the probe radius givena capillary pressure and surface tension
+        """
+        if pc == 0:
+            r_probe = 0
+        else:
+            r_probe = 2.0 * gamma / pc
+        return r_probe
+
+    @staticmethod
+    def get_pc(radius, gamma=1):
+        """
+        Return the capillary pressure given a surface tension and radius
+        """
+        return 2.0 * gamma / radius

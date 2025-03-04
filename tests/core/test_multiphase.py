@@ -1,74 +1,47 @@
+"""test_multiphase.py"""
+
 import numpy as np
-from mpi4py import MPI
 import pmmoto
-import time
 
 
-# def test_multiphase():
+def test_volume_fraction():
+    """
+    Ensures correct calculation of volume fraction
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
+    img = np.zeros(sd.voxels)
+    img[3:6, 3:6, 3:6] = 1
+    pm = pmmoto.core.porousmedia.gen_pm(sd, img)
 
-#     comm = MPI.COMM_WORLD
-#     size = comm.Get_size()
-#     rank = comm.Get_rank()
+    assert pm.porosity == (27 / 1000)
 
-#     subdomains = [1, 1, 1]
-#     voxels = [100, 100, 100]
+    mp_img = np.copy(img)
+    mp_img[4:6, 4:6, 4:6] = 2
+    mp = pmmoto.core.multiphase.Multiphase(porous_media=pm, img=mp_img, num_phases=2)
 
-#     box = [[0, 3.945410e-01], [0, 3.945410e-01], [0, 3.945410e-01]]
-#     file = "tests/test_data/sphere_packs/50pack.out"
-#     boundary_types = [[2, 2], [2, 2], [2, 2]]
-#     inlet = [[0, 0], [0, 0], [0, 0]]
-#     outlet = [[0, 0], [0, 0], [0, 0]]
+    assert mp.get_volume_fraction(1) == (19 / 1000)
+    assert mp.get_volume_fraction(2) == (8 / 1000)
 
-#     # Multiphase
-#     num_fluid_phases = 2
-
-#     w_inlet = [[0, 0], [0, 0], [0, 0]]
-#     nw_inlet = [[0, 0], [0, 0], [0, 0]]
-#     mp_inlet = {0: w_inlet, 1: nw_inlet}
-
-#     w_outlet = [[0, 0], [0, 0], [0, 0]]
-#     nw_outlet = [[0, 0], [0, 0], [0, 0]]
-#     mp_outlet = {0: w_outlet, 1: nw_outlet}
-
-#     save_data = True
-
-#     sd = pmmoto.initialize(
-#         box=box,
-#         subdomains=subdomains,
-#         voxels=voxels,
-#         boundary_types=boundary_types,
-#         inlet=inlet,
-#         outlet=outlet,
-#         rank=rank,
-#         mpi_size=size,
-#         reservoir_voxels=0,
-#     )
-
-#     sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file)
-#     pm = pmmoto.domain_generation.gen_pm_spheres_domain(
-#         sd,
-#         sphere_data,
-#     )
+    assert mp.get_saturation(1) == (19 / 27)
+    assert mp.get_saturation(2) == (8 / 27)
 
 
-#     mp = pmmoto.core.initialize_multiphase(
-#         porous_media=pm,
-#         num_phases=num_fluid_phases,
-#         inlets=mp_inlet,
-#         outlets=mp_outlet,
-#     )
+def test_get_radii():
+    """
+    Test if capillary pressures are converting to radii correctly
+    """
 
-#     mp = pmmoto.domain_generation.gen_mp_constant(mp, fluid_phase=2)
+    p_c = 1
+    gamma = 1
+    radius = pmmoto.core.multiphase.Multiphase.get_probe_radius(p_c, gamma)
+    assert radius == 2.0
 
-#     saturation = mp.get_saturation(2)
-#     print(saturation)
+    p_c = 2
+    gamma = 1
+    radius = pmmoto.core.multiphase.Multiphase.get_probe_radius(p_c, gamma)
+    assert radius == 1.0
 
-#     if save_data:
-
-#         kwargs = {}
-#         pmmoto.io.save_grid_data("dataOut/test_opening", sd, mp.grid, **kwargs)
-
-
-# if __name__ == "__main__":
-#     test_multiphase()
-#     MPI.Finalize()
+    p_c = 3
+    gamma = 0.5
+    radius = pmmoto.core.multiphase.Multiphase.get_probe_radius(p_c, gamma)
+    assert radius == 1 / 3

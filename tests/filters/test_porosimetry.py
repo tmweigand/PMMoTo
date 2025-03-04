@@ -104,7 +104,7 @@ def test_modes():
 
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
     morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
-    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "dt")
+    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "distance")
     hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "hybrid")
 
     pmmoto.io.output.save_img_data_parallel(
@@ -120,21 +120,6 @@ def test_modes():
 
     np.testing.assert_array_almost_equal(morph, dt_mode)
     np.testing.assert_array_almost_equal(morph, hybrid)
-
-
-def test_get_radii():
-    """
-    Test if capillary pressures are converting to radii correctly
-    """
-
-    p_c = 1
-    gamma = 1
-    radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
-    assert radii == 1.0
-
-    p_c = [1, 2, 4]
-    radii = pmmoto.filters.porosimetry.get_radii(p_c, gamma)
-    assert np.allclose(radii, [1.0, 0.5, 0.25])
 
 
 def test_porosimetry_inlet():

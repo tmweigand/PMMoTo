@@ -23,15 +23,15 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.index = self.get_index()
         self.pad = self.get_padding(pad)
         self.inlet = self.get_inlet()
-
-        self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
-        self.voxels = self.get_voxels()
-        self.box = self.get_box()
-        self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
+        self.global_boundary = self.get_global_boundary()
         self.boundary_types = self.get_boundary_types(
             self.global_boundary, self.neighbor_ranks
         )
+        self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
+        self.voxels = self.get_voxels()
+        self.box = self.get_box()
+
         self.outlet = self.get_outlet()
         self.start = self.get_start()
         self.periodic = self.periodic_check()
@@ -181,7 +181,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         self, reservoir_voxels: int
     ) -> tuple[tuple[int, int], ...]:
         """
-        Determine inlet/outlet info and pad grid but only inlet!
+        Determine inlet/outlet info and pad img but only inlet!
         Convert to tuple of tuples - overly complicated
         """
 
@@ -214,18 +214,21 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return tuple(start)
 
-    def get_own_voxels(self, subdomain_pad, start, subdomain_voxels):
+    def get_own_voxels(self):
         """
-        Determine the index for the voxels owned by this subdomaion
+        Determine the index for the voxels owned by this subdomain
 
         Returns:
             _type_: _description_
         """
         own_voxels = np.zeros([6], dtype=np.int64)
-        for dim, s in enumerate(self.start):
-            own_voxels[dim * 2] = s + subdomain_pad[dim][0]
-            own_voxels[dim * 2 + 1] = (
-                own_voxels[dim * 2] + self.voxels[dim]  ### MAYBE BUG HERE
-            )
+        for dim, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
+            own_voxels[dim * 2] = pad[0] + r_pad[0]
+            own_voxels[dim * 2 + 1] = self.voxels[dim] - pad[1] + r_pad[1]
+        # for dim, s in enumerate(self.start):
+        #     own_voxels[dim * 2] = s + self.pad[dim][0]
+        #     own_voxels[dim * 2 + 1] = (
+        #         own_voxels[dim * 2] + self.voxels[dim]  ### MAYBE BUG HERE
+        #     )
 
         return own_voxels
