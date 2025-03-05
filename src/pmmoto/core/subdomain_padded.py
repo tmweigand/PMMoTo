@@ -184,6 +184,8 @@ class PaddedSubdomain(subdomain.Subdomain):
         Determine inlet/outlet info and pad img but only inlet!
         Convert to tuple of tuples - overly complicated
         """
+        if reservoir_voxels == 0:
+            return ((0, 0), (0, 0), (0, 0))
 
         _pad = [0, 0, 0, 0, 0, 0]
         for n, is_inlet in enumerate(self.inlet):
@@ -225,10 +227,22 @@ class PaddedSubdomain(subdomain.Subdomain):
         for dim, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
             own_voxels[dim * 2] = pad[0] + r_pad[0]
             own_voxels[dim * 2 + 1] = self.voxels[dim] - pad[1] + r_pad[1]
-        # for dim, s in enumerate(self.start):
-        #     own_voxels[dim * 2] = s + self.pad[dim][0]
-        #     own_voxels[dim * 2 + 1] = (
-        #         own_voxels[dim * 2] + self.voxels[dim]  ### MAYBE BUG HERE
-        #     )
 
         return own_voxels
+
+    def update_reservoir(self, img, value):
+        """
+        Enforce a constant value in reservoir
+        """
+        for dim, (start_pad, end_pad) in enumerate(self.reservoir_pad):
+            if start_pad > 0:
+                idx = [slice(None)] * img.ndim
+                idx[dim] = slice(0, start_pad)
+                img[tuple(idx)] = value
+
+            if end_pad > 0:
+                idx = [slice(None)] * img.ndim
+                idx[dim] = slice(-end_pad, None)
+                img[tuple(idx)] = value
+
+        return img

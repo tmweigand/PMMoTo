@@ -359,8 +359,10 @@ def gen_inkbottle(double[:] x, double[:] y, double[:] z):
     return grid
 
 
-def domainGenEllINK(double[:] x, double[:] y, double[:] z):
-
+def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
+    """
+    Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
+    """
     cdef int NX = x.shape[0]
     cdef int NY = y.shape[0]
     cdef int NZ = z.shape[0]
@@ -377,10 +379,10 @@ def domainGenEllINK(double[:] x, double[:] y, double[:] z):
     for i in range(0,NX):
       for j in range(0,NY):
         for k in range(0,NZ):
-          r = (0.01*math.cos(0.01*x[i]) + 0.5*math.sin(x[i]) + 0.75)
+          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
           rY = r*radiusY
           rz = r*radiusZ
           if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
-            grid[i,j,k] = 1
+            _grid[i,j,k] = 1
 
-    return _grid
+    return grid

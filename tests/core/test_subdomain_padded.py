@@ -73,8 +73,8 @@ def test_subdomain():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [33, 68, 33, 68, 0, 35])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [1, 34, 1, 34, 1, 34])
 
 
 def test_subdomain_2():
@@ -134,8 +134,8 @@ def test_subdomain_2():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [66, 102, 66, 103, 66, 104])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [2, 36, 2, 36, 2, 36])
 
 
 def test_subdomain_3():
@@ -193,8 +193,8 @@ def test_subdomain_3():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[3, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [-3, 34, 0, 35, 0, 35])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [3, 36, 1, 34, 1, 34])
 
 
 def test_own_voxels():

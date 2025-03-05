@@ -5,6 +5,7 @@ from ..core import communication
 from ..core import utils
 from ..core import porousmedia
 from ..core import subdomain_features
+from ..core import multiphase
 
 
 __all__ = [
@@ -185,16 +186,18 @@ def gen_pm_inkbottle(subdomain):
     )
     pm = porousmedia.gen_pm(subdomain, _img)
     utils.check_grid(subdomain, pm.img)
-    pm.img = communication.update_buffer(subdomain, pm.img)
+    if subdomain.domain.num_subdomains > 1:
+        pm.img = communication.update_buffer(subdomain, pm.img)
 
     return pm
 
 
-def gen_mp_constant(mp, fluid_phase=1):
+def gen_mp_constant(porous_media, fluid_phase=1):
     """
     Set the pore space to be a specific fluid phase
     """
-    mp.grid = np.where(mp.pm_grid == 1, fluid_phase, 0).astype(np.uint8)
+    img = np.where(porous_media.img == 1, fluid_phase, 0).astype(np.uint8)
+    mp = multiphase.Multiphase(porous_media, img, 2)
 
     return mp
 

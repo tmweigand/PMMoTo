@@ -13,6 +13,7 @@ class PorousMedia:
         self.subdomain = subdomain
         self.img = img
         self._porosity = None
+        self._distance = None
 
     @property
     def porosity(self):
@@ -37,6 +38,20 @@ class PorousMedia:
             global_pore_voxels = local_pore_voxels
 
         self._porosity = global_pore_voxels / np.prod(self.subdomain.domain.voxels)
+
+    @property
+    def distance(self):
+        """
+        Getter for euclidean distance, calculates if None.
+        """
+        if self._porosity is None:
+            self.set_porosity()
+        return self._porosity
+
+    def set_distance(self):
+        """
+        Calculate the euclidean distance
+        """
 
 
 def gen_pm(subdomain, img):

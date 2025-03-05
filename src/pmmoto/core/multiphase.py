@@ -12,6 +12,7 @@ class Multiphase:
         if porous_media.img is None:
             raise ValueError("Error: The porous_media image (img) is None.")
         self.porous_media = porous_media
+        self.pm_img = self.porous_media.img
         self.subdomain = porous_media.subdomain
         self.num_phases = num_phases
         self.img = img
@@ -43,7 +44,7 @@ class Multiphase:
         )
 
         total_voxels = np.prod(self.subdomain.domain.voxels)
-        return total_voxel_count / total_voxels if total_voxels > 0 else 0.0
+        return total_voxel_count / total_voxels
 
     def get_saturation(self, phase):
         """

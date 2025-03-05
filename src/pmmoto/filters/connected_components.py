@@ -131,9 +131,12 @@ def inlet_outlet_labels(subdomain, labeled_img):
     return connections
 
 
-def inlet_connected_img(subdomain, img):
+def inlet_connected_img(subdomain, img, phase=None):
     """
-    This function return an img where all voxels are connected to the inlet
+    This function return an img where all voxels are connected to the inlet.
+
+    If phase is specified, all other phases are set to zero leaving only connected
+    voxels of the specified phase.
     """
     labeled_img = connect_components(img, subdomain, return_label_count=False)
     inlet_labels = gen_inlet_label_map(subdomain, labeled_img)
@@ -141,12 +144,48 @@ def inlet_connected_img(subdomain, img):
     inlet_img = np.zeros_like(img)
     if inlet_labels.shape[0] == 0:
         return inlet_img
-    else:
-        inlet_phase_map = gen_img_to_label_map(img, labeled_img)
+
+    inlet_phase_map = gen_img_to_label_map(img, labeled_img)
+    if phase is None:
         for label in inlet_phase_map.keys():
             if label not in inlet_labels:
                 inlet_phase_map[label] = 0
+    else:
+        for label, _phase in inlet_phase_map.items():
+            if _phase != phase or label not in inlet_labels:
+                inlet_phase_map[label] = 0
 
-        inlet_img = voxels.renumber_image(labeled_img, inlet_phase_map)
+    inlet_img = voxels.renumber_image(labeled_img, inlet_phase_map)
 
     return inlet_img
+
+
+def outlet_connected_img(subdomain, img, phase=None):
+    """
+    This function return an img where all voxels are connected to the inlet.
+
+    If phase is specified, all other phases are set to zero leaving only connected
+    voxels of the specified phase.
+    """
+    labeled_img = connect_components(img, subdomain, return_label_count=False)
+    outlet_labels = gen_outlet_label_map(subdomain, labeled_img)
+
+    outlet_img = np.zeros_like(img)
+    if outlet_labels.shape[0] == 0:
+        return outlet_img
+
+    outlet_phase_map = gen_img_to_label_map(img, labeled_img)
+    if phase is None:
+        for label in outlet_phase_map.keys():
+            if label not in outlet_labels:
+                outlet_phase_map[label] = 0
+    else:
+        for label, _phase in outlet_phase_map.items():
+            if _phase != phase or label not in outlet_labels:
+                outlet_phase_map[label] = 0
+            else:
+                outlet_phase_map[label] = phase
+
+    outlet_img = voxels.renumber_image(labeled_img, outlet_phase_map)
+
+    return outlet_img
