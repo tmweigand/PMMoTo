@@ -82,7 +82,9 @@ def porosimetry(
             )
 
         if np.any(img_results):
-            edt_inverse = distance.edt(img=~img_results, subdomain=subdomain)
+            edt_inverse = distance.edt(
+                img=np.logical_not(img_results), subdomain=subdomain
+            )
             img_results = edt_inverse < radius
 
     elif mode == "hybrid":
