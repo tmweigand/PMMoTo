@@ -121,7 +121,7 @@ def convert_atoms_to_spheres(
     return spheres
 
 
-def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
+def gen_inkbottle(double[:] x, double[:] y, double[:] z):
     """
     Generate pm for inkbottle test case. See Miller_Bruning_etal_2019
     """
@@ -139,6 +139,7 @@ def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
     for i in range(0,sx):
         for j in range(0,sy):
             for k in range(0,sz):
+
                 r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
                 if y[j]*y[j] + z[k]*z[k] <= r*r:
                     _img[i,j,k] = 1
@@ -146,35 +147,41 @@ def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
     return img
 
 
-# def trim_list(subdomain, spheres, kd_tree = False):
+
+#                 if x[i] < 0: # TMW Hack for reservoirs
+#                     _grid[i,j,k] = 1
+#                 else:
+#                     r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+#                     if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+#                         _grid[i,j,k] = 1
+
+#     return grid
+
+
+# def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
 #     """
-#     Trim a list. This is useful in input is not on subdomain basis.
+#     Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
 #     """
-#     cdef:
-#         vector[vector[double]] spheres_in
-#         vector[Sphere] spheres_out
-#         vector[double] point
-#         double radius
-#         unique_ptr[SphereList] sphere_list
+#     cdef int NX = x.shape[0]
+#     cdef int NY = y.shape[0]
+#     cdef int NZ = z.shape[0]
+#     cdef int i, j, k
+#     cdef double r
+#     cdef double radiusY = 1.0
+#     cdef double radiusZ = 2.0
 
-#     spheres_in = spheres
-#     point = subdomain.get_centroid()
-#     sd_radius = subdomain.get_radius()
+#     _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+#     cdef cnp.uint8_t [:,:,:] grid
 
-#     # Add maximum sphere radius to account for spheres where centroids are outside
-#     radius = sd_radius + np.max(spheres[:,3])
+#     grid = _grid
 
-#     spheres_out = trim_sphere_list_spheres(spheres_in,point,radius, kd_tree)
-
-#     cdef cnp.ndarray[cnp.double_t, ndim=2] spheres_result = np.empty((spheres_out.size(), 4), dtype=np.double)
-    
-#     # Fill the array with data from the spheres_out vector
-#     for i in range(spheres_out.size()):
-#         # sphere = spheres_out[i]
-#         spheres_result[i, 0] = spheres_out[i].coordinates.x
-#         spheres_result[i, 1] = spheres_out[i].coordinates.y
-#         spheres_result[i, 2] = spheres_out[i].coordinates.z
-#         spheres_result[i, 3] = spheres_out[i].radius
-
+#     for i in range(0,NX):
+#       for j in range(0,NY):
+#         for k in range(0,NZ):
+#           r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+#           rY = r*radiusY
+#           rz = r*radiusZ
+#           if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
+#             _grid[i,j,k] = 1
 
 #     return spheres_result

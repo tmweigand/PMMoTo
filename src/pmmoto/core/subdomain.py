@@ -166,15 +166,19 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     def get_inlet(self):
         """
-        Determine if subdomain is on inlet
+        Determine if subdomain is on inlet.
+        Inlet requires the global boundary to be of type 0
         Also change orientation of how inlet is stored here
         """
         dims = len(self.index)
         inlet = np.zeros([dims * 2], dtype=np.uint8)
         for dim, ind in enumerate(self.index):
-            if ind == 0:
+            if ind == 0 and self.domain.boundary_types[dim][0] == 0:
                 inlet[dim * 2] = self.domain.inlet[dim][0]
-            if ind == self.domain.subdomains[dim] - 1:
+            if (
+                ind == self.domain.subdomains[dim] - 1
+                and self.domain.boundary_types[dim][1] == 0
+            ):
                 inlet[dim * 2 + 1] = self.domain.inlet[dim][1]
 
         return inlet

@@ -374,3 +374,19 @@ def test_periodic_3d_2():
             voxels[2] : voxels[2] * 2,
         ],
     )
+
+
+def test_edt_single_non_periodic():
+    """
+    Check to make sure this is called as it needs no correctors. Domain is unit length so max edt must be less than zero.
+    Pretty inefficient approach.
+    """
+    voxels = (10, 10, 10)
+    prob_zero = 0.1
+    seed = 1
+    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+
+    sd = pmmoto.initialize(voxels=voxels)
+    edt = pmmoto.filters.distance.edt(img, sd)
+
+    assert np.max(edt) < 1.0

@@ -337,7 +337,7 @@ def collect_features(
 
 def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
     """
-    Compute feature-specific voxel ranges with optional padding.
+    Compute feature-specific (i.e face, edge, corner) voxel ranges with optional padding.
 
     This function generates voxel ranges for a given feature based on the `feature_id`,
     `voxels`, and an optional `pad` parameter. It returns a dictionary with ranges for

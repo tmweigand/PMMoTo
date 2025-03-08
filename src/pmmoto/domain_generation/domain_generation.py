@@ -1,9 +1,10 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from . import _domain_generation
+from . import porousmedia
+from . import multiphase
 from ..core import communication
 from ..core import utils
-from ..core import porousmedia
 from ..core import subdomain_features
 
 
@@ -188,24 +189,30 @@ def gen_pm_verlet_atom_domain(
     return pm
 
 
-def gen_pm_inkbottle(subdomain, domain_data, res_size=0):
-    """ """
-    subdomain.update_domain_size(domain_data)
-    _img = _domain_generation.gen_pm_inkbottle(
+def gen_pm_inkbottle(subdomain):
+    """
+    Generate an inkbottle with reservoirs
+    """
+
+    _img = _domain_generation.gen_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
     pm = porousmedia.gen_pm(subdomain, _img)
     utils.check_grid(subdomain, pm.img)
-    pm.img = communication.update_buffer(subdomain, pm.img)
+    if subdomain.domain.num_subdomains > 1:
+        pm.img = communication.update_buffer(subdomain, pm.img)
+
+    pm.img = subdomain.update_reservoir(pm.img, 1)
 
     return pm
 
 
-def gen_mp_constant(mp, fluid_phase=1):
+def gen_mp_constant(porous_media, fluid_phase=1):
     """
     Set the pore space to be a specific fluid phase
     """
-    mp.grid = np.where(mp.pm_grid == 1, fluid_phase, 0).astype(np.uint8)
+    img = np.where(porous_media.img == 1, fluid_phase, 0).astype(np.uint8)
+    mp = multiphase.Multiphase(porous_media, img, 2)
 
     return mp
 

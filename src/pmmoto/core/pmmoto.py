@@ -1,5 +1,6 @@
 """pmmoto.py"""
 
+
 import numpy as np
 
 from . import domain_decompose
@@ -9,7 +10,6 @@ from . import subdomain_padded
 from . import subdomain_verlet
 from . import utils
 
-import numpy as np
 
 __all__ = ["initialize", "deconstruct_grid"]
 

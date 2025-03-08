@@ -1,52 +1,147 @@
-import numpy as np
+"""test_inkbottle.py"""
+
 from mpi4py import MPI
+import numpy as np
+import pytest
 import pmmoto
 
-def my_function():
 
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
-
-    subdomains = [1,1,1] # Specifies how Domain is broken among procs
-    nodes = [140,30,30] # Total Number of Nodes in Domain
-
-    ## Ordering for Inlet/Outlet ( (-x,+x) , (-y,+y) , (-z,+z) )
-    boundaries = [[0,0],[0,0],[0,0]] # 0: Nothing Assumed  1: Walls 2: Periodic
-    inlet  = [[0,0],[0,0],[0,0]]
-    outlet = [[0,0],[0,0],[0,0]]
-
-    domain_size = np.array([[0.,14.],[-1.5,1.5],[-1.5,1.5]])
-    sd = pmmoto.initialize(rank,size,subdomains,nodes,boundaries,inlet,outlet)
-    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd,domain_size,res_size = 0)
-
-    # Multiphase parameters
-    num_fluid_phases = 2
-
-    w_inlet  = [[1,0],[0,0],[0,0]]
-    nw_inlet = [[0,1],[0,0],[0,0]]
-    mp_inlets = {1:w_inlet,
-                 2:nw_inlet}
-
-    w_outlet  = [[0,0],[0,0],[0,0]]
-    nw_outlet = [[0,0],[0,0],[0,0]]
-    mp_outlets = {1:w_outlet,
-                  2:nw_outlet}
-
-    # Initalize multiphase grid
-    mp = pmmoto.initialize_mp(pm,num_fluid_phases,mp_inlets,mp_outlets,res_size = 10)
-    mp = pmmoto.domain_generation.gen_mp_constant(mp,2)
-
-    print(sd.index_own_nodes,mp.index_own_nodes)
-
-    pc = [2.46250]
-    gamma = 1.
-    pmmoto.filters.multiPhase.calc_drainage(mp,pc,gamma)
+capillary_pressure = [
+    1.58965,
+    1.5943,
+    1.60194,
+    1.61322,
+    1.62893,
+    1.65002,
+    1.67755,
+    1.7127,
+    1.75678,
+    1.81122,
+    1.87764,
+    1.95783,
+    2.05388,
+    2.16814,
+    2.30332,
+    2.4625,
+    2.64914,
+    2.86704,
+    3.12024,
+    3.41274,
+    3.74806,
+    4.12854,
+    4.55421,
+    5.02123,
+    5.52008,
+    6.03352,
+    6.53538,
+    6.9909,
+    7.36005,
+    7.60403,
+    7.69393,
+    7.69409,
+]
 
 
-    ### Save Grid Data where kwargs are used for saving other grid data (i.e. EDT, Medial Axis)
-    pmmoto.io.save_grid_data("dataOut/test_inkbottle",sd,pm.grid,mp = mp.grid)
+w_saturation_expected = [
+    0.914608928,
+    0.914608928,
+    0.914608928,
+    0.903539715,
+    0.903539715,
+    0.895876414,
+    0.885658679,
+    0.877508819,
+    0.870696995,
+    0.865466488,
+    0.86047926,
+    0.856343511,
+    0.853545797,
+    0.840651989,
+    0.838462474,
+    0.837124437,
+    0.830190974,
+    0.829461136,
+    0.827514901,
+    0.826055224,
+    0.822649313,
+    0.821919475,
+    0.820824717,
+    0.818513563,
+    0.817418805,
+    0.816810607,
+    0.816810607,
+    0.816445688,
+    0.81571585,
+    0.81571585,
+    0.81571585,
+    0.81571585,
+]
 
-if __name__ == "__main__":
-    my_function()
-    MPI.Finalize()
+
+def initialize_ink_bottle(parallel=False):
+
+    if parallel:
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        subdomains = (8, 1, 1)
+    else:
+        subdomains = (1, 1, 1)
+        rank = 0
+
+    voxels = (140, 30, 30)
+    reservoir_voxels = 10
+
+    box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
+
+    inlet = ((0, 1), (0, 0), (0, 0))
+    outlet = ((1, 0), (0, 0), (0, 0))
+
+    sd = pmmoto.initialize(
+        voxels,
+        rank=rank,
+        box=box,
+        subdomains=subdomains,
+        inlet=inlet,
+        outlet=outlet,
+        reservoir_voxels=reservoir_voxels,
+    )
+
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
+    mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
+
+    return mp
+
+
+def test_serial_drainage():
+
+    mp = initialize_ink_bottle()
+
+    w_saturation = pmmoto.filters.equilibrium_distribution.drainage(
+        mp, capillary_pressure
+    )
+
+    np.testing.assert_array_almost_equal(w_saturation, w_saturation_expected)
+
+
+@pytest.mark.mpi(min_size=8)
+def test_parallel_drainage():
+
+    mp = initialize_ink_bottle(True)
+
+    w_saturation = pmmoto.filters.equilibrium_distribution.drainage(
+        mp, capillary_pressure
+    )
+
+    np.testing.assert_array_almost_equal(w_saturation, w_saturation_expected)
+
+
+@pytest.mark.xfail
+def test_drainage_contact_angle():
+
+    mp = initialize_ink_bottle()
+
+    w_saturation = pmmoto.filters.equilibrium_distribution.drainage(
+        mp, capillary_pressure, contact_angle=10, method="contact_angle"
+    )
+
+    np.testing.assert_array_almost_equal(w_saturation, w_saturation_expected)
