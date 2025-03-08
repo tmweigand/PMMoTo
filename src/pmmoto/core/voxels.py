@@ -375,7 +375,7 @@ def gen_outlet_label_map(subdomain, label_grid):
         subdomain (_type_): _description_
         label_grid (_type_): _description_
     """
-    outlet_labels = []
+    outlet_labels = np.empty(0)
     for feature_id, feature in subdomain.features["faces"].items():
         if feature.outlet:
             outlet_labels = np.unique(

@@ -154,8 +154,7 @@ class PaddedSubdomain(subdomain.Subdomain):
     def get_box(self):
         """
         Determine the bounding box for each subdomain.
-        Note: subdomains are divided such that voxel spacing
-        is constant
+        Note: subdomains are divided such that voxel spacing is constant
         """
         box = []
         for dim, (ind, pad, r_pad) in enumerate(
@@ -226,7 +225,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         own_voxels = np.zeros([6], dtype=np.int64)
         for dim, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
             own_voxels[dim * 2] = pad[0] + r_pad[0]
-            own_voxels[dim * 2 + 1] = self.voxels[dim] - pad[1] + r_pad[1]
+            own_voxels[dim * 2 + 1] = self.voxels[dim] - pad[1] - r_pad[1]
 
         return own_voxels
 

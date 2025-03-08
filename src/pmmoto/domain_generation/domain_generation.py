@@ -179,7 +179,9 @@ def gen_pm_verlet_atom_domain(
 
 
 def gen_pm_inkbottle(subdomain):
-    """ """
+    """
+    Generate an inkbottle with reservoirs
+    """
 
     _img = _domain_generation.gen_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
@@ -188,6 +190,8 @@ def gen_pm_inkbottle(subdomain):
     utils.check_grid(subdomain, pm.img)
     if subdomain.domain.num_subdomains > 1:
         pm.img = communication.update_buffer(subdomain, pm.img)
+
+    pm.img = subdomain.update_reservoir(pm.img, 1)
 
     return pm
 

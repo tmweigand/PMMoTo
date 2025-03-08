@@ -63,7 +63,7 @@ def test_connect_componets_periodic(generate_simple_subdomain):
         local_img, sd_local, return_label_count=True
     )
 
-    connected_labels = pmmoto.filters.connected_components.inlet_outlet_labels(
+    connected_labels = pmmoto.filters.connected_components.inlet_outlet_connections(
         sd_local, cc
     )
 

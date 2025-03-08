@@ -2,6 +2,7 @@
 
 from typing import Literal
 import numpy as np
+from ..core import utils
 from . import morphological_operators
 from . import distance
 from . import connected_components
@@ -36,7 +37,6 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
         log_min = np.log10(min_value)
         log_max = np.log10(max_value)
         values = np.logspace(log_min, log_max, num_values)[::-1]
-        # print(values)
 
     else:
         raise ValueError(f"spacing {spacing} can only be 'linear' or 'log'")
@@ -49,54 +49,56 @@ def porosimetry(
     img,
     radius,
     inlet=False,
+    multiphase=None,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
     """
     Perform a morphological erosion followed by a morphological dilation.
-    If inlet, the foreground voxels must be connected to the inlet
+    If inlet, the foreground voxels must be connected to the inlet.
     """
 
-    img_results = np.zeros_like(img, dtype=np.double)
-
+    # Erosion
     if mode == "morph":
         img_results = morphological_operators.subtraction(
             subdomain=subdomain, img=img, radius=radius, fft=True
         )
-
-        if inlet:
-            img_results = connected_components.inlet_connected_img(
-                subdomain, img_results
-            )
-
-        img_results = morphological_operators.addition(
-            subdomain=subdomain, img=img_results, radius=radius, fft=True
-        )
-
-    elif mode == "distance":  # Close, but need to fix to match morph
+    elif mode in {"distance", "hybrid"}:
         edt = distance.edt(img=img, subdomain=subdomain)
         img_results = edt >= radius
 
-        if inlet:
-            img_results = connected_components.inlet_connected_img(
-                subdomain, img_results
+    # Check inlet
+    if inlet:
+        img_results = connected_components.inlet_connected_img(subdomain, img_results)
+
+    # Dilation
+    if utils.phase_exists(img_results, 1):
+
+        # Handle multiphase constraints if provided
+        if (
+            multiphase
+            and hasattr(multiphase, "img")
+            and utils.phase_exists(multiphase.img, 1)
+        ):
+            n_connected = connected_components.inlet_connected_img(
+                subdomain, multiphase.img, 1
             )
 
-        if np.any(img_results):
+            img_results = np.where(
+                (img_results != 1) | (n_connected != 1), 0, img_results
+            )
+
+        if mode == "morph":
+            img_results = morphological_operators.addition(
+                subdomain=subdomain, img=img_results, radius=radius, fft=True
+            )
+
+        elif mode == "distance":
             edt_inverse = distance.edt(
                 img=np.logical_not(img_results), subdomain=subdomain
             )
             img_results = edt_inverse < radius
 
-    elif mode == "hybrid":
-        edt = distance.edt(img=img, subdomain=subdomain)
-        img_results = edt >= radius
-
-        if inlet:
-            img_results = connected_components.inlet_connected_img(
-                subdomain, img_results
-            )
-
-        if np.any(img_results):
+        elif mode == "hybrid":
             img_results = morphological_operators.addition(
                 subdomain=subdomain, img=img_results, radius=radius, fft=False
             )

@@ -1,10 +1,14 @@
+"""pmmoto.py"""
+
+from mpi4py import MPI
+import numpy as np
+
 from . import domain_decompose
 from . import domain
 from . import domain_discretization
 from . import subdomain_padded
 from . import utils
 
-import numpy as np
 
 __all__ = ["initialize", "deconstruct_grid"]
 
@@ -18,7 +22,6 @@ def initialize(
     outlet=((0, 0), (0, 0), (0, 0)),
     reservoir_voxels=0,
     rank=0,
-    mpi_size=1,
     pad=(1, 1, 1),
 ):
     """
