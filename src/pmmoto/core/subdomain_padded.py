@@ -23,15 +23,15 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.index = self.get_index()
         self.pad = self.get_padding(pad)
         self.inlet = self.get_inlet()
-
-        self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
-        self.voxels = self.get_voxels()
-        self.box = self.get_box()
-        self.global_boundary = self.get_global_boundary()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
+        self.global_boundary = self.get_global_boundary()
         self.boundary_types = self.get_boundary_types(
             self.global_boundary, self.neighbor_ranks
         )
+        self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
+        self.voxels = self.get_voxels()
+        self.box = self.get_box()
+
         self.outlet = self.get_outlet()
         self.start = self.get_start()
         self.periodic = self.periodic_check()
@@ -154,8 +154,7 @@ class PaddedSubdomain(subdomain.Subdomain):
     def get_box(self):
         """
         Determine the bounding box for each subdomain.
-        Note: subdomains are divided such that voxel spacing
-        is constant
+        Note: subdomains are divided such that voxel spacing is constant
         """
         box = []
         for dim, (ind, pad, r_pad) in enumerate(
@@ -181,9 +180,11 @@ class PaddedSubdomain(subdomain.Subdomain):
         self, reservoir_voxels: int
     ) -> tuple[tuple[int, int], ...]:
         """
-        Determine inlet/outlet info and pad grid but only inlet!
+        Determine inlet/outlet info and pad img but only inlet!
         Convert to tuple of tuples - overly complicated
         """
+        if reservoir_voxels == 0:
+            return ((0, 0), (0, 0), (0, 0))
 
         _pad = [0, 0, 0, 0, 0, 0]
         for n, is_inlet in enumerate(self.inlet):
@@ -214,18 +215,33 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return tuple(start)
 
-    def get_own_voxels(self, subdomain_pad, start, subdomain_voxels):
+    def get_own_voxels(self):
         """
-        Determine the index for the voxels owned by this subdomaion
+        Determine the index for the voxels owned by this subdomain
 
         Returns:
             _type_: _description_
         """
         own_voxels = np.zeros([6], dtype=np.int64)
-        for dim, s in enumerate(self.start):
-            own_voxels[dim * 2] = s + subdomain_pad[dim][0]
-            own_voxels[dim * 2 + 1] = (
-                own_voxels[dim * 2] + self.voxels[dim]  ### MAYBE BUG HERE
-            )
+        for dim, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
+            own_voxels[dim * 2] = pad[0] + r_pad[0]
+            own_voxels[dim * 2 + 1] = self.voxels[dim] - pad[1] - r_pad[1]
 
         return own_voxels
+
+    def update_reservoir(self, img, value):
+        """
+        Enforce a constant value in reservoir
+        """
+        for dim, (start_pad, end_pad) in enumerate(self.reservoir_pad):
+            if start_pad > 0:
+                idx = [slice(None)] * img.ndim
+                idx[dim] = slice(0, start_pad)
+                img[tuple(idx)] = value
+
+            if end_pad > 0:
+                idx = [slice(None)] * img.ndim
+                idx[dim] = slice(-end_pad, None)
+                img[tuple(idx)] = value
+
+        return img

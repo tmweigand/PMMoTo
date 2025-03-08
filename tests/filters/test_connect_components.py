@@ -63,12 +63,12 @@ def test_connect_componets_periodic(generate_simple_subdomain):
         local_img, sd_local, return_label_count=True
     )
 
-    connected_labels = pmmoto.filters.connected_components.inlet_outlet_labels(
+    connected_labels = pmmoto.filters.connected_components.inlet_outlet_connections(
         sd_local, cc
     )
 
     assert label_count == 2
-    assert sorted(connected_labels) == [1]
+    assert sorted(connected_labels) == []
 
 
 def test_connect_componets_bcs_0(generate_simple_subdomain):
@@ -184,3 +184,21 @@ def test_connect_componets_partial_periodic(generate_simple_subdomain):
         )
 
         assert max_label == np.prod(sd.domain.voxels)
+
+
+def test_inlet_connected_img():
+    """
+    Test for passing in an image and only return where labels are on the inlet
+    """
+    voxels = (20, 20, 20)
+    inlet = ((1, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels=voxels, inlet=inlet)
+
+    img = np.zeros(sd.voxels)
+    img[0:10, 5:10, 5:10] = 1
+    img[12:15, 12:15, 12:15] = 1
+
+    labeled_image = pmmoto.filters.connected_components.inlet_connected_img(sd, img)
+
+    np.testing.assert_array_equal(labeled_image[12:15, 12:15, 12:15], 0)
+    np.testing.assert_array_equal(labeled_image[0:10, 5:10, 5:10], 1)

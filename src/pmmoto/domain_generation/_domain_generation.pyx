@@ -16,7 +16,7 @@ __all__ = [
     "gen_pm_atom",
     "gen_pm_verlet_sphere",
     "gen_pm_verlet_atom",
-    "gen_pm_inkbottle",
+    "gen_inkbottle",
     "convert_atoms_to_spheres"
 ]
 
@@ -331,7 +331,7 @@ def convert_atoms_to_spheres(
     return spheres
 
 
-def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
+def gen_inkbottle(double[:] x, double[:] y, double[:] z):
     """
     Generate pm for inkbottle test case. See Miller_Bruning_etal_2019
     """
@@ -349,8 +349,40 @@ def gen_pm_inkbottle(double[:] x, double[:] y, double[:] z):
     for i in range(0,sx):
         for j in range(0,sy):
             for k in range(0,sz):
-                r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-                if y[j]*y[j] + z[k]*z[k] <= r*r:
+                if x[i] < 0: # TMW Hack for reservoirs
                     _grid[i,j,k] = 1
+                else:
+                    r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+                    if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+                        _grid[i,j,k] = 1
+
+    return grid
+
+
+def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
+    """
+    Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
+    """
+    cdef int NX = x.shape[0]
+    cdef int NY = y.shape[0]
+    cdef int NZ = z.shape[0]
+    cdef int i, j, k
+    cdef double r
+    cdef double radiusY = 1.0
+    cdef double radiusZ = 2.0
+
+    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] grid
+
+    grid = _grid
+
+    for i in range(0,NX):
+      for j in range(0,NY):
+        for k in range(0,NZ):
+          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+          rY = r*radiusY
+          rz = r*radiusZ
+          if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
+            _grid[i,j,k] = 1
 
     return grid

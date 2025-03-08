@@ -186,6 +186,7 @@ def phase_exists(grid, phase):
     """
     phase_exists = False
     local_count = np.count_nonzero(grid == phase)
+
     global_count = comm.allreduce(local_count, op=MPI.SUM)
 
     if global_count > 0:

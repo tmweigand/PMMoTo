@@ -64,7 +64,6 @@ def test_update_buffer():
         inlet=inlet,
         outlet=outlet,
         rank=0,
-        mpi_size=1,
         reservoir_voxels=0,
     )
 

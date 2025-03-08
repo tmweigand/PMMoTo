@@ -155,3 +155,27 @@ def test_subdomain_figures(generate_subdomain):
                 ] = 1
 
     pmmoto.io.output.save_img_data_proc("data_out/test_subdomain", sd, img)
+
+
+def test_walls():
+    """
+    Ensures that walls are correctly added to a porous media img
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
+
+    img = np.ones(sd.voxels)
+    img = sd.set_wall_bcs(img)
+
+    assert np.all(img[0, :, :] == 0)
+    assert np.all(img[-1, :, :] == 0)
+    assert np.all(img[:, 0, :] == 0)
+    assert np.all(img[:, -1, :] == 0)
+    assert np.all(img[:, :, 0] == 0)
+    assert np.all(img[:, :, -1] == 0)
+
+    assert not np.all(img[1, :, :] == 0)
+    assert not np.all(img[-2, :, :] == 0)
+    assert not np.all(img[:, 1, :] == 0)
+    assert not np.all(img[:, -2, :] == 0)
+    assert not np.all(img[:, :, 1] == 0)
+    assert not np.all(img[:, :, -2] == 0)

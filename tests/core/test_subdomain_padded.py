@@ -73,8 +73,8 @@ def test_subdomain():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [33, 68, 33, 68, 0, 35])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [1, 34, 1, 34, 1, 34])
 
 
 def test_subdomain_2():
@@ -134,8 +134,8 @@ def test_subdomain_2():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [66, 102, 66, 103, 66, 104])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [2, 36, 2, 36, 2, 36])
 
 
 def test_subdomain_3():
@@ -193,5 +193,38 @@ def test_subdomain_3():
     res_padding = sd.get_reservoir_padding(reservoir_voxels)
     np.testing.assert_array_equal(res_padding, [[3, 0], [0, 0], [0, 0]])
 
-    own_voxels = sd.get_own_voxels(sd.pad, sd.start, sd.voxels)
-    np.testing.assert_array_equal(own_voxels, [-3, 34, 0, 35, 0, 35])
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [3, 36, 1, 34, 1, 34])
+
+
+def test_own_voxels():
+    """
+    Ensures that walls are correctly added to a porous media img
+    """
+    boundary_types = ((1, 1), (1, 1), (1, 1))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=boundary_types,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
+
+    # # Boundary Conditions must be 0 for reservoir check
+    inlet = ((1, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=((1, 1), (1, 1), (1, 1)),
+        inlet=inlet,
+        reservoir_voxels=10,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
+
+    # Now test reservoir
+    inlet = ((1, 0), (0, 0), (0, 0))
+    boundary_types = ((0, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=boundary_types,
+        reservoir_voxels=10,
+        inlet=inlet,
+    )
+    np.testing.assert_array_equal(sd.get_own_voxels(), [10, 20, 0, 10, 0, 10])

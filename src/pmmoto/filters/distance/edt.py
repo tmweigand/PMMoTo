@@ -16,7 +16,6 @@ def edt(img, subdomain=None):
         subdomain (_type_): _description_
         img (numpy array): _description_
     """
-    # img_out = np.copy(img).astype(np.float32)
     if subdomain is not None:
         if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
             img_out = corrected_edt(img, subdomain)
