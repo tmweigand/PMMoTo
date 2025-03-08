@@ -1,7 +1,8 @@
 import numpy as np
 
-from . import communication
-from . import utils
+from ..core import communication
+from ..core import utils
+from ..filters import distance
 
 
 class PorousMedia:
@@ -44,14 +45,15 @@ class PorousMedia:
         """
         Getter for euclidean distance, calculates if None.
         """
-        if self._porosity is None:
-            self.set_porosity()
-        return self._porosity
+        if self._distance is None:
+            self.set_distance()
+        return self._distance
 
     def set_distance(self):
         """
         Calculate the euclidean distance
         """
+        self._distance = distance.edt(img=self.img, subdomain=self.subdomain)
 
 
 def gen_pm(subdomain, img):

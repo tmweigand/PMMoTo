@@ -103,9 +103,9 @@ def test_modes():
     )
 
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
-    morph = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "morph")
-    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "distance")
-    hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm.img, radius, "hybrid")
+    morph = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "morph")
+    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "distance")
+    hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "hybrid")
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_modes",
@@ -136,12 +136,14 @@ def test_porosimetry_inlet():
     img[0:10, 5:10, 5:10] = 1
     img[12:35, 12:35, 12:35] = 1
 
+    pm = pmmoto.domain_generation.porousmedia.gen_pm(subdomain=sd, img=img)
+
     morph_no_inlet = pmmoto.filters.porosimetry.porosimetry(
-        subdomain=sd, img=img, radius=radius, mode="morph", inlet=False
+        subdomain=sd, porous_media=pm, radius=radius, mode="morph", inlet=False
     )
 
     morph_inlet = pmmoto.filters.porosimetry.porosimetry(
-        subdomain=sd, img=img, radius=radius, mode="morph", inlet=True
+        subdomain=sd, porous_media=pm, radius=radius, mode="morph", inlet=True
     )
 
     pmmoto.io.output.save_img_data_parallel(

@@ -7,7 +7,7 @@ from . import morphological_operators
 from . import distance
 from . import connected_components
 
-__all__ = ["get_sizes", "porosimetry"]
+__all__ = ["get_sizes", "porosimetry", "pore_size_distribution"]
 
 
 def get_sizes(min_value, max_value, num_values, spacing="linear"):
@@ -46,7 +46,7 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
 
 def porosimetry(
     subdomain,
-    img,
+    porous_media,
     radius,
     inlet=False,
     multiphase=None,
@@ -55,16 +55,31 @@ def porosimetry(
     """
     Perform a morphological erosion followed by a morphological dilation.
     If inlet, the foreground voxels must be connected to the inlet.
+
+    Additionally, allow for different radii to specified for the erosion and dilation.
+    To do this, provide a list where the first entry is the erosion radius and the
+    second entry is the dilation radius.
     """
+
+    if isinstance(radius, (int, float)):
+        erosion_radius = radius
+        dilation_radius = radius
+    elif isinstance(radius, list):
+        erosion_radius = radius[0]
+        dilation_radius = radius[1]
+    else:
+        raise ValueError(
+            f"Radius {radius} must either be a number or a list of length 2"
+        )
 
     # Erosion
     if mode == "morph":
         img_results = morphological_operators.subtraction(
-            subdomain=subdomain, img=img, radius=radius, fft=True
+            subdomain=subdomain, img=porous_media.img, radius=erosion_radius, fft=True
         )
     elif mode in {"distance", "hybrid"}:
-        edt = distance.edt(img=img, subdomain=subdomain)
-        img_results = edt >= radius
+        edt = porous_media.distance
+        img_results = edt >= erosion_radius
 
     # Check inlet
     if inlet:
@@ -89,18 +104,18 @@ def porosimetry(
 
         if mode == "morph":
             img_results = morphological_operators.addition(
-                subdomain=subdomain, img=img_results, radius=radius, fft=True
+                subdomain=subdomain, img=img_results, radius=dilation_radius, fft=True
             )
 
         elif mode == "distance":
             edt_inverse = distance.edt(
                 img=np.logical_not(img_results), subdomain=subdomain
             )
-            img_results = edt_inverse < radius
+            img_results = edt_inverse < dilation_radius
 
         elif mode == "hybrid":
             img_results = morphological_operators.addition(
-                subdomain=subdomain, img=img_results, radius=radius, fft=False
+                subdomain=subdomain, img=img_results, radius=dilation_radius, fft=False
             )
 
     return img_results.astype(np.double)
@@ -108,10 +123,10 @@ def porosimetry(
 
 def pore_size_distribution(
     subdomain,
-    img,
+    porous_media,
     radii,
     inlet=False,
-    mode: Literal["hybrid", "dt", "morph"] = "hybrid",
+    mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
     """
     Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
@@ -123,7 +138,11 @@ def pore_size_distribution(
     img_results = np.zeros_like(img, dtype=np.double)
     for radius in radii:
         img_temp = porosimetry(
-            subdomain=subdomain, img=img, radius=radius, inlet=inlet, mode=mode
+            subdomain=subdomain,
+            porous_media=porous_media,
+            radius=radius,
+            inlet=inlet,
+            mode=mode,
         )
 
         if np.any(img_temp):

@@ -1,8 +1,8 @@
 """multiphase.py"""
 
 import numpy as np
-from . import communication
-from . import utils
+from ..core import communication
+from ..core import utils
 
 
 class Multiphase:
@@ -53,14 +53,14 @@ class Multiphase:
         return self.get_volume_fraction(phase) / self.porous_media.porosity
 
     @staticmethod
-    def get_probe_radius(pc, gamma=1):
+    def get_probe_radius(pc, gamma=1, contact_angle=0):
         """
-        Return the probe radius givena capillary pressure and surface tension
+        Return the probe radius given a capillary pressure, surface tension and contact_angle
         """
         if pc == 0:
             r_probe = 0
         else:
-            r_probe = 2.0 * gamma / pc
+            r_probe = 2.0 * gamma / pc * np.cos(np.deg2rad(contact_angle))
         return r_probe
 
     @staticmethod

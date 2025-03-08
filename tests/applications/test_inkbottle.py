@@ -133,3 +133,15 @@ def test_parallel_drainage():
     )
 
     np.testing.assert_array_almost_equal(w_saturation, w_saturation_expected)
+
+
+@pytest.mark.xfail
+def test_drainage_contact_angle():
+
+    mp = initialize_ink_bottle()
+
+    w_saturation = pmmoto.filters.equilibrium_distribution.drainage(
+        mp, capillary_pressure, contact_angle=10, method="contact_angle"
+    )
+
+    np.testing.assert_array_almost_equal(w_saturation, w_saturation_expected)

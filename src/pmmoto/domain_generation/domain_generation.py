@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from . import _domain_generation
+from . import porousmedia
+from . import multiphase
 from ..core import communication
 from ..core import utils
-from ..core import porousmedia
 from ..core import subdomain_features
-from ..core import multiphase
 
 
 __all__ = [
