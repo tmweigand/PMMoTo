@@ -409,8 +409,7 @@ convert_to_type(const std::vector<std::vector<double> >& data_in)
 }
 
 /**
- * @brief Initializes a SphereList, optionally trims it using KD-tree or
- * Verlet, and returns a unique pointer to the SphereList.
+ * @brief Initializes a List of particles.
  *
  * @param data A vector of data, specific to thew typoe specified
  * @param point The reference point as {x, y, z}.

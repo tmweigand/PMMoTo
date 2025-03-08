@@ -18,11 +18,13 @@ __all__ = [
 ]
 
 
-def save_particle_data(file_name: str, subdomain: dict, particles, **kwargs):
+def save_particle_data(file_name: str, subdomain, particles, **kwargs):
     """
     Save particle data as VTK PolyData
     """
-    io_utils.check_file_path(file_name)
+    if subdomain.rank == 0:
+        io_utils.check_file_path(file_name)
+    comm.barrier()
 
     data_length = particles.shape[1]
     data = {}

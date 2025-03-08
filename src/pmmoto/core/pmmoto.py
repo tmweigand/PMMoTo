@@ -1,3 +1,7 @@
+"""pmmoto.py"""
+
+import numpy as np
+
 from . import domain_decompose
 from . import domain
 from . import domain_discretization
@@ -19,7 +23,6 @@ def initialize(
     outlet=((0, 0), (0, 0), (0, 0)),
     reservoir_voxels=0,
     rank=0,
-    mpi_size=1,
     pad=(1, 1, 1),
     verlet_domains=(1, 1, 1),
 ):
