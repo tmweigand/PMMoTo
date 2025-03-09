@@ -9,24 +9,39 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
-        python-version: ['3.10', '3.11', '3.12']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        if [ "$RUNNER_OS" = "Linux" ]; then
-          sudo apt update
-          sudo apt install -y libmpich-dev
-        elif [ "$RUNNER_OS" = "macOS" ]; then
-          brew install mpich
-        fi
-        python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
-    - name: Test with tox
-      run: tox
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt update
+            sudo apt install -y libmpich-dev
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install mpich
+          fi
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install mpich  # Install MPICH on Windows using Chocolatey
+          refreshenv  # Refresh environment variables after installing MPI
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+        shell: pwsh
+
+      - name: Test with tox
+        run: tox -e py$(echo ${{ matrix.python-version }} | tr -d .)
+        shell: bash
