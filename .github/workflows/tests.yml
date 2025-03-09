@@ -36,7 +36,8 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install msmpi
+          choco install mpich  # Install MPICH on Windows using Chocolatey
+          refreshenv  # Refresh environment variables after installing MPI
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions
         shell: pwsh
