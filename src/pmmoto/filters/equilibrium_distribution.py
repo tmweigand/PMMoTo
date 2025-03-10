@@ -6,7 +6,7 @@ from typing import Literal
 
 from .porosimetry import porosimetry
 from . import connected_components
-
+from ..io.output import save_img_data_parallel
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -17,6 +17,7 @@ def drainage(
     gamma=1,
     contact_angle=0,
     method: Literal["standard", "contact_angle"] = "standard",
+    save=False,
 ):
     """
     This is a morphological approach to determining the equilibrium
@@ -68,6 +69,15 @@ def drainage(
         multiphase.update_img(
             np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
         )
+
+        if save:
+            save_img_data_parallel(
+                f"drainage_results/capillary_pressure_{capillary_pressure:.3f}".replace(
+                    ".", "_"
+                ),
+                multiphase.subdomain,
+                multiphase.img,
+            )
 
         # Store wetting phase saturation
         w_saturation[n] = multiphase.get_saturation(2)
