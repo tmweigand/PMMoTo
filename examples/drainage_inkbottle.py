@@ -86,7 +86,7 @@ def drain_ink_bottle():
     mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
 
     w_saturation_standard = pmmoto.filters.equilibrium_distribution.drainage(
-        mp, capillary_pressure, gamma=1, method="standard"
+        mp, capillary_pressure, gamma=1, method="standard", save=True
     )
 
     # Reset to fully wetted domain
