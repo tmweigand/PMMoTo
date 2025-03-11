@@ -16,7 +16,7 @@ using KDTreeType =
 class KDTree
 {
 private:
-    std::unique_ptr<KDTreeType> tree; // Store tree in a smart pointer
+    std::shared_ptr<KDTreeType> tree; // Store tree in a smart pointer
     std::shared_ptr<std::vector<std::vector<double> > > data_ref; // Shared
                                                                   // ownership
 
@@ -35,9 +35,12 @@ public:
 
         // Store shared pointer
         data_ref = data;
-        // Create KD-tree and assign it to the member variable
+
         tree =
-            std::make_unique<KDTreeType>(3 /*dim*/, *data_ref, max_leaf_size);
+            std::make_shared<KDTreeType>(3 /*dim*/, *data_ref, max_leaf_size);
+
+        // Explicitly build the index
+        tree->index->buildIndex();
     }
 
     KDTreeType* getTree()

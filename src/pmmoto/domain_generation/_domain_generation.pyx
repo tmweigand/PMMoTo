@@ -14,16 +14,14 @@ from libcpp.memory cimport shared_ptr
 from libc.math cimport sin, cos
 cnp.import_array()
 
-from .particles.sphere_pack cimport Sphere
-from .particles.sphere_pack cimport SphereList
-from .particles.sphere_pack cimport initialize_list
-from .particles.sphere_pack cimport trim_sphere_list_spheres
+
+from .particles.spheres cimport SphereList
 
 
 __all__ = [
     "gen_pm_sphere",
     "gen_pm_atom",
-    "gen_pm_inkbottle",
+    "gen_inkbottle",
     "convert_atoms_to_spheres",
     # "trim_list"
 ]
@@ -38,6 +36,8 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         Verlet verlet_c
         vector[vector[double]] spheres_c
         vector[vector[double]] domain_box,subdomain_box
+        vector[double] spheres_radii_c
+        bool add_periodic = False
 
     # Initialize img
     img = np.ones(subdomain.voxels, dtype=np.uint8)
@@ -54,7 +54,8 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         grid_c.strides.push_back(_stride)
 
     # Initialize SphereList Class
-    spheres_c = spheres
+    spheres_coords_c = spheres[:,0:2]
+    spheres_radii_c = spheres[:,3]
     if trim:
         point = subdomain.get_centroid()
         sd_radius = subdomain.get_radius()
@@ -63,22 +64,22 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
     domain_box = subdomain.domain.box
     subdomain_box = subdomain.own_box
 
-    cdef shared_ptr[SphereList] all_spheres = initialize_list[SphereList,Sphere](spheres_c,domain_box,subdomain_box)
+    # cdef shared_ptr[SphereList] all_spheres = initialize_spheres(spheres_c,spheres_radii_c,domain_box,subdomain_box,add_periodic)
 
-    # Convert Verlet info
-    verlet_c.num_verlet = subdomain.num_verlet
-    verlet_c.centroids = subdomain.centroids
-    verlet_c.diameters = subdomain.max_diameters
-    verlet_c.loops = subdomain.verlet_loop
+    # # Convert Verlet info
+    # verlet_c.num_verlet = subdomain.num_verlet
+    # verlet_c.centroids = subdomain.centroids
+    # verlet_c.diameters = subdomain.max_diameters
+    # verlet_c.loops = subdomain.verlet_loop
 
-    if kd:
-        gen_sphere_img_kd_method(
-            <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
-        )
-    else:
-        gen_sphere_img_brute_force(
-            <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
-        )
+    # if kd:
+    #     gen_sphere_img_kd_method(
+    #         <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
+    #     )
+    # else:
+    #     gen_sphere_img_brute_force(
+    #         <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
+    #     )
 
     return img
 
@@ -131,57 +132,48 @@ def gen_inkbottle(double[:] x, double[:] y, double[:] z):
         int sy = y.shape[0]
         int sz = z.shape[0]
         double r
-        cnp.uint8_t [:,:,:] _img
+        cnp.uint8_t [:,:,:] _grid
 
-    img = np.zeros((sx, sy, sz), dtype=np.uint8)
-    _img = img
+    grid = np.zeros((sx, sy, sz), dtype=np.uint8)
+    _grid = grid
 
     for i in range(0,sx):
         for j in range(0,sy):
             for k in range(0,sz):
+                if x[i] < 0: # TMW Hack for reservoirs
+                    _grid[i,j,k] = 1
+                else:
+                    r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+                    if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+                        _grid[i,j,k] = 1
 
-                r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-                if y[j]*y[j] + z[k]*z[k] <= r*r:
-                    _img[i,j,k] = 1
-
-    return img
-
-
-
-#                 if x[i] < 0: # TMW Hack for reservoirs
-#                     _grid[i,j,k] = 1
-#                 else:
-#                     r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-#                     if (y[j]*y[j] + z[k]*z[k]) <= r*r:
-#                         _grid[i,j,k] = 1
-
-#     return grid
+    return grid
 
 
-# def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
-#     """
-#     Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
-#     """
-#     cdef int NX = x.shape[0]
-#     cdef int NY = y.shape[0]
-#     cdef int NZ = z.shape[0]
-#     cdef int i, j, k
-#     cdef double r
-#     cdef double radiusY = 1.0
-#     cdef double radiusZ = 2.0
+def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
+    """
+    Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
+    """
+    cdef int NX = x.shape[0]
+    cdef int NY = y.shape[0]
+    cdef int NZ = z.shape[0]
+    cdef int i, j, k
+    cdef double r
+    cdef double radiusY = 1.0
+    cdef double radiusZ = 2.0
 
-#     _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
-#     cdef cnp.uint8_t [:,:,:] grid
+    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
+    cdef cnp.uint8_t [:,:,:] grid
 
-#     grid = _grid
+    grid = _grid
 
-#     for i in range(0,NX):
-#       for j in range(0,NY):
-#         for k in range(0,NZ):
-#           r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-#           rY = r*radiusY
-#           rz = r*radiusZ
-#           if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
-#             _grid[i,j,k] = 1
+    for i in range(0,NX):
+      for j in range(0,NY):
+        for k in range(0,NZ):
+          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
+          rY = r*radiusY
+          rz = r*radiusZ
+          if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
+            _grid[i,j,k] = 1
 
-#     return spheres_result
+    return grid

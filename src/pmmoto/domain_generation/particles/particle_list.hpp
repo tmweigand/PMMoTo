@@ -15,8 +15,7 @@ using Coords = std::vector<double>;
 
 struct Box
 {
-    double min[3], max[3];
-    double length[3];
+    double min[3], max[3], length[3];
 
     // Function to update the lengths of the box
     void box_length()
@@ -31,130 +30,99 @@ struct Box
 struct Particle
 {
     Coords coordinates;
-    double radius;
+    // double radius;
     bool own = false;
 
-    // Constructor to initialize coordinates and radius
-    Particle(Coords c = { 0.0, 0.0, 0.0 }, double r = 0.0)
-        : coordinates(c), radius(r)
+    // Constructor to initialize coordinates
+    Particle(Coords c = { 0.0, 0.0, 0.0 }) : coordinates(c)
     {
     }
-    Particle(double x = 0.0, double y = 0.0, double z = 0.0, double r = 0.0)
-        : coordinates({ x, y, z }), radius(r)
+    Particle(double x = 0.0, double y = 0.0, double z = 0.0)
+        : coordinates({ x, y, z })
     {
     }
-};
 
-/**
- * @brief Checks if a point is inside a sphere.
- *
- * @param point The point as {x, y, z}.
- * @param sphere_center The sphere center as {x, y, z}.
- * @param s_r Squared radius of the sphere.
- * @return 1 if the point is inside the sphere, 0 otherwise.
- */
-inline uint8_t
-in_sphere(const std::vector<double>& point,
-          const Coords& coords,
-          double s_r) noexcept
-{
-    double dx = coords[0] - point[0];
-    double dy = coords[1] - point[1];
-    double dz = coords[2] - point[2];
-    return (dx * dx + dy * dy + dz * dz) <= s_r ? 1 : 0;
-};
+    void print()
+    {
+        std::cout << coordinates[0] << " " << coordinates[1] << " "
+                  << coordinates[2] << std::endl;
+    }
 
-/**
- * @brief Determines if a particle is within a bounding box
- * @param box - the extents of the process
- * @param p - particle with coordinates
- */
-bool
-inside_box(const Box& box, const Particle& p)
-{
-    return (p.coordinates[0] >= box.min[0] && p.coordinates[0] <= box.max[0] &&
-            p.coordinates[1] >= box.min[1] && p.coordinates[1] <= box.max[1] &&
-            p.coordinates[2] >= box.min[2] && p.coordinates[2] <= box.max[2]);
-};
-
-/**
- * @brief Determines if a particle intersects bounding box
- * @param box - the extents of the process
- * @param p - particle with coordinates
- */
-bool
-intersects_box(const Box& box, const Coords& coordinates, const double& radius)
-{
-    return !(coordinates[0] + radius < box.min[0] ||
-             coordinates[0] - radius > box.max[0] ||
-             coordinates[1] + radius < box.min[1] ||
-             coordinates[1] - radius > box.max[1] ||
-             coordinates[2] + radius < box.min[2] ||
-             coordinates[2] - radius > box.max[2]);
-};
-
-/**
- * @brief Determines if a particle crosses the outer box boundaries.
- * @param particle The particle to check
- * @param outerBox The outer periodic box dimensions
- * @return Array of bools indicating whether the particle crosses each axis
- * boundary.
- */
-std::array<bool, 3>
-cross_boundary(const Box& box, const Particle& particle)
-{
-    return {
-        particle.coordinates[0] - particle.radius < box.min[0] ||
-            particle.coordinates[0] + particle.radius > box.max[0],
-        particle.coordinates[1] - particle.radius < box.min[1] ||
-            particle.coordinates[1] + particle.radius > box.max[1],
-        particle.coordinates[2] - particle.radius < box.min[2] ||
-            particle.coordinates[2] + particle.radius > box.max[2],
+    /**
+     * @brief Determines if a particle is within a bounding box
+     * @param box - the extents of the process
+     */
+    void inside_box(const Box& box)
+    {
+        own = (coordinates[0] >= box.min[0] && coordinates[0] <= box.max[0] &&
+               coordinates[1] >= box.min[1] && coordinates[1] <= box.max[1] &&
+               coordinates[2] >= box.min[2] && coordinates[2] <= box.max[2]);
     };
-}
+};
 
-template <typename ParticleType>
 class ParticleList
 {
-protected:
-    std::vector<ParticleType> particles;
-    KDTree kd_tree;
+private:
+    std::vector<Particle> particles;
+    std::shared_ptr<KDTree> kd_tree;
 
 public:
-    ParticleList(const std::vector<ParticleType>& particle_data)
+    // Update constructors to initialize kd_tree
+    ParticleList(const std::vector<Particle>& particle_data)
+        : particles(particle_data), kd_tree(std::make_shared<KDTree>())
     {
-        for (const auto& particle : particle_data)
+    }
+
+    ParticleList(const std::vector<Coords>& particle_data)
+        : kd_tree(std::make_shared<KDTree>())
+    {
+        for (const auto& coords : particle_data)
         {
-            particles.emplace_back(particle.coordinates[0],
-                                   particle.coordinates[1],
-                                   particle.coordinates[2],
-                                   particle.radius);
+            particles.push_back(Particle{ coords });
         }
     }
 
-    ~ParticleList() = default;
+    // Move constructor with noexcept
+    ParticleList(ParticleList&& other) noexcept = default;
+
+    // Move assignment operator with noexcept
+    ParticleList& operator=(ParticleList&& other) noexcept = default;
 
     size_t size() const
     {
         return particles.size();
     }
 
+    /**
+     * @brief Method to update particles
+     */
+    void updateParticles(const std::vector<Coords>& new_coords)
+    {
+        particles.clear();
+        particles.reserve(new_coords.size());
+
+        for (const auto& coords : new_coords)
+        {
+            particles.emplace_back(Particle{ coords });
+        }
+    }
+
     // Overload operator[]
-    const ParticleType& operator[](size_t index) const
+    const Particle& operator[](size_t index) const
     {
         if (index >= size())
         {
             throw std::out_of_range("Index out of bounds!");
         }
+
         return particles[index];
     }
 
     /**
      * @brief Collect the coordinates of all particles
-     *
-     * @return A vector of Sphere coordinates
+     * @return A vector of coordinates
      */
-    std::vector<std::vector<double> > getAllCoordinates() const
+    std::vector<std::vector<double> > get_coordinates() const
     {
         std::vector<std::vector<double> > coords;
         for (const auto& particle : particles)
@@ -167,60 +135,17 @@ public:
     }
 
     /**
-     * @brief Collects particle indices within a given Verlet radius
-     *
-     * @param verlet_radius The Verlet radius to consider.
-     * @param point The reference point as {x, y, z}.
-     * @return A vector of indices to particles within the Verlet radius.
+     * @brief Initialize kd tree
      */
-    std::vector<size_t> collect_verlet_indices(const std::vector<double>& point,
-                                               double verlet_radius)
+    void initializeKDTree()
     {
-        std::vector<size_t> verlet_indices;
-        for (size_t i = 0; i < particles.size(); ++i)
+        if (!kd_tree)
         {
-            const auto& particle = particles[i];
-            double r_squared = (particle.radius + verlet_radius) *
-                               (particle.radius + verlet_radius);
-
-            if (in_sphere(point, particle.coordinates, r_squared))
-            {
-                verlet_indices.push_back(i);
-            }
+            kd_tree = std::make_shared<KDTree>();
         }
-        return verlet_indices;
-    }
-
-    /**
-     * @brief Collects spheres within a given Verlet radius and returns them as
-     * Sphere objects.
-     *
-     * @param verlet_radius The Verlet radius to consider.
-     * @param point The reference point as {x, y, z}.
-     * @return A vector of Sphere objects within the Verlet radius.
-     */
-    std::vector<ParticleType>
-    collect_verlet_objects(const std::vector<double>& point,
-                           double verlet_radius)
-    {
-        std::vector<ParticleType> verlet_particles;
-        for (const auto& particle : particles)
-        {
-            double r_squared = (particle.radius + verlet_radius) *
-                               (particle.radius + verlet_radius);
-
-            if (in_sphere(point, particle.coordinates, r_squared))
-            {
-                verlet_particles.push_back(particle);
-            }
-        }
-        return verlet_particles;
-    }
-
-    void initializeKDTree(const std::vector<std::vector<double> >& coords)
-    {
-        kd_tree.initialize_kd(
-            std::make_shared<std::vector<std::vector<double> > >(coords));
+        auto coords = std::make_shared<std::vector<std::vector<double> > >(
+            get_coordinates());
+        kd_tree->initialize_kd(coords);
     }
 
     /**
@@ -233,9 +158,11 @@ public:
     std::vector<size_t> collect_kd_indices(const std::vector<double>& point,
                                            double radius)
     {
-        std::vector<size_t> indices =
-            kd_tree.radius_search_indices(point, radius);
-        return indices;
+        if (!kd_tree)
+        {
+            throw std::runtime_error("KD-tree not initialized");
+        }
+        return kd_tree->radius_search_indices(point, radius);
     }
 
     /**
@@ -251,7 +178,7 @@ public:
                                              bool return_square = true)
     {
         std::vector<double> distances =
-            kd_tree.radius_search_distances(point, radius, return_square);
+            kd_tree->radius_search_distances(point, radius, return_square);
         return distances;
     }
 
@@ -268,8 +195,7 @@ public:
         {
             std::vector<double> _info = { particle.coordinates[0],
                                           particle.coordinates[1],
-                                          particle.coordinates[2],
-                                          particle.radius };
+                                          particle.coordinates[2] };
 
             if (own) _info.push_back(static_cast<double>(particle.own));
 
@@ -286,15 +212,15 @@ public:
      * @param radius the search radius
      * @return A vector of T-type indices within the radius.
      */
-    std::vector<ParticleType>
-    collect_kd_objects(const std::vector<double>& point, double radius)
+    std::vector<Coords> collect_kd_objects(const std::vector<double>& point,
+                                           double radius)
     {
-        std::vector<ParticleType> local_particles;
+        std::vector<Coords> local_particles;
         std::vector<size_t> indices =
-            kd_tree.radius_search_indices(point, radius);
+            kd_tree->radius_search_indices(point, radius);
         for (const auto& index : indices)
         {
-            local_particles.push_back(particles[index]);
+            local_particles.push_back(particles[index].coordinates);
         }
         return local_particles;
     }
@@ -305,9 +231,9 @@ public:
      */
     void particles_in_box(const Box& box)
     {
-        for (auto& p : particles)
+        for (auto& particle : particles)
         {
-            p.own = inside_box(box, p);
+            particle.inside_box(box);
         }
     }
 
@@ -315,81 +241,9 @@ public:
      * @brief Provide access to the particles
      */
     // Provide a getter for atoms if you want to access it directly
-    const std::vector<ParticleType>& getParticles() const
+    const std::vector<Particle>& getParticles() const
     {
         return particles;
-    }
-
-    /**
-     * @brief Applies periodic boundary conditions to spheres and retains only
-     * those that intersect the inner box.
-     * @param domain Dimensions of domain via Box
-     * @param subdomain Dimensions of the subdomain vix Box
-     */
-    void add_periodic_particles(const Box& domain, const Box& subdomain)
-    {
-        std::vector<ParticleType> new_particles;
-        for (const auto& particle : particles)
-        {
-            auto crosses = cross_boundary(domain, particle);
-
-            for (int dx = -1; dx <= 1; ++dx)
-            {
-                for (int dy = -1; dy <= 1; ++dy)
-                {
-                    for (int dz = -1; dz <= 1; ++dz)
-                    {
-                        if (dx == 0 && dy == 0 && dz == 0)
-                        {
-                            if (intersects_box(subdomain,
-                                               particle.coordinates,
-                                               particle.radius))
-                            {
-                                new_particles.push_back(particle);
-                            }
-                            continue; // Skip original sphere
-                        }
-
-                        if ((dx != 0 && crosses[0]) ||
-                            (dy != 0 && crosses[1]) || (dz != 0 && crosses[2]))
-                        {
-                            Coords periodic_particle = {
-                                particle.coordinates[0] + dx * domain.length[0],
-                                particle.coordinates[1] + dy * domain.length[1],
-                                particle.coordinates[2] + dz * domain.length[2],
-                            };
-                            if (intersects_box(subdomain,
-                                               periodic_particle,
-                                               particle.radius))
-                            {
-                                new_particles.push_back(
-                                    { periodic_particle, particle.radius });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        particles = std::move(new_particles);
-    }
-
-    /**
-     * @brief Removes particles that do not intersect specified box
-     * @param subdomain Dimensions of the subdomain vix Box
-     */
-    void trim_particles(const Box& subdomain)
-    {
-        std::vector<ParticleType> new_particles;
-        for (const auto& particle : particles)
-        {
-            if (intersects_box(
-                    subdomain, particle.coordinates, particle.radius))
-            {
-                new_particles.push_back(particle);
-            }
-        }
-        particles = std::move(new_particles);
     }
 
 }; // end class
@@ -411,58 +265,19 @@ convert_to_type(const std::vector<std::vector<double> >& data_in)
 /**
  * @brief Initializes a List of particles.
  *
- * @param data A vector of data, specific to thew typoe specified
- * @param point The reference point as {x, y, z}.
- * @param radius The search radius for filtering spheres.
- * @param kd_tree Flag to use KD-tree or Verlet algorithm for filtering.
- * @param add_periodic Flag to specify whether periodic particles should be
- * added
+ * @param data A vector of data, specific to thew type specified
  * @return A unique pointer to the initialized (and possibly trimmed)
- * SphereList.
+ * ParticleList.
  */
-template <typename List, typename ListType>
-std::shared_ptr<List>
-initialize_list(std::vector<std::vector<double> >& data_in,
-                const std::vector<std::vector<double> >& domain,
-                const std::vector<std::vector<double> >& subdomain,
-                bool add_periodic = false)
+std::shared_ptr<ParticleList>
+initialize_particles(std::vector<std::vector<double> >& data_in)
 {
-    std::vector<ListType> data = convert_to_type<ListType>(data_in);
+    std::vector<Particle> data = convert_to_type<Particle>(data_in);
 
-    Box domain_box = { { domain[0][0], domain[1][0], domain[2][0] },
-                       { domain[0][1], domain[1][1], domain[2][1] } };
-
-    domain_box.box_length();
-
-    Box subdomain_box = {
-        { subdomain[0][0], subdomain[1][0], subdomain[2][0] },
-        { subdomain[0][1], subdomain[1][1], subdomain[2][1] }
-    };
-
-    std::shared_ptr<List> data_list = std::make_shared<List>(data);
-
-    if (add_periodic)
-    {
-        data_list->add_periodic_particles(domain_box, subdomain_box);
-    }
-    else
-    {
-        data_list->trim_particles(subdomain_box);
-    }
-
-    if (data_list->size() < 1)
-    {
-        throw std::invalid_argument("List has not entries after trimming.");
-    }
+    std::shared_ptr<ParticleList> data_list =
+        std::make_shared<ParticleList>(data);
 
     return data_list;
-}
-
-template <typename List>
-std::vector<std::vector<double> >
-return_particles(std::shared_ptr<List> particle_list, bool return_own = false)
-{
-    return particle_list->return_particles(return_own);
 }
 
 template <typename List>

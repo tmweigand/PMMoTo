@@ -13,8 +13,7 @@ def test_particles():
     rank = comm.Get_rank()
 
     N = 50
-    atoms = np.random.rand(N, 4)
-    atoms[:, 3] = atoms[:, 3]
+    spheres = np.random.rand(N, 4)
 
     eps = 0
     box = ((eps, 1 - eps), (eps, 1 - eps), (eps, 1 - eps))
@@ -23,16 +22,19 @@ def test_particles():
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
         boundary_types=((2, 2), (2, 2), (2, 2)),
+        box=box,
         rank=rank,
         subdomains=subdomains,
     )
 
-    atoms = pmmoto.domain_generation.particles.initialize(sd, atoms)
+    spheres = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_particles_subdomain", sd, np.zeros(sd.voxels)
     )
-    pmmoto.io.output.save_particle_data("data_out/test_particles", sd, atoms)
+    pmmoto.io.output.save_particle_data(
+        "data_out/test_particles", sd, spheres.return_np_array()
+    )
 
 
 def test_gen_periodic_spheres():
@@ -44,7 +46,7 @@ def test_gen_periodic_spheres():
 
     # No periodic spheres
     spheres = np.array([[0.5, 0.5, 0.5, 0.25]])
-    sphere_list = pmmoto.domain_generation.particles.initialize(sd, spheres)
+    sphere_list = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
 
     np.testing.assert_allclose(sphere_list.return_np_array(), [[0.5, 0.5, 0.5, 0.25]])
 
@@ -52,7 +54,7 @@ def test_gen_periodic_spheres():
         [[0.9, 0.5, 0.5, 0.25], [0.1, 0.5, 0.1, 0.15], [0.1, 0.1, 0.1, 0.45]]
     )
 
-    sphere_list = pmmoto.domain_generation.particles.initialize(
+    sphere_list = pmmoto.domain_generation.particles.initialize_spheres(
         sd, spheres, add_periodic=True
     )
 
@@ -84,20 +86,68 @@ def test_trim_particles():
 
     sd = pmmoto.initialize(voxels=(10, 10, 10))
 
-    particles = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
+    spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
 
-    trimmed_particles = pmmoto.domain_generation.particles.initialize(sd, particles)
+    trimmed_spheres = pmmoto.domain_generation.particles.initialize_spheres(
+        sd, spheres, trim=True, set_own=True
+    )
 
     np.testing.assert_allclose(
-        trimmed_particles.return_np_array(return_own=True),
+        trimmed_spheres.return_np_array(return_own=True),
         np.array([[0.5, 0.5, 0.5, 0.25, 1]]),
     )
 
-    particles = np.array([[0.5, 0.5, 0.5, 0.25], [1.08, 0.5, 0.5, 0.09]])
+    spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.08, 0.5, 0.5, 0.09]])
 
-    trimmed_particles = pmmoto.domain_generation.particles.initialize(sd, particles)
+    trimmed_spheres = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
 
     np.testing.assert_allclose(
-        trimmed_particles.return_np_array(return_own=True),
+        trimmed_spheres.return_np_array(return_own=True),
         np.array([[0.5, 0.5, 0.5, 0.25, 1], [1.08, 0.5, 0.5, 0.09, 0]]),
     )
+
+
+def test_group_atoms():
+    """
+    Test the creation of atom lists
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+
+    # No periodic spheres
+    atom_coordinates = np.array(
+        [
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [25, 0.5, 0.5],
+        ]
+    )
+    atom_ids = np.array([1, 15, 3, 15, 15], dtype=int)
+
+    atom_radii = {}
+    for _id in atom_ids:
+        atom_radii[_id] = 0.1
+
+    atoms = pmmoto.domain_generation.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, by_type=False
+    )
+    atoms.build_KDtree()
+    atoms = atoms.return_np_array(True)
+
+
+def test_spheres():
+    """
+    Test the creation of sphere lists
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+
+    # No periodic spheres
+    sphere = np.array([[0.19, 0.1, 0.5, 0.2]])
+    spheres = pmmoto.domain_generation.particles.initialize_spheres(
+        sd, sphere, add_periodic=True
+    )
+
+    spheres.build_KDtree()
+
+    print(spheres.return_np_array())

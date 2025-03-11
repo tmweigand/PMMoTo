@@ -39,8 +39,6 @@ class PaddedSubdomain(subdomain.Subdomain):
             self.global_boundary, self.neighbor_ranks
         )
         self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
-        self.voxels = self.get_voxels()
-        self.box = self.get_box()
 
         self.outlet = self.get_outlet()
         self.start = self.get_start()

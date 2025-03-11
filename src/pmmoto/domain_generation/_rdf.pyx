@@ -11,54 +11,49 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 
+from .rdf cimport generate_rdf
 
-from .rdf cimport _generate_rdf
-
-from .particles.atoms cimport Atom
 from .particles.atoms cimport AtomList
-from .particles.atoms cimport initialize_list
+from ._particles cimport PyAtomList
 
-__all__ = ["generate_rdf"]
+__all__ = ["_generate_rdf"]
 
-def generate_rdf(subdomain, atoms, probe_atoms, radius_in, num_bins):
+def _generate_rdf(probe_atoms, atoms, max_radius, bins, bin_width):
     """
     generate a radial distribution function 
     """
-    # build atom list
-    # loop through probe_atom to collect neares
-    # calculate the distance
-    # bin distance counts
     cdef: 
-        vector[double] point
-        double radius = 0
-        vector[vector[double]] atoms_c, probe_atoms_c
-        vector[long int] rdf
-        vector[vector[double]] box
-        bool trim = False
-        bool kd = True
+        # AtomList _probe_atoms,_atoms
+        vector[long int] _bins
 
-    atoms_c = atoms
-    probe_atoms_c = probe_atoms
-
-    if subdomain is not None:
-        point = subdomain.get_centroid()
-        sd_radius = subdomain.get_radius()
-        radius = sd_radius + radius_in
-        trim = True
-    else:
-        point = [0,0,0]
-        trim = False
-
-    box = subdomain.own_box
-
-    # cdef shared_ptr[AtomList] atom_list = initialize_list[AtomList,Atom](atoms_c,point,radius,box,kd,trim)
-    # cdef shared_ptr[AtomList] probe_list = initialize_list[AtomList,Atom](probe_atoms_c,point,radius,box,kd,trim)
+    # cdef PyAtomList py_probe_atoms = <PyAtomList>probe_atoms
+    # cdef shared_ptr[AtomList] _probe_atoms = py_probe_atoms._atom_list
+    # cdef PyAtomList py_atoms = <PyAtomList>atoms
+    # cdef shared_ptr[AtomList] _atoms = py_atoms._atom_list 
     
-    # radius = radius_in
-    # rdf = _generate_rdf(probe_list,atom_list,radius,num_bins)
+    _bins = bins
 
-    # cdef vector[vector[double]] check_atoms_c = return_particles(atom_list)
+    # if not _probe_atoms:
+    #     raise ValueError("probe_atoms is null!")
+    # if not _atoms:
+    #     raise ValueError("atoms is null!")
 
-    # check_atoms = check_atoms_c
 
-    return 0
+    # bins = generate_rdf(
+    #     _probe_atoms,
+    #     _atoms,
+    #     max_radius,
+    #     _bins,
+    #     bin_width
+    # )
+
+
+    bins = generate_rdf(
+        (<PyAtomList>probe_atoms)._atom_list,
+        (<PyAtomList>atoms)._atom_list,
+        max_radius,
+        _bins,
+        bin_width
+    )
+
+    return bins

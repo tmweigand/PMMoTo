@@ -3,24 +3,35 @@
 
 #include "atoms.hpp"
 
-std::vector<long int> _generate_rdf(std::shared_ptr<AtomList> probe_atoms,
-                                    std::shared_ptr<AtomList> atoms,
-                                    double maximum_distance, int num_bins) {
-
-  double bin_width = maximum_distance / num_bins;
-  std::vector<long int> bins(num_bins, 0);
-  auto particles = probe_atoms->getParticles();
-  for (const auto &probe_atom : particles) {
-    auto distances =
-        atoms->collect_kd_distances(probe_atom.coordinates, maximum_distance,
-                                    false); // false so not squared distance
-    for (double distance : distances) {
-      int bin_index =
-          std::floor(distance / bin_width); // Determine the correct bin index
-      bins[bin_index]++;                    // Increment the count for that bin
+std::vector<long int>
+generate_rdf(std::shared_ptr<AtomList> probe_atoms,
+             std::shared_ptr<AtomList> atoms,
+             double max_distance,
+             std::vector<long int> bins,
+             double bin_width)
+{
+    if (!probe_atoms)
+    {
+        throw std::runtime_error("probe_atoms is null!");
     }
-  }
-  return bins;
+
+    auto particles = probe_atoms->get_coordinates();
+    for (const auto& probe_coordinates : particles)
+    {
+        auto distances =
+            atoms->collect_kd_distances(probe_coordinates,
+                                        max_distance,
+                                        false); // false so not squared
+
+        for (double distance : distances)
+        {
+            int bin_index = std::floor(distance / bin_width);
+            bins[bin_index]++;
+            std::cout << max_distance << " " << distance << " " << bin_index
+                      << " " << bins[bin_index] << std::endl;
+        }
+    }
+    return bins;
 };
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef ATOMS_H
 #define ATOMS_H
 
-#include "particle_list.hpp"
+#include "spheres.hpp"
 
 /**
  * @class Atom
@@ -10,25 +10,148 @@
 class Atom : public Particle
 {
 public:
+    double radius;
+
     Atom(double x, double y, double z, double radius)
-        : Particle({ x, y, z }, radius)
+        : Particle(x, y, z), radius(radius)
     {
     }
     Atom(std::vector<double> coordinates, double radius)
-        : Particle(coordinates, radius)
-    {
-    }
-    Atom(std::vector<double> atom_data) : Particle(atom_data, atom_data[3])
+        : Particle(coordinates), radius(radius)
     {
     }
 };
 
-class AtomList : public ParticleList<Atom>
+/**
+ * @class AtomList
+ * @brief Extends AtomList with additional operations for atoms.
+ */
+class AtomList : public SphereList
 {
+private:
 public:
-    AtomList(std::vector<Atom> atom_data) : ParticleList<Atom>(atom_data)
+    using SphereList::SphereList; // Inherit constructors
+
+    double radius;
+    int label;
+
+    AtomList(ParticleList& atom_coordinates,
+             const double radius,
+             const int label = 0)
+        : SphereList(atom_coordinates, radius), radius(radius), label(label)
     {
     }
+
+    AtomList(std::vector<std::vector<double> > atom_coordinates,
+             const double radius,
+             const int label = 0)
+        : SphereList(atom_coordinates, radius), radius(radius), label(label)
+    {
+    }
+
+    std::vector<std::vector<double> > return_atoms(bool return_own = false,
+                                                   bool return_label = false)
+    {
+        std::vector<std::vector<double> > info;
+        info.reserve(spheres.size());
+        for (const auto& sphere : spheres)
+        {
+            std::vector<double> _info = { sphere.coordinates[0],
+                                          sphere.coordinates[1],
+                                          sphere.coordinates[2],
+                                          sphere.radius };
+
+            if (return_own) _info.push_back(static_cast<double>(sphere.own));
+            if (return_label) _info.push_back(static_cast<double>(label));
+
+            info.emplace_back(std::move(_info)); // Move to avoid extra copies
+        }
+
+        return info;
+    }
+
+    void add_periodic_atoms(Box& domain, const Box& subdomain)
+    {
+        add_periodic_spheres(domain, subdomain);
+    }
+
+    /**
+     * @brief Add periodic atoms
+     * @return A unique pointer to the initialized (and possibly trimmed)
+     * SphereList.
+     */
+    void trim_atoms(const Box& subdomain)
+    {
+        trim_spheres(subdomain);
+    }
+
+    void set_own_atoms(const Box& subdomain)
+    {
+        own_spheres(subdomain);
+    }
 };
+
+/**
+ * @brief Groups atom coordinates by their respective atom types.
+ *
+ * @param atom_coordinates A vector of 3D coordinates, where each entry
+ * represents an atom's position.
+ * @param atom_ids A vector containing atom type identifiers, corresponding to
+ * each atom in `atom_coordinates`.
+ * @return A map where each unique atom type is associated with a
+ * vector of its corresponding coordinates.
+ */
+std::unordered_map<int, std::vector<std::vector<double> > >
+group_atoms_by_type(const std::vector<std::vector<double> >& atom_coordinates,
+                    const std::vector<int>& atom_ids)
+{
+    std::unordered_map<int, std::vector<std::vector<double> > > atoms_by_type;
+
+    size_t num_atoms = atom_ids.size();
+
+    // Reserve space for efficiency if atom types are known
+    atoms_by_type.reserve(num_atoms);
+
+    for (size_t i = 0; i < num_atoms; ++i)
+    {
+        atoms_by_type[atom_ids[i]].emplace_back(atom_coordinates[i]);
+    }
+
+    return atoms_by_type;
+}
+
+/**
+ * @brief Initializes a Atom Type - Coordinates and radius.
+ * @return A unique pointer to the initialized (and possibly trimmed)
+ * SphereList.
+ */
+std::vector<double>
+atom_id_to_radius(const std::vector<int>& atom_ids,
+                  const std::unordered_map<int, double>& radii)
+{
+    // Create a vector to store radius values, same size as atom_ids
+    std::vector<double> _radii(atom_ids.size());
+
+    // Loop through the atom_ids and populate the radius_values vector
+    for (size_t i = 0; i < atom_ids.size(); ++i)
+    {
+        int atom_id = atom_ids[i];
+
+        // Look up the radius corresponding to the atom_id
+        auto it = radii.find(atom_id);
+        if (it != radii.end())
+        {
+            _radii[i] = it->second;
+        }
+        else
+        {
+            // Throw an exception if atom_id does not exist in the radii map
+            throw std::runtime_error("Radius for atom_id " +
+                                     std::to_string(atom_id) + " not found.");
+        }
+    }
+
+    return _radii;
+}
 
 #endif

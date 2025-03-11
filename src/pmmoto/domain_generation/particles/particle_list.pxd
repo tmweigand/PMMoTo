@@ -6,15 +6,19 @@ from libcpp.memory cimport shared_ptr
 
 cdef extern from "particle_list.hpp":
 
-	cdef cppclass ParticleList
+	cdef struct Box:
+		double[3] min,max,length
 
-	cdef shared_ptr[ParticleList] initialize_list(
+	cdef cppclass Particle
+
+	cdef cppclass ParticleList:
+		ParticleList(vector[vector[double]] particle_data)
+
+	cdef shared_ptr[ParticleList] initialize_particles(
 		vector[vector[double]] data,
-		vector[double] point,
-		double radius,
-		vector[vector[double]] box,
-		bool kd_tree,
-		bool trim
+		vector[vector[double]] domain_box,
+		vector[vector[double]] subdomain_box,
+		bool add_periodic
 	)
 
 	cdef vector[vector[double]] return_particles(

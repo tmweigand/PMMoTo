@@ -6,9 +6,10 @@ from numpy cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 from libcpp cimport bool
 from libcpp.vector cimport vector
+
 from libcpp.memory cimport shared_ptr
 
-from .particles.sphere_pack cimport SphereList
+from .particles.spheres cimport SphereList
 
 cdef extern from "domain_generation.hpp":
 	cdef struct Grid:

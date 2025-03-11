@@ -34,6 +34,9 @@ def save_particle_data(file_name: str, subdomain, particles, **kwargs):
     if data_length > 4:
         own = np.ascontiguousarray(particles[:, 4])
         data["own"] = own
+    if data_length > 5:
+        label = np.ascontiguousarray(particles[:, 5])
+        data["label"] = label
 
     file_proc = (
         file_name + "/" + file_name.split("/")[-1] + "Proc." + str(subdomain.rank)

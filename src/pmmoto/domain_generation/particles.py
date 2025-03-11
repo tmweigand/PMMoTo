@@ -5,15 +5,21 @@ from ..core import subdomain_features
 from . import _particles
 
 __all__ = [
-    "gen_periodic_spheres",
-    "gen_periodic_atoms",
-    "is_inside_domain",
-    "collect_boundary_crossings",
-    "reflect_boundary_sphere",
+    "initialize_atoms",
+    "initialize_spheres",
 ]
 
 
-def initialize(subdomain, particles, add_periodic=False, set_own=True):
+def initialize_atoms(
+    subdomain,
+    atom_coordinates,
+    atom_radii,
+    atoms_ids,
+    by_type=False,
+    add_periodic=False,
+    set_own=True,
+    trim=False,
+):
     """
     Initialize a list of particles (i.e. atoms, spheres).
     Particles that do not cross the subdomain boundary are deleted
@@ -21,7 +27,48 @@ def initialize(subdomain, particles, add_periodic=False, set_own=True):
     If set_own: particles owned by a subdomain will be identified
     """
 
-    particles = _particles.initialize(subdomain, particles, add_periodic, set_own)
+    particles = _particles._initialize_atoms(
+        atom_coordinates, atom_radii, atoms_ids, by_type
+    )
+
+    if trim:
+        particles.trim(subdomain)
+
+    if add_periodic:
+        particles.add_periodic(subdomain)
+
+    if set_own:
+        particles.set_own(subdomain)
+
+    return particles
+
+
+def initialize_spheres(
+    subdomain, spheres, radii=None, add_periodic=False, set_own=True, trim=False
+):
+    """
+    Initialize a list of spheres.
+    Particles that do not cross the subdomain boundary are deleted
+    If add_periodic: particles that cross the domain boundary will be add.
+    If set_own: particles owned by a subdomain will be identified
+    """
+
+    if not radii:
+        _spheres = spheres[:, 0:3]
+        radii = spheres[:, 3]
+    else:
+        _spheres = spheres
+
+    particles = _particles.initialize_spheres(_spheres, radii)
+
+    if trim:
+        particles.trim(subdomain)
+
+    if add_periodic:
+        particles.add_periodic(subdomain)
+
+    if set_own:
+        particles.set_own(subdomain)
 
     return particles
 

@@ -2,9 +2,10 @@
 
 import numpy as np
 
-__all__ = ["g_rdf"]
+__all__ = ["generate_rdf"]
 
 from . import _rdf
+from . import particles
 
 
 class RDF:
@@ -110,18 +111,29 @@ class Bounded_RDF(RDF):
         return np.interp(g, self.g_data, self.r_data)
 
 
-def g_rdf(subdomain, probe_atom, radius, atom_list, num_bins):
+def generate_rdf(subdomain, probe_atom_list, atoms, num_bins):
     """
     Finds the atoms that are within a radius of probe atom
     """
-    if len(probe_atom.shape) == 1:
-        probe_atom = probe_atom[np.newaxis, :]
 
-    # binned_distances = _rdf.generate_rdf(
-    #     subdomain, atom_list, probe_atom, radius, num_bins
-    # )
+    if not isinstance(probe_atom_list, particles._particles.PyAtomList):
+        raise TypeError(
+            f"Expected probe_atom_list to be of type PyAtomList, got {type(probe_atom_list)}"
+        )
 
-    atoms = _rdf.generate_rdf(subdomain, atom_list, probe_atom, radius, num_bins)
+    # Generate bins
+    rdf_bin = {}
+    for label, atom_list in atoms.atom_map.items():
+
+        # Ensure kd_tree built
+        atom_list.build_KDtree()
+
+        rdf_bin[label] = np.zeros(num_bins)
+        bin_width = atom_list.radius / num_bins
+
+        rdf_bin[label] = _rdf._generate_rdf(
+            probe_atom_list, atom_list, atom_list.radius, rdf_bin[label], bin_width
+        )
 
     # # If probe_atom in atom_list
     # binned_distances[0] = binned_distances[0] - probe_atom.shape[0]
@@ -143,7 +155,7 @@ def g_rdf(subdomain, probe_atom, radius, atom_list, num_bins):
 
     # g_r = binned_distances / (number_density * shell_volumes * num_probe_atoms)
 
-    return atoms
+    return rdf_bin
 
 
 def sphere_volume(radius):
