@@ -36,7 +36,7 @@ public:
      * @param s_r Squared radius of the sphere.
      * @return 1 if the point is inside the sphere, 0 otherwise.
      */
-    inline uint8_t in_sphere(std::vector<double>& point) noexcept
+    inline uint8_t in_sphere(const std::vector<double>& point) noexcept
     {
         double dx = coordinates[0] - point[0];
         double dy = coordinates[1] - point[1];
@@ -163,6 +163,42 @@ public:
         particle_list.initializeKDTree();
     }
 
+    // Add operator[] to access individual spheres
+    Sphere& operator[](size_t index)
+    {
+        if (index >= spheres.size())
+        {
+            throw std::out_of_range("Sphere index out of range");
+        }
+        return spheres[index];
+    }
+
+    const Sphere& operator[](size_t index) const
+    {
+        if (index >= spheres.size())
+        {
+            throw std::out_of_range("Sphere index out of range");
+        }
+        return spheres[index];
+    }
+
+    /**
+     * @brief Determine the maximum sphere radius
+     */
+    double max_radius()
+    {
+        if (spheres.empty())
+        {
+            return 0.0;
+        }
+
+        return std::max_element(spheres.begin(),
+                                spheres.end(),
+                                [](const Sphere& a, const Sphere& b)
+                                { return a.radius < b.radius; })
+            ->radius;
+    }
+
     /**
      * @brief Provide access to the particles
      * @note This class can update the sphereList so need to grab actual
@@ -202,6 +238,27 @@ public:
         {
             sphere.inside_box(box);
         }
+    }
+
+    /**
+     * @brief Finds indices of spheres that intersect with the specified box
+     * @param subdomain Dimensions of the subdomain via Box
+     * @return Vector of indices of intersecting spheres
+     */
+    std::vector<size_t> find_intersecting_sphere_indices(const Box& box) const
+    {
+        std::vector<size_t> indices;
+        indices.reserve(spheres.size());
+
+        for (size_t i = 0; i < spheres.size(); ++i)
+        {
+            const auto& sphere = spheres[i];
+            if (sphere.intersects_box(sphere.coordinates, sphere.radius, box))
+            {
+                indices.push_back(i);
+            }
+        }
+        return indices;
     }
 
     /**
@@ -300,6 +357,21 @@ public:
     {
         std::vector<double> distances =
             particle_list.collect_kd_distances(point, radius, return_square);
+        return distances;
+    }
+
+    /**
+     * @brief Determine the indices of spheres within a radius using a kd tree
+     * @param point The reference point as {x, y, z}.
+     * @param radius the search radius
+     * @return A vector of distances for particles within the radius.
+     */
+    std::vector<size_t> collect_kd_indices(const std::vector<double>& point,
+                                           double radius,
+                                           bool return_square = true)
+    {
+        std::vector<size_t> distances =
+            particle_list.collect_kd_indices(point, radius);
         return distances;
     }
 };

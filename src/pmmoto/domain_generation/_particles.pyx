@@ -158,27 +158,35 @@ cdef class PyAtomList:
 
 
 cdef class PySphereList:
-    
-    def __cinit__(self, vector[vector[double]] spheres, vector[double] radii):
-    
-        self._sphere_list = new SphereList(spheres, radii)
 
-    def __dealloc__(self):
-        del self._sphere_list
+
+    def __cinit__(self, vector[vector[double]] coordinates, vector[double] radii):
+        """
+        Initialize a PySphereList
+        """
+        if coordinates.size() == 0:
+            raise ValueError("Cannot initialize PySphereList with empty coordinates")
+            
+        try:
+            self._sphere_list = shared_ptr[SphereList](new SphereList(coordinates, radii))
+            if not self._sphere_list:
+                raise RuntimeError("Failed to initialize SphereList")
+        except Exception as e:
+            raise RuntimeError(f"Failed to create SphereList: {str(e)}")
 
 
     def build_KDtree(self):
         """
         Build a KD tree from the coordinates
         """
-        self._sphere_list.build_KDtree()
+        self._sphere_list.get().build_KDtree()
         
 
     def return_np_array(self, return_own = False):
         """
         Return atoms as np array
         """
-        cdef vector[vector[double]] particles = self._sphere_list.return_spheres(return_own)
+        cdef vector[vector[double]] particles = self._sphere_list.get().return_spheres(return_own)
 
         return(np.asarray(particles))
 
@@ -191,7 +199,7 @@ cdef class PySphereList:
         _domain_box = create_box(subdomain.domain.box)
         _subdomain_box = create_box(subdomain.box)
 
-        self._sphere_list.add_periodic_spheres(_domain_box,_subdomain_box)
+        self._sphere_list.get().add_periodic_spheres(_domain_box,_subdomain_box)
 
     def set_own(self,subdomain):
         """
@@ -200,7 +208,7 @@ cdef class PySphereList:
         cdef Box _subdomain_box
         _subdomain_box = create_box(subdomain.own_box)
 
-        self._sphere_list.own_spheres(_subdomain_box) 
+        self._sphere_list.get().own_spheres(_subdomain_box) 
 
     def trim(self,subdomain):
         """
@@ -209,7 +217,7 @@ cdef class PySphereList:
         cdef Box _subdomain_box
         _subdomain_box = create_box(subdomain.box)
 
-        self._sphere_list.trim_spheres(_subdomain_box)  
+        self._sphere_list.get().trim_spheres(_subdomain_box)  
 
 
 def _initialize_atoms(atom_coordinates, atom_radii, atom_ids, by_type = False):

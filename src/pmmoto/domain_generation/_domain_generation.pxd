@@ -6,9 +6,10 @@ from numpy cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 from libcpp cimport bool
 from libcpp.vector cimport vector
-
+from libcpp.unordered_map cimport unordered_map
 from libcpp.memory cimport shared_ptr
 
+from .particles.particle_list cimport Box
 from .particles.spheres cimport SphereList
 
 cdef extern from "domain_generation.hpp":
@@ -20,9 +21,10 @@ cdef extern from "domain_generation.hpp":
 
 	cdef struct Verlet:
 		size_t num_verlet
+		vector[vector[vector[size_t]]] loops
 		vector[vector[double]] centroids
 		vector[double] diameters
-		vector[vector[vector[size_t]]] loops
+		unordered_map[int,Box] box
 
 
 	cdef void gen_sphere_img_brute_force(

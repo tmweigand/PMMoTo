@@ -3,6 +3,7 @@ from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from . import porousmedia
 from . import multiphase
+from . import particles
 from ..core import communication
 from ..core import utils
 from ..core import subdomain_features
@@ -95,11 +96,13 @@ def gen_linear_img(shape, dim):
     return linear_values * np.ones(shape)
 
 
-def gen_pm_spheres_domain(subdomain, spheres):
+def gen_pm_spheres_domain(subdomain, spheres, kd=False):
     """
     Generate binary domain (pm) from sphere data that contains radii
     """
-    img = _domain_generation.gen_pm_sphere(subdomain, spheres)
+    _spheres = particles.initialize_spheres(subdomain, spheres)
+
+    img = _domain_generation.gen_pm_sphere(subdomain, _spheres, kd)
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
@@ -109,20 +112,15 @@ def gen_pm_spheres_domain(subdomain, spheres):
     return pm
 
 
-def gen_pm_atom_domain(subdomain, atom_locations, atom_types, atom_cutoff):
+def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types):
     """
     Generate binary domain (pm) from atom data, types and cutoff
     """
-    _img = _domain_generation.gen_pm_atom(
-        subdomain.coords[0],
-        subdomain.coords[1],
-        subdomain.coords[2],
-        atom_locations,
-        atom_types,
-        atom_cutoff,
+    _spheres = particles.initialize_atoms(
+        subdomain, atom_locations, atom_radii, atom_types
     )
-
-    pm = porousmedia.gen_pm(subdomain, _img)
+    img = _domain_generation.gen_pm_sphere(subdomain, _spheres)
+    pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
     utils.check_grid(subdomain, pm.img)

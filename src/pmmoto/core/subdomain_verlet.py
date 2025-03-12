@@ -25,6 +25,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         self.verlet_loop = self.get_verlet_loop()
         self.centroids = self.get_verlet_centroid()
         self.max_diameters = self.get_maximum_diameter()
+        self.verlet_box = self.get_verlet_box()
 
     @classmethod
     def from_subdomain(
@@ -102,3 +103,23 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
             max_diameter[n] = np.sqrt(diameter)
 
         return max_diameter
+
+    def get_verlet_box(self):
+        """
+        Determine the box of the verlet subdomain
+        """
+        box = {}
+        for n in range(self.num_verlet):
+            bounds = []
+            for dim in range(self.domain.dims):
+                length = self.domain.resolution[dim] * self.verlet_voxels[n][dim]
+                lower = (
+                    self.coords[dim][self.verlet_loop[n][dim, 0]]
+                    - self.domain.resolution[dim] / 2.0
+                )
+                upper = lower + length
+                bounds.append((lower, upper))
+
+            box[n] = tuple(bounds)
+
+        return box

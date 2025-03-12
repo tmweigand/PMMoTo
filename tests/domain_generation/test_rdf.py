@@ -65,10 +65,10 @@ def test_generate_rdf():
     n_bins = 90
     max_rdf = 18
 
-    probe_atom = np.copy(atoms)
-    atoms = pmmoto.domain_generation.gen_periodic_spheres(sd, atoms)
+    # probe_atom = np.copy(atoms)
+    # atoms = pmmoto.domain_generation.gen_periodic_spheres(sd, atoms)
 
-    atoms = pmmoto.domain_generation.rdf.g_rdf(sd, probe_atom, max_rdf, atoms, n_bins)
+    # atoms = pmmoto.domain_generation.rdf.g_rdf(sd, probe_atom, max_rdf, atoms, n_bins)
 
     # n_bins = 90
     # max_rdf = 5

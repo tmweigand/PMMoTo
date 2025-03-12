@@ -12,5 +12,5 @@ cdef class PyAtomList:
     
 
 cdef class PySphereList:
-    cdef SphereList* _sphere_list
+    cdef shared_ptr[SphereList] _sphere_list
     

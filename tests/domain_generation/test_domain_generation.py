@@ -14,8 +14,8 @@ def test_pm_sphere():
     sd = pmmoto.initialize(voxels=(10, 10, 10))
     sphere = np.array([[0.5, 0.5, 0.5, 0.25]])
 
-    img = pmmoto.domain_generation.gen_pm_sphere(sd, sphere)
-    assert np.sum(img) == 944
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, sphere)
+    assert np.sum(pm.img) == 944
 
 
 def test_pm_sphere_verlet():
@@ -26,9 +26,9 @@ def test_pm_sphere_verlet():
     """
     sd = pmmoto.initialize(voxels=(10, 10, 10), verlet_domains=(3, 3, 3))
     sphere = np.array([[0.5, 0.5, 0.5, 0.25]])
-    img = pmmoto.domain_generation.gen_pm_sphere(sd, sphere)
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, sphere)
 
-    assert np.sum(img) == 944
+    assert np.sum(pm.img) == 944
 
 
 def test_pm_atom():
@@ -42,20 +42,14 @@ def test_pm_atom():
     sd = pmmoto.initialize(voxels=(10, 10, 10))
     atom_locations = np.array([[0.5, 0.5, 0.5]])
 
-    atom_types = np.array([0, 0], dtype=np.int64)
-    atom_cutoff = {}
-    atom_cutoff[0] = 0.25
+    atom_types = np.array([1], dtype=np.int64)
+    atom_radii = {}
+    atom_radii[1] = 0.25
 
-    spheres = pmmoto.domain_generation._domain_generation.convert_atoms_to_spheres(
-        atom_locations, atom_types, atom_cutoff
+    pm = pmmoto.domain_generation.gen_pm_atom_domain(
+        sd, atom_locations, atom_radii, atom_types
     )
-
-    np.testing.assert_array_equal(spheres, [[0.5, 0.5, 0.5, 0.25]])
-
-    grid = pmmoto.domain_generation._domain_generation.gen_pm_atom(
-        sd, atom_locations, atom_types, atom_cutoff
-    )
-    assert np.sum(grid) == 944
+    assert np.sum(pm.img) == 944
 
 
 def test_pm_atom_verlet():
@@ -70,21 +64,15 @@ def test_pm_atom_verlet():
 
     atom_locations = np.array([[0.5, 0.5, 0.5]])
 
-    atom_types = np.array([0], dtype=np.int64)
-    atom_cutoff = {}
-    atom_cutoff[0] = 0.25
+    atom_types = np.array([1], dtype=np.int64)
+    atom_radii = {}
+    atom_radii[1] = 0.25
 
-    spheres = pmmoto.domain_generation._domain_generation.convert_atoms_to_spheres(
-        atom_locations, atom_types, atom_cutoff
+    pm = pmmoto.domain_generation.gen_pm_atom_domain(
+        sd, atom_locations, atom_radii, atom_types
     )
 
-    np.testing.assert_array_equal(spheres, [[0.5, 0.5, 0.5, 0.25]])
-
-    img = pmmoto.domain_generation._domain_generation.gen_pm_atom(
-        sd, atom_locations, atom_types, atom_cutoff
-    )
-
-    assert np.sum(img) == 944
+    assert np.sum(pm.img) == 944
 
 
 @pytest.mark.figures

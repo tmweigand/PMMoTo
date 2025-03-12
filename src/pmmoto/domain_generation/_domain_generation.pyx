@@ -16,17 +16,18 @@ cnp.import_array()
 
 
 from .particles.spheres cimport SphereList
-
+from . import particles
+from ._particles cimport PySphereList
+from ._particles import create_box
 
 __all__ = [
     "gen_pm_sphere",
     "gen_pm_atom",
     "gen_inkbottle",
     "convert_atoms_to_spheres",
-    # "trim_list"
 ]
 
-def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
+def gen_pm_sphere(subdomain, spheres, kd = False):
     """
     Determine if voxel centroid is located in a sphere
     """
@@ -34,10 +35,6 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         cnp.uint8_t [:, :, :] _img
         Grid grid_c
         Verlet verlet_c
-        vector[vector[double]] spheres_c
-        vector[vector[double]] domain_box,subdomain_box
-        vector[double] spheres_radii_c
-        bool add_periodic = False
 
     # Initialize img
     img = np.ones(subdomain.voxels, dtype=np.uint8)
@@ -53,33 +50,33 @@ def gen_pm_sphere(subdomain, spheres, kd = False, trim = False):
         _stride = stride//img.itemsize
         grid_c.strides.push_back(_stride)
 
-    # Initialize SphereList Class
-    spheres_coords_c = spheres[:,0:2]
-    spheres_radii_c = spheres[:,3]
-    if trim:
-        point = subdomain.get_centroid()
-        sd_radius = subdomain.get_radius()
-        radius = sd_radius + np.max(spheres[:,3])
+    # Convert Verlet info
+    verlet_c.num_verlet = subdomain.num_verlet
+    verlet_c.loops = subdomain.verlet_loop
+    verlet_c.diameters = subdomain.max_diameters
+    verlet_c.centroids = subdomain.centroids
 
-    domain_box = subdomain.domain.box
-    subdomain_box = subdomain.own_box
+    box = {}
+    for n in range(subdomain.num_verlet):
+        box[n] = create_box(subdomain.verlet_box[n])
 
-    # cdef shared_ptr[SphereList] all_spheres = initialize_spheres(spheres_c,spheres_radii_c,domain_box,subdomain_box,add_periodic)
+    verlet_c.box = box
 
-    # # Convert Verlet info
-    # verlet_c.num_verlet = subdomain.num_verlet
-    # verlet_c.centroids = subdomain.centroids
-    # verlet_c.diameters = subdomain.max_diameters
-    # verlet_c.loops = subdomain.verlet_loop
-
-    # if kd:
-    #     gen_sphere_img_kd_method(
-    #         <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
-    #     )
-    # else:
-    #     gen_sphere_img_brute_force(
-    #         <uint8_t*>&_img[0,0,0], grid_c, verlet_c, all_spheres
-    #     )
+    if kd:
+        spheres.build_KDtree()
+        gen_sphere_img_kd_method(
+            <uint8_t*>&_img[0,0,0],
+            grid_c,
+            verlet_c,
+            (<PySphereList>spheres)._sphere_list
+        )
+    else:
+        gen_sphere_img_brute_force(
+            <uint8_t*>&_img[0,0,0],
+            grid_c,
+            verlet_c,
+            (<PySphereList>spheres)._sphere_list
+        )
 
     return img
 
