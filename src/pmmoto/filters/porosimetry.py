@@ -1,5 +1,6 @@
 """porosimetry.py"""
 
+
 from typing import Literal
 import numpy as np
 from ..core import utils
@@ -42,7 +43,6 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
         raise ValueError(f"spacing {spacing} can only be 'linear' or 'log'")
 
     return values
-
 
 def porosimetry(
     subdomain,

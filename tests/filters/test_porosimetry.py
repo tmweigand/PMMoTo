@@ -38,7 +38,7 @@ def test_porosimetry_sizes_input_fail():
     values = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
 
 
-def test_porosimetry(generate_simple_subdomain):
+def test_porosimetry():
     """
     Single process test for porosimetry
     """
@@ -49,11 +49,11 @@ def test_porosimetry(generate_simple_subdomain):
         "tests/test_domains/bcc.in"
     )
 
-    sd = generate_simple_subdomain(
+    sd = pmmoto.initialize(
+        voxels=(100, 100, 100),
         rank=0,
         box=domain_data,
-        specified_types=((2, 2), (2, 2), (2, 2)),
-        voxels_in=(100, 100, 100),
+        boundary_types=((2, 2), (2, 2), (2, 2)),
     )
 
     # generate porous media

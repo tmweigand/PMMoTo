@@ -8,5 +8,6 @@ from . import domain_discretization
 from . import subdomain
 from . import subdomain_padded
 from . import subdomain_features
+from . import subdomain_verlet
 from . import utils
 from . import voxels

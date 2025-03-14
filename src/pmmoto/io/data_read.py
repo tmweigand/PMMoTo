@@ -98,6 +98,8 @@ def read_lammps_atoms(input_file):
     else:
         domain_file = open(input_file, "r", encoding="utf-8")
 
+    charges = {}
+
     lines = domain_file.readlines()
     domain_data = np.zeros([3, 2], dtype=np.double)
     count_atom = 0
@@ -113,7 +115,16 @@ def read_lammps_atoms(input_file):
             domain_data[n_line - 5, 1] = float(line.split(" ")[1])
         elif n_line >= 9:
             split = line.split(" ")
-            atom_type[count_atom] = int(split[2])
+
+            type = int(split[2])
+            atom_type[count_atom] = type
+            charge = float(split[4])
+            if type in charges:
+                if charge not in charges[type]:
+                    charges[type].append(charge)
+            else:
+                charges[type] = [charge]
+
             for count, n in enumerate([5, 6, 7]):
                 atom_position[count_atom, count] = float(split[n])  # x,y,z,atom_id
 
@@ -145,11 +156,11 @@ def read_rdf(input_folder):
 
     # Check rdf files found for all atoms
     atom_data = {}
-    for atom in atom_map:
-        atom_file = input_folder + atom + ".rdf"
+    for label, name in atom_map.items():
+        atom_file = input_folder + name + ".rdf"
         io_utils.check_file(atom_file)
         data = np.genfromtxt(atom_file)
-        atom_data[atom] = data
+        atom_data[label] = data
 
     return atom_map, atom_data
 
@@ -169,6 +180,6 @@ def read_atom_map(input_file):
     for line in lines:
         split = line.split(" ")
         label = split[1].split("\n")[0]
-        atom_data[label] = int(split[0])
+        atom_data[int(split[0])] = label
 
     return atom_data

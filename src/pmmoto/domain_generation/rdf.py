@@ -1,6 +1,15 @@
 """rdf.py"""
 
+from dataclasses import dataclass
+from typing import Dict, Any
 import numpy as np
+
+__all__ = ["generate_bins", "generate_rdf", "bin_distances"]
+
+from . import _rdf
+from . import particles
+from . import _particles
+from ..core import communication
 
 
 class RDF:
@@ -104,3 +113,111 @@ class Bounded_RDF(RDF):
         Note! This only works for bounded RDFs
         """
         return np.interp(g, self.g_data, self.r_data)
+
+
+@dataclass
+class RDFBins:
+    """Container for RDF binning data"""
+
+    rdf_bins: Dict[int, np.ndarray]
+    bin_widths: Dict[int, float]
+    bin_centers: Dict[int, np.ndarray]
+    shell_volumes: Dict[int, np.ndarray]
+
+
+def sphere_volume(radius):
+    return (4.0 / 3.0) * np.pi * radius * radius * radius
+
+
+def generate_bins(radii, num_bins):
+    """
+    Generate the bins, bin widths and shell volumes for RDF calculation
+
+    Args:
+        atoms: AtomMap object containing atom lists
+        num_bins: Number of bins for the RDF histogram
+
+    Returns:
+        RDFBins: Dataclass containing binning information:
+            - rdf_bins: Dictionary of zero-initialized bins for each atom type
+            - bin_widths: Dictionary of bin widths for each atom type
+            - bin_centers: Dictionary of bin center positions
+            - shell_volumes: Dictionary of shell volumes for normalization
+    """
+    bins_data = RDFBins(rdf_bins={}, bin_widths={}, bin_centers={}, shell_volumes={})
+
+    for label, radius in radii.items():
+        # Initialize RDF bins
+
+        bins_data.rdf_bins[label] = np.zeros(num_bins)
+
+        # Calculate bin width based on radius
+        bins_data.bin_widths[label] = radius / num_bins
+
+        # Calculate bin centers
+        bins_data.bin_centers[label] = np.linspace(
+            bins_data.bin_widths[label] / 2,
+            bins_data.bin_widths[label] / 2 + radius,
+            num_bins,
+        )
+
+        # Calculate shell volumes
+        bins_data.shell_volumes[label] = sphere_volume(
+            bins_data.bin_centers[label] + bins_data.bin_widths[label] / 2
+        ) - sphere_volume(
+            bins_data.bin_centers[label] - bins_data.bin_widths[label] / 2
+        )
+
+    return bins_data
+
+
+def generate_rdf(binned_distances, bins):
+    """
+    Generate an rdf from binned distances
+    """
+    rdf = {}
+    for label, binned in binned_distances.items():
+        rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
+
+    return rdf
+
+
+def bin_distances(subdomain, probe_atom_list, atoms, bins):
+    """
+    Finds the atoms that are within a radius of probe atom
+    """
+
+    if not isinstance(probe_atom_list, _particles.PyAtomList):
+        raise TypeError(
+            f"Expected probe_atom_list to be of type PyAtomList, got {type(probe_atom_list)}"
+        )
+
+    # Generate bins
+    for label, atom_list in atoms.atom_map.items():
+
+        # Ensure kd_tree built
+        atom_list.build_KDtree()
+
+        bins.rdf_bins[label] = _rdf._generate_rdf(
+            probe_atom_list,
+            atom_list,
+            atom_list.radius,
+            bins.rdf_bins[label],
+            bins.bin_widths[label],
+        )
+
+    all_rdf = communication.all_gather(bins.rdf_bins)
+
+    for n_proc, proc_rdf in enumerate(all_rdf):
+        if n_proc == subdomain.rank:
+            continue
+        for label in proc_rdf:
+            bins.rdf_bins[label] = [
+                a + b for a, b in zip(bins.rdf_bins[label], proc_rdf[label])
+            ]
+
+    g_r = {}
+    for label in atoms.labels:
+        g_r[label] = np.asarray(bins.rdf_bins[label])
+
+    return g_r

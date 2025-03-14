@@ -7,9 +7,8 @@ class Domain:
     Information for domain including:
         size_domain: Size of the domain in physical units
         boundary_types:  0: No assumption made
-                            1: Wall boundary condition
-                         2: Periodic boundary condition
-                        Opposing boundary must also be 2
+                         1: Wall boundary condition
+                         2: Periodic boundary condition - Opposing face must also be 2!
         inlet: True/False boundary must be 0
         outlet: True/False boundary must be 0
 
@@ -28,6 +27,7 @@ class Domain:
         self.inlet = inlet
         self.outlet = outlet
         self.dims = 3
+        self.volume = self.get_volume()
         self.periodic = self.periodic_check()
         self.length = self.get_length()
 
@@ -40,6 +40,16 @@ class Domain:
             length[n] = self.box[n][1] - self.box[n][0]
 
         return tuple(length)
+
+    def get_volume(self):
+        """
+        Calculate the length of the domain
+        """
+        length = np.zeros([self.dims], dtype=np.float64)
+        for n in range(0, self.dims):
+            length[n] = self.box[n][1] - self.box[n][0]
+
+        return np.prod(length)
 
     def periodic_check(self) -> bool:
         """
