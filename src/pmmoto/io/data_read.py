@@ -156,11 +156,11 @@ def read_rdf(input_folder):
 
     # Check rdf files found for all atoms
     atom_data = {}
-    for atom in atom_map:
-        atom_file = input_folder + atom + ".rdf"
+    for label, name in atom_map.items():
+        atom_file = input_folder + name + ".rdf"
         io_utils.check_file(atom_file)
         data = np.genfromtxt(atom_file)
-        atom_data[atom] = data
+        atom_data[label] = data
 
     return atom_map, atom_data
 

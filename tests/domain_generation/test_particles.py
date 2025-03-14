@@ -89,7 +89,7 @@ def test_trim_particles():
     spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
 
     trimmed_spheres = pmmoto.domain_generation.particles.initialize_spheres(
-        sd, spheres, trim=True, set_own=True
+        sd, spheres, trim_intersecting=True, set_own=True
     )
 
     np.testing.assert_allclose(

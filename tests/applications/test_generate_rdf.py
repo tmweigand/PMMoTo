@@ -4,7 +4,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 import pmmoto
-import matplotlib.pyplot as plt
 
 import gzip
 from pmmoto.io import io_utils
@@ -147,61 +146,61 @@ def generate_rdf():
         subdomain=sd, probe_atom_list=water, atoms=membrane, bins=bins
     )
 
-    if rank == 0:
-        # Set style for publication-quality figures
-        # plt.style.use("seaborn")
+    # if rank == 0:
+    #     # Set style for publication-quality figures
+    #     # plt.style.use("seaborn")
 
-        # Create figure with specific size
-        plt.figure(figsize=(10, 6))
+    #     # Create figure with specific size
+    #     plt.figure(figsize=(10, 6))
 
-        # Plot RDFs for each atom type
-        for label, rdf in rdf_bins.items():
-            if sd.rank == 0:
-                print(label)
-            plt.plot(
-                bins.bin_centers[label],
-                rdf,
-                label=f"Atom type {atom_labels_to_name[label]}",
-                linewidth=2,
-            )
+    #     # Plot RDFs for each atom type
+    #     for label, rdf in rdf_bins.items():
+    #         if sd.rank == 0:
+    #             print(label)
+    #         plt.plot(
+    #             bins.bin_centers[label],
+    #             rdf,
+    #             label=f"Atom type {atom_labels_to_name[label]}",
+    #             linewidth=2,
+    #         )
 
-        # Customize plot
-        plt.xlabel("Distance (Å)", fontsize=12)
-        plt.ylabel("Radial Distribution Function g(r)", fontsize=12)
-        plt.title("Radial Distribution Functions by Atom Type", fontsize=14)
-        plt.legend(frameon=True)
-        plt.grid(True, alpha=0.3)
+    #     # Customize plot
+    #     plt.xlabel("Distance (Å)", fontsize=12)
+    #     plt.ylabel("Radial Distribution Function g(r)", fontsize=12)
+    #     plt.title("Radial Distribution Functions by Atom Type", fontsize=14)
+    #     plt.legend(frameon=True)
+    #     plt.grid(True, alpha=0.3)
 
-        # Set axis limits and ticks
-        plt.xlim(left=0)
-        plt.ylim(bottom=0)
+    #     # Set axis limits and ticks
+    #     plt.xlim(left=0)
+    #     plt.ylim(bottom=0)
 
-        # Adjust layout to prevent label clipping
-        plt.tight_layout()
+    #     # Adjust layout to prevent label clipping
+    #     plt.tight_layout()
 
-        # Save figure with high DPI
-        plt.savefig(f"data_out/rdf_all_types.pdf", dpi=300, bbox_inches="tight")
-        plt.close()
+    #     # Save figure with high DPI
+    #     plt.savefig(f"data_out/rdf_all_types.pdf", dpi=300, bbox_inches="tight")
+    #     plt.close()
 
-        # Also save individual plots
-        for label, rdf in rdf_bins.items():
-            plt.figure(figsize=(8, 5))
-            plt.plot(bins.bin_centers[label], rdf, linewidth=2, color="navy")
+    #     # Also save individual plots
+    #     for label, rdf in rdf_bins.items():
+    #         plt.figure(figsize=(8, 5))
+    #         plt.plot(bins.bin_centers[label], rdf, linewidth=2, color="navy")
 
-            plt.xlabel("Distance (Å)", fontsize=12)
-            plt.ylabel("g(r)", fontsize=12)
-            plt.title(f"RDF for Atom Type {atom_labels_to_name[label]}", fontsize=14)
-            plt.grid(True, alpha=0.3)
-            plt.xlim(left=0)
-            plt.ylim(bottom=0)
+    #         plt.xlabel("Distance (Å)", fontsize=12)
+    #         plt.ylabel("g(r)", fontsize=12)
+    #         plt.title(f"RDF for Atom Type {atom_labels_to_name[label]}", fontsize=14)
+    #         plt.grid(True, alpha=0.3)
+    #         plt.xlim(left=0)
+    #         plt.ylim(bottom=0)
 
-            plt.tight_layout()
-            plt.savefig(
-                f"data_out/generate_rdf_{atom_labels_to_name[label]}.pdf",
-                dpi=300,
-                bbox_inches="tight",
-            )
-            plt.close()
+    #         plt.tight_layout()
+    #         plt.savefig(
+    #             f"data_out/generate_rdf_{atom_labels_to_name[label]}.pdf",
+    #             dpi=300,
+    #             bbox_inches="tight",
+    #         )
+    #         plt.close()
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_lammps_subdomain", sd, np.zeros(sd.voxels)
