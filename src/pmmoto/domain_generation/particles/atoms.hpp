@@ -76,13 +76,19 @@ public:
     }
 
     /**
-     * @brief Add periodic atoms
-     * @return A unique pointer to the initialized (and possibly trimmed)
-     * SphereList.
+     * @brief Removes atoms that are not within nor intersect specified box
      */
-    void trim_atoms(const Box& subdomain)
+    void trim_atoms_intersecting(const Box& subdomain)
     {
-        trim_spheres(subdomain);
+        trim_spheres_intersecting(subdomain);
+    }
+
+    /**
+     * @brief Removes atoms that are not within specified box
+     */
+    void trim_atoms_within(const Box& subdomain)
+    {
+        trim_spheres_within(subdomain);
     }
 
     void set_own_atoms(const Box& subdomain)

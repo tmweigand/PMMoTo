@@ -21,7 +21,7 @@ from .particles.atoms cimport AtomList,atom_id_to_radius,group_atoms_by_type
 from .particles.spheres cimport SphereList
 
 
-__all__ = ["_initialize_atoms","initialize_spheres"]
+__all__ = ["_initialize_atoms","_initialize_spheres"]
 
 
 def create_box(bounds):
@@ -77,12 +77,20 @@ class AtomMap():
             self.atom_map[label].set_own(subdomain)  
 
 
-    def trim(self,subdomain):
+    def trim_intersecting(self,subdomain):
         """
-        Determine which atoms owned by this mpi process
+        Remove all atoms that are not within nor intersect box
         """
         for label in self.labels:
-            self.atom_map[label].trim(subdomain)   
+            self.atom_map[label].trim_intersecting(subdomain)   
+
+
+    def trim_within(self,subdomain):
+        """
+        Remove all atoms that are not within box
+        """
+        for label in self.labels:
+            self.atom_map[label].trim_within(subdomain)   
 
     def return_list(self,label):
         """
@@ -147,14 +155,24 @@ cdef class PyAtomList:
 
         self._atom_list.get().set_own_atoms(_subdomain_box) 
 
-    def trim(self, subdomain):
+    def trim_intersecting(self, subdomain):
         """
-        Determine which atoms owned by this mpi process
+        Remove all atoms that are not within nor intersect box
         """
         cdef Box _subdomain_box
         _subdomain_box = create_box(subdomain.box)
 
-        self._atom_list.get().trim_atoms(_subdomain_box)  
+        self._atom_list.get().trim_atoms_intersecting(_subdomain_box)  
+
+
+    def trim_within(self, subdomain):
+        """
+        Remove all atoms that are not within box
+        """
+        cdef Box _subdomain_box
+        _subdomain_box = create_box(subdomain.own_box)
+
+        self._atom_list.get().trim_atoms_within(_subdomain_box)  
 
 
 cdef class PySphereList:
@@ -210,14 +228,23 @@ cdef class PySphereList:
 
         self._sphere_list.get().own_spheres(_subdomain_box) 
 
-    def trim(self,subdomain):
+    def trim_intersecting(self,subdomain):
         """
-        Determine which atoms owned by this mpi process
+        Remove all spheres that are not within nor intersect box
         """
         cdef Box _subdomain_box
         _subdomain_box = create_box(subdomain.box)
 
-        self._sphere_list.get().trim_spheres(_subdomain_box)  
+        self._sphere_list.get().trim_spheres_intersecting(_subdomain_box)  
+
+    def trim_within(self,subdomain):
+        """
+        Remove all spheres that are not within box
+        """
+        cdef Box _subdomain_box
+        _subdomain_box = create_box(subdomain.own_box)
+
+        self._sphere_list.get().trim_spheres_within(_subdomain_box)  
 
 
 def _initialize_atoms(atom_coordinates, atom_radii, atom_ids, by_type = False):
@@ -232,7 +259,7 @@ def _initialize_atoms(atom_coordinates, atom_radii, atom_ids, by_type = False):
         
     else:
         radii = atom_id_to_radius(atom_ids,atom_radii)
-        return initialize_spheres(atom_coordinates, radii)
+        return _initialize_spheres(atom_coordinates, radii)
 
 def _initialize_atoms_by_type(atom_coordinates, atom_radii, atom_ids):
     """
@@ -262,7 +289,7 @@ def _initialize_atoms_by_type(atom_coordinates, atom_radii, atom_ids):
     
     return atom_map
 
-def initialize_spheres(spheres, radii):
+def _initialize_spheres(spheres, radii):
     """
     Initialize a list of particles (i.e. atoms, spheres).
     Particles must be a np array of size (n_atoms,4)=>(x,y,z,radius)

@@ -36,7 +36,11 @@ cdef extern from "atoms.hpp":
 			Box subdomain_box
 		)
 
-		void trim_atoms(
+		void trim_atoms_intersecting(
+			Box subdomain_box
+		)
+
+		void trim_atoms_within(
 			Box subdomain_box
 		)
 

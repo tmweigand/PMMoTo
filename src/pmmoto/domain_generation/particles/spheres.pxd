@@ -30,6 +30,10 @@ cdef extern from "spheres.hpp":
 			Box subdomain_box
 		)
 
-		void trim_spheres(
+		void trim_spheres_intersecting(
+			Box subdomain_box
+		)
+
+		void trim_spheres_within(
 			Box subdomain_box
 		)

@@ -27,8 +27,6 @@ generate_rdf(std::shared_ptr<AtomList> probe_atoms,
         {
             int bin_index = std::floor(distance / bin_width);
             bins[bin_index]++;
-            std::cout << max_distance << " " << distance << " " << bin_index
-                      << " " << bins[bin_index] << std::endl;
         }
     }
     return bins;

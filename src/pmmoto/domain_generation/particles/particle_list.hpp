@@ -52,11 +52,11 @@ struct Particle
      * @brief Determines if a particle is within a bounding box
      * @param box - the extents of the process
      */
-    void inside_box(const Box& box)
+    bool inside_box(const Box& box)
     {
-        own = (coordinates[0] >= box.min[0] && coordinates[0] <= box.max[0] &&
-               coordinates[1] >= box.min[1] && coordinates[1] <= box.max[1] &&
-               coordinates[2] >= box.min[2] && coordinates[2] <= box.max[2]);
+        return (coordinates[0] >= box.min[0] && coordinates[0] <= box.max[0] &&
+                coordinates[1] >= box.min[1] && coordinates[1] <= box.max[1] &&
+                coordinates[2] >= box.min[2] && coordinates[2] <= box.max[2]);
     };
 };
 
@@ -260,34 +260,6 @@ convert_to_type(const std::vector<std::vector<double> >& data_in)
     }
 
     return particle_list;
-}
-
-/**
- * @brief Initializes a List of particles.
- *
- * @param data A vector of data, specific to thew type specified
- * @return A unique pointer to the initialized (and possibly trimmed)
- * ParticleList.
- */
-std::shared_ptr<ParticleList>
-initialize_particles(std::vector<std::vector<double> >& data_in)
-{
-    std::vector<Particle> data = convert_to_type<Particle>(data_in);
-
-    std::shared_ptr<ParticleList> data_list =
-        std::make_shared<ParticleList>(data);
-
-    return data_list;
-}
-
-template <typename List>
-void
-set_own_particles(std::shared_ptr<List> particle_list,
-                  const std::vector<std::vector<double> >& subdomain)
-{
-    Box box = { { subdomain[0][0], subdomain[1][0], subdomain[2][0] },
-                { subdomain[0][1], subdomain[1][1], subdomain[2][1] } };
-    particle_list->particles_in_box(box);
 }
 
 #endif

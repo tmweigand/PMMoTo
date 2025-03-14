@@ -79,6 +79,9 @@ public:
         };
     }
 
+    /**
+     * @brief Print sphere coordinates and radius
+     */
     void print()
     {
         std::cout << coordinates[0] << " " << coordinates[1] << " "
@@ -222,7 +225,8 @@ public:
 
             if (return_own) _info.push_back(static_cast<double>(sphere.own));
 
-            info.emplace_back(std::move(_info)); // Move to avoid extra copies
+            info.emplace_back(std::move(_info)); // Move to avoid extra
+                                                 // copies
         }
 
         return info;
@@ -236,7 +240,7 @@ public:
     {
         for (auto& sphere : spheres)
         {
-            sphere.inside_box(box);
+            sphere.own = sphere.inside_box(box);
         }
     }
 
@@ -265,7 +269,7 @@ public:
      * @brief Removes spheres that do not intersect specified box
      * @param subdomain Dimensions of the subdomain vix Box
      */
-    void trim_spheres(const Box& subdomain)
+    void trim_spheres_intersecting(const Box& subdomain)
     {
         std::vector<Coords> new_coords;
         std::vector<Sphere> new_spheres;
@@ -274,6 +278,28 @@ public:
         {
             if (sphere.intersects_box(
                     sphere.coordinates, sphere.radius, subdomain))
+            {
+                new_coords.push_back(sphere.coordinates);
+                new_spheres.push_back(sphere);
+            }
+        }
+
+        particle_list.updateParticles(new_coords);
+        spheres = std::move(new_spheres);
+    }
+
+    /**
+     * @brief Removes spheres that are not within specified box
+     * @param subdomain Dimensions of the subdomain vix Box
+     */
+    void trim_spheres_within(const Box& box)
+    {
+        std::vector<Coords> new_coords;
+        std::vector<Sphere> new_spheres;
+
+        for (auto& sphere : spheres)
+        {
+            if (sphere.inside_box(box))
             {
                 new_coords.push_back(sphere.coordinates);
                 new_spheres.push_back(sphere);
@@ -344,8 +370,8 @@ public:
     }
 
     /**
-     * @brief Determine the spheres within a radius using a kd tree and return
-     * their distance
+     * @brief Determine the spheres within a radius using a kd tree and
+     * return their distance
      *
      * @param point The reference point as {x, y, z}.
      * @param radius the search radius
@@ -361,7 +387,8 @@ public:
     }
 
     /**
-     * @brief Determine the indices of spheres within a radius using a kd tree
+     * @brief Determine the indices of spheres within a radius using a kd
+     * tree
      * @param point The reference point as {x, y, z}.
      * @param radius the search radius
      * @return A vector of distances for particles within the radius.
