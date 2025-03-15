@@ -60,6 +60,15 @@ class AtomMap():
 
         return np.concatenate(particle_list, axis=0)
 
+    def size(self):
+        """
+        Add the periodic atoms for each atom type
+        """
+        atom_counts = {}
+        for label in self.labels:
+            atom_counts[label] = self.atom_map[label].size()
+
+        return atom_counts
 
     def add_periodic(self,subdomain):
         """
@@ -120,6 +129,10 @@ cdef class PyAtomList:
     @property
     def radius(self):
         return self._atom_list.get().radius
+
+
+    def size(self):
+        return self._atom_list.get().size()
 
     def build_KDtree(self):
         """
@@ -192,6 +205,8 @@ cdef class PySphereList:
         except Exception as e:
             raise RuntimeError(f"Failed to create SphereList: {str(e)}")
 
+    def size(self):
+        return self._sphere_list.get().size()
 
     def build_KDtree(self):
         """
