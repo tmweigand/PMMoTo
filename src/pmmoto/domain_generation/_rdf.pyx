@@ -23,7 +23,7 @@ def _generate_rdf(probe_atoms, atoms, max_radius, bins, bin_width):
     generate a radial distribution function 
     """
     cdef: 
-        vector[long int] _bins
+        vector[unsigned long long] _bins
 
     _bins = bins
     bins = generate_rdf(

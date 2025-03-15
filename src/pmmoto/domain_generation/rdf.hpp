@@ -3,11 +3,11 @@
 
 #include "atoms.hpp"
 
-std::vector<long int>
+std::vector<unsigned long long>
 generate_rdf(std::shared_ptr<AtomList> probe_atoms,
              std::shared_ptr<AtomList> atoms,
              double max_distance,
-             std::vector<long int> bins,
+             std::vector<unsigned long long> bins,
              double bin_width)
 {
     if (!probe_atoms)
