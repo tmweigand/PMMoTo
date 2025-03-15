@@ -193,12 +193,13 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
         )
 
     # Generate bins
+    binned_distance = {}
     for label, atom_list in atoms.atom_map.items():
 
         # Ensure kd_tree built
         atom_list.build_KDtree()
 
-        bins.rdf_bins[label] = _rdf._generate_rdf(
+        binned_distance[label] = _rdf._generate_rdf(
             probe_atom_list,
             atom_list,
             atom_list.radius,
@@ -206,7 +207,7 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
             bins.bin_widths[label],
         )
 
-    all_rdf = communication.all_gather(bins.rdf_bins)
+    all_rdf = communication.all_gather(binned_distance)
 
     for n_proc, proc_rdf in enumerate(all_rdf):
         if n_proc == subdomain.rank:
