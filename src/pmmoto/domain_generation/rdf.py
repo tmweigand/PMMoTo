@@ -184,7 +184,16 @@ def generate_rdf(binned_distances, bins):
 
 def bin_distances(subdomain, probe_atom_list, atoms, bins):
     """
-    Finds the atoms that are within a radius of probe atom
+    Finds the atoms that are within a radius of probe atom and bins the distances
+
+    Args:
+        subdomain: Subdomain object containing rank information
+        probe_atom_list: List of probe atoms to calculate RDF from
+        atoms: AtomMap containing target atoms
+        bins: RDFBins object containing binning information
+
+    Returns:
+        RDFBins with updated bin counts from all processes
     """
 
     if not isinstance(probe_atom_list, _particles.PyAtomList):
@@ -199,26 +208,27 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
         # Ensure kd_tree built
         atom_list.build_KDtree()
 
+        binned_distance[label] = np.zeros_like(bins.rdf_bins[label])
+
         binned_distance[label] = _rdf._generate_rdf(
             probe_atom_list,
             atom_list,
             atom_list.radius,
-            bins.rdf_bins[label],
+            binned_distance[label],
             bins.bin_widths[label],
         )
 
     all_rdf = communication.all_gather(binned_distance)
 
-    for n_proc, proc_rdf in enumerate(all_rdf):
-        if n_proc == subdomain.rank:
+    # Sum contributions from all processes
+    for n_proc, proc_data in enumerate(all_rdf):
+        if subdomain.rank == n_proc:
             continue
-        for label in proc_rdf:
-            bins.rdf_bins[label] = [
-                a + b for a, b in zip(bins.rdf_bins[label], proc_rdf[label])
-            ]
 
-    g_r = {}
-    for label in atoms.labels:
-        g_r[label] = np.asarray(bins.rdf_bins[label])
+        for label in proc_data:
+            binned_distance[label] = binned_distance[label] + proc_data[label]
 
-    return g_r
+    for label, binned in binned_distance.items():
+        bins.rdf_bins[label] += binned
+
+    return bins
