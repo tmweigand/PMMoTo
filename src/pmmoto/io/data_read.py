@@ -5,10 +5,12 @@ import gzip
 import numpy as np
 from pmmoto.io import io_utils
 
+from . import _data_read
 
 __all__ = [
     "read_sphere_pack_xyzr_domain",
     "read_r_lookup_file",
+    "py_read_lammps_atoms",
     "read_lammps_atoms",
     "read_atom_map",
     "read_rdf",
@@ -85,7 +87,7 @@ def read_r_lookup_file(input_file, power=1):
     return sigma
 
 
-def read_lammps_atoms(input_file):
+def py_read_lammps_atoms(input_file):
     """
     Read position of atoms from LAMMPS file
     atom_map must sync with LAMMPS ID
@@ -133,6 +135,21 @@ def read_lammps_atoms(input_file):
     domain_file.close()
 
     return atom_position, atom_type, domain_data
+
+
+def read_lammps_atoms(input_file, type_map=None):
+    """
+    Call to c++ read
+
+    type_map (dict, optional): Mapping of (type, charge) pairs to new types
+    Example: {(1, 0.4): 2, (1, -0.4): 3}
+    """
+
+    positions, types, domain, timestep = _data_read.read_lammps_atoms(
+        input_file, type_map
+    )
+
+    return positions, types, domain, timestep
 
 
 def read_rdf(input_folder):

@@ -9,11 +9,10 @@ import numpy as np
 cimport numpy as cnp
 from libcpp cimport bool
 from libcpp.vector cimport vector
-from libcpp.memory cimport shared_ptr
+
 
 from .rdf cimport generate_rdf
 
-from .particles.atoms cimport AtomList
 from ._particles cimport PyAtomList
 
 __all__ = ["_generate_rdf"]
@@ -34,4 +33,4 @@ def _generate_rdf(probe_atoms, atoms, max_radius, bins, bin_width):
         bin_width
     )
 
-    return bins
+    return np.asarray(bins)

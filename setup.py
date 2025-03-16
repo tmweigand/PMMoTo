@@ -15,11 +15,11 @@ import sys
 #     sys.exit(1)
 
 
-extra_compile_args = ["-std=c++17"]
+extra_compile_args = ["-std=c++20"]
 if sys.platform == "win32":
     extra_compile_args += ["/std:c++17", "/O2"]
 else:
-    extra_compile_args += ["-std=c++17", "-O3", "-ffast-math", "-pthread"]
+    extra_compile_args += ["-O3", "-ffast-math", "-pthread"]
 
 if sys.platform == "darwin":
     extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
@@ -50,6 +50,14 @@ ext_modules = [
             "src/pmmoto/analysis/minkowskic.c",
         ],
         include_dirs=["pmmoto/analysis"],
+    ),
+    Extension(
+        "pmmoto.io._data_read",
+        ["src/pmmoto/io/_data_read.pyx"],
+        include_dirs=["src/pmmoto/io"],
+        libraries=["z"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
     ),
     Extension(
         "pmmoto.domain_generation._rdf",
