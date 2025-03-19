@@ -30,7 +30,7 @@ def read_sphere_pack_xyzr_domain(input_file):
     """
 
     # Check input file and proceed of exists
-    io_utils.check_file(input_file)
+    # io_utils.check_file(input_file)
 
     domain_file = open(input_file, "r", encoding="utf-8")
     lines = domain_file.readlines()
