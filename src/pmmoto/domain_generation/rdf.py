@@ -7,8 +7,8 @@ import numpy as np
 __all__ = ["generate_bins", "generate_rdf", "bin_distances"]
 
 from . import _rdf
-from . import particles
-from . import _particles
+from ..particles import particles
+from ..particles import _particles
 from ..core import communication
 
 
@@ -176,7 +176,7 @@ def generate_rdf(binned_distances, bins):
     Generate an rdf from binned distances
     """
     rdf = {}
-    for label, binned in binned_distances.items():
+    for label, binned in binned_distances.rdf_bins.items():
         rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
 
     return rdf

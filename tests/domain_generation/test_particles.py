@@ -3,6 +3,7 @@
 import numpy as np
 from mpi4py import MPI
 import pmmoto
+import gc
 
 
 def test_particles():
@@ -27,7 +28,7 @@ def test_particles():
         subdomains=subdomains,
     )
 
-    spheres = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
+    spheres = pmmoto.particles.initialize_spheres(sd, spheres)
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_particles_subdomain", sd, np.zeros(sd.voxels)
@@ -46,7 +47,7 @@ def test_gen_periodic_spheres():
 
     # No periodic spheres
     spheres = np.array([[0.5, 0.5, 0.5, 0.25]])
-    sphere_list = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
+    sphere_list = pmmoto.particles.initialize_spheres(sd, spheres)
 
     np.testing.assert_allclose(sphere_list.return_np_array(), [[0.5, 0.5, 0.5, 0.25]])
 
@@ -54,9 +55,7 @@ def test_gen_periodic_spheres():
         [[0.9, 0.5, 0.5, 0.25], [0.1, 0.5, 0.1, 0.15], [0.1, 0.1, 0.1, 0.45]]
     )
 
-    sphere_list = pmmoto.domain_generation.particles.initialize_spheres(
-        sd, spheres, add_periodic=True
-    )
+    sphere_list = pmmoto.particles.initialize_spheres(sd, spheres, add_periodic=True)
 
     np.testing.assert_allclose(
         sphere_list.return_np_array(),
@@ -88,7 +87,7 @@ def test_trim_particles():
 
     spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
 
-    trimmed_spheres = pmmoto.domain_generation.particles.initialize_spheres(
+    trimmed_spheres = pmmoto.particles.initialize_spheres(
         sd, spheres, trim_intersecting=True, set_own=True
     )
 
@@ -99,7 +98,7 @@ def test_trim_particles():
 
     spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.08, 0.5, 0.5, 0.09]])
 
-    trimmed_spheres = pmmoto.domain_generation.particles.initialize_spheres(sd, spheres)
+    trimmed_spheres = pmmoto.particles.initialize_spheres(sd, spheres)
 
     np.testing.assert_allclose(
         trimmed_spheres.return_np_array(return_own=True),
@@ -129,7 +128,7 @@ def test_group_atoms():
     for _id in atom_ids:
         atom_radii[_id] = 0.1
 
-    atoms = pmmoto.domain_generation.particles.initialize_atoms(
+    atoms = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, by_type=False
     )
     atoms.build_KDtree()
@@ -144,10 +143,33 @@ def test_spheres():
 
     # No periodic spheres
     sphere = np.array([[0.19, 0.1, 0.5, 0.2]])
-    spheres = pmmoto.domain_generation.particles.initialize_spheres(
-        sd, sphere, add_periodic=True
-    )
+    spheres = pmmoto.particles.initialize_spheres(sd, sphere, add_periodic=True)
 
     spheres.build_KDtree()
 
     print(spheres.return_np_array())
+
+
+def test_cleanup():
+    """
+    Test deletion of particle lists
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+
+    # No periodic spheres
+    atom_coordinates = np.array(
+        [
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [25, 0.5, 0.5],
+        ]
+    )
+    atom_ids = np.array([1, 15, 3, 15, 15], dtype=int)
+
+    atom_radii = {_id: 0.1 for _id in atom_ids}
+
+    atoms = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, by_type=False
+    )

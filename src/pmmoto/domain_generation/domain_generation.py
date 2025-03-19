@@ -3,7 +3,7 @@ from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from . import porousmedia
 from . import multiphase
-from . import particles
+from ..particles import particles
 from ..core import communication
 from ..core import utils
 from ..core import subdomain_features
