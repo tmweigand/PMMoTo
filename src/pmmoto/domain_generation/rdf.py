@@ -177,7 +177,11 @@ def generate_rdf(binned_distances, bins):
     """
     rdf = {}
     for label, binned in binned_distances.rdf_bins.items():
-        rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
+        _sum = np.sum(binned)
+        if _sum == 0:
+            rdf[label] = binned
+        else:
+            rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
 
     return rdf
 
