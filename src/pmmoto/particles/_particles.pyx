@@ -14,11 +14,9 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 from libcpp.unordered_map cimport unordered_map
 
-
-from .particles.particle_list cimport Box
-from .particles.atoms cimport AtomList,atom_id_to_radius,group_atoms_by_type
-
-from .particles.spheres cimport SphereList
+from .spheres cimport SphereList
+from .particle_list cimport Box
+from .atoms cimport AtomList,atom_id_to_radius,group_atoms_by_type
 
 
 __all__ = ["_initialize_atoms","_initialize_spheres"]
@@ -44,8 +42,8 @@ class AtomMap():
     Wrapper to a map of atom lists what are broken down by atom type
     """
 
-    def __init__(self, atom_map,labels):
-        self.atom_map = atom_map
+    def __init__(self, atom_map, labels):
+        self.atom_map = atom_map 
         self.labels = labels
 
     def return_np_array(self,return_own = False, return_label = False):
@@ -126,6 +124,12 @@ cdef class PyAtomList:
         except Exception as e:
             raise RuntimeError(f"Failed to create AtomList: {str(e)}")
 
+    def __dealloc__(self):
+        """Ensure proper cleanup of resources"""
+        if self._atom_list != NULL: # Add NULL check
+            self._atom_list.reset()
+            self._atom_list = shared_ptr[AtomList]()
+
     @property
     def radius(self):
         return self._atom_list.get().radius
@@ -190,14 +194,12 @@ cdef class PyAtomList:
 
 cdef class PySphereList:
 
-
     def __cinit__(self, vector[vector[double]] coordinates, vector[double] radii):
         """
         Initialize a PySphereList
         """
         if coordinates.size() == 0:
             raise ValueError("Cannot initialize PySphereList with empty coordinates")
-            
         try:
             self._sphere_list = shared_ptr[SphereList](new SphereList(coordinates, radii))
             if not self._sphere_list:
@@ -265,8 +267,8 @@ cdef class PySphereList:
 def _initialize_atoms(atom_coordinates, atom_radii, atom_ids, by_type = False):
     """
     Initialize a list of atoms. 
-
     """
+
     cdef vector[double] radii
     
     if by_type:
@@ -299,10 +301,8 @@ def _initialize_atoms_by_type(atom_coordinates, atom_radii, atom_ids):
     atom_lists = {}
     for label in labels:
         atom_lists[label] = PyAtomList(atom_groups[label], _radii[label], label)
-
-    atom_map = AtomMap(atom_lists,labels)
     
-    return atom_map
+    return AtomMap(atom_lists,labels)
 
 def _initialize_spheres(spheres, radii):
     """
@@ -311,14 +311,5 @@ def _initialize_spheres(spheres, radii):
     If add_periodic: particles that cross the domain boundary will be add.
     If trim: particles that do not cross the subdomain boundary will be deleted.
     """
-    cdef: 
-        vector[vector[double]] _spheres
-        vector[double] _radii
 
-    _spheres = spheres 
-    _radii = radii
-
-    sphere_list = PySphereList(_spheres,_radii)
-    
-    return sphere_list
-
+    return PySphereList(spheres,radii)

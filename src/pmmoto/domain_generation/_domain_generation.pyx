@@ -15,10 +15,10 @@ from libc.math cimport sin, cos
 cnp.import_array()
 
 
-from .particles.spheres cimport SphereList
-from . import particles
-from ._particles cimport PySphereList
-from ._particles import create_box
+from ..particles.spheres cimport SphereList
+
+from ..particles._particles cimport PySphereList
+from ..particles._particles import create_box
 
 __all__ = [
     "gen_pm_sphere",

@@ -2,12 +2,18 @@
 from libcpp cimport bool
 from libcpp.vector cimport vector
 
-from particle_list cimport Box
+from .particle_list cimport Box
 
 cdef extern from "spheres.hpp":
 
 	cdef cppclass SphereList:
+		
+		SphereList(
+            double radii
+		) except +
 
+		SphereList() except +
+		
 		SphereList(
 			vector[vector[double]] coordinates,
 			vector[double] radii,

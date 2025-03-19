@@ -35,12 +35,12 @@ public:
     double radius;
     int label;
 
-    AtomList(ParticleList& atom_coordinates,
-             const double radius,
-             const int label = 0)
-        : SphereList(atom_coordinates, radius), radius(radius), label(label)
-    {
-    }
+    // AtomList(ParticleList& atom_coordinates,
+    //          const double radius,
+    //          const int label = 0)
+    //     : SphereList(atom_coordinates, radius), radius(radius), label(label)
+    // {
+    // }
 
     AtomList(std::vector<std::vector<double> > atom_coordinates,
              const double radius,
@@ -64,7 +64,7 @@ public:
             if (return_own) _info.push_back(static_cast<double>(sphere.own));
             if (return_label) _info.push_back(static_cast<double>(label));
 
-            info.emplace_back(std::move(_info)); // Move to avoid extra copies
+            info.emplace_back(std::move(_info));
         }
 
         return info;

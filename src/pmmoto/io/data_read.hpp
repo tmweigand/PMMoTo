@@ -23,80 +23,113 @@ struct LammpsData
 class LammpsReader
 {
 private:
-    using AtimIdMap =
-        std::map<std::pair<int, double>, int>; // type, charge -> atim_id
-    static inline std::vector<std::string_view> tokens;
+    using AtomIdMap =
+        std::map<std::pair<int, double>, int>;       // type, charge -> atom_id
+    static constexpr size_t BUFFER_SIZE = 64 * 1024; // 64KB buffer
+    static inline std::vector<std::string> tokens;
+
+    class GzFileWrapper
+    {
+        gzFile file_;
+
+    public:
+        explicit GzFileWrapper(const std::string& filename)
+        {
+            file_ = gzopen(filename.c_str(), "r");
+            if (!file_)
+            {
+                throw std::runtime_error("Could not open gzipped file: " +
+                                         filename);
+            }
+        }
+
+        ~GzFileWrapper()
+        {
+            if (file_)
+            {
+                gzclose(file_);
+            }
+        }
+
+        gzFile get()
+        {
+            return file_;
+        }
+
+        // Prevent copying
+        GzFileWrapper(const GzFileWrapper&) = delete;
+        GzFileWrapper& operator=(const GzFileWrapper&) = delete;
+    };
 
     // Efficient string splitting
-    static void split(std::string_view str,
-                      std::vector<std::string_view>& tokens)
+    static void split(const std::string& str, std::vector<std::string>& out)
     {
-        tokens.clear();
+        out.clear();
         size_t start = 0;
         size_t end = 0;
 
-        while ((end = str.find(' ', start)) != std::string_view::npos)
+        // Pre-reserve some space to avoid reallocations
+        out.reserve(8); // Most lines have 8 or fewer tokens
+
+        while ((end = str.find(' ', start)) != std::string::npos)
         {
-            if (end > start) tokens.push_back(str.substr(start, end - start));
+            if (end > start) out.emplace_back(str.substr(start, end - start));
             start = end + 1;
+            // Skip multiple spaces
+            while (start < str.length() && str[start] == ' ') ++start;
         }
 
-        if (start < str.length()) tokens.push_back(str.substr(start));
+        if (start < str.length()) out.emplace_back(str.substr(start));
     }
 
     static std::string readGzipFile(const std::string& filename)
     {
-        gzFile file = gzopen(filename.c_str(), "r");
-        if (!file)
-        {
-            throw std::runtime_error("Could not open gzipped file: " +
-                                     filename);
-        }
-
-        // Pre-allocate buffer based on file size
-        unsigned int uncompressed_size = 0;
-        if (gzseek(file, 0, SEEK_END) != -1)
-        {
-            uncompressed_size = gztell(file);
-            gzrewind(file);
-        }
+        GzFileWrapper file(filename); // RAII wrapper handles cleanup
 
         std::string content;
-        content.reserve(uncompressed_size > 0 ? uncompressed_size :
-                                                1024 * 1024);
+        content.reserve(1024 * 1024);
+        std::vector<char> buffer(BUFFER_SIZE);
 
-        std::vector<char> buffer(64 * 1024); // Larger buffer
-
-        while (int bytesRead = gzread(file, buffer.data(), buffer.size()))
+        while (int bytesRead = gzread(file.get(), buffer.data(), buffer.size()))
         {
             if (bytesRead < 0)
             {
-                gzclose(file);
                 throw std::runtime_error("Error reading gzipped file: " +
                                          filename);
             }
             content.append(buffer.data(), bytesRead);
         }
 
-        gzclose(file);
         return content;
     }
 
     static std::string readFile(const std::string& filename)
     {
-        std::ifstream file(filename);
-        if (!file.is_open())
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        if (!file)
         {
             throw std::runtime_error("Could not open file: " + filename);
         }
-        return std::string(std::istreambuf_iterator<char>(file),
-                           std::istreambuf_iterator<char>());
+
+        // Get file size and reserve space
+        size_t size = file.tellg();
+        file.seekg(0);
+
+        std::string content;
+        content.reserve(size);
+        content.assign(std::istreambuf_iterator<char>(file),
+                       std::istreambuf_iterator<char>());
+
+        file.close();
+        return content;
     }
 
     static std::stringstream openFile(const std::string& filename)
     {
         std::string content;
-        if (filename.ends_with(".gz"))
+        // C++17 compatible check for .gz extension
+        if (filename.length() > 3 &&
+            filename.compare(filename.length() - 3, 3, ".gz") == 0)
         {
             content = readGzipFile(filename);
         }
@@ -104,7 +137,7 @@ private:
         {
             content = readFile(filename);
         }
-        return std::stringstream(content);
+        return std::stringstream(std::move(content));
     }
 
     static double readTimestep(const std::string& line)
@@ -131,50 +164,48 @@ private:
         }
     }
 
-    static void
-    processAtomLine(std::string_view line, int atom_count, LammpsData& data)
+    static void processAtomLine(const std::string& line,
+                                size_t atom_count,
+                                LammpsData& data)
     {
         split(line, tokens);
 
         if (tokens.size() >= 8)
         {
-            data.atom_types[atom_count] = std::stoi(std::string(tokens[2]));
+            data.atom_types[atom_count] = std::stoi(tokens[2]);
 
-            for (int i = 0; i < 3; ++i)
+            for (size_t i = 0; i < 3; ++i)
             {
-                data.atom_positions[atom_count][i] =
-                    std::stod(std::string(tokens[i + 5]));
+                data.atom_positions[atom_count][i] = std::stod(tokens[i + 5]);
             }
         }
     }
 
-    static void processAtomLineWithMap(std::string_view line,
-                                       int atom_count,
+    static void processAtomLineWithMap(const std::string& line,
+                                       size_t atom_count,
                                        LammpsData& data,
-                                       const AtimIdMap& id_map)
+                                       const AtomIdMap& id_map)
     {
         split(line, tokens);
 
         if (tokens.size() >= 8)
         {
-            int type = std::stoi(std::string(tokens[2]));
-            double charge = std::stod(std::string(tokens[4]));
+            int type = std::stoi(tokens[2]);
+            double charge = std::stod(tokens[4]);
 
-            // Look up the ATIM ID from the map using compile-time pair creation
             auto it = id_map.find({ type, charge });
             if (it == id_map.end())
             {
-                throw std::runtime_error("No ATIM ID found for type " +
+                throw std::runtime_error("No atom ID found for type " +
                                          std::to_string(type) + " and charge " +
                                          std::to_string(charge));
             }
             data.atom_types[atom_count] = it->second;
 
             // Store positions - use direct conversion from string_view
-            for (int i = 0; i < 3; ++i)
+            for (size_t i = 0; i < 3; ++i)
             {
-                data.atom_positions[atom_count][i] =
-                    std::stod(std::string(tokens[i + 5]));
+                data.atom_positions[atom_count][i] = std::stod(tokens[i + 5]);
             }
         }
     }
@@ -188,19 +219,31 @@ public:
 
         auto file = openFile(filename);
         std::string line;
-        int line_count = 0;
-        int num_atoms = 0;
-        int atom_count = 0;
+        size_t line_count = 0;
+        size_t num_atoms = 0;
+        size_t atom_count = 0;
+
+        // Pre-allocate tokens vector
+        tokens.reserve(10);
 
         while (std::getline(file, line))
         {
+            if (line.empty())
+            {
+                ++line_count;
+                continue;
+            }
+
             if (line_count == 1)
             {
-                data.timestep = readTimestep(line);
+                data.timestep = std::stod(line);
             }
             else if (line_count == 3)
             {
-                num_atoms = readNumAtoms(line, data);
+                num_atoms = std::stoull(line);
+                data.atom_positions.resize(num_atoms,
+                                           std::vector<double>(3, 0.0));
+                data.atom_types.resize(num_atoms);
             }
             else if (line_count >= 5 && line_count <= 7)
             {
@@ -208,17 +251,16 @@ public:
             }
             else if (line_count >= 9 && atom_count < num_atoms)
             {
-                processAtomLine(line, atom_count, data);
-                atom_count++;
+                processAtomLine(line, atom_count++, data);
             }
-            line_count++;
+            ++line_count;
         }
 
         return data;
     }
 
     static LammpsData read_lammps_atoms_with_map(const std::string& filename,
-                                                 const AtimIdMap& id_map)
+                                                 const AtomIdMap& id_map)
     {
         LammpsData data;
         data.domain_data =
@@ -226,9 +268,9 @@ public:
 
         auto file = openFile(filename);
         std::string line;
-        int line_count = 0;
-        int num_atoms = 0;
-        int atom_count = 0;
+        size_t line_count = 0;
+        size_t num_atoms = 0;
+        size_t atom_count = 0;
 
         while (std::getline(file, line))
         {

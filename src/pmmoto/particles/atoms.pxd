@@ -5,7 +5,7 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 from libcpp.unordered_map cimport unordered_map
 
-from particle_list cimport Box
+from .particle_list cimport Box
 
 cdef extern from "atoms.hpp":
 

@@ -4,6 +4,7 @@
 #include "KDTreeVectorOfVectorsAdaptor.h"
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -16,14 +17,13 @@ using KDTreeType =
 class KDTree
 {
 private:
-    std::shared_ptr<KDTreeType> tree; // Store tree in a smart pointer
-    std::shared_ptr<std::vector<std::vector<double> > > data_ref; // Shared
-                                                                  // ownership
+    std::shared_ptr<KDTreeType> tree;
+    std::shared_ptr<std::vector<std::vector<double> > > data_ref;
 
 public:
     KDTree() : tree(nullptr)
     {
-    } // Constructor initializes tree pointer to nullptr
+    }
 
     void initialize_kd(std::shared_ptr<std::vector<std::vector<double> > > data,
                        int max_leaf_size = 10)
@@ -33,19 +33,15 @@ public:
             throw std::runtime_error("Cannot create KD-tree with empty input.");
         }
 
-        // Store shared pointer
         data_ref = data;
-
         tree =
             std::make_shared<KDTreeType>(3 /*dim*/, *data_ref, max_leaf_size);
-
-        // Explicitly build the index
         tree->index->buildIndex();
     }
 
     KDTreeType* getTree()
     {
-        return tree.get(); // Provide access to the tree
+        return tree.get();
     }
 
     /**

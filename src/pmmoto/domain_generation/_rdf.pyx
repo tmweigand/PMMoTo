@@ -13,7 +13,7 @@ from libcpp.vector cimport vector
 
 from .rdf cimport generate_rdf
 
-from ._particles cimport PyAtomList
+from ..particles._particles cimport PyAtomList
 
 __all__ = ["_generate_rdf"]
 

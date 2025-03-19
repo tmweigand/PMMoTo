@@ -64,17 +64,22 @@ class ParticleList
 {
 private:
     std::vector<Particle> particles;
-    std::shared_ptr<KDTree> kd_tree;
+    KDTree kd_tree;
 
 public:
+    // Add destructor to ensure cleanup
+    ~ParticleList()
+    {
+        particles.clear();
+    }
+
     // Update constructors to initialize kd_tree
     ParticleList(const std::vector<Particle>& particle_data)
-        : particles(particle_data), kd_tree(std::make_shared<KDTree>())
+        : particles(particle_data)
     {
     }
 
     ParticleList(const std::vector<Coords>& particle_data)
-        : kd_tree(std::make_shared<KDTree>())
     {
         for (const auto& coords : particle_data)
         {
@@ -135,17 +140,13 @@ public:
     }
 
     /**
-     * @brief Initialize kd tree
+     * @brief Initialize a kd tree
      */
     void initializeKDTree()
     {
-        if (!kd_tree)
-        {
-            kd_tree = std::make_shared<KDTree>();
-        }
         auto coords = std::make_shared<std::vector<std::vector<double> > >(
             get_coordinates());
-        kd_tree->initialize_kd(coords);
+        kd_tree.initialize_kd(coords);
     }
 
     /**
@@ -158,11 +159,7 @@ public:
     std::vector<size_t> collect_kd_indices(const std::vector<double>& point,
                                            double radius)
     {
-        if (!kd_tree)
-        {
-            throw std::runtime_error("KD-tree not initialized");
-        }
-        return kd_tree->radius_search_indices(point, radius);
+        return kd_tree.radius_search_indices(point, radius);
     }
 
     /**
@@ -178,7 +175,7 @@ public:
                                              bool return_square = true)
     {
         std::vector<double> distances =
-            kd_tree->radius_search_distances(point, radius, return_square);
+            kd_tree.radius_search_distances(point, radius, return_square);
         return distances;
     }
 
@@ -217,7 +214,7 @@ public:
     {
         std::vector<Coords> local_particles;
         std::vector<size_t> indices =
-            kd_tree->radius_search_indices(point, radius);
+            kd_tree.radius_search_indices(point, radius);
         for (const auto& index : indices)
         {
             local_particles.push_back(particles[index].coordinates);

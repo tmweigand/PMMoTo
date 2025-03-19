@@ -97,36 +97,12 @@ class SphereList
 {
 protected:
     std::vector<Sphere> spheres;
-    ParticleList& particle_list;
+    ParticleList particle_list;
 
 public:
-    SphereList(ParticleList& particle_list, const std::vector<double>& radii)
-        : particle_list(particle_list)
-    {
-        const auto& particles = particle_list.getParticles();
-
-        // Assuming the number of particles matches the number of radii
-        for (size_t i = 0; i < particles.size(); ++i)
-        {
-            spheres.push_back(Sphere(particles[i].coordinates, radii[i]));
-        }
-    }
-
-    SphereList(ParticleList& particle_list, const double radius)
-        : particle_list(particle_list)
-    {
-        const auto& particles = particle_list.getParticles();
-
-        // Assuming the number of particles matches the number of radii
-        for (size_t i = 0; i < particles.size(); ++i)
-        {
-            spheres.push_back(Sphere(particles[i].coordinates, radius));
-        }
-    }
-
-    SphereList(std::vector<std::vector<double> > coordinates,
+    SphereList(const std::vector<std::vector<double> >& coordinates,
                const std::vector<double>& radius)
-        : particle_list(*new ParticleList(coordinates))
+        : particle_list(coordinates)
     {
         const auto& particles = particle_list.getParticles();
 
@@ -137,9 +113,9 @@ public:
         }
     }
 
-    SphereList(std::vector<std::vector<double> > coordinates,
-               const double radius)
-        : particle_list(*new ParticleList(coordinates))
+    SphereList(const std::vector<std::vector<double> >& coordinates,
+               const double& radius)
+        : particle_list(coordinates)
     {
         const auto& particles = particle_list.getParticles();
 
@@ -161,7 +137,7 @@ public:
     /**
      * @brief Build a kd-tree
      */
-    void build_KDtree() const
+    void build_KDtree()
     {
         particle_list.initializeKDTree();
     }
@@ -245,7 +221,8 @@ public:
     }
 
     /**
-     * @brief Finds indices of spheres that intersect with the specified box
+     * @brief Finds indices of spheres that intersect with the specified
+     box
      * @param subdomain Dimensions of the subdomain via Box
      * @return Vector of indices of intersecting spheres
      */

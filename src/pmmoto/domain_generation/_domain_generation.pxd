@@ -9,8 +9,8 @@ from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map
 from libcpp.memory cimport shared_ptr
 
-from .particles.particle_list cimport Box
-from .particles.spheres cimport SphereList
+from ..particles.particle_list cimport Box
+from ..particles.spheres cimport SphereList
 
 cdef extern from "domain_generation.hpp":
 	cdef struct Grid:

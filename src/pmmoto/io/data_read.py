@@ -3,9 +3,8 @@
 import os
 import gzip
 import numpy as np
-from pmmoto.io import io_utils
 
-from . import _data_read
+from . import io_utils
 
 __all__ = [
     "read_sphere_pack_xyzr_domain",
@@ -144,6 +143,7 @@ def read_lammps_atoms(input_file, type_map=None):
     type_map (dict, optional): Mapping of (type, charge) pairs to new types
     Example: {(1, 0.4): 2, (1, -0.4): 3}
     """
+    from . import _data_read
 
     positions, types, domain, timestep = _data_read.read_lammps_atoms(
         input_file, type_map
