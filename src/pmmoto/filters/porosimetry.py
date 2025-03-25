@@ -128,6 +128,7 @@ def pore_size_distribution(
     radii=None,
     inlet=False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
+    plot: Literal["cdf", "pdf"] = None,
 ):
     """
     Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
@@ -138,10 +139,10 @@ def pore_size_distribution(
             radii = [radii]
     else:
         edt = porous_media.distance
+        global_max_edt = utils.determine_maximum(edt)
         radii = get_sizes(
-            np.min(subdomain.domain.resolution), np.amax(edt), 50, "linear"
+            np.min(subdomain.domain.resolution), global_max_edt, 50, "linear"
         )
-        # print(radii)
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
     for radius in radii:
@@ -156,9 +157,9 @@ def pore_size_distribution(
         if np.any(img_temp):
             img_results[np.logical_and(img_results == 0, img_temp == 1)] = radius
 
-    _plot_pore_size_distribution(subdomain, porous_media, radii, img_results)
+    if plot:
+        _plot_pore_size_distribution(subdomain, porous_media, radii, img_results, plot)
 
-    # _plot_pore_size_distribution(subdomain, porous_media, radii, img_results, "pdf")
     return img_results
 
 

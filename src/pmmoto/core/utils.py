@@ -4,11 +4,12 @@ import numpy as np
 
 # from mpi4py import MPI
 from mpi4py import MPI
+from . import communication
 
 comm = MPI.COMM_WORLD
 
 
-__all__ = ["phase_exists", "constant_pad_img", "unpad"]
+__all__ = ["phase_exists", "constant_pad_img", "unpad", "determine_maximum"]
 
 
 def raise_error():
@@ -193,6 +194,17 @@ def phase_exists(grid, phase):
         phase_exists = True
 
     return phase_exists
+
+
+def determine_maximum(img):
+    """
+    Determine the global maximum of an input image
+    """
+    local_max = np.amax(img)
+
+    proc_local_max = communication.all_gather(local_max)
+
+    return np.amax(proc_local_max)
 
 
 def global_grid(grid, index, local_grid):

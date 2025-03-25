@@ -3,6 +3,7 @@
 import pytest
 import pmmoto
 import numpy as np
+from mpi4py import MPI
 
 
 def test_porosimetry_sizes():
@@ -174,3 +175,56 @@ def test_pore_size_distribution():
         pm.img,
         additional_img={"psd": img, "edt": pm.distance},
     )
+
+
+def test_lammps_psd():
+    """
+    Test for reading membrane files for psd.
+    """
+
+    lammps_file = "tests/test_data/membrane_data/membranedata.90000000.gz"
+
+    positions, types, domain, time = pmmoto.io.data_read.read_lammps_atoms(lammps_file)
+
+    unique_types = np.unique(types)
+    radii = {}
+    for _id in unique_types:
+        radii[_id] = 1.0
+
+    print(types)
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    # Full domain with reservoirs
+    box = [
+        [0.0, 1.7576827931001799e02],
+        [0.0, 1.7576827931001799e02],
+        [-287.0, 237.0],
+    ]
+
+    # ignore reservoirs
+    # Ignore water "reservoirs"
+    box[2] = [-150, 175]
+
+    sd = pmmoto.initialize(
+        voxels=(100, 100, 100),
+        box=box,
+        rank=rank,
+        subdomains=(2, 2, 2),
+        boundary_types=((2, 2), (2, 2), (2, 2)),
+    )
+
+    pm = pmmoto.domain_generation.gen_pm_atom_domain(sd, positions, radii, types)
+    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=False)
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/membrane_binary_map",
+        sd,
+        pm.img,
+        additional_img={"psd": img},
+    )
+
+
+if __name__ == "__main__":
+    test_lammps_psd()

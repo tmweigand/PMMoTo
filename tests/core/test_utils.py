@@ -2,6 +2,8 @@
 
 import pmmoto
 import numpy as np
+import pytest
+from mpi4py import MPI
 
 
 def test_decompose_img():
@@ -77,3 +79,19 @@ def test_pad():
     pad_img = pmmoto.core.utils.constant_pad_img(img, pad, 8)
     unpad_img = pmmoto.core.utils.unpad(pad_img, pad)
     np.testing.assert_array_equal(img, unpad_img)
+
+
+@pytest.mark.mpi(min_size=8)
+def test_determine_max():
+    """
+    Test to ensure we can find the global maximum
+    """
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    sd = pmmoto.initialize((10, 10, 10), subdomains=(2, 2, 2), rank=rank)
+    img = np.ones(sd.voxels) * sd.rank
+
+    global_max = pmmoto.core.utils.determine_maximum(img)
+
+    assert global_max == 7
