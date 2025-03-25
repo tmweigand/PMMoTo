@@ -175,13 +175,20 @@ def generate_rdf(binned_distances, bins):
     """
     Generate an rdf from binned distances
     """
-    rdf = {}
-    for label, binned in binned_distances.rdf_bins.items():
-        _sum = np.sum(binned)
-        if _sum == 0:
-            rdf[label] = binned
-        else:
-            rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
+    if isinstance(bin_distances, Dict):
+        rdf = {}
+        for label, binned in binned_distances.rdf_bins.items():
+            _sum = np.sum(binned)
+            if _sum == 0:
+                rdf[label] = binned
+            else:
+                rdf[label] = binned / bins.shell_volumes[label] / np.sum(binned)
+    else:
+        bin_width = bins[1] - bins[0]
+        shell_volumes = sphere_volume(bins + bin_width / 2) - sphere_volume(
+            bins - bin_width / 2
+        )
+        rdf = binned_distances / shell_volumes / np.sum(binned_distances)
 
     return rdf
 
