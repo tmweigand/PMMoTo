@@ -67,7 +67,10 @@
       "unordered_map": "cpp",
       "unordered_set": "cpp",
       "variant": "cpp",
-      "algorithm": "cpp"
+      "algorithm": "cpp",
+      "regex": "cpp",
+      "set": "cpp",
+      "stack": "cpp"
     }
   }
 }

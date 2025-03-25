@@ -15,11 +15,11 @@ import sys
 #     sys.exit(1)
 
 
-extra_compile_args = ["-std=c++20"]
+extra_compile_args = ["-std=c++17"]
 if sys.platform == "win32":
     extra_compile_args += ["/std:c++17", "/O2"]
 else:
-    extra_compile_args += ["-O3", "-ffast-math", "-pthread"]
+    extra_compile_args += ["-std=c++17", "-O3", "-ffast-math", "-pthread"]
 
 if sys.platform == "darwin":
     extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
@@ -60,27 +60,23 @@ ext_modules = [
         extra_compile_args=extra_compile_args,
     ),
     Extension(
-        "pmmoto.domain_generation._rdf",
-        ["src/pmmoto/domain_generation/_rdf.pyx"],
-        include_dirs=["src/pmmoto/domain_generation/"],
+        "pmmoto.particles._particles",
+        ["src/pmmoto/particles/_particles.pyx"],
+        include_dirs=["src/pmmoto/particles/"],
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
     Extension(
-        "pmmoto.domain_generation._particles",
-        ["src/pmmoto/domain_generation/_particles.pyx"],
-        include_dirs=[
-            "src/pmmoto/domain_generation/particles",
-            "src/pmmoto/domain_generation/",
-            numpy.get_include(),
-        ],
+        "pmmoto.domain_generation._rdf",
+        ["src/pmmoto/domain_generation/_rdf.pyx"],
+        include_dirs=["src/pmmoto/domain_generation/", "src/pmmoto/particles/"],
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
     Extension(
         "pmmoto.domain_generation._domain_generation",
         ["src/pmmoto/domain_generation/_domain_generation.pyx"],
-        include_dirs=["src/pmmoto/domain_generation/"],
+        include_dirs=["src/pmmoto/domain_generation/", "src/pmmoto/particles/"],
         language="c++",
         extra_compile_args=extra_compile_args,
     ),

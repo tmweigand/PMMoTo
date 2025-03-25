@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 
 
-from .particles.atoms cimport AtomList
+from ..particles.atoms cimport AtomList
 
 cdef extern from "rdf.hpp":
 
