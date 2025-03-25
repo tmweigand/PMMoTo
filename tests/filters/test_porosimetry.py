@@ -155,3 +155,22 @@ def test_porosimetry_inlet():
             "morph_inlet": morph_inlet,
         },
     )
+
+
+def test_pore_size_distribution():
+    """
+    Test generation of pore size distribution for an inkbottle
+    """
+    voxels = (560, 120, 120)
+    box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
+    inlet = ((0, 1), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels, box, inlet=inlet)
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
+    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=True)
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/inkbottle_ps_distribution",
+        sd,
+        pm.img,
+        additional_img={"psd": img, "edt": pm.distance},
+    )
