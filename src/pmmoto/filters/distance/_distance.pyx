@@ -578,7 +578,6 @@ def get_boundary_hull(
     cdef vector[vector[Hull]] hull
     hull = vector[vector[Hull]]()
 
-
     # Resize the outer vector and initialize each inner vector
     for _ in range(s1 * s2):
         hull.push_back(vector[Hull]())
@@ -592,6 +591,10 @@ def get_boundary_hull(
             if bound[x, y] == -1: # No solid 
                 start[dimension] = lower_skip
                 n_voxels = _size - upper_skip - lower_skip
+                if forward:
+                    index_corrector = 0
+                else:
+                    index_corrector = -n_voxels
             else:
                 if forward:
                     start[dimension] = lower_skip
@@ -643,27 +646,26 @@ def get_boundary_hull_2d(
 
     for n in range(s):
         start[other_dim] = n
-        end = _size
         if bound[n] == -1: 
             start[dimension] = lower_skip
-            end = end - upper_skip - lower_skip
+            n_voxels = _size - upper_skip - lower_skip
             if forward:
                 index_corrector = 0
             else:
-                index_corrector = -end
+                index_corrector = -n_voxels
         else:
             if forward:
                 start[dimension] = lower_skip
-                end = bound[n]
+                n_voxels = bound[n] - lower_skip + 1
                 index_corrector = 0
             else:
                 start[dimension] = bound[n]
-                end = end - bound[n] - upper_skip
-                index_corrector = -end
+                n_voxels = _size - bound[n] - upper_skip
+                index_corrector = -n_voxels
 
         hull[n] = return_boundary_hull(
             img=<float*>&img[start[0], start[1]],
-            n=end,
+            n=n_voxels,
             resolution=resolution,
             stride=stride,
             num_hull=num_hull,

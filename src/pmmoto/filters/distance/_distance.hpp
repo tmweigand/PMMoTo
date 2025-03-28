@@ -318,42 +318,40 @@ return_boundary_hull(float* img,
 
     for (long int i = 0; i < n; i++)
     {
-        // std::cout << i << " " << n << std::endl;
         ff[i] = img[i * stride];
     }
 
-    // hull_height[0] = ff[0];
-    // std::vector<float> ranges(n + 1, 0);
-    // ranges[0] = -INFINITY;
-    // ranges[1] = +INFINITY;
+    hull_height[0] = ff[0];
+    std::vector<float> ranges(n + 1, 0);
+    ranges[0] = -INFINITY;
+    ranges[1] = +INFINITY;
 
-    // int k = 1;
-    // for (long int i = 1; i < n; i++)
-    // {
-    //     update_hull(
-    //         k, i, ff[i], hull_vertices, hull_height, ranges,
-    //         anisotropy_factor);
-    // }
+    int k = 1;
+    for (long int i = 1; i < n; i++)
+    {
+        update_hull(
+            k, i, ff[i], hull_vertices, hull_height, ranges, anisotropy_factor);
+    }
 
-    // num_hull = std::min(num_hull, k);
-    // hull.reserve(num_hull); // Preallocate memory
+    num_hull = std::min(num_hull, k);
+    hull.reserve(num_hull); // Preallocate memory
 
-    // // Select hulls
-    // int kk = forward ? 0 : k;
-    // int step = forward ? 1 : -1;
+    // Select hulls
+    int kk = forward ? 0 : k;
+    int step = forward ? 1 : -1;
 
-    // while (hull.size() <= num_hull && kk >= 0 && kk <= k)
-    // {
-    //     if (hull_height[kk] < (std::numeric_limits<float>::max() - 1))
-    //     {
-    //         hull.push_back({ hull_vertices[kk] + index_corrector,
-    //                          hull_height[kk],
-    //                          ranges[kk] + index_corrector });
-    //         if (hull_height[kk] == 0.9f)
-    //             break; // Stop early for minimal parabolas
-    //     }
-    //     kk += step;
-    // }
+    while (hull.size() <= num_hull && kk >= 0 && kk <= k)
+    {
+        if (hull_height[kk] < (std::numeric_limits<float>::max() - 1))
+        {
+            hull.push_back({ hull_vertices[kk] + index_corrector,
+                             hull_height[kk],
+                             ranges[kk] + index_corrector });
+            if (hull_height[kk] == 0.9f)
+                break; // Stop early for minimal parabolas
+        }
+        kk += step;
+    }
 
     return hull;
 }
