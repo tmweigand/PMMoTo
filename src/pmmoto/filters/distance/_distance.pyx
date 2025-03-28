@@ -547,7 +547,7 @@ def get_boundary_hull(
     int dimension,
     float resolution,
     int num_hull,
-    bool forward = True,
+    bool forward,
     int lower_skip = 0,
     int upper_skip = 0
 ):
@@ -555,6 +555,10 @@ def get_boundary_hull(
     Determine the boundary parabolas a given 3d array.
     hull.vertex and and hull.range are adjusted to provide the location
     for communication and are determined for non-shared voxels, aka "pad".
+
+
+    End, start are from the entire img shape
+
     """
     _dim1, _dim2 = get_dimensions(dimension)
     cdef int dim1 = _dim1
@@ -568,7 +572,7 @@ def get_boundary_hull(
     cdef size_t s1 = img.shape[dim1]
     cdef size_t s2 = img.shape[dim2]
 
-    cdef size_t end = _size
+    cdef size_t n_voxels
     cdef int index_corrector
 
     cdef vector[vector[Hull]] hull
@@ -585,27 +589,22 @@ def get_boundary_hull(
         start[dim1] = x
         for y in range(s2):
             start[dim2] = y
-            end = _size
-            if bound[x, y] == -1: 
+            if bound[x, y] == -1: # No solid 
                 start[dimension] = lower_skip
-                end = end - upper_skip - lower_skip
-                if forward:
-                    index_corrector = 0
-                else:
-                    index_corrector = -end
+                n_voxels = _size - upper_skip - lower_skip
             else:
                 if forward:
                     start[dimension] = lower_skip
-                    end = bound[x, y] + 1
+                    n_voxels = bound[x, y] - lower_skip + 1
                     index_corrector = 0
                 else:
                     start[dimension] = bound[x, y]
-                    end = end - bound[x, y] - upper_skip
-                    index_corrector = -end
+                    n_voxels = _size - bound[x, y] - upper_skip
+                    index_corrector = -n_voxels
 
             hull[x*s2 + y] = return_boundary_hull(
                 img=<float*>&img[start[0], start[1], start[2]],
-                n=end,
+                n=n_voxels,
                 resolution=resolution,
                 stride=stride,
                 num_hull=num_hull,
@@ -655,7 +654,7 @@ def get_boundary_hull_2d(
         else:
             if forward:
                 start[dimension] = lower_skip
-                end = bound[n] + 1
+                end = bound[n]
                 index_corrector = 0
             else:
                 start[dimension] = bound[n]

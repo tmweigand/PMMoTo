@@ -6,7 +6,6 @@ from . import multiphase
 from ..particles import particles
 from ..core import communication
 from ..core import utils
-from ..core import subdomain_features
 
 
 __all__ = [
@@ -15,8 +14,6 @@ __all__ = [
     "gen_linear_img",
     "gen_pm_spheres_domain",
     "gen_pm_atom_domain",
-    "gen_pm_verlet_spheres_domain",
-    "gen_pm_verlet_atom_domain",
     "gen_pm_inkbottle",
     "gen_mp_constant",
     "gen_mp_from_grid",
@@ -98,7 +95,7 @@ def gen_linear_img(shape, dim):
 
 def gen_pm_spheres_domain(subdomain, spheres, kd=False):
     """
-    Generate binary domain (pm) from sphere data that contains radii
+    Generate binary porous media (pm) domain from sphere data that contains radii
     """
     _spheres = particles.initialize_spheres(subdomain, spheres)
 
@@ -106,80 +103,21 @@ def gen_pm_spheres_domain(subdomain, spheres, kd=False):
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
-
     utils.check_grid(subdomain, pm.img)
 
     return pm
 
 
-def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types):
+def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=False):
     """
-    Generate binary domain (pm) from atom data, types and cutoff
+    Generate binary porous media (pm) domain from atom data, types and cutoff
     """
-    _spheres = particles.initialize_atoms(
+    _atoms = particles.initialize_atoms(
         subdomain, atom_locations, atom_radii, atom_types
     )
-    img = _domain_generation.gen_pm_sphere(subdomain, _spheres)
+
+    img = _domain_generation.gen_pm_atom(subdomain, _atoms, kd=False)
     pm = porousmedia.gen_pm(subdomain, img)
-    pm.img = communication.update_buffer(subdomain, pm.img)
-
-    utils.check_grid(subdomain, pm.img)
-
-    return pm
-
-
-def gen_pm_verlet_spheres_domain(subdomain, spheres):
-    """
-    Generate binary domain (pm) from sphere data that contains radii
-       using verlet domains
-    """
-    _img = np.ones(subdomain.voxels, dtype=np.uint8)
-    for n in range(subdomain.num_verlet):
-        verlet_spheres = _domain_generation.gen_verlet_list(
-            subdomain.max_diameters[n],
-            subdomain.centroids[n, 0],
-            subdomain.centroids[n, 1],
-            subdomain.centroids[n, 2],
-            spheres,
-        )
-
-        print(verlet_spheres)
-
-        # _img = _domain_generation.gen_pm_verlet_sphere(
-        #     _img,
-        #     subdomain.verlet_loop[n],
-        #     subdomain.coords[0],
-        #     subdomain.coords[1],
-        #     subdomain.coords[2],
-        #     verlet_spheres,
-        # )
-
-    # pm = porousmedia.gen_pm(subdomain, _img)
-    # pm.img = communication.update_buffer(subdomain, pm.img)
-
-    # # utils.check_grid(subdomain, pm.img)
-
-    # return pm
-
-
-def gen_pm_verlet_atom_domain(
-    subdomain, atom_locations, atom_types, atom_cutoff, verlet=[1, 1, 1], res_size=0
-):
-    """
-    Generate binary domain (pm) from atom data, types and cutoff
-       using verlet domains
-    """
-    _img = _domain_generation.gen_pm_verlet_atom(
-        verlet,
-        subdomain.coords[0],
-        subdomain.coords[1],
-        subdomain.coords[2],
-        atom_locations,
-        atom_types,
-        atom_cutoff,
-    )
-
-    pm = porousmedia.gen_pm(subdomain, _img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
     utils.check_grid(subdomain, pm.img)

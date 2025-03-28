@@ -290,7 +290,7 @@ def test_periodic_3d():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_pmmoto_3d_parallel(generate_simple_subdomain):
+def test_pmmoto_3d_parallel():
     """
     Tests EDT with pmmoto
     """
@@ -298,7 +298,7 @@ def test_pmmoto_3d_parallel(generate_simple_subdomain):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
-    sd = generate_simple_subdomain(0, periodic=periodic)
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
     img = np.ones(sd.domain.voxels, dtype=np.uint8)
     img = pmmoto.domain_generation.gen_random_binary_grid(
         sd.domain.voxels,

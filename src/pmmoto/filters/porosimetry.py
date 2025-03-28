@@ -143,6 +143,7 @@ def pore_size_distribution(
         radii = get_sizes(
             np.min(subdomain.domain.resolution), global_max_edt, 50, "linear"
         )
+        print(global_max_edt, radii)
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
     for radius in radii:

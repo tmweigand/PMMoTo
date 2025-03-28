@@ -3,7 +3,8 @@
 import numpy as np
 from typing import Dict, Union
 
-from ._particles import _initialize_atoms, _initialize_spheres
+from ._particles import _initialize_atoms
+from ._particles import _initialize_spheres
 
 __all__ = [
     "initialize_atoms",
