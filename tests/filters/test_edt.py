@@ -331,13 +331,6 @@ def test_pmmoto_3d_parallel():
 
     pmmoto_edt = pmmoto.filters.distance.edt(subdomain=sd_local, img=local_img)
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_edt",
-        sd_local,
-        local_img,
-        additional_img={"edt": pmmoto_edt, "local": local_edt_img},
-    )
-
     np.testing.assert_array_almost_equal(
         local_edt_img * local_edt_img, pmmoto_edt * pmmoto_edt
     )

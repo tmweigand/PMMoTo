@@ -173,3 +173,17 @@ def test_cleanup():
     atoms = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, by_type=False
     )
+
+
+def test_uff_radius():
+    """
+    Test for the universal force field lookup to convert atoms to radii.
+    """
+
+    atom_names = ["C", "H", "N", "O"]
+    radii_names = pmmoto.particles.uff_radius(atom_names=atom_names)
+
+    atomic_numbers = [6, 1, 7, 8]
+    radii_number = pmmoto.particles.uff_radius(atomic_numbers=atomic_numbers)
+
+    assert radii_names == radii_number

@@ -1,21 +1,83 @@
 """particles.py"""
 
 import numpy as np
-from typing import Dict, Union
+from typing import Dict, List, Optional
 
 from ._particles import _initialize_atoms
 from ._particles import _initialize_spheres
 
 __all__ = [
+    "uff_radius",
     "initialize_atoms",
     "initialize_spheres",
 ]
 
 
+def _load_uff_data():
+    """
+    Read universal force field file for atom radius lookup
+    Can query the dictionary based on:
+        Atom Name
+        Atomic Number (i.e. 1 = H, 6 = C)
+    """
+    file_name = "src/pmmoto/particles/atom_universal_force_field.in"
+    element_table = {}
+    with open(file_name, "r") as file:
+        next(file)  # skip header
+        for line in file:
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+            atomic_number = int(parts[0])
+            name = parts[1]
+            radius = float(parts[2]) / 2.0  # Convert diameter to radius
+            element_table[name] = atomic_number, radius
+            element_table[atomic_number] = atomic_number, radius
+
+    return element_table
+
+
+def uff_radius(
+    atom_names: Optional[List[str]] = None, atomic_numbers: Optional[List[int]] = None
+) -> Dict[int, float]:
+    """
+    Collect the radius by Atom Name or Atomic Number, but not both.
+
+    Units of radii are Angstroms!
+
+    Args:
+        atom_names (List[str], optional): List of element names.
+        atomic_numbers (List[int], optional): List of atomic numbers.
+
+    Returns:
+        Dict[int, float]: Dictionary mapping atomic numbers to their radii.
+    """
+
+    if (atom_names is None) == (atomic_numbers is None):
+        raise ValueError(
+            "Provide either 'atom_names' or 'atomic_numbers', but not both."
+        )
+
+    all_uff_radii = _load_uff_data()
+    radii = {}
+    if atom_names:
+        for name in atom_names:
+            if name in all_uff_radii:
+                atomic_number, radius = all_uff_radii[name]
+                radii[atomic_number] = radius
+    elif atomic_numbers:
+        for num in atomic_numbers:
+            if num in all_uff_radii:
+                atomic_number, radius = all_uff_radii[num]
+                radii[atomic_number] = radius
+
+    return radii
+
+
 def initialize_atoms(
     subdomain,
     atom_coordinates: np.ndarray,
-    atom_radii: Union[Dict[int, float], np.ndarray],
+    atom_radii: Dict[int, float],
     atoms_ids: np.ndarray,
     by_type: bool = False,
     add_periodic: bool = False,
@@ -38,9 +100,9 @@ def initialize_atoms(
         trim_within: Remove particles fully within boundary
 
     Returns:
-        AtomMap: Container of initialized particles
+        AtomMap: Python Class that wraps atoms. See _particles.pyx
     """
-    # Convert inputs to contiguous arrays for better memory efficiency
+
     if not atom_coordinates.flags["C_CONTIGUOUS"]:
         atom_coordinates = np.ascontiguousarray(atom_coordinates)
 
