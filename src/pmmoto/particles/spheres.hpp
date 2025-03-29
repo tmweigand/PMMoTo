@@ -82,7 +82,7 @@ public:
     /**
      * @brief Print sphere coordinates and radius
      */
-    void print()
+    void print() const
     {
         std::cout << coordinates[0] << " " << coordinates[1] << " "
                   << coordinates[2] << " " << radius << std::endl;
@@ -229,11 +229,10 @@ public:
     std::vector<size_t> find_intersecting_sphere_indices(const Box& box) const
     {
         std::vector<size_t> indices;
-        indices.reserve(spheres.size());
 
         for (size_t i = 0; i < spheres.size(); ++i)
         {
-            const auto& sphere = spheres[i];
+            const Sphere& sphere = spheres[i];
             if (sphere.intersects_box(sphere.coordinates, sphere.radius, box))
             {
                 indices.push_back(i);

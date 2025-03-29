@@ -402,19 +402,19 @@ def get_initial_correctors(subdomain, img, dimension=None):
 def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
     """
     Get the boundary hull for a subdomain and image.
-    Always pad the domain by 1 to allow for exact update of img.
+    Always pad the domain by 1 to allow for exact update of img aka account for subdomain padding
+    and make it so the pad is correct on the update
     """
     if dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
     boundary_hull = {}
 
-    dim_key = [0, 0, 0]
-    lower_dim_key = dim_key
+    lower_dim_key = [0, 0, 0]
     lower_dim_key[dimension] = -1
     lower_dim_key = tuple(lower_dim_key)
 
-    upper_dim_key = dim_key
+    upper_dim_key = [0, 0, 0]
     upper_dim_key[dimension] = 1
     upper_dim_key = tuple(upper_dim_key)
 

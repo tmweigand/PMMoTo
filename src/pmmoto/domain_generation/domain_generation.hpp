@@ -31,8 +31,7 @@ struct Verlet
 };
 
 /**
- * @brief Brute force approach
- * otherwise).
+ * @brief Brute force approach but with verlet
  */
 void
 brute_force(uint8_t* img,
@@ -66,7 +65,7 @@ void
 gen_sphere_img_brute_force(uint8_t* img,
                            const Grid& grid,
                            Verlet verlet,
-                           const std::shared_ptr<SphereList>& sphere_list)
+                           std::shared_ptr<SphereList>& sphere_list)
 {
     std::vector<double> voxel(3);
 
@@ -138,16 +137,20 @@ gen_sphere_img_kd_method(uint8_t* img,
                          Verlet verlet,
                          const std::shared_ptr<SphereList>& sphere_list)
 {
+    // Collect the sphere coordinates
     auto samples = sphere_list->get_coordinates();
 
+    // Ensure kd tree is built
+    sphere_list->build_KDtree();
+
     std::vector<double> voxel(3);
+
+    // Maximum search radius for the kd-tree
     double radius = sphere_list->max_radius();
 
     for (size_t n = 0; n < verlet.num_verlet; ++n)
     {
         std::vector<std::vector<size_t> > loop = verlet.loops[n];
-        std::vector<size_t> verlet_spheres =
-            sphere_list->find_intersecting_sphere_indices(verlet.box[n]);
 
         for (size_t i = loop[0][0]; i < loop[0][1]; ++i)
         {

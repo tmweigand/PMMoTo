@@ -1,3 +1,4 @@
+# Cython optimizations
 # cython: profile=True
 # cython: linetrace=True
 # cython: boundscheck=False
@@ -8,115 +9,90 @@
 import numpy as np
 cimport numpy as cnp
 from numpy cimport uint8_t
-from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map
-from libcpp.memory cimport shared_ptr
 from libc.math cimport sin, cos
 cnp.import_array()
 
-
-from ..particles.spheres cimport SphereList
-
 from ..particles._particles cimport PySphereList
 from ..particles._particles import create_box
+from ._domain_generation cimport Grid, Verlet
+from ._domain_generation cimport gen_sphere_img_brute_force
+from ._domain_generation cimport gen_sphere_img_kd_method
+
 
 __all__ = [
     "gen_pm_sphere",
     "gen_pm_atom",
     "gen_inkbottle",
-    "convert_atoms_to_spheres",
+    "gen_elliptical_inkbottle",
 ]
 
-def gen_pm_sphere(subdomain, spheres, kd = False):
+def gen_pm_sphere(subdomain, spheres, kd: bool = False) -> np.ndarray:
     """
-    Determine if voxel centroid is located in a sphere
+    Determine if voxel centroids are located inside spheres.
+
+    Args:
+        subdomain: Subdomain object containing voxel and Verlet information.
+        spheres: SphereList or PySphereList object.
+        kd (bool): Whether to use KD-tree for sphere lookup.
+
+    Returns:
+        np.ndarray: 3D binary image indicating voxel inclusion in spheres.
     """
-    cdef: 
-        cnp.uint8_t [:, :, :] _img
+    cdef:
+        cnp.uint8_t[:, :, :] _img
         Grid grid_c
         Verlet verlet_c
 
-    # Initialize img
+    # Initialize binary image
     img = np.ones(subdomain.voxels, dtype=np.uint8)
     _img = img
 
-    # Convert coords to vectors
-    grid_c.x = subdomain.coords[0]
-    grid_c.y = subdomain.coords[1]
-    grid_c.z = subdomain.coords[2]
+    # Convert subdomain coordinates to vectors
+    grid_c.x, grid_c.y, grid_c.z = subdomain.coords
 
     # Determine strides for indexing
     for stride in img.strides:
-        _stride = stride//img.itemsize
-        grid_c.strides.push_back(_stride)
+        grid_c.strides.push_back(stride // img.itemsize)
 
-    # Convert Verlet info
+    # Convert Verlet information
     verlet_c.num_verlet = subdomain.num_verlet
     verlet_c.loops = subdomain.verlet_loop
     verlet_c.diameters = subdomain.max_diameters
     verlet_c.centroids = subdomain.centroids
 
-    box = {}
-    for n in range(subdomain.num_verlet):
-        box[n] = create_box(subdomain.verlet_box[n])
+    # Create bounding boxes for Verlet cells
+    verlet_c.box = {n: create_box(subdomain.verlet_box[n]) for n in range(subdomain.num_verlet)}
 
-    verlet_c.box = box
-
+    # Generate sphere image using KD-tree or brute force
     if kd:
-        spheres.build_KDtree()
         gen_sphere_img_kd_method(
-            <uint8_t*>&_img[0,0,0],
+            <uint8_t*>&_img[0, 0, 0],
             grid_c,
             verlet_c,
-            (<PySphereList>spheres)._sphere_list
+            (<PySphereList>spheres)._sphere_list,
         )
     else:
         gen_sphere_img_brute_force(
-            <uint8_t*>&_img[0,0,0],
+            <uint8_t*>&_img[0, 0, 0],
             grid_c,
             verlet_c,
             (<PySphereList>spheres)._sphere_list
         )
 
-    return img
+    return np.ascontiguousarray(img)
 
-def gen_pm_atom(subdomain,atom_locations,atom_types,atom_cutoff
-):
+def gen_pm_atom(subdomain, atoms, kd: bool = False) -> np.ndarray:
     """
-    Determine if voxel centroid is located in atom
+    Determine if voxel centroids are located inside atoms.
+
+    Args:
+        subdomain: Subdomain object containing voxel and Verlet information.
+        atoms: 
+    Returns:
+        np.ndarray: 3D binary image indicating voxel inclusion in atoms.
     """
-    spheres = convert_atoms_to_spheres(
-        atom_locations,
-        atom_types,
-        atom_cutoff
-        ) 
-
-    img = gen_pm_sphere(subdomain,spheres)
-   
-    return img
-
-
-def convert_atoms_to_spheres(
-    double[:,:] atom_locations,
-    long[:] atom_types,
-    unordered_map[int,double]  atom_cutoff 
-    ):
-    """
-    Convert atom locations, index, and cutoff to spheres of given radius
-    """
-    cdef:
-        int n
-        int num_atoms = atom_locations.shape[0]
-        double [:,:] _spheres
-
-    spheres = np.zeros((num_atoms, 4), dtype=np.double)
-    _spheres = spheres
-    _spheres[:,0:3] = atom_locations
-
-    for n in range(0,num_atoms):
-        _spheres[n,3] = atom_cutoff[atom_types[n]]
-
-    return spheres
+    return gen_pm_sphere(subdomain, atoms)
 
 
 def gen_inkbottle(double[:] x, double[:] y, double[:] z):

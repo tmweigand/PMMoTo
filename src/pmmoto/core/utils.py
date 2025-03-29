@@ -1,27 +1,35 @@
 ### Core Utility Functions ###
 import sys
+import logging
 import numpy as np
 
 # from mpi4py import MPI
 from mpi4py import MPI
+from . import communication
 
 comm = MPI.COMM_WORLD
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
-__all__ = ["phase_exists", "constant_pad_img", "unpad"]
+
+__all__ = ["phase_exists", "constant_pad_img", "unpad", "determine_maximum"]
 
 
 def raise_error():
-    """Exit gracefuully."""
+    """Exit gracefully."""
     MPI.Finalize()
     sys.exit()
 
 
 def check_grid(subdomain, grid):
-    """Esure solid voxel on each subprocess"""
+    """Ensure solid voxel on each subprocess"""
     if np.sum(grid) == np.prod(subdomain.voxels):
-        print(
-            "This code requires at least 1 solid voxel in each subdomain. Please reorder processors!"
+        logging.warning(
+            f"Many functions in pmmoto require at least 1 solid voxel in each subdomain. Process with rank: {subdomain.rank} is all pores."
         )
         raise_error()
 
@@ -193,6 +201,17 @@ def phase_exists(grid, phase):
         phase_exists = True
 
     return phase_exists
+
+
+def determine_maximum(img):
+    """
+    Determine the global maximum of an input image
+    """
+    local_max = np.amax(img)
+
+    proc_local_max = communication.all_gather(local_max)
+
+    return np.amax(proc_local_max)
 
 
 def global_grid(grid, index, local_grid):
