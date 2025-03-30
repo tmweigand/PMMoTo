@@ -183,6 +183,8 @@ def test_uff_radius():
     atom_names = ["C", "H", "N", "O"]
     radii_names = pmmoto.particles.uff_radius(atom_names=atom_names)
 
+    assert radii_names == {6: 3.431, 1: 2.571, 7: 3.261, 8: 3.118}
+
     atomic_numbers = [6, 1, 7, 8]
     radii_number = pmmoto.particles.uff_radius(atomic_numbers=atomic_numbers)
 

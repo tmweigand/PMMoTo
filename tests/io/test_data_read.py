@@ -37,7 +37,10 @@ def test_read_atom_map():
 
     atom_map = pmmoto.io.data_read.read_atom_map(atom_map_file)
 
-    assert atom_map == {1: "BC1", 12: "COOH_C"}
+    assert atom_map == {
+        1: {"element": "C", "label": "BC1"},
+        12: {"element": "C", "label": "COOH_C"},
+    }
 
 
 def test_read_rdf():
@@ -48,7 +51,10 @@ def test_read_rdf():
 
     atom_map, atom_data = pmmoto.io.data_read.read_rdf(atom_folder)
 
-    assert atom_map == {1: "BC1", 12: "COOH_C"}
+    assert atom_map == {
+        1: {"element": "C", "label": "BC1"},
+        12: {"element": "C", "label": "COOH_C"},
+    }
 
     np.testing.assert_equal(atom_data[1].shape, (1000, 3))
 

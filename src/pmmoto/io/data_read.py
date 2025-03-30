@@ -173,8 +173,8 @@ def read_rdf(input_folder):
 
     # Check rdf files found for all atoms
     atom_data = {}
-    for label, name in atom_map.items():
-        atom_file = input_folder + name + ".rdf"
+    for label, atom_info in atom_map.items():
+        atom_file = input_folder + atom_info["label"] + ".rdf"
         io_utils.check_file(atom_file)
         data = np.genfromtxt(atom_file)
         atom_data[label] = data
@@ -185,7 +185,7 @@ def read_rdf(input_folder):
 def read_atom_map(input_file):
     """
     Read in the atom mapping file which has the following format:
-        atom_id atom_name
+        atom_id element_name atom_name
     """
     # Check input file and proceed of exists
     io_utils.check_file(input_file)
@@ -196,7 +196,8 @@ def read_atom_map(input_file):
     lines = atom_file.readlines()
     for line in lines:
         split = line.split(" ")
-        label = split[1].split("\n")[0]
-        atom_data[int(split[0])] = label
+        element = split[1]
+        label = split[2].split("\n")[0]
+        atom_data[int(split[0])] = {"element": element, "label": label}
 
     return atom_data

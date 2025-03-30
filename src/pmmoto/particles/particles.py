@@ -5,34 +5,54 @@ from typing import Dict, List, Optional
 
 from ._particles import _initialize_atoms
 from ._particles import _initialize_spheres
+from .atom_universal_force_field import atom_universal_force_field
+
 
 __all__ = [
+    "convert_atoms_elements_to_ids",
     "uff_radius",
     "initialize_atoms",
     "initialize_spheres",
 ]
 
 
-def _load_uff_data():
+def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
+    """
+    Convert a list of atom names (C,H,N,O) to id
+    """
+    element_table = atom_universal_force_field()
+
+    atom_ids = np.zeros(len(atom_elements), dtype=int)  # Initialize array with zeros
+
+    for n, element in enumerate(atom_elements):
+        if element in element_table:
+            atom_ids[n] = element_table[element][0]  # Store atomic number
+
+    return atom_ids
+
+
+def _load_uff_data(file_name=None):
     """
     Read universal force field file for atom radius lookup
     Can query the dictionary based on:
         Atom Name
         Atomic Number (i.e. 1 = H, 6 = C)
     """
-    file_name = "src/pmmoto/particles/atom_universal_force_field.in"
-    element_table = {}
-    with open(file_name, "r") as file:
-        next(file)  # skip header
-        for line in file:
-            parts = line.split()
-            if len(parts) < 3:
-                continue
-            atomic_number = int(parts[0])
-            name = parts[1]
-            radius = float(parts[2]) / 2.0  # Convert diameter to radius
-            element_table[name] = atomic_number, radius
-            element_table[atomic_number] = atomic_number, radius
+    if file_name is None:
+        element_table = atom_universal_force_field()
+    else:
+        element_table = {}
+        with open(file_name, "r") as file:
+            next(file)  # skip header
+            for line in file:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                atomic_number = int(parts[0])
+                name = parts[1]
+                radius = float(parts[2]) / 2.0  # Convert diameter to radius
+                element_table[name] = atomic_number, radius
+                element_table[atomic_number] = atomic_number, radius
 
     return element_table
 
@@ -60,16 +80,19 @@ def uff_radius(
 
     all_uff_radii = _load_uff_data()
     radii = {}
-    if atom_names:
+
+    if atom_names is not None:
         for name in atom_names:
             if name in all_uff_radii:
                 atomic_number, radius = all_uff_radii[name]
                 radii[atomic_number] = radius
-    elif atomic_numbers:
+    elif atomic_numbers is not None:
         for num in atomic_numbers:
             if num in all_uff_radii:
                 atomic_number, radius = all_uff_radii[num]
                 radii[atomic_number] = radius
+    else:
+        raise ValueError("Input data must be a list of atom names or atomic numbers.")
 
     return radii
 
