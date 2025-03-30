@@ -74,6 +74,13 @@ ext_modules = [
         extra_compile_args=extra_compile_args,
     ),
     Extension(
+        "pmmoto.analysis._bins",
+        ["src/pmmoto/analysis/_bins.pyx"],
+        include_dirs=["src/pmmoto/analysis/"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+    ),
+    Extension(
         "pmmoto.domain_generation._domain_generation",
         ["src/pmmoto/domain_generation/_domain_generation.pyx"],
         include_dirs=["src/pmmoto/domain_generation/", "src/pmmoto/particles/"],

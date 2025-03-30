@@ -2,8 +2,10 @@
 
 from typing import Dict, Optional
 import numpy as np
-
+from . import _bins
 from ..io import io_utils
+
+__all__ = ["count_locations"]
 
 
 def sphere_volume(radius):
@@ -57,11 +59,16 @@ class Bin:
             self.num_bins,
         )
 
+    def set_values(self, values: np.ndarray):
+        """
+        Count the number of items in bins
+        """
+        self.values = values
+
     def calculate_volume(self, area=None, radial_volume=False):
         """
         Bin volume
         """
-
         if radial_volume:
             self.volume = sphere_volume(self.centers + self.width / 2) - sphere_volume(
                 self.centers - self.width / 2
@@ -144,3 +151,21 @@ class Bins:
                 data,
                 delimiter="\t",
             )
+
+
+def count_locations(coordinates, dimension, bin):
+    """
+    Count the number of atoms in a bin
+
+    Args:
+        subdomain (Subdomain): A pmmoto subdomain
+        atoms (PyAtomList): A pmmoto PyAtomList
+        dimension (int): Dimension to sum the bins
+        bins (Bin): A pmmoto bin
+    """
+
+    _counts = _bins._count_locations(
+        coordinates, dimension, bin.values, bin.width, bin.start
+    )
+
+    return _counts
