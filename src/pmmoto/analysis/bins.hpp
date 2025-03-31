@@ -7,7 +7,7 @@
 void
 count_locations(const std::vector<std::vector<double> >& coordinates,
                 int dimension,
-                std::vector<unsigned long long>& bins,
+                std::vector<uint64_t>& bins,
                 double bin_width,
                 double min_bin_value)
 {
