@@ -86,7 +86,7 @@ def read_r_lookup_file(input_file, power=1):
     return sigma
 
 
-def py_read_lammps_atoms(input_file):
+def py_read_lammps_atoms(input_file, include_mass=False):
     """
     Read position of atoms from LAMMPS file
     atom_map must sync with LAMMPS ID
@@ -111,6 +111,8 @@ def py_read_lammps_atoms(input_file):
             num_objects = int(line)
             atom_position = np.zeros([num_objects, 3], dtype=np.double)
             atom_type = np.zeros(num_objects, dtype=int)
+            if include_mass:
+                masses = np.zeros(num_objects, dtype=float)
         elif 5 <= n_line <= 7:
             domain_data[n_line - 5, 0] = float(line.split(" ")[0])
             domain_data[n_line - 5, 1] = float(line.split(" ")[1])
@@ -126,6 +128,9 @@ def py_read_lammps_atoms(input_file):
             else:
                 charges[type] = [charge]
 
+            if include_mass:
+                masses[count_atom] = float(split[3])
+
             for count, n in enumerate([5, 6, 7]):
                 atom_position[count_atom, count] = float(split[n])  # x,y,z,atom_id
 
@@ -133,7 +138,10 @@ def py_read_lammps_atoms(input_file):
 
     domain_file.close()
 
-    return atom_position, atom_type, domain_data
+    if include_mass:
+        return atom_position, atom_type, masses, domain_data
+    else:
+        return atom_position, atom_type, domain_data
 
 
 def read_lammps_atoms(input_file, type_map=None):

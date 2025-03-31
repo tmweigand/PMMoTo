@@ -54,8 +54,8 @@ class Bin:
         Bin centers
         """
         self.centers = np.linspace(
-            self.width / 2,
-            self.end,
+            self.start + self.width / 2,
+            self.end - self.width / 2,
             self.num_bins,
         )
 
@@ -158,7 +158,6 @@ def count_locations(coordinates, dimension, bin):
     Count the number of atoms in a bin
 
     Args:
-        subdomain (Subdomain): A pmmoto subdomain
         atoms (PyAtomList): A pmmoto PyAtomList
         dimension (int): Dimension to sum the bins
         bins (Bin): A pmmoto bin
@@ -169,3 +168,20 @@ def count_locations(coordinates, dimension, bin):
     )
 
     return _counts
+
+
+def sum_masses(coordinates, dimension, bin, masses):
+    """
+    Sums the number of atoms in a bin
+
+    Args:
+        atoms (PyAtomList): A pmmoto PyAtomList
+        dimension (int): Dimension to sum the bins
+        bins (Bin): A pmmoto bin
+        masses (np array): atom masses
+    """
+    _masses = _bins._sum_masses(
+        coordinates, masses, dimension, bin.values, bin.width, bin.start
+    )
+
+    return _masses

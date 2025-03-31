@@ -15,3 +15,12 @@ cdef extern from "bins.hpp":
         double bin_width,
         double min_bin_value
         ) 
+
+    cdef vector[double] sum_masses(
+        vector[vector[double]] atoms,
+        vector[double] masses,
+        int dimension,
+        vector[double] bins,
+        double bin_width,
+        double min_bin_value
+        ) 

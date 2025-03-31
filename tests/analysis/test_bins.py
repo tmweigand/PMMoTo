@@ -2,6 +2,36 @@
 
 import numpy as np
 import pmmoto
+from mpi4py import MPI
+import matplotlib.pyplot as plt
+import pytest
+
+
+def test_bin_centers():
+    """
+    Dummy check for bins
+    """
+    start = 0
+    end = 1
+    num_bins = 1
+
+    bin = pmmoto.analysis.bins.Bin(start=start, end=end, num_bins=num_bins)
+
+    assert (
+        bin.centers[0] == 0.5
+    )  # Only one bin, so center is halfway between start and end
+
+    start = -1
+    bin = pmmoto.analysis.bins.Bin(start=start, end=end, num_bins=num_bins)
+
+    assert (
+        bin.centers[0] == 0.0
+    )  # Only one bin, so center is halfway between start and end
+
+    num_bins = 2
+    bin = pmmoto.analysis.bins.Bin(start=start, end=end, num_bins=num_bins)
+
+    np.testing.assert_array_equal(bin.centers, np.array([-0.5, 0.5]))
 
 
 def test_bin():
@@ -50,7 +80,7 @@ def test_count_locations():
     Test binning coordinates
     """
 
-    start = -1
+    start = 0
     end = 3
     num_bins = 25
 
@@ -62,4 +92,182 @@ def test_count_locations():
         coordinates=coordinates, dimension=0, bin=bin
     )
 
-    print(counts)
+    assert np.sum(counts) == 3
+
+    start = -1
+    end = 3
+    num_bins = 25
+
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    counts = pmmoto.analysis.bins.count_locations(
+        coordinates=coordinates, dimension=0, bin=bin
+    )
+
+    assert np.sum(counts) == 3
+
+    start = -1
+    end = 2
+    num_bins = 25
+
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    counts = pmmoto.analysis.bins.count_locations(
+        coordinates=coordinates, dimension=0, bin=bin
+    )
+
+    assert np.sum(counts) == 2
+
+
+def test_count_membrane():
+    """
+    Test if membrane atoms are being counted.
+    """
+
+    membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
+    positions, types, domain = pmmoto.io.data_read.py_read_lammps_atoms(membrane_file)
+
+    dimension = 2
+    start = domain[dimension, 0]
+    end = domain[dimension, 1]
+    num_bins = 100
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    counts = pmmoto.analysis.bins.count_locations(
+        coordinates=positions, dimension=dimension, bin=bin
+    )
+
+    print(counts, np.sum(counts), positions.shape)
+
+    assert np.sum(counts) == positions.shape[0]
+
+
+def test_sum_masses():
+    """
+    Tests summing masses of atoms based on location.
+    """
+
+    start = 0
+    end = 3
+    num_bins = 25
+
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    coordinates = np.array([[0.1, 0.0, 0.0], [1.1, 0.0, 0.0], [2.1, 0.0, 0.0]])
+
+    masses = np.array([3, 12.5, 256])
+
+    mass_counts = pmmoto.analysis.bins.sum_masses(
+        coordinates=coordinates, dimension=0, bin=bin, masses=masses
+    )
+
+    assert np.sum(mass_counts) == 3 + 12.5 + 256  # Total mass of all atoms
+
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    coordinates = np.array([[0.1, 0.0, 0.0], [0.1, 0.0, 0.0], [0.1, 0.0, 0.0]])
+
+    mass_counts = pmmoto.analysis.bins.sum_masses(
+        coordinates=coordinates, dimension=0, bin=bin, masses=masses
+    )
+
+    assert mass_counts[0] == 3 + 12.5 + 256  # All atoms are in the first bin
+
+    start = -5
+    end = 3
+    num_bins = 25
+
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    coordinates = np.array([[-4.9, 0.0, 0.0], [1.1, 0.0, 0.0], [2.1, 0.0, 0.0]])
+
+    mass_counts = pmmoto.analysis.bins.sum_masses(
+        coordinates=coordinates, dimension=0, bin=bin, masses=masses
+    )
+
+
+def test_sum_membrane_mass():
+    """
+    Test membrane mass counting.
+    """
+
+    membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
+    positions, types, masses, domain = pmmoto.io.data_read.py_read_lammps_atoms(
+        membrane_file, include_mass=True
+    )
+
+    dimension = 2
+    start = domain[dimension, 0]
+    end = domain[dimension, 1]
+    num_bins = 100
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    mass_counts = pmmoto.analysis.bins.sum_masses(
+        coordinates=positions, dimension=2, bin=bin, masses=masses
+    )
+
+    # Calculate bin volume
+    area = (domain[0, 1] - domain[0, 0]) * (domain[1, 1] - domain[1, 0])
+
+    bin.calculate_volume(area=area)
+    mass_density = mass_counts / bin.volume
+
+    np.testing.assert_approx_equal(np.sum(mass_counts), np.sum(masses))
+
+
+@pytest.mark.mpi(min_size=8)
+def test_sum_membrane_mass_parallel():
+    """
+    Test membrane mass counting.
+    """
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    # Full domain with reservoirs
+    box = [
+        [0.0, 175.768],
+        [0.0, 175.768],
+        [-287, 237],
+    ]
+
+    membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
+    positions, types, masses, _ = pmmoto.io.data_read.py_read_lammps_atoms(
+        membrane_file, include_mass=True
+    )
+
+    dimension = 2
+    start = box[dimension][0]
+    end = box[dimension][1]
+    num_bins = 100
+    bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
+
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10), box=box, rank=rank, subdomains=(2, 2, 2)
+    )
+
+    print(np.unique(masses), np.unique(types))
+
+    unique_types = np.unique(types)
+    atom_radii = {}
+    for _type in unique_types:
+        atom_radii[_type] = 1
+
+    membrane = pmmoto.particles.initialize_atoms(
+        sd, positions, atom_radii, types, by_type=False, trim_within=True
+    )
+
+    mem_coordinate = membrane.return_np_array()
+
+    print(sd.rank, mem_coordinate.shape)
+
+    # mass_counts = pmmoto.analysis.bins.sum_masses(
+    #     coordinates=positions, dimension=2, bin=bin, masses=masses
+    # )
+
+    # # Calculate bin volume
+    # area = (box[0, 1] - box[0, 0]) * (box[1, 1] - box[1, 0])
+
+    # bin.calculate_volume(area=area)
+    # mass_density = mass_counts / bin.volume
+
+    # np.testing.assert_approx_equal(np.sum(mass_counts), np.sum(masses))
