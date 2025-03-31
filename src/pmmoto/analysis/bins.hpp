@@ -1,13 +1,13 @@
 #ifndef BINS_H
 #define BINS_H
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
-std::vector<unsigned long long>
+void
 count_locations(const std::vector<std::vector<double> >& coordinates,
                 int dimension,
-                std::vector<unsigned long long> bins,
+                std::vector<unsigned long long>& bins,
                 double bin_width,
                 double min_bin_value)
 {
@@ -15,22 +15,22 @@ count_locations(const std::vector<std::vector<double> >& coordinates,
     {
         int bin_index =
             std::floor((coords[dimension] - min_bin_value) / bin_width);
-        
-        if (bin_index >= 0 && bin_index < bins.size() ){
+
+        if (bin_index >= 0 && bin_index < bins.size())
+        {
             bins[bin_index]++;
         }
     }
-    return bins;
+    // return bins;
 };
 
-
-std::vector<double>
+void
 sum_masses(const std::vector<std::vector<double> >& coordinates,
-                const std::vector<double> & masses,
-                int dimension,
-                std::vector<double> bins,
-                double bin_width,
-                double min_bin_value)
+           const std::vector<double>& masses,
+           int dimension,
+           std::vector<double>& bins,
+           double bin_width,
+           double min_bin_value)
 {
     for (size_t i = 0; i < coordinates.size(); ++i)
     {
@@ -38,13 +38,13 @@ sum_masses(const std::vector<std::vector<double> >& coordinates,
         double mass = masses[i];
         int bin_index =
             std::floor((coords[dimension] - min_bin_value) / bin_width);
-         
-        if (bin_index >= 0 && bin_index < bins.size() ){
-            
+
+        if (bin_index >= 0 && bin_index < bins.size())
+        {
             bins[bin_index] = bins[bin_index] + mass;
         }
     }
-    return bins;
+    // return bins;
 };
 
 #endif

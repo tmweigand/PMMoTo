@@ -9,23 +9,23 @@ import numpy as np
 cimport numpy as cnp
 from libcpp cimport bool
 from libcpp.vector cimport vector
-
+from libc.stdint cimport uint64_t
 
 from .bins cimport count_locations, sum_masses
 
 __all__ = ["_count_locations", "_sum_masses"]
 
-def _count_locations(coordinates, dimension, bins, bin_width, min_bin_value):
+def _count_locations(coordinates, dimension, num_bins, bin_width, min_bin_value):
     """
     generate a radial distribution function 
     """
     cdef: 
-        vector[unsigned long long] _bins
+        vector[uint64_t] _bins
         vector[vector[double]] _coordinates
 
-    _bins = bins
+    _bins = vector[uint64_t](num_bins, 0)
     _coordinates = coordinates
-    bins = count_locations(
+    count_locations(
         _coordinates,
         dimension,
         _bins,
@@ -33,10 +33,10 @@ def _count_locations(coordinates, dimension, bins, bin_width, min_bin_value):
         min_bin_value
     )
 
-    return np.asarray(bins)
+    return np.asarray(_bins)
 
 
-def _sum_masses(coordinates, masses, dimension, bins, bin_width, min_bin_value):
+def _sum_masses(coordinates, masses, dimension, num_bins, bin_width, min_bin_value):
     """
     sum masses 
     """
@@ -45,11 +45,11 @@ def _sum_masses(coordinates, masses, dimension, bins, bin_width, min_bin_value):
         vector[vector[double]] _coordinates
         vector[double] _masses
 
-    _bins = bins
+    _bins = vector[double](num_bins, 0.0)
     _coordinates = coordinates
     _masses = masses
     
-    bins = sum_masses(
+    sum_masses(
         _coordinates,
         _masses,
         dimension,
@@ -58,4 +58,4 @@ def _sum_masses(coordinates, masses, dimension, bins, bin_width, min_bin_value):
         min_bin_value
     )
 
-    return np.asarray(bins)
+    return np.asarray(_bins)

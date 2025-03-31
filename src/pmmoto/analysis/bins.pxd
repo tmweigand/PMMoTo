@@ -8,7 +8,7 @@ from ..particles.atoms cimport AtomList
 
 cdef extern from "bins.hpp":
 
-    cdef vector[unsigned long long] count_locations(
+    cdef void count_locations(
         vector[vector[double]] atoms,
         int dimension,
         vector[unsigned long long] bins,
@@ -16,7 +16,7 @@ cdef extern from "bins.hpp":
         double min_bin_value
         ) 
 
-    cdef vector[double] sum_masses(
+    cdef void sum_masses(
         vector[vector[double]] atoms,
         vector[double] masses,
         int dimension,

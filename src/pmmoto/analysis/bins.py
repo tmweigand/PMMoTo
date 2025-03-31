@@ -4,6 +4,7 @@ from typing import Dict, Optional
 import numpy as np
 from . import _bins
 from ..io import io_utils
+from ..core import communication
 
 __all__ = ["count_locations"]
 
@@ -64,6 +65,12 @@ class Bin:
         Count the number of items in bins
         """
         self.values = values
+
+    def update_values(self, values: np.ndarray):
+        """
+        Increment the values with new values
+        """
+        self.values += values
 
     def calculate_volume(self, area=None, radial_volume=False):
         """
@@ -153,24 +160,28 @@ class Bins:
             )
 
 
-def count_locations(coordinates, dimension, bin):
+def count_locations(coordinates, dimension, bin, subdomain=None):
     """
     Count the number of atoms in a bin
 
     Args:
         atoms (PyAtomList): A pmmoto PyAtomList
         dimension (int): Dimension to sum the bins
-        bins (Bin): A pmmoto bin
-    """
+        bins (Bin): A pmmoto bin. Results are stored in bin.values
 
+    Note: Repeated calls to this function increment bin.values!
+    """
     _counts = _bins._count_locations(
-        coordinates, dimension, bin.values, bin.width, bin.start
+        coordinates, dimension, bin.num_bins, bin.width, bin.start
     )
 
-    return _counts
+    if subdomain is not None:
+        _counts = _sum_process_bins(subdomain, _counts)
+
+    bin.update_values(_counts)
 
 
-def sum_masses(coordinates, dimension, bin, masses):
+def sum_masses(coordinates, dimension, bin, masses, subdomain=None):
     """
     Sums the number of atoms in a bin
 
@@ -181,7 +192,32 @@ def sum_masses(coordinates, dimension, bin, masses):
         masses (np array): atom masses
     """
     _masses = _bins._sum_masses(
-        coordinates, masses, dimension, bin.values, bin.width, bin.start
+        coordinates, masses, dimension, bin.num_bins, bin.width, bin.start
     )
 
+    if subdomain is not None:
+        _masses = _sum_process_bins(subdomain, _masses)
+
+    bin.update_values(_masses)
+
     return _masses
+
+
+def _sum_process_bins(subdomain, counts):
+    """
+    Sum the bins across all processes
+
+    Args:
+        subdomain (subdomain): A pmmoto subdomain
+        counts (np array): A numpy array of counts
+    """
+    _all_counts = communication.all_gather(counts)
+
+    # Sum contributions from all processes
+    for n_proc, proc_data in enumerate(_all_counts):
+        if subdomain.rank == n_proc:
+            continue
+
+        counts = counts + proc_data
+
+    return counts
