@@ -102,6 +102,7 @@ def initialize_atoms(
     atom_coordinates: np.ndarray,
     atom_radii: Dict[int, float],
     atoms_ids: np.ndarray,
+    atom_masses: Optional[Dict[int, float]] = None,
     by_type: bool = False,
     add_periodic: bool = False,
     set_own: bool = True,
@@ -135,8 +136,10 @@ def initialize_atoms(
     if not atoms_ids.flags["C_CONTIGUOUS"]:
         atoms_ids = np.ascontiguousarray(atoms_ids)
 
-    # Initialize particles with memory-efficient arrays
-    particles = _initialize_atoms(atom_coordinates, atom_radii, atoms_ids, by_type)
+    # Initialize particles
+    particles = _initialize_atoms(
+        atom_coordinates, atom_radii, atoms_ids, atom_masses, by_type
+    )
 
     # Apply operations in optimal order to minimize memory usage
     if trim_within:

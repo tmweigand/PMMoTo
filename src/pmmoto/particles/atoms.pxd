@@ -17,7 +17,8 @@ cdef extern from "atoms.hpp":
 		AtomList(
 			vector[vector[double]] coordinates,
 			double radii,
-			int label
+			int label,
+			double mass
 		) except +
 
 		vector[vector[double]] return_atoms(
@@ -57,6 +58,6 @@ cdef extern from "atoms.hpp":
 		)
 
 
-	cdef vector[double] atom_id_to_radius(
+	cdef vector[double] atom_id_to_values(
 		vector[int] atom_ids,
-    	unordered_map[int, double] radii)
+    	unordered_map[int, double] values)

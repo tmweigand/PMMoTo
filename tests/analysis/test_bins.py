@@ -245,29 +245,34 @@ def test_sum_membrane_mass_parallel():
         voxels=(10, 10, 10), box=box, rank=rank, subdomains=(2, 2, 2)
     )
 
-    print(np.unique(masses), np.unique(types))
-
     unique_types = np.unique(types)
     atom_radii = {}
+    atom_masses = {}
     for _type in unique_types:
         atom_radii[_type] = 1
+        atom_masses[_type] = 0.1
 
     membrane = pmmoto.particles.initialize_atoms(
-        sd, positions, atom_radii, types, by_type=False, trim_within=True
+        sd,
+        positions,
+        atom_radii,
+        types,
+        atom_masses=atom_masses,
+        by_type=False,
+        trim_within=True,
     )
 
-    mem_coordinate = membrane.return_np_array()
+    coords = membrane.return_coordinates()
+    masses = membrane.return_masses()
 
-    print(sd.rank, mem_coordinate.shape)
+    mass_counts = pmmoto.analysis.bins.sum_masses(
+        coordinates=coords, dimension=2, bin=bin, masses=masses
+    )
 
-    # mass_counts = pmmoto.analysis.bins.sum_masses(
-    #     coordinates=positions, dimension=2, bin=bin, masses=masses
-    # )
+    # Calculate bin volume
+    area = (box[0][1] - box[0][0]) * (box[1][1] - box[1][0])
 
-    # # Calculate bin volume
-    # area = (box[0, 1] - box[0, 0]) * (box[1, 1] - box[1, 0])
+    bin.calculate_volume(area=area)
+    mass_density = mass_counts / bin.volume
 
-    # bin.calculate_volume(area=area)
-    # mass_density = mass_counts / bin.volume
-
-    # np.testing.assert_approx_equal(np.sum(mass_counts), np.sum(masses))
+    np.testing.assert_approx_equal(np.sum(mass_counts), np.sum(masses))

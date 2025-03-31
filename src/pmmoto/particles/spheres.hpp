@@ -12,6 +12,7 @@ class Sphere : public Particle
 public:
     double radius;
     double radius_squared;
+    double mass = 0;
 
     Sphere(double x, double y, double z, double radius)
         : Particle(x, y, z), radius(radius), radius_squared(radius * radius)
@@ -132,6 +133,32 @@ public:
     size_t size() const
     {
         return spheres.size();
+    }
+
+    /**
+     * @brief Set masses
+     */
+    void set_masses(const std::vector<double>& masses)
+    {
+        for (size_t i = 0; i < spheres.size(); ++i)
+        {
+            spheres[i].mass = masses[i];
+        }
+    }
+
+    /**
+     * @brief Get masses
+     */
+    std::vector<double> get_masses() const
+    {
+        std::vector<double> masses;
+        masses.reserve(spheres.size());
+        for (size_t i = 0; i < spheres.size(); ++i)
+        {
+            masses.emplace_back(spheres[i].mass);
+        }
+
+        return masses;
     }
 
     /**
