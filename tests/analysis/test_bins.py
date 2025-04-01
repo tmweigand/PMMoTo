@@ -275,12 +275,23 @@ def test_sum_membrane_mass_parallel():
         [-287, 237],
     ]
 
+    atom_id_mass_map = {
+        1: 12.01,
+        3: 12.01,
+        4: 16,
+        5: 1.008,
+        7: 14.01,
+        8: 1.008,
+        12: 16,
+        14: 1.008,
+    }
+
     membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
     positions, types, masses, _ = pmmoto.io.data_read.py_read_lammps_atoms(
         membrane_file, include_mass=True
     )
 
-    num_positions = positions.shape[0]
+    all_masses = np.sum(masses)
 
     dimension = 2
     start = box[dimension][0]
@@ -293,11 +304,12 @@ def test_sum_membrane_mass_parallel():
     )
 
     unique_types = np.unique(types)
+    print(unique_types)
     atom_radii = {}
     atom_masses = {}
     for _type in unique_types:
         atom_radii[_type] = 1
-        atom_masses[_type] = 0.1
+        atom_masses[_type] = atom_id_mass_map[_type]
 
     membrane = pmmoto.particles.initialize_atoms(
         sd,
@@ -316,10 +328,4 @@ def test_sum_membrane_mass_parallel():
         coordinates=coords, dimension=2, bin=bin, masses=masses, subdomain=sd
     )
 
-    # Calculate bin volume
-    area = (box[0][1] - box[0][0]) * (box[1][1] - box[1][0])
-
-    bin.calculate_volume(area=area)
-    mass_density = bin.values / bin.volume
-
-    np.testing.assert_approx_equal(np.sum(bin.values), num_positions * 0.1)
+    np.testing.assert_approx_equal(np.sum(bin.values), all_masses)
