@@ -317,13 +317,18 @@ def _initialize_atoms_by_type(atom_coordinates, atom_radii, atom_ids, atom_masse
     _atom_coordinates = atom_coordinates
     _atom_ids = atom_ids
     _radii = atom_radii
-    _atom_masses = atom_masses
+
+    if atom_masses is not None:
+        _atom_masses = atom_masses
 
     cdef unordered_map[int,vector[vector[double]]] atom_groups = group_atoms_by_type(_atom_coordinates,_atom_ids)
 
     atom_lists = {}
     for label in labels:
-        atom_lists[label] = PyAtomList(atom_groups[label], _radii[label], label, _atom_masses[label])
+        if atom_masses is not None:
+            atom_lists[label] = PyAtomList(atom_groups[label], _radii[label], label, _atom_masses[label])
+        else:
+            atom_lists[label] = PyAtomList(atom_groups[label], _radii[label], label)
     
     return AtomMap(atom_lists,labels)
 

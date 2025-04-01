@@ -93,7 +93,8 @@ class Bin:
         if _sum == 0:
             rdf = np.zeros_like(self.values)
         else:
-            rdf = self.values / self.volume / _sum
+            # rdf = self.values / self.volume / _sum
+            rdf = self.values / (_sum * self.volume)
 
         return rdf
 

@@ -216,5 +216,3 @@ def test_atoms_with_masses():
     atoms = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=False
     )
-
-    print(atoms.return_masses())
