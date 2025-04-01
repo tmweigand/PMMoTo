@@ -98,6 +98,27 @@ class Bin:
 
         return rdf
 
+    def save_bin(self, subdomain, folder):
+        """
+        Save the bin
+        """
+        if subdomain.rank != 0:
+            return  # Only the root process saves the bins
+
+        # Create output directory if it doesn't exist
+        io_utils.check_file_path(folder)
+
+        # Stack the data into columns
+        data = np.column_stack((self.centers, self.values))
+
+        # Save with header
+        out_file = folder + f"bin_{self.name}.txt"
+        np.savetxt(
+            out_file,
+            data,
+            delimiter="\t",
+        )
+
 
 class Bins:
     """
@@ -200,8 +221,6 @@ def sum_masses(coordinates, dimension, bin, masses, subdomain=None):
         _masses = _sum_process_bins(subdomain, _masses)
 
     bin.update_values(_masses)
-
-    return _masses
 
 
 def _sum_process_bins(subdomain, counts):
