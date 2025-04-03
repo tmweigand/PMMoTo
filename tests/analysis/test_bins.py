@@ -206,7 +206,7 @@ def test_sum_masses():
         coordinates=coordinates, dimension=0, bin=bin, masses=masses
     )
 
-    assert np.sum(mass_counts) == 3 + 12.5 + 256  # Total mass of all atoms
+    assert np.sum(bin.values) == 3 + 12.5 + 256  # Total mass of all atoms
 
     bin = pmmoto.analysis.bins.Bin(start, end, num_bins)
 
