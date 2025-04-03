@@ -93,6 +93,13 @@ public:
     {
         own_spheres(subdomain);
     }
+
+    size_t get_atom_count()
+    {
+        auto own_atoms = get_own_count();
+        return own_atoms;
+        ;
+    }
 };
 
 /**

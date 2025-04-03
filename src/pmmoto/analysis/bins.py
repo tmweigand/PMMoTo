@@ -93,8 +93,7 @@ class Bin:
         if _sum == 0:
             rdf = np.zeros_like(self.values)
         else:
-            # rdf = self.values / self.volume / _sum
-            rdf = self.values / (_sum * self.volume)
+            rdf = self.values / (self.volume * _sum) * sphere_volume(self.end)
 
         return rdf
 
@@ -175,11 +174,8 @@ class Bins:
 
             # Save with header
             out_file = folder + f"bins_{bin.name}.txt"
-            np.savetxt(
-                out_file,
-                data,
-                delimiter="\t",
-            )
+            header = f"Atom Type: {bin.name} \nAtom Label: {label}"
+            np.savetxt(out_file, data, delimiter="\t", header=header)
 
 
 def count_locations(coordinates, dimension, bin, subdomain=None):

@@ -17,7 +17,7 @@ from libcpp.unordered_map cimport unordered_map
 from .spheres cimport SphereList
 from .particle_list cimport Box
 from .atoms cimport AtomList,atom_id_to_values,group_atoms_by_type
-
+from ..core import communication
 
 __all__ = ["_initialize_atoms","_initialize_spheres"]
 
@@ -58,7 +58,7 @@ class AtomMap():
 
         return np.concatenate(particle_list, axis=0)
 
-    def size(self):
+    def size(self, subdomain = None, global_size = True):
         """
         Add the periodic atoms for each atom type
         """
@@ -66,7 +66,40 @@ class AtomMap():
         for label in self.labels:
             atom_counts[label] = self.atom_map[label].size()
 
+        if global_size and subdomain:
+            all_atom_counts = communication.all_gather(atom_counts)
+
+            # Sum contributions from all processes
+            for n_proc, proc_data in enumerate(all_atom_counts):
+                if subdomain.rank == n_proc:
+                    continue
+
+                for label in proc_data:
+                    atom_counts[label] = atom_counts[label] + proc_data[label]
+
         return atom_counts
+
+    def get_own_count(self, subdomain = None, global_size = False):
+        """
+        Add the periodic atoms for each atom type
+        """
+        atom_counts = {}
+        for label in self.labels:
+            atom_counts[label] = self.atom_map[label].get_own_count()
+
+        if global_size and subdomain:
+            all_atom_counts = communication.all_gather(atom_counts)
+
+            # Sum contributions from all processes
+            for n_proc, proc_data in enumerate(all_atom_counts):
+                if subdomain.rank == n_proc:
+                    continue
+
+                for label in proc_data:
+                    atom_counts[label] = atom_counts[label] + proc_data[label]
+
+        return atom_counts
+
 
     def add_periodic(self,subdomain):
         """
@@ -133,6 +166,23 @@ cdef class PyAtomList:
     @property
     def radius(self):
         return self._atom_list.get().radius
+
+    def get_own_count(self, subdomain = None, global_size = False):
+        """
+        Count Own Atoms
+        """
+        atom_counts = self._atom_list.get().get_atom_count()
+        if global_size and subdomain:
+            all_atom_counts = communication.all_gather(atom_counts)
+
+            # Sum contributions from all processes
+            for n_proc, proc_data in enumerate(all_atom_counts):
+                if subdomain.rank == n_proc:
+                    continue
+                
+                atom_counts = atom_counts + proc_data
+
+        return atom_counts
 
     def size(self):
         return self._atom_list.get().size()
@@ -212,6 +262,9 @@ cdef class PySphereList:
 
     def size(self):
         return self._sphere_list.get().size()
+
+    def get_own_count(self):
+        return self._sphere_list.get().get_own_count()
 
     def build_KDtree(self):
         """

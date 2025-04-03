@@ -42,12 +42,21 @@ class RDF:
         """
         return np.interp(r, self.r_data, self.g_data)
 
-    def get_G(self, k_b=8.31446261815324, temp=300):
+    def get_G(self, k_b=0.0083144621, temp=300):
         """
         Galculate G(r)
         """
-        _sum = np.sum(self.g_data)
-        return -k_b * temp * np.log(self.g_data) / _sum
+        # _sum = np.sum(self.g_data)
+        return -k_b * temp * np.log(self.g_data)  # / _sum
+
+    def r_from_G(self, G, k_b=0.0083144621, temp=300):
+        """
+        Determine the radius given G.
+
+        """
+        _G = self.get_G(k_b, temp)
+        print(G)
+        return np.interp(G, _G, self.r_data)
 
 
 class Bounded_RDF(RDF):
@@ -72,7 +81,11 @@ class Bounded_RDF(RDF):
         """
         bounds = [0, len(g)]
         bounds[0] = self.find_min_r(g)
-        bounds[1] = self.find_max_r(1.1)
+        g_max = np.max(self.g_data)
+        if g_max < 1.0:
+            bounds[1] = np.argmax(g_max)
+        else:
+            bounds[1] = self.find_max_r(1.0)
 
         return bounds
 

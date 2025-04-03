@@ -99,6 +99,7 @@ class SphereList
 protected:
     std::vector<Sphere> spheres;
     ParticleList particle_list;
+    size_t own_count{ 0 };
 
 public:
     SphereList(const std::vector<std::vector<double> >& coordinates,
@@ -241,10 +242,21 @@ public:
      */
     void own_spheres(const Box& box)
     {
+        own_count = 0;
         for (auto& sphere : spheres)
         {
             sphere.own = sphere.inside_box(box);
+            if (sphere.own) own_count++;
         }
+    }
+
+    /**
+     * @brief Get the number of owned spheres
+     * @return Number of spheres owned by this process
+     */
+    size_t get_own_count() const
+    {
+        return own_count;
     }
 
     /**

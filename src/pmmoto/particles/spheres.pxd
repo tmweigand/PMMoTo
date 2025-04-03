@@ -23,6 +23,8 @@ cdef extern from "spheres.hpp":
 
 		size_t size()
 
+		size_t get_own_count()
+
 		void set_masses(vector[double] masses)
 
 		vector[double] get_masses()

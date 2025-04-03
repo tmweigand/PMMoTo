@@ -26,6 +26,8 @@ cdef extern from "atoms.hpp":
 			bool return_label
 		)
 
+		size_t get_atom_count()
+
 		size_t size()
 
 		void build_KDtree()

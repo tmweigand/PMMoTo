@@ -216,3 +216,40 @@ def test_atoms_with_masses():
     atoms = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=False
     )
+
+
+def test_count_own():
+    """
+    Test deletion of particle lists
+    """
+    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+
+    # No periodic spheres
+    atom_coordinates = np.array(
+        [
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [0.05, 0.5, 0.5],
+            [25, 0.5, 0.5],
+        ]
+    )
+    atom_ids = np.array([1, 15, 3, 15, 15], dtype=int)
+
+    atom_radii = {_id: 0.1 for _id in atom_ids}
+
+    atom_masses = {_id: 0.3 for _id in atom_ids}
+
+    atoms = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=False
+    )
+
+    assert atoms.get_own_count() == 4
+    assert atoms.size() == 5
+
+    atoms = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=True
+    )
+
+    assert atoms.size() == {1: 1, 3: 1, 15: 3}
+    assert atoms.get_own_count() == {1: 1, 3: 1, 15: 2}
