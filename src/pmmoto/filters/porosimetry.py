@@ -142,7 +142,7 @@ def pore_size_distribution(
         edt = porous_media.distance
         global_max_edt = utils.determine_maximum(edt)
         radii = get_sizes(
-            np.min(subdomain.domain.resolution) * 2, global_max_edt, 100, "linear"
+            np.min(subdomain.domain.resolution), global_max_edt, 50, "linear"
         )
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
@@ -164,7 +164,7 @@ def pore_size_distribution(
     if plot:
         _plot_pore_size_distribution(subdomain, porous_media, radii, img_results, plot)
 
-    return img_temp, img_results
+    return img_results
 
 
 def _plot_pore_size_distribution(

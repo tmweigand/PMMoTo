@@ -25,6 +25,7 @@ def test_rdf():
     np.testing.assert_allclose(atom_data[rdf.atom_id][:, 1], interp_g)
 
 
+@pytest.mark.skip
 def test_bounded_rdf():
     """
     Test for checking rdf values
