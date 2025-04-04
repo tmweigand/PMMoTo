@@ -29,9 +29,9 @@ class PorousMedia:
         """
         Calculate the porosity of porous media
         """
-        own_grid = utils.own_grid(self.img, self.subdomain.get_own_voxels())
+        own_img = utils.own_img(self.subdomain, self.img)
 
-        local_pore_voxels = np.count_nonzero(own_grid == 1)  # One is pore space
+        local_pore_voxels = np.count_nonzero(own_img == 1)  # One is pore space
 
         if self.subdomain.domain.num_subdomains > 1:
             global_pore_voxels = communication.all_reduce(local_pore_voxels)

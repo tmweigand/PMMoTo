@@ -95,3 +95,56 @@ def test_determine_max():
     global_max = pmmoto.core.utils.determine_maximum(img)
 
     assert global_max == 7
+
+
+def test_bin_image():
+    """
+    Test for counting occurrences of a value
+    """
+    N = 10
+    sd = pmmoto.initialize((N, N, N))
+    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+
+    counts = pmmoto.core.utils.bin_image(sd, img)
+
+    assert counts == {
+        0.0: 100,
+        1.0: 100,
+        2.0: 100,
+        3.0: 100,
+        4.0: 100,
+        5.0: 100,
+        6.0: 100,
+        7.0: 100,
+        8.0: 100,
+        9.0: 100,
+    }
+
+
+@pytest.mark.mpi(min_size=8)
+def test_bin_image_parallel():
+    """
+    Test for counting occurrences of a value
+    """
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    N = 10
+    sd = pmmoto.initialize((N, N, N), subdomains=(2, 2, 2), rank=rank)
+    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+
+    counts = pmmoto.core.utils.bin_image(sd, img, own=True)
+
+    assert counts == {0.0: 100, 1.0: 200, 2.0: 200, 3.0: 200, 4.0: 200, 5.0: 100}
+
+    counts = pmmoto.core.utils.bin_image(sd, img, own=False)
+
+    assert counts == {
+        0.0: 288,
+        1.0: 288,
+        2.0: 288,
+        3.0: 288,
+        4.0: 288,
+        5.0: 288,
+    }  # Counting buffer as well - so double counting

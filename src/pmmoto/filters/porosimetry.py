@@ -1,14 +1,20 @@
 """porosimetry.py"""
 
-from typing import Literal
+from typing import Literal, Dict
 import numpy as np
 import matplotlib.pyplot as plt
 from ..core import utils
+from ..io import io_utils
 from . import morphological_operators
 from . import distance
 from . import connected_components
 
-__all__ = ["get_sizes", "porosimetry", "pore_size_distribution"]
+__all__ = [
+    "get_sizes",
+    "porosimetry",
+    "pore_size_distribution",
+    "plot_pore_size_distribution",
+]
 
 
 def get_sizes(min_value, max_value, num_values, spacing="linear"):
@@ -128,16 +134,18 @@ def pore_size_distribution(
     radii=None,
     inlet=False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
-    plot: Literal["cdf", "pdf"] = None,
 ):
     """
     Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
     Calls porosimetry function with single size and returns img_results.
     """
-    if radii:
-        if not isinstance(radii, list):
+    if radii is not None:
+        if isinstance(radii, (int, float)):
             radii = [radii]
-        radii.sort(reverse=True)
+        elif isinstance(radii, list):
+            radii.sort(reverse=True)
+        elif isinstance(radii, np.ndarray):
+            radii = np.sort(radii)[::-1]
     else:
         edt = porous_media.distance
         global_max_edt = utils.determine_maximum(edt)
@@ -147,7 +155,6 @@ def pore_size_distribution(
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
     for radius in radii:
-
         img_temp = porosimetry(
             subdomain=subdomain,
             porous_media=porous_media,
@@ -161,53 +168,45 @@ def pore_size_distribution(
                 (img_results == 0) & (img_temp == 1), radius, img_results
             )
 
-    if plot:
-        _plot_pore_size_distribution(subdomain, porous_media, radii, img_results, plot)
-
     return img_results
 
 
-def _plot_pore_size_distribution(
-    subdomain, porous_media, radii, img, plot_type: Literal["cdf", "pdf"] = "cdf"
+def plot_pore_size_distribution(
+    file_name: str,
+    pore_size_counts: Dict[float, float],
+    plot_type: Literal["cdf", "pdf"] = "pdf",
 ):
     """
     Plots pore size distribution.
-
     plot_type: (string) choose between cumulative distribution function, or probability density function
     """
+    io_utils.check_file_path(file_name)
+    out_file = file_name + "pore_size_distribution.png"
 
-    # Will normalize by pore voxel count
-    pore_voxel_count = porous_media.porosity * np.prod(subdomain.domain.voxels)
+    radii = np.array(list(pore_size_counts.keys()))
+    counts = np.array(list(pore_size_counts.values()))
+    total_counts = np.sum(counts)
 
-    # Initialize pore size distributions
-    pore_size_counts = np.zeros(len(radii))
-    for i, radius in enumerate(radii):
-        matches = np.where(img == radius)
-        sum_matches = len(matches[0])
-        normalized_matches = sum_matches / pore_voxel_count
-        pore_size_counts[i] = normalized_matches
+    plt.figure(figsize=(8, 6))
+    plt.title("Pore Size Distribution")
+    plt.xlabel("Pore Size Radius")
 
-    if subdomain.rank == 0:
-        plt.figure(figsize=(8, 6))
-        plt.title("Pore Size Distribution")
-        plt.xlabel("Pore Size Radius")
-
-        if plot_type == "cdf":
-            # Cumulatively sum pore_size_counts for pore_size_cdf
-            pore_size_cdf = np.cumsum(pore_size_counts)
-            reversed_radii = radii[::-1]
-            plt.plot(
-                reversed_radii,
-                pore_size_cdf,
-                linestyle="-",
-                linewidth=2,
-                color="darkorchid",
-            )
-            plt.ylabel("Cumulative Distribution Function")
-            plt.savefig("pore_size_distribution_CDF.png")
-        else:
-            plt.plot(
-                radii, pore_size_counts, linestyle="-", linewidth=2, color="royalblue"
-            )
-            plt.ylabel("Probability Density Function")
-            plt.savefig("pore_size_distribution_PDF.png")
+    if plot_type == "cdf":
+        # Cumulatively sum pore_size_counts for pore_size_cdf
+        pore_size_cdf = np.cumsum(counts / total_counts)
+        reversed_radii = radii[::-1]
+        plt.plot(
+            reversed_radii,
+            pore_size_cdf,
+            linestyle="-",
+            linewidth=2,
+            color="darkorchid",
+        )
+        plt.ylabel("Cumulative Distribution Function")
+        plt.savefig(out_file)
+    else:
+        plt.plot(
+            radii, counts / total_counts, linestyle="-", linewidth=2, color="royalblue"
+        )
+        plt.ylabel("Probability Density Function")
+        plt.savefig(out_file)

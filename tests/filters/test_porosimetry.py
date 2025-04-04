@@ -207,9 +207,7 @@ def test_lammps_psd():
     )
 
     pm = pmmoto.domain_generation.gen_pm_atom_domain(sd, positions, radii, types)
-    img = pmmoto.filters.porosimetry.pore_size_distribution(
-        sd, pm, inlet=False, plot="pdf"
-    )
+    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=False)
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/membrane_binary_map",

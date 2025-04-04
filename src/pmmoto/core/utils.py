@@ -16,7 +16,14 @@ logging.basicConfig(
 )
 
 
-__all__ = ["phase_exists", "constant_pad_img", "unpad", "determine_maximum"]
+__all__ = [
+    "phase_exists",
+    "constant_pad_img",
+    "unpad",
+    "determine_maximum",
+    "bin_image",
+    "own_img",
+]
 
 
 def raise_error():
@@ -179,13 +186,14 @@ def constant_pad_img(img, pad, pad_value):
     return img
 
 
-def own_grid(grid, own):
+def own_img(subdomain, img):
     """
     Pass array with only nodes owned py that process
     """
-    grid_out = grid[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
+    own = subdomain.get_own_voxels()
+    img_out = img[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
 
-    return np.ascontiguousarray(grid_out)
+    return np.ascontiguousarray(img_out)
 
 
 def phase_exists(grid, phase):
@@ -212,6 +220,28 @@ def determine_maximum(img):
     proc_local_max = communication.all_gather(local_max)
 
     return np.amax(proc_local_max)
+
+
+def bin_image(subdomain, img, own=True):
+    """
+    This function counts the number of times each unique element occurs in the input array
+    """
+    if own:
+        _img = own_img(subdomain, img)
+    else:
+        _img = img
+
+    local_counts = np.unique(_img, return_counts=True)
+
+    global_counts = communication.all_gather(local_counts)
+    image_counts = {}
+    for proc_data in global_counts:
+        for element, count in zip(proc_data[0], proc_data[1]):
+            if element not in image_counts:
+                image_counts[element] = 0
+            image_counts[element] += count
+
+    return image_counts
 
 
 def global_grid(grid, index, local_grid):
