@@ -148,3 +148,24 @@ def test_bin_image_parallel():
         4.0: 288,
         5.0: 288,
     }  # Counting buffer as well - so double counting
+
+
+def test_check_img_for_solid():
+    """
+    Ensure solid-0 exists on image
+    """
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.zeros(sd.voxels)
+
+    pmmoto.core.utils.check_img_for_solid(sd, img)
+
+
+# @pytest.mark.xfail
+def test_check_img_for_solid_fail():
+    """
+    Ensure solid-0 exists on image
+    """
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.ones(sd.voxels)
+
+    pmmoto.core.utils.check_img_for_solid(sd, img)

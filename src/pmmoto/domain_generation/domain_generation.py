@@ -105,7 +105,7 @@ def gen_pm_spheres_domain(subdomain, spheres, kd=False):
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
-    utils.check_grid(subdomain, pm.img)
+    utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -122,7 +122,7 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.img)
+    utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -147,7 +147,7 @@ def gen_pm_atom_file(subdomain, lammps_file, atom_radii, add_periodic=False, kd=
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_grid(subdomain, pm.img)
+    utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -161,7 +161,7 @@ def gen_pm_inkbottle(subdomain):
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
     )
     pm = porousmedia.gen_pm(subdomain, _img)
-    utils.check_grid(subdomain, pm.img)
+    utils.check_img_for_solid(subdomain, pm.img)
     if subdomain.domain.num_subdomains > 1:
         pm.img = communication.update_buffer(subdomain, pm.img)
 

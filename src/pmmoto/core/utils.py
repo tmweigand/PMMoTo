@@ -1,19 +1,12 @@
 ### Core Utility Functions ###
 import sys
-import logging
 import numpy as np
-
-# from mpi4py import MPI
 from mpi4py import MPI
 from . import communication
 
-comm = MPI.COMM_WORLD
+# from .logging import logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+comm = MPI.COMM_WORLD
 
 
 __all__ = [
@@ -32,10 +25,10 @@ def raise_error():
     sys.exit()
 
 
-def check_grid(subdomain, grid):
+def check_img_for_solid(subdomain, img):
     """Ensure solid voxel on each subprocess"""
-    if np.sum(grid) == np.prod(subdomain.voxels):
-        logging.warning(
+    if np.sum(img) == np.prod(subdomain.voxels):
+        logger.warning(
             f"Many functions in pmmoto require at least 1 solid voxel in each subdomain. Process with rank: {subdomain.rank} is all pores."
         )
         raise_error()
