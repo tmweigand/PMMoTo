@@ -3,6 +3,7 @@ from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from . import porousmedia
 from . import multiphase
+from ..io import data_read
 from ..particles import particles
 from ..core import communication
 from ..core import utils
@@ -14,6 +15,7 @@ __all__ = [
     "gen_linear_img",
     "gen_pm_spheres_domain",
     "gen_pm_atom_domain",
+    "gen_pm_atom_file",
     "gen_pm_inkbottle",
     "gen_mp_constant",
     "gen_mp_from_grid",
@@ -114,6 +116,31 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
     """
     _atoms = particles.initialize_atoms(
         subdomain, atom_locations, atom_radii, atom_types
+    )
+
+    img = _domain_generation.gen_pm_atom(subdomain, _atoms, kd=False)
+    pm = porousmedia.gen_pm(subdomain, img)
+    pm.img = communication.update_buffer(subdomain, pm.img)
+
+    utils.check_grid(subdomain, pm.img)
+
+    return pm
+
+
+def gen_pm_atom_file(subdomain, lammps_file, atom_radii, add_periodic=False, kd=False):
+    """
+    Generate binary porous media (pm) domain from atom data, types and cutoff
+    """
+
+    positions, types, _, _ = data_read.read_lammps_atoms(lammps_file)
+
+    _atoms = particles.initialize_atoms(
+        subdomain=subdomain,
+        atom_coordinates=positions,
+        atom_radii=atom_radii,
+        atom_ids=types,
+        add_periodic=add_periodic,
+        trim_intersecting=True,
     )
 
     img = _domain_generation.gen_pm_atom(subdomain, _atoms, kd=False)

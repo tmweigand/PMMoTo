@@ -101,7 +101,7 @@ def initialize_atoms(
     subdomain,
     atom_coordinates: np.ndarray,
     atom_radii: Dict[int, float],
-    atoms_ids: np.ndarray,
+    atom_ids: np.ndarray,
     atom_masses: Optional[Dict[int, float]] = None,
     by_type: bool = False,
     add_periodic: bool = False,
@@ -133,12 +133,12 @@ def initialize_atoms(
     if isinstance(atom_radii, np.ndarray) and not atom_radii.flags["C_CONTIGUOUS"]:
         atom_radii = np.ascontiguousarray(atom_radii)
 
-    if not atoms_ids.flags["C_CONTIGUOUS"]:
-        atoms_ids = np.ascontiguousarray(atoms_ids)
+    if not atom_ids.flags["C_CONTIGUOUS"]:
+        atom_ids = np.ascontiguousarray(atom_ids)
 
     # Initialize particles
     particles = _initialize_atoms(
-        atom_coordinates, atom_radii, atoms_ids, atom_masses, by_type
+        atom_coordinates, atom_radii, atom_ids, atom_masses, by_type
     )
 
     # Apply operations in optimal order to minimize memory usage

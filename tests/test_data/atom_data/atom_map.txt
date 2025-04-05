@@ -1,2 +1,1 @@
-1 C BC1
-12 C COOH_C
+1 H BH1
