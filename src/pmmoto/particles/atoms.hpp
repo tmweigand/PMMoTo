@@ -34,18 +34,16 @@ public:
 
     double radius;
     int label;
-
-    // AtomList(ParticleList& atom_coordinates,
-    //          const double radius,
-    //          const int label = 0)
-    //     : SphereList(atom_coordinates, radius), radius(radius), label(label)
-    // {
-    // }
+    double mass = 0;
 
     AtomList(std::vector<std::vector<double> > atom_coordinates,
              const double radius,
-             const int label = 0)
-        : SphereList(atom_coordinates, radius), radius(radius), label(label)
+             const int label = 0,
+             const double mass = 0)
+        : SphereList(atom_coordinates, radius),
+          radius(radius),
+          label(label),
+          mass(mass)
     {
     }
 
@@ -95,6 +93,13 @@ public:
     {
         own_spheres(subdomain);
     }
+
+    size_t get_atom_count()
+    {
+        auto own_atoms = get_own_count();
+        return own_atoms;
+        ;
+    }
 };
 
 /**
@@ -127,16 +132,14 @@ group_atoms_by_type(const std::vector<std::vector<double> >& atom_coordinates,
 }
 
 /**
- * @brief Initializes a Atom Type - Coordinates and radius.
- * @return A unique pointer to the initialized (and possibly trimmed)
- * SphereList.
+ * @brief Determine the values based on atom type
  */
 std::vector<double>
-atom_id_to_radius(const std::vector<int>& atom_ids,
-                  const std::unordered_map<int, double>& radii)
+atom_id_to_values(const std::vector<int>& atom_ids,
+                  const std::unordered_map<int, double>& value)
 {
     // Create a vector to store radius values, same size as atom_ids
-    std::vector<double> _radii(atom_ids.size());
+    std::vector<double> _value(atom_ids.size());
 
     // Loop through the atom_ids and populate the radius_values vector
     for (size_t i = 0; i < atom_ids.size(); ++i)
@@ -144,20 +147,20 @@ atom_id_to_radius(const std::vector<int>& atom_ids,
         int atom_id = atom_ids[i];
 
         // Look up the radius corresponding to the atom_id
-        auto it = radii.find(atom_id);
-        if (it != radii.end())
+        auto it = value.find(atom_id);
+        if (it != value.end())
         {
-            _radii[i] = it->second;
+            _value[i] = it->second;
         }
         else
         {
             // Throw an exception if atom_id does not exist in the radii map
-            throw std::runtime_error("Radius for atom_id " +
+            throw std::runtime_error("Value for atom_id " +
                                      std::to_string(atom_id) + " not found.");
         }
     }
 
-    return _radii;
+    return _value;
 }
 
 #endif

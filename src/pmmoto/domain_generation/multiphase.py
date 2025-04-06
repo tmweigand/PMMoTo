@@ -34,8 +34,8 @@ class Multiphase:
         Returns:
             float: The volume fraction of the specified phase.
         """
-        local_grid = utils.own_grid(self.img, self.subdomain.get_own_voxels())
-        local_voxel_count = np.count_nonzero(local_grid == phase)
+        local_img = utils.own_img(self.subdomain, self.img)
+        local_voxel_count = np.count_nonzero(local_img == phase)
 
         total_voxel_count = (
             communication.all_reduce(local_voxel_count)

@@ -1,15 +1,13 @@
 """rdf.py"""
 
-from dataclasses import dataclass
-from typing import Dict, Any
 import numpy as np
-
-__all__ = ["generate_bins", "generate_rdf", "bin_distances"]
+import warnings
 
 from . import _rdf
-from ..particles import particles
 from ..particles import _particles
 from ..core import communication
+
+__all__ = ["generate_rdf", "bin_distances"]
 
 
 class RDF:
@@ -32,25 +30,27 @@ class RDF:
     a new interpolated function.
     """
 
-    def __init__(self, name, atom_id, r, g):
+    def __init__(self, name, atom_id, radii, rdf):
         self.name = name
         self.atom_id = atom_id
-        self.r_data = r
-        self.g_data = g
+        self.radii = radii
+        self.rdf = rdf
+        # self.rdf = self.rdf_from_counts(counts)
         self.bounds = None
 
-    def g(self, r):
+    def interpolate_rdf(self, radius):
         """
-        Given a r-value return g
+        Given a radius return the rdf
         """
-        return np.interp(r, self.r_data, self.g_data)
+        return np.interp(radius, self.radii, self.rdf)
 
-    def get_G(self, k_b=8.31446261815324, temp=300):
+    def potential_mean_force(self, k_b=0.0083144621, temp=300):
         """
-        Galculate G(r)
+        Potential mean force (pmf)
         """
-        _sum = np.sum(self.g_data)
-        return -k_b * temp * np.log(self.g_data) / _sum
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            return -k_b * temp * np.log(self.rdf)
 
 
 class Bounded_RDF(RDF):
@@ -63,120 +63,99 @@ class Bounded_RDF(RDF):
      r(g)
     """
 
-    def __init__(self, name, atom_id, r, g):
-        super().__init__(name, atom_id, r, g)
-        self.bounds = self.determine_bounds(r, g)
-        self.r_data, self.g_data = self.get_bounded_RDF_data(r, g, self.bounds)
+    def __init__(self, name, atom_id, radii, rdf, eps=0):
+        super().__init__(name, atom_id, radii, rdf)
+        self.bounds = self.determine_bounds(radii, rdf, eps)
+        self.radii, self.rdf = self.get_bounded_RDF_data(radii, rdf, self.bounds)
 
-    def determine_bounds(self, r, g):
+    @classmethod
+    def from_rdf(cls, rdf_instance: RDF, eps: float = 0) -> "Bounded_RDF":
+        """
+        Create a Bounded_RDF instance from an existing RDF instance.
+
+        Args:
+            rdf_instance: An instance of the RDF class
+            eps: Epsilon value for determining bounds (default: 0)
+
+        Returns:
+            A new Bounded_RDF instance with the same data but bounded
+
+        Example:
+            >>> rdf = RDF("H2O", 1, radii, rdf_data)
+            >>> bounded_rdf = Bounded_RDF.from_rdf(rdf)
+        """
+        return cls(
+            name=rdf_instance.name,
+            atom_id=rdf_instance.atom_id,
+            radii=rdf_instance.radii,
+            rdf=rdf_instance.rdf,
+            eps=eps,
+        )
+
+    def determine_bounds(self, radii, rdf, eps=0):
         """
         Get the the r values of the bounded RDF such that:
             g(r) > 0 : r : g(r) = 1
         """
-        bounds = [0, len(g)]
-        bounds[0] = self.find_min_r(g)
-        bounds[1] = self.find_max_r(1.1)
+        bounds = [0, len(rdf)]
+        bounds[0] = self.find_min_radius(rdf, eps)
+        g_max = np.max(rdf)
+        if g_max < 1.0:
+            bounds[1] = np.argmax(g_max)
+        else:
+            bounds[1] = self.find_max_radius(1.0)
 
         return bounds
 
-    def find_min_r(self, rdf_g_data):
+    def find_min_radius(self, rdf, eps=0):
         """
         Find the smallest r values from the RDF data such that:
-             min r where g(r) > 0
+             min r where g(r) > eps
         """
-        r_loc = np.where([rdf_g_data == 0])[1][-1]
+        r_loc = np.where(rdf < 1e-3)[0][-1]
 
         return r_loc
 
-    def find_max_r(self, g):
+    def find_max_radius(self, rdf):
         """
         Find the smallest r value from the RDF data such that:
           all g(r) values are non-zero after r
         """
-        find_r = g - self.g_data
+        find_r = rdf - self.rdf
         r_loc = np.where([find_r < 0])[1][0]
 
         return r_loc
 
-    def get_bounded_RDF_data(self, r, g, bounds):
+    def get_bounded_RDF_data(self, radii, rdf, bounds):
         """
         Set the bounds of the radial distribution function
         """
-        r_out = r[bounds[0] : bounds[1]]
-        g_out = g[bounds[0] : bounds[1]]
+        r_out = radii[bounds[0] : bounds[1]]
+        rdf_out = rdf[bounds[0] : bounds[1]]
 
-        return r_out, g_out
+        return r_out, rdf_out
 
-    def r(self, g):
+    def interpolate_radius_from_pmf(self, pmf_in):
         """
-        Given a g-value return r
-        Note! This only works for bounded RDFs
+        Determine the radius given G.
+
         """
-        return np.interp(g, self.g_data, self.r_data)
+        pmf = self.potential_mean_force()
+
+        if pmf_in < min(pmf) or pmf_in > max(pmf):
+            print("pmf_in is out of bounds. Interpolation will return boundary values.")
+
+        sorted_pmf, sorted_radii = zip(*sorted(zip(pmf, self.radii)))
+
+        return np.interp(pmf_in, sorted_pmf, sorted_radii)
 
 
-@dataclass
-class RDFBins:
-    """Container for RDF binning data"""
-
-    rdf_bins: Dict[int, np.ndarray]
-    bin_widths: Dict[int, float]
-    bin_centers: Dict[int, np.ndarray]
-    shell_volumes: Dict[int, np.ndarray]
-
-
-def sphere_volume(radius):
-    return (4.0 / 3.0) * np.pi * radius * radius * radius
-
-
-def generate_bins(radii, num_bins):
-    """
-    Generate the bins, bin widths and shell volumes for RDF calculation
-
-    Args:
-        atoms: AtomMap object containing atom lists
-        num_bins: Number of bins for the RDF histogram
-
-    Returns:
-        RDFBins: Dataclass containing binning information:
-            - rdf_bins: Dictionary of zero-initialized bins for each atom type
-            - bin_widths: Dictionary of bin widths for each atom type
-            - bin_centers: Dictionary of bin center positions
-            - shell_volumes: Dictionary of shell volumes for normalization
-    """
-    bins_data = RDFBins(rdf_bins={}, bin_widths={}, bin_centers={}, shell_volumes={})
-
-    for label, radius in radii.items():
-        # Initialize RDF bins
-
-        bins_data.rdf_bins[label] = np.zeros(num_bins)
-
-        # Calculate bin width based on radius
-        bins_data.bin_widths[label] = radius / num_bins
-
-        # Calculate bin centers
-        bins_data.bin_centers[label] = np.linspace(
-            bins_data.bin_widths[label] / 2,
-            bins_data.bin_widths[label] / 2 + radius,
-            num_bins,
-        )
-
-        # Calculate shell volumes
-        bins_data.shell_volumes[label] = sphere_volume(
-            bins_data.bin_centers[label] + bins_data.bin_widths[label] / 2
-        ) - sphere_volume(
-            bins_data.bin_centers[label] - bins_data.bin_widths[label] / 2
-        )
-
-    return bins_data
-
-
-def generate_rdf(binned_distances, bins):
+def generate_rdf(bins, binned_distances):
     """
     Generate an rdf from binned distances
     """
     rdf = {}
-    for label, binned in binned_distances.rdf_bins.items():
+    for label, binned in binned_distances.items():
         _sum = np.sum(binned)
         if _sum == 0:
             rdf[label] = binned
@@ -212,14 +191,14 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
         # Ensure kd_tree built
         atom_list.build_KDtree()
 
-        binned_distance[label] = np.zeros_like(bins.rdf_bins[label])
+        binned_distance[label] = np.zeros_like(bins.bins[label].values)
 
         binned_distance[label] = _rdf._generate_rdf(
             probe_atom_list,
             atom_list,
             atom_list.radius,
             binned_distance[label],
-            bins.bin_widths[label],
+            bins.bins[label].width,
         )
 
     all_rdf = communication.all_gather(binned_distance)
@@ -232,7 +211,4 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
         for label in proc_data:
             binned_distance[label] = binned_distance[label] + proc_data[label]
 
-    for label, binned in binned_distance.items():
-        bins.rdf_bins[label] += binned
-
-    return bins
+    bins.update_bins(binned_distance)

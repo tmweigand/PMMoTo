@@ -18,7 +18,7 @@ def test_domain_generation_sphere_pack():
     sd = pmmoto.initialize(voxels, verlet_domains=[1, 1, 1])
 
     start_time = time.perf_counter()
-    img = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
     end_time = time.perf_counter()
     runtime = end_time - start_time
     print(f"Execution time: {runtime:.6f} seconds")
@@ -41,7 +41,7 @@ def test_domain_generation_sphere_pack_verlet():
         sd = pmmoto.initialize(voxels, verlet_domains=[n, n, n])
 
         start_time = time.perf_counter()
-        img = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
+        pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
         end_time = time.perf_counter()
         runtime = end_time - start_time
         print(f"Execution time: {runtime:.6f} seconds for {n} Verlet domain")
@@ -54,28 +54,13 @@ def test_domain_generation_sphere_pack_kd():
     num_spheres = 50000
     spheres = np.random.rand(num_spheres, 4)
     spheres[:, 3] = spheres[:, 3] * 0.0001
-    voxels = (300, 300, 300)
 
-    for n in range(1, 25):
-        sd = pmmoto.initialize(voxels, verlet_domains=[n, n, n])
+    sd = pmmoto.initialize(voxels=(300, 300, 300))
 
-        start_time = time.perf_counter()
-        pmmoto.domain_generation._domain_generation.gen_pm_sphere(sd, spheres, kd=True)
-        end_time = time.perf_counter()
-        runtime = end_time - start_time
+    start_time = time.perf_counter()
+    pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, kd=True)
 
-        print(
-            f"Execution time for kd: {runtime:.6f} seconds with {n,n,n} Verlet domains"
-        )
-
-    for n in range(20, 25):
-        sd = pmmoto.initialize(voxels, verlet_domains=[n, n, n])
-
-        start_time = time.perf_counter()
-        img = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
-        end_time = time.perf_counter()
-        runtime = end_time - start_time
-        print(f"Execution time: {runtime:.6f} seconds for {n,n,n} Verlet domains")
+    print(f"Execution time for kd: {(time.perf_counter() - start_time):.6f} seconds")
 
 
 if __name__ == "__main__":

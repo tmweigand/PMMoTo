@@ -23,6 +23,14 @@ cdef extern from "spheres.hpp":
 
 		size_t size()
 
+		size_t get_own_count()
+
+		void set_masses(vector[double] masses)
+
+		vector[double] get_masses()
+
+		vector[vector[double]] get_coordinates()
+
 		vector[vector[double]] return_spheres(
 			bool return_own,
 		)

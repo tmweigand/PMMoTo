@@ -1,29 +1,38 @@
 ### Core Utility Functions ###
 import sys
 import numpy as np
-
-# from mpi4py import MPI
 from mpi4py import MPI
+from .logging import get_logger
+from . import communication
+
 
 comm = MPI.COMM_WORLD
+logger = get_logger()
 
 
-__all__ = ["phase_exists", "constant_pad_img", "unpad"]
+__all__ = [
+    "phase_exists",
+    "constant_pad_img",
+    "unpad",
+    "determine_maximum",
+    "bin_image",
+    "own_img",
+]
 
 
 def raise_error():
-    """Exit gracefuully."""
+    """Exit gracefully."""
     MPI.Finalize()
     sys.exit()
 
 
-def check_grid(subdomain, grid):
-    """Esure solid voxel on each subprocess"""
-    if np.sum(grid) == np.prod(subdomain.voxels):
-        print(
-            "This code requires at least 1 solid voxel in each subdomain. Please reorder processors!"
+def check_img_for_solid(subdomain, img):
+    """Ensure solid voxel on each subprocess"""
+    if np.sum(img) == np.prod(subdomain.voxels):
+        logger.warning(
+            "Many functions in pmmoto require at least 1 solid voxel in each subdomain. Process with rank: %i is all pores."
+            % subdomain.rank
         )
-        raise_error()
 
 
 def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
@@ -43,7 +52,7 @@ def check_input_nodes(nodes):
     for n in nodes:
         if n <= 0:
             error = True
-            print("Error: Nodes must be positive integer!")
+            logger.error("Nodes must be positive integer!")
 
     if error:
         raise_error()
@@ -57,13 +66,13 @@ def check_subdomain_size(mpi_size, subdomains):
     for n in subdomains:
         if n <= 0:
             error = True
-            print("Error: Number of Subdomains must be positive integer!")
+            logger.error("Number of Subdomains must be positive integer!")
 
     num_subdomains = np.prod(subdomains)
 
     if mpi_size != num_subdomains:
         error = True
-        print("Error: Number of MPI processes must equal number of subdomains!")
+        logger.error("Number of MPI processes must equal number of subdomains!")
 
     if error:
         raise_error()
@@ -78,8 +87,8 @@ def check_boundaries(boundaries):
         for n in d:
             if n < 0 or n > 2:
                 error = True
-                print(
-                    "Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic"
+                logger.error(
+                    "Allowable Boundary IDs are (0) None (1) Walls (2) Periodic"
                 )
     if error:
         raise_error()
@@ -99,10 +108,10 @@ def check_inlet_outlet(boundaries, inlet, outlet):
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
-                    print("Error: Boundary must be type (0) None at Inlet")
+                    logger.error("Boundary must be type (0) None at Inlet")
     if n_sum > 1:
         error = True
-        print("Error: Only 1 Inlet Allowed")
+        logger.error("Only 1 Inlet Allowed")
 
     # Outlet
     n_sum = 0
@@ -112,10 +121,10 @@ def check_inlet_outlet(boundaries, inlet, outlet):
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
-                    print("Error: Boundary must be type (0) None at Outlet")
+                    logger.error("Boundary must be type (0) None at Outlet")
     if n_sum > 1:
         error = True
-        print("Error: Only 1 Outlet Allowed")
+        logger.error("Only 1 Outlet Allowed")
 
     if error:
         raise_error()
@@ -171,13 +180,14 @@ def constant_pad_img(img, pad, pad_value):
     return img
 
 
-def own_grid(grid, own):
+def own_img(subdomain, img):
     """
     Pass array with only nodes owned py that process
     """
-    grid_out = grid[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
+    own = subdomain.get_own_voxels()
+    img_out = img[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
 
-    return np.ascontiguousarray(grid_out)
+    return np.ascontiguousarray(img_out)
 
 
 def phase_exists(grid, phase):
@@ -193,6 +203,39 @@ def phase_exists(grid, phase):
         phase_exists = True
 
     return phase_exists
+
+
+def determine_maximum(img):
+    """
+    Determine the global maximum of an input image
+    """
+    local_max = np.amax(img)
+
+    proc_local_max = communication.all_gather(local_max)
+
+    return np.amax(proc_local_max)
+
+
+def bin_image(subdomain, img, own=True):
+    """
+    This function counts the number of times each unique element occurs in the input array
+    """
+    if own:
+        _img = own_img(subdomain, img)
+    else:
+        _img = img
+
+    local_counts = np.unique(_img, return_counts=True)
+
+    global_counts = communication.all_gather(local_counts)
+    image_counts = {}
+    for proc_data in global_counts:
+        for element, count in zip(proc_data[0], proc_data[1]):
+            if element not in image_counts:
+                image_counts[element] = 0
+            image_counts[element] += count
+
+    return image_counts
 
 
 def global_grid(grid, index, local_grid):

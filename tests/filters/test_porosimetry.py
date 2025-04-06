@@ -3,6 +3,7 @@
 import pytest
 import pmmoto
 import numpy as np
+from mpi4py import MPI
 
 
 def test_porosimetry_sizes():
@@ -154,4 +155,63 @@ def test_porosimetry_inlet():
             "morph_no_inlet": morph_no_inlet,
             "morph_inlet": morph_inlet,
         },
+    )
+
+
+def test_pore_size_distribution():
+    """
+    Test generation of pore size distribution for an inkbottle
+    """
+    voxels = (560, 120, 120)
+    box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
+    inlet = ((0, 1), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels, box, inlet=inlet)
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
+    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=True)
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/inkbottle_ps_distribution",
+        sd,
+        pm.img,
+        additional_img={"psd": img, "edt": pm.distance},
+    )
+
+
+@pytest.mark.skip
+def test_lammps_psd():
+    """
+    Test for reading membrane files for psd.
+    """
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    lammps_file = "tests/test_data/LAMMPS/membranedata.gz"
+
+    positions, types, box, time = pmmoto.io.data_read.read_lammps_atoms(lammps_file)
+
+    unique_types = np.unique(types)
+    radii = {}
+    for _id in unique_types:
+        radii[_id] = 2
+
+    # ignore reservoirs
+    box[2] = [-100, 100]
+
+    sd = pmmoto.initialize(
+        voxels=(500, 500, 500),
+        box=box,
+        rank=rank,
+        subdomains=(2, 2, 2),
+        boundary_types=((2, 2), (2, 2), (2, 2)),
+        verlet_domains=[20, 20, 20],
+    )
+
+    pm = pmmoto.domain_generation.gen_pm_atom_domain(sd, positions, radii, types)
+    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=False)
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/membrane_binary_map",
+        sd,
+        pm.img,
+        additional_img={"psd": img},
     )

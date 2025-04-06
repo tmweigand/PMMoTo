@@ -12,6 +12,7 @@ class Sphere : public Particle
 public:
     double radius;
     double radius_squared;
+    double mass = 0;
 
     Sphere(double x, double y, double z, double radius)
         : Particle(x, y, z), radius(radius), radius_squared(radius * radius)
@@ -82,7 +83,7 @@ public:
     /**
      * @brief Print sphere coordinates and radius
      */
-    void print()
+    void print() const
     {
         std::cout << coordinates[0] << " " << coordinates[1] << " "
                   << coordinates[2] << " " << radius << std::endl;
@@ -98,6 +99,7 @@ class SphereList
 protected:
     std::vector<Sphere> spheres;
     ParticleList particle_list;
+    size_t own_count{ 0 };
 
 public:
     SphereList(const std::vector<std::vector<double> >& coordinates,
@@ -132,6 +134,32 @@ public:
     size_t size() const
     {
         return spheres.size();
+    }
+
+    /**
+     * @brief Set masses
+     */
+    void set_masses(const std::vector<double>& masses)
+    {
+        for (size_t i = 0; i < spheres.size(); ++i)
+        {
+            spheres[i].mass = masses[i];
+        }
+    }
+
+    /**
+     * @brief Get masses
+     */
+    std::vector<double> get_masses() const
+    {
+        std::vector<double> masses;
+        masses.reserve(spheres.size());
+        for (size_t i = 0; i < spheres.size(); ++i)
+        {
+            masses.emplace_back(spheres[i].mass);
+        }
+
+        return masses;
     }
 
     /**
@@ -214,10 +242,21 @@ public:
      */
     void own_spheres(const Box& box)
     {
+        own_count = 0;
         for (auto& sphere : spheres)
         {
             sphere.own = sphere.inside_box(box);
+            if (sphere.own) own_count++;
         }
+    }
+
+    /**
+     * @brief Get the number of owned spheres
+     * @return Number of spheres owned by this process
+     */
+    size_t get_own_count() const
+    {
+        return own_count;
     }
 
     /**
@@ -229,11 +268,10 @@ public:
     std::vector<size_t> find_intersecting_sphere_indices(const Box& box) const
     {
         std::vector<size_t> indices;
-        indices.reserve(spheres.size());
 
         for (size_t i = 0; i < spheres.size(); ++i)
         {
-            const auto& sphere = spheres[i];
+            const Sphere& sphere = spheres[i];
             if (sphere.intersects_box(sphere.coordinates, sphere.radius, box))
             {
                 indices.push_back(i);

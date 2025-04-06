@@ -209,44 +209,37 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
 
 def send_recv(rank, data_per_process):
     """
-    Performs non-blocking sends and blocking receives for inter-process communication.
-
-    This function uses MPI to send data to and receive data from other processes.
-    Each process sends data to all other processes except itself, using non-blocking
-    sends (`isend`). It receives data from all other processes using blocking receives
-    (`recv`). After initiating all non-blocking sends, it waits for all sends to complete.
-
-    @param rank The rank of the current process.
-    @param data_per_process A dictionary where keys represent process ranks, and values
-                            are the data to be sent to the respective processes.
-                            The rank key's value is ignored as a process does not send
-                            data to itself.
-
-    @return A dictionary where keys represent the ranks of processes that sent data to
-            the current process, and values are the received data.
+    Performs non-blocking sends and receives for inter-process communication.
+    Uses a two-phase communication pattern to avoid deadlocks.
     """
-
-    send_request = {}
+    send_requests = {}
     receive_data = {}
 
+    # First phase: Post all sends
     for n_proc in data_per_process:
         if n_proc != rank:
             try:
-                send_request[n_proc] = comm.isend(
-                    data_per_process[n_proc],
-                    dest=n_proc,
-                )
-
-                receive_data[n_proc] = comm.recv(
-                    source=n_proc,
+                send_requests[n_proc] = comm.isend(
+                    data_per_process[n_proc], dest=n_proc
                 )
             except Exception as e:
-                print(f"Error initiating communication with process {n_proc}: {e}")
+                print(f"Error sending to process {n_proc}: {e}")
+                raise
+
+    # Second phase: Receive from all processes
+    for n_proc in data_per_process:
+        if n_proc != rank:
+            try:
+                receive_data[n_proc] = comm.recv(source=n_proc)
+            except Exception as e:
+                print(f"Error receiving from process {n_proc}: {e}")
+                raise
 
     # Wait for all sends to complete
     try:
-        MPI.Request.waitall(list(send_request.values()))
+        MPI.Request.waitall(list(send_requests.values()))
     except Exception as e:
         print(f"Error completing send requests: {e}")
+        raise
 
     return receive_data

@@ -61,3 +61,16 @@ class Domain:
                 if n_bound == 2:
                     periodic = True
         return periodic
+
+    def get_origin(self) -> tuple[float, ...]:
+        """
+        Determine the domain origin from box
+
+        Returns:
+            tuple[float,...]: Domain origin
+        """
+        origin = [0, 0, 0]
+        for n, box_dim in enumerate(self.box):
+            origin[n] = box_dim[0]
+
+        return tuple(origin)

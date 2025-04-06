@@ -5,6 +5,8 @@ import gzip
 import numpy as np
 
 from . import io_utils
+from ..domain_generation import rdf
+from ..analysis import bins
 
 __all__ = [
     "read_sphere_pack_xyzr_domain",
@@ -13,6 +15,7 @@ __all__ = [
     "read_lammps_atoms",
     "read_atom_map",
     "read_rdf",
+    "read_binned_distances_rdf",
 ]
 
 
@@ -86,7 +89,7 @@ def read_r_lookup_file(input_file, power=1):
     return sigma
 
 
-def py_read_lammps_atoms(input_file):
+def py_read_lammps_atoms(input_file, include_mass=False):
     """
     Read position of atoms from LAMMPS file
     atom_map must sync with LAMMPS ID
@@ -111,6 +114,8 @@ def py_read_lammps_atoms(input_file):
             num_objects = int(line)
             atom_position = np.zeros([num_objects, 3], dtype=np.double)
             atom_type = np.zeros(num_objects, dtype=int)
+            if include_mass:
+                masses = np.zeros(num_objects, dtype=float)
         elif 5 <= n_line <= 7:
             domain_data[n_line - 5, 0] = float(line.split(" ")[0])
             domain_data[n_line - 5, 1] = float(line.split(" ")[1])
@@ -126,6 +131,9 @@ def py_read_lammps_atoms(input_file):
             else:
                 charges[type] = [charge]
 
+            if include_mass:
+                masses[count_atom] = float(split[3])
+
             for count, n in enumerate([5, 6, 7]):
                 atom_position[count_atom, count] = float(split[n])  # x,y,z,atom_id
 
@@ -133,7 +141,10 @@ def py_read_lammps_atoms(input_file):
 
     domain_file.close()
 
-    return atom_position, atom_type, domain_data
+    if include_mass:
+        return atom_position, atom_type, masses, domain_data
+    else:
+        return atom_position, atom_type, domain_data
 
 
 def read_lammps_atoms(input_file, type_map=None):
@@ -152,11 +163,32 @@ def read_lammps_atoms(input_file, type_map=None):
     return positions, types, domain, timestep
 
 
+def read_atom_map(input_file):
+    """
+    Read in the atom mapping file which has the following format:
+        atom_id, element_name, atom_name
+    """
+    # Check input file and proceed of exists
+    io_utils.check_file(input_file)
+
+    atom_file = open(input_file, "r", encoding="utf-8")
+    atom_data = {}
+
+    lines = atom_file.readlines()
+    for line in lines:
+        split = line.split(" ")
+        element = split[1]
+        atom_name = split[2].split("\n")[0]
+        atom_data[int(split[0])] = {"element": element, "name": atom_name}
+
+    return atom_data
+
+
 def read_rdf(input_folder):
     """
     Read input folder containing radial distribution function data of the form
 
-        radial distance, g(r), coordination number(r)
+        radial distance, rdf(r)
 
     Folder must contain file called `atom_map.txt`
     Files for all listed atoms of name 'atom_name'.rdf
@@ -172,31 +204,59 @@ def read_rdf(input_folder):
     atom_map = read_atom_map(atom_map_file)
 
     # Check rdf files found for all atoms
-    atom_data = {}
-    for label, name in atom_map.items():
-        atom_file = input_folder + name + ".rdf"
+    rdf_out = {}
+    for _id, atom_info in atom_map.items():
+        atom_file = input_folder + atom_info["name"] + ".rdf"
         io_utils.check_file(atom_file)
         data = np.genfromtxt(atom_file)
-        atom_data[label] = data
+        rdf_out[_id] = rdf.RDF(
+            name=atom_info["name"],
+            atom_id=_id,
+            radii=data[:, 0],
+            rdf=data[:, 1],
+        )
 
-    return atom_map, atom_data
+    return atom_map, rdf_out
 
 
-def read_atom_map(input_file):
+def read_binned_distances_rdf(input_folder):
     """
-    Read in the atom mapping file which has the following format:
-        atom_id atom_name
+    Read input folder containing radial distribution function data of the form
+
+        radial distance, rdf(r)
+
+    Folder must contain file called `atom_map.txt`
+    Files for all listed atoms of name 'atom_name'.rdf
     """
-    # Check input file and proceed of exists
-    io_utils.check_file(input_file)
 
-    atom_file = open(input_file, "r", encoding="utf-8")
-    atom_data = {}
+    # Check folder exists
+    io_utils.check_folder(input_folder)
 
-    lines = atom_file.readlines()
-    for line in lines:
-        split = line.split(" ")
-        label = split[1].split("\n")[0]
-        atom_data[int(split[0])] = label
+    # Check for atom_map.txt
+    atom_map_file = input_folder + "atom_map.txt"
+    io_utils.check_file(atom_map_file)
 
-    return atom_data
+    atom_map = read_atom_map(atom_map_file)
+
+    # Check rdf files found for all atoms
+    rdf_out = {}
+    for _id, atom_info in atom_map.items():
+        atom_file = input_folder + atom_info["name"] + ".rdf"
+        io_utils.check_file(atom_file)
+        _bins, binned_distances = np.genfromtxt(atom_file, skip_header=0, unpack=True)
+
+        bin = bins.Bin(
+            start=_bins[0],
+            end=_bins[-1],
+            num_bins=len(_bins),
+            name=atom_info["name"],
+            values=binned_distances,
+        )
+        rdf_out[_id] = rdf.RDF(
+            name=atom_info["name"],
+            atom_id=_id,
+            radii=_bins,
+            rdf=bin.generate_rdf(),
+        )
+
+    return atom_map, rdf_out
