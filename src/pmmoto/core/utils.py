@@ -2,11 +2,12 @@
 import sys
 import numpy as np
 from mpi4py import MPI
+from .logging import get_logger
 from . import communication
 
-# from .logging import logger
 
 comm = MPI.COMM_WORLD
+logger = get_logger()
 
 
 __all__ = [
@@ -29,9 +30,9 @@ def check_img_for_solid(subdomain, img):
     """Ensure solid voxel on each subprocess"""
     if np.sum(img) == np.prod(subdomain.voxels):
         logger.warning(
-            f"Many functions in pmmoto require at least 1 solid voxel in each subdomain. Process with rank: {subdomain.rank} is all pores."
+            "Many functions in pmmoto require at least 1 solid voxel in each subdomain. Process with rank: %i is all pores."
+            % subdomain.rank
         )
-        raise_error()
 
 
 def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
@@ -51,7 +52,7 @@ def check_input_nodes(nodes):
     for n in nodes:
         if n <= 0:
             error = True
-            print("Error: Nodes must be positive integer!")
+            logger.error("Nodes must be positive integer!")
 
     if error:
         raise_error()
@@ -65,13 +66,13 @@ def check_subdomain_size(mpi_size, subdomains):
     for n in subdomains:
         if n <= 0:
             error = True
-            print("Error: Number of Subdomains must be positive integer!")
+            logger.error("Number of Subdomains must be positive integer!")
 
     num_subdomains = np.prod(subdomains)
 
     if mpi_size != num_subdomains:
         error = True
-        print("Error: Number of MPI processes must equal number of subdomains!")
+        logger.error("Number of MPI processes must equal number of subdomains!")
 
     if error:
         raise_error()
@@ -86,8 +87,8 @@ def check_boundaries(boundaries):
         for n in d:
             if n < 0 or n > 2:
                 error = True
-                print(
-                    "Error: Allowable Boundary IDs are (0) None (1) Walls (2) Periodic"
+                logger.error(
+                    "Allowable Boundary IDs are (0) None (1) Walls (2) Periodic"
                 )
     if error:
         raise_error()
@@ -107,10 +108,10 @@ def check_inlet_outlet(boundaries, inlet, outlet):
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
-                    print("Error: Boundary must be type (0) None at Inlet")
+                    logger.error("Boundary must be type (0) None at Inlet")
     if n_sum > 1:
         error = True
-        print("Error: Only 1 Inlet Allowed")
+        logger.error("Only 1 Inlet Allowed")
 
     # Outlet
     n_sum = 0
@@ -120,10 +121,10 @@ def check_inlet_outlet(boundaries, inlet, outlet):
                 n_sum = n_sum + 1
                 if n_bound != 0:
                     error = True
-                    print("Error: Boundary must be type (0) None at Outlet")
+                    logger.error("Boundary must be type (0) None at Outlet")
     if n_sum > 1:
         error = True
-        print("Error: Only 1 Outlet Allowed")
+        logger.error("Only 1 Outlet Allowed")
 
     if error:
         raise_error()

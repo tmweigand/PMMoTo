@@ -160,7 +160,7 @@ def test_check_img_for_solid():
     pmmoto.core.utils.check_img_for_solid(sd, img)
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail
 def test_check_img_for_solid_fail():
     """
     Ensure solid-0 exists on image

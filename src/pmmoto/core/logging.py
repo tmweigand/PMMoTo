@@ -73,5 +73,13 @@ def setup_logger(name="pmmoto", log_dir="logs"):
     return logger
 
 
-# Initialize the logger and make it accessible
-# logger = setup_logger()
+# Add a module-level logger instance
+_logger = None
+
+
+def get_logger():
+    """Get or create the logger instance"""
+    global _logger
+    if _logger is None:
+        _logger = setup_logger()
+    return _logger
