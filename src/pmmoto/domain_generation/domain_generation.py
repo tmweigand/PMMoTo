@@ -127,12 +127,16 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
     return pm
 
 
-def gen_pm_atom_file(subdomain, lammps_file, atom_radii, add_periodic=False, kd=False):
+def gen_pm_atom_file(
+    subdomain, lammps_file, atom_radii, type_map=None, add_periodic=False, kd=False
+):
     """
     Generate binary porous media (pm) domain from atom data, types and cutoff
     """
 
-    positions, types, _, _ = data_read.read_lammps_atoms(lammps_file)
+    positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
+
+    print(np.unique(types))
 
     _atoms = particles.initialize_atoms(
         subdomain=subdomain,

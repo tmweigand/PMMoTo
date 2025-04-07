@@ -179,3 +179,14 @@ def test_walls():
     assert not np.all(img[:, -2, :] == 0)
     assert not np.all(img[:, :, 1] == 0)
     assert not np.all(img[:, :, -2] == 0)
+
+
+def test_get_img_index():
+    """
+    Ensure the correct index is provided given physical coordinates
+    """
+    sd = pmmoto.initialize((10, 10, 10))
+
+    assert sd.get_img_index((0.5, 0.5, 0.5)) == (5, 5, 5)
+    assert sd.get_img_index((0.49, 0.49, 0.49)) == (4, 4, 4)
+    assert sd.get_img_index((0.01, 0.99, 0.33)) == (0, 9, 3)

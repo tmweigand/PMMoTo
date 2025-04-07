@@ -1,5 +1,6 @@
 import numpy as np
 from mpi4py import MPI
+import xml.etree.ElementTree as ET
 
 
 from ..core import subdomain_padded
@@ -49,6 +50,64 @@ def save_particle_data(file_name: str, subdomain, particles, **kwargs):
         np.ascontiguousarray(particles[:, 2]),
         data=data,
     )
+
+    # Rank 0 creates the .pvtp file
+    comm.barrier()
+    if subdomain.rank == 0:
+        create_pvtu_file(file_name, subdomain)
+
+
+def create_pvtu_file(file_name: str, subdomain):
+    """
+    Create a .pvtu file that groups all .vtu files.
+    """
+    comm = MPI.COMM_WORLD
+    num_procs = comm.Get_size()
+    base_name = file_name.split("/")[-1]
+    pvtu_file = f"{file_name}/{base_name}.pvtu"
+
+    # Create the root XML element
+    root = ET.Element(
+        "VTKFile",
+        type="PUnstructuredGrid",
+        version="1.0",
+        byte_order="LittleEndian",
+        header_type="UInt64",  # match your vtu file
+    )
+    collection = ET.SubElement(root, "PUnstructuredGrid")
+
+    # Add point data structure (match your radius field!)
+    point_data = ET.SubElement(collection, "PPointData", Scalars="radius")
+    ET.SubElement(
+        point_data,
+        "PDataArray",
+        type="Float64",  # MATCH type
+        Name="radius",  # MATCH name
+        NumberOfComponents="1",
+        format="appended",  # MATCH format
+    )
+
+    # Add cell data (empty for now)
+    ET.SubElement(collection, "PCellData")
+
+    # Add points
+    points = ET.SubElement(collection, "PPoints")
+    ET.SubElement(
+        points,
+        "PDataArray",
+        type="Float64",  # MATCH type
+        Name="points",  # MATCH name (lowercase!)
+        NumberOfComponents="3",
+        format="appended",  # MATCH format
+    )
+
+    # Add references to individual .vtu files
+    for rank in range(num_procs):
+        piece = ET.SubElement(collection, "Piece", Source=f"{base_name}Proc.{rank}.vtu")
+
+    # Write the .pvtu file
+    tree = ET.ElementTree(root)
+    tree.write(pvtu_file, encoding="utf-8", xml_declaration=True)
 
 
 def save_img_data_serial(file_name: str, subdomains: dict, img: dict, **kwargs):
