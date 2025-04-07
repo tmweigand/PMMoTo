@@ -262,3 +262,26 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             origin[n] = box_dim[0]
 
         return tuple(origin)
+
+    def get_img_index(
+        self, coordinates: tuple[float, float, float]
+    ) -> tuple[int, int, int]:
+        """
+        Given coordinates, return the corresponding index in the img array.
+
+        Args:
+            coordinates (tuple[float, float, float]): The (x, y, z) coordinates.
+
+        Returns:
+            tuple[int, int, int]: The (i, j, k) index in the img array.
+        """
+        indices = [0, 0, 0]
+        for dim, coord in enumerate(coordinates):
+            # Calculate the index based on the coordinate, origin, and resolution
+            indices[dim] = int((coord - self.box[dim][0]) / self.domain.resolution[dim])
+
+            # Ensure the index is within bounds
+            if indices[dim] < 0 or indices[dim] >= self.voxels[dim]:
+                return None
+
+        return tuple(indices)
