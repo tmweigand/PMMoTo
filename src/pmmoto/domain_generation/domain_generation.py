@@ -136,8 +136,6 @@ def gen_pm_atom_file(
 
     positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
 
-    print(np.unique(types))
-
     _atoms = particles.initialize_atoms(
         subdomain=subdomain,
         atom_coordinates=positions,
