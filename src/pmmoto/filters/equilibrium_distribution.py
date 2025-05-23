@@ -42,12 +42,14 @@ def drainage(
         if contact_angle != 0:
             raise ValueError("The standard approach requires a zero contact angle!")
         approach = _standard_method
+        update_img = True
     elif method == "contact_angle":
         if contact_angle == 0:
             logging.warning(
                 "The contact angle is zero. This will yield same results as the standard approach."
             )
         approach = _contact_angle_method
+        update_img = False
     else:
         raise ValueError(f"{method} is not implemented. ")
 
@@ -66,9 +68,13 @@ def drainage(
         )
 
         # Update the phase distribution
-        multiphase.update_img(
-            np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
-        )
+        if update_img:
+            multiphase.update_img(
+                np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
+            )
+            mp_img = multiphase.img
+        else:
+            mp_img = np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
 
         if save:
             save_img_data_parallel(
@@ -76,11 +82,11 @@ def drainage(
                     ".", "_"
                 ),
                 multiphase.subdomain,
-                multiphase.img,
+                mp_img,
             )
 
         # Store wetting phase saturation
-        w_saturation[n] = multiphase.get_saturation(2)
+        w_saturation[n] = multiphase.get_saturation(2, mp_img)
 
         if multiphase.subdomain.rank == 0:
             logging.info(
