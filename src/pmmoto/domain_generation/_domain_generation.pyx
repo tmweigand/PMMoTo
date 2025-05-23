@@ -9,7 +9,6 @@
 import numpy as np
 cimport numpy as cnp
 from numpy cimport uint8_t
-from libcpp.unordered_map cimport unordered_map
 from libc.math cimport sin, cos
 cnp.import_array()
 
@@ -24,7 +23,6 @@ __all__ = [
     "gen_pm_sphere",
     "gen_pm_atom",
     "gen_inkbottle",
-    "gen_elliptical_inkbottle",
 ]
 
 def gen_pm_sphere(subdomain, spheres, kd: bool = False) -> np.ndarray:
@@ -95,7 +93,7 @@ def gen_pm_atom(subdomain, atoms, kd: bool = False) -> np.ndarray:
     return gen_pm_sphere(subdomain, atoms)
 
 
-def gen_inkbottle(double[:] x, double[:] y, double[:] z):
+def gen_inkbottle(double[:] x, double[:] y, double[:] z, double r_y = 1.0, double r_z = 1.0):
     """
     Generate pm for inkbottle test case. See Miller_Bruning_etal_2019
     """
@@ -117,36 +115,9 @@ def gen_inkbottle(double[:] x, double[:] y, double[:] z):
                     _grid[i,j,k] = 1
                 else:
                     r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-                    if (y[j]*y[j] + z[k]*z[k]) <= r*r:
+                    ry = r*r_y
+                    rz = r*r_z
+                    if y[j]*y[j]/(ry*ry) + z[k]*z[k]/(rz*rz) <= 1:
                         _grid[i,j,k] = 1
-
-    return grid
-
-
-def gen_elliptical_inkbottle(double[:] x, double[:] y, double[:] z):
-    """
-    Generate ellipitical inkbottle test case. See Miller_Bruning_etal_2019
-    """
-    cdef int NX = x.shape[0]
-    cdef int NY = y.shape[0]
-    cdef int NZ = z.shape[0]
-    cdef int i, j, k
-    cdef double r
-    cdef double radiusY = 1.0
-    cdef double radiusZ = 2.0
-
-    _grid = np.zeros((NX, NY, NZ), dtype=np.uint8)
-    cdef cnp.uint8_t [:,:,:] grid
-
-    grid = _grid
-
-    for i in range(0,NX):
-      for j in range(0,NY):
-        for k in range(0,NZ):
-          r = (0.01*cos(0.01*x[i]) + 0.5*sin(x[i]) + 0.75)
-          rY = r*radiusY
-          rz = r*radiusZ
-          if y[j]*y[j]/(rY*rY) + z[k]*z[k]/(rz*rz) <= 1:
-            _grid[i,j,k] = 1
 
     return grid

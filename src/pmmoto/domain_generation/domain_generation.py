@@ -154,13 +154,14 @@ def gen_pm_atom_file(
     return pm
 
 
-def gen_pm_inkbottle(subdomain):
+def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
     """
-    Generate an inkbottle with reservoirs
+    Generate an inkbottle with reservoirs.
+    To generate an elliptical inkbottle, r_y and r_z can be used.
     """
 
     _img = _domain_generation.gen_inkbottle(
-        subdomain.coords[0], subdomain.coords[1], subdomain.coords[2]
+        subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], r_y, r_z
     )
     pm = porousmedia.gen_pm(subdomain, _img)
     utils.check_img_for_solid(subdomain, pm.img)
