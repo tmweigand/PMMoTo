@@ -1,7 +1,6 @@
-"""morphology.py"""
+"""morphological_operators.py"""
 
 import math
-import edt
 import numpy as np
 from scipy.signal import fftconvolve
 from ..core import communication
@@ -18,7 +17,6 @@ __all__ = [
     "erode",
     "opening",
     "closing",
-    "multiphase_dilation",
 ]
 
 
@@ -182,26 +180,3 @@ def closing(subdomain, grid, radius, fft=False):
     _dilate = addition(subdomain, grid, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
     return closing_map
-
-
-# def multiphase_dilation(subdomain, grid, phase, radius, fft=False):
-#     """
-#     Perform a morpological dilation on a multiphase domain
-#     """
-#     struct_ratio, struct_element = gen_struct_element(subdomain, radius)
-#     halo_grid, halo = communication.generate_halo(subdomain, grid, struct_ratio)
-
-#     if fft:
-#         _grid = np.where(halo_grid == phase, 1, 0)
-#         _grid = fftconvolve(_grid, struct_element, mode="same") > 0.1
-#         _grid_out = np.where(_grid, phase, halo_grid).astype(np.uint8)
-#     else:
-#         _grid = np.where(halo_grid == phase, 0, 1)
-#         _grid_distance = edt.edt3dsq(_grid, anisotropy=subdomain.resolution)
-#         _grid_out = np.where(
-#             (_grid_distance <= radius * radius), phase, halo_grid
-#         ).astype(np.uint8)
-
-#     grid_out = utils.unpad(_grid_out, halo)
-
-#     return grid_out
