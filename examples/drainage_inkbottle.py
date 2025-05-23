@@ -82,7 +82,12 @@ def drain_ink_bottle():
         reservoir_voxels=reservoir_voxels,
     )
 
-    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
+    # Scaling parameters for inkbottle
+    # Set to 1 for traditional inkbottle
+    r_y = 0.5
+    r_z = 2
+
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd, r_y, r_z)
     mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
 
     w_saturation_standard = pmmoto.filters.equilibrium_distribution.drainage(
@@ -116,7 +121,7 @@ def drain_ink_bottle():
         )
         plt.xlabel("Wetting Phase Saturation")
         plt.ylabel("Capillary Pressure")
-        plt.savefig("examples/drainage_inkpottle.pdf")
+        plt.savefig("examples/drainage_inkbottle.pdf")
         plt.close()
 
 
