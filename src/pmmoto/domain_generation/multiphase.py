@@ -24,7 +24,7 @@ class Multiphase:
         """
         self.img = img
 
-    def get_volume_fraction(self, phase: int) -> float:
+    def get_volume_fraction(self, phase: int, img=None) -> float:
         """
         Calculate the volume fraction of a given phase in a multiphase image.
 
@@ -34,7 +34,10 @@ class Multiphase:
         Returns:
             float: The volume fraction of the specified phase.
         """
-        local_img = utils.own_img(self.subdomain, self.img)
+        if img is None:
+            img = self.img
+
+        local_img = utils.own_img(self.subdomain, img)
         local_voxel_count = np.count_nonzero(local_img == phase)
 
         total_voxel_count = (
@@ -46,11 +49,13 @@ class Multiphase:
         total_voxels = np.prod(self.subdomain.domain.voxels)
         return total_voxel_count / total_voxels
 
-    def get_saturation(self, phase):
+    def get_saturation(self, phase: int, img=None) -> float:
         """
         Calculate the saturation of a multiphase image
         """
-        return self.get_volume_fraction(phase) / self.porous_media.porosity
+        if img is None:
+            img = self.img
+        return self.get_volume_fraction(phase, img) / self.porous_media.porosity
 
     @staticmethod
     def get_probe_radius(pc, gamma=1, contact_angle=0):
