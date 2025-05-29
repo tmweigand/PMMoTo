@@ -180,3 +180,29 @@ def closing(subdomain, grid, radius, fft=False):
     _dilate = addition(subdomain, grid, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
     return closing_map
+
+
+def check_radii(subdomain, radii):
+    """
+    Validates that each radius in the list does not exceed the subdomain size.
+
+    Args:
+        subdomain: Object with `own_voxels` and `rank` attributes.
+        radii: Iterable of buffer radii to check against the subdomain.
+    """
+
+    error_message = (
+        "The specified radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
+        "To resolve this, use a different subdomain topology—for example, change the configuration of subdomains from (%s).\n"
+        "Simulation stopping.\n"
+    )
+
+    for radius in radii:
+        struct_ratio, _ = gen_struct_element(subdomain.domain.resolution, radius)
+        utils.check_subdomain_condition(
+            subdomain=subdomain,
+            condition_fn=lambda s, r: np.any(s.own_voxels < r),
+            args=(struct_ratio,),
+            error_message=error_message,
+            error_args=(radius, subdomain.get_length(), subdomain.domain.subdomains),
+        )

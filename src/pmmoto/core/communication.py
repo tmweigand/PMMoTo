@@ -1,6 +1,7 @@
 """communication.py"""
 
 from . import utils
+from .logging import get_logger
 
 import numpy as np
 from mpi4py import MPI
@@ -15,6 +16,7 @@ __all__ = [
 
 
 comm = MPI.COMM_WORLD
+logger = get_logger()
 
 
 def all_gather(data):
@@ -58,6 +60,20 @@ def update_buffer(subdomain, img, buffer=None):
     """
 
     if buffer is not None:
+
+        # Ensure buffer does not span more than 1 subdomain
+        # If does, exit as horribly inefficient and a
+        # different subdomain topology is needed.
+        utils.check_subdomain_condition(
+            subdomain=subdomain,
+            condition_fn=lambda s, b: np.any(s.own_voxels < b),
+            args=(buffer,),
+            error_message=(
+                "The buffer size (%s) exceeds at least one dimension of the subdomain (%s). "
+                "Simulation stopping."
+            ),
+            error_args=(buffer, subdomain.own_voxels),
+        )
         pad, extended_loop = subdomain.extend_padding(buffer)
         _img = utils.constant_pad_img(img.copy(), pad, 255)
     else:
