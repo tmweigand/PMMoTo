@@ -83,6 +83,16 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(box)
 
+    def get_length(self) -> tuple[float, ...]:
+        """
+        Calculate the length of the domain
+        """
+        length = np.zeros([self.domain.dims], dtype=np.float64)
+        for n in range(0, self.domain.dims):
+            length[n] = self.box[n][1] - self.box[n][0]
+
+        return tuple(length)
+
     def get_global_boundary(self):
         """
         Determine if the features are on the domain boundary.

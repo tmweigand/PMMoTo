@@ -79,6 +79,8 @@ def porosimetry(
             f"Radius {radius} must either be a number or a list of length 2"
         )
 
+    morphological_operators.check_radii(subdomain, [erosion_radius, dilation_radius])
+
     # Erosion
     if mode == "morph":
         img_results = morphological_operators.subtraction(
@@ -152,6 +154,8 @@ def pore_size_distribution(
         radii = get_sizes(
             np.min(subdomain.domain.resolution), global_max_edt, 50, "linear"
         )
+
+    morphological_operators.check_radii(subdomain, radii)
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
     for radius in radii:

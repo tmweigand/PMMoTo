@@ -64,9 +64,7 @@ def setup_logger(name="pmmoto", log_dir="logs"):
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)
         logger.addHandler(ch)
-    else:
-        # Disable propagation for non-rank-0 processes
-        logger.propagate = False
+    logger.propagate = False
 
     logger.setLevel(logging.INFO)
 

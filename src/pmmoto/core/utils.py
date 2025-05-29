@@ -266,6 +266,33 @@ def decompose_img(img, start, shape, padded_img=False):
     return img[np.ix_(index[0], index[1], index[2])]
 
 
+def check_subdomain_condition(subdomain, condition_fn, args, error_message, error_args):
+    """
+    Checks a generic condition on the subdomain using provided arguments.
+    If an error is detected on any rank, all ranks are terminated.
+
+    Parameters:
+        subdomain: Object with attributes `rank` and `own_voxels`
+        condition_fn: Callable(subdomain, *args) -> bool
+            A function that returns True if there is an error condition
+        args: Tuple of arguments to pass to condition_fn
+        error_message: str, a format string for the error message
+        error_args: Tuple of arguments to format into error_message
+    """
+    local_error = condition_fn(subdomain, *args)
+    if local_error:
+        msg = error_message % error_args if error_args else error_message
+        logger.error(msg)
+
+    global_error = comm.allreduce(local_error, op=MPI.LOR)
+
+    if global_error:
+        comm.Barrier()
+        if subdomain.rank == 0:
+            logger.error("Terminating all processes due to distributed error condition")
+        raise_error()
+
+
 # def reconstruct_grid_to_root(subdomain,grid):
 #     """This function (re)constructs a grid from all proccesses to root
 #     """
