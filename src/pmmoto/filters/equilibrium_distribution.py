@@ -16,7 +16,7 @@ def drainage(
     capillary_pressures,
     gamma=1,
     contact_angle=0,
-    method: Literal["standard", "contact_angle"] = "standard",
+    method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
     save=False,
 ):
     """
@@ -49,7 +49,14 @@ def drainage(
                 "The contact angle is zero. This will yield same results as the standard approach."
             )
         approach = _contact_angle_method
-        update_img = False
+        update_img = True
+    elif method == "extended_contact_angle":
+        if contact_angle == 0:
+            logging.warning(
+                "The contact angle is zero. This will yield same results as the standard approach."
+            )
+        approach = _extended_contact_angle_method
+        update_img = True
     else:
         raise ValueError(f"{method} is not implemented. ")
 
@@ -83,6 +90,7 @@ def drainage(
                 ),
                 multiphase.subdomain,
                 mp_img,
+                additional_img={"morph": morph},
             )
 
         # Store wetting phase saturation
@@ -101,6 +109,9 @@ def drainage(
 def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
     """
     This method for drainage follows Hilpert and Miller 2001
+    The radius(r) is defined as:
+        r = 2*gamma / p_c
+    where gamma is the surface tensions and p_c is the capillary pressure.
     """
 
     # Compute morphological changes based on capillary pressure
@@ -124,16 +135,53 @@ def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
 
 def _contact_angle_method(multiphase, capillary_pressure, gamma, contact_angle):
     """
+    This method for drainage follows Schulz and Becker 2007.
+    The radius(r) is  defined as:
+        r = 2*gamma*cos(theta) / p_c
+    where gamma is the surface tensions, theta is the contact angle,
+    and p_c is the capillary pressure.
+    """
+
+    # Compute morphological changes based on capillary pressure
+    radius = multiphase.get_probe_radius(capillary_pressure, gamma, contact_angle)
+
+    # Check if radius is larger than resolution
+    if radius < min(multiphase.subdomain.domain.resolution):
+        morph = np.zeros_like(multiphase.pm_img)
+    else:
+        morph = porosimetry(
+            subdomain=multiphase.subdomain,
+            porous_media=multiphase.porous_media,
+            radius=radius,
+            inlet=True,
+            multiphase=multiphase,
+            mode="hybrid",
+        )
+
+    return morph
+
+
+def _extended_contact_angle_method(
+    multiphase, capillary_pressure, gamma, contact_angle
+):
+    """
     This method for drainage follows Schulz and Wargo 2015.
-    This paper seems to have many typos/ errors?
-    ..For example Eqations 1 and 5 show dimeter but should be radii.
+    In this work the radius (r) of erosion step includes the contact angle
+    but the dilation does not.
+
+
+    This method does not yield good results
     """
 
     # Compute morphological changes based on capillary pressure
     erosion_radius = multiphase.get_probe_radius(
         capillary_pressure, gamma, contact_angle
     )
-    dilation_radius = multiphase.get_probe_radius(capillary_pressure, gamma)
+
+    # Mutiply again by cosine of contact angle
+    dilation_radius = multiphase.get_probe_radius(
+        capillary_pressure, gamma, contact_angle
+    ) * np.abs(np.cos(np.deg2rad(contact_angle)))
 
     radius = [erosion_radius, dilation_radius]
 
