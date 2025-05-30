@@ -65,7 +65,7 @@ def drain_ink_bottle():
 
     voxels = (560, 120, 120)
     reservoir_voxels = 40
-    subdomains = (8, 1, 1)
+    subdomains = (4, 1, 1)
 
     box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
 
@@ -101,6 +101,20 @@ def drain_ink_bottle():
         mp, capillary_pressure, gamma=1, contact_angle=20, method="contact_angle"
     )
 
+    # Reset to fully wetted domain
+    mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
+
+    # Bad method!
+    w_saturation_extended_contact_angle = (
+        pmmoto.filters.equilibrium_distribution.drainage(
+            mp,
+            capillary_pressure,
+            gamma=1,
+            contact_angle=20,
+            method="extended_contact_angle",
+        )
+    )
+
     # Save final state of multiphase image
     pmmoto.io.output.save_img_data_parallel(
         file_name="examples/drainage_inkbottle_img",
@@ -119,8 +133,15 @@ def drain_ink_bottle():
             ".",
             label="Contact Angle Method",
         )
+        plt.plot(
+            w_saturation_extended_contact_angle,
+            capillary_pressure,
+            ".",
+            label="Extended Contact Angle Method",
+        )
         plt.xlabel("Wetting Phase Saturation")
         plt.ylabel("Capillary Pressure")
+        plt.legend()
         plt.savefig("examples/drainage_inkbottle.pdf")
         plt.close()
 
