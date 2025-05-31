@@ -14,8 +14,7 @@ def sphere_volume(radius):
 
 
 class Bin:
-    """
-    Generic class for a bin.
+    """Generic class for a bin.
     """
 
     def __init__(
@@ -45,14 +44,12 @@ class Bin:
         self.get_bin_centers()
 
     def get_bin_width(self):
-        """
-        Bin width
+        """Bin width
         """
         self.width = (self.end - self.start) / self.num_bins
 
     def get_bin_centers(self):
-        """
-        Bin centers
+        """Bin centers
         """
         self.centers = np.linspace(
             self.start + self.width / 2,
@@ -61,20 +58,17 @@ class Bin:
         )
 
     def set_values(self, values: np.ndarray):
-        """
-        Count the number of items in bins
+        """Count the number of items in bins
         """
         self.values = values
 
     def update_values(self, values: np.ndarray):
-        """
-        Increment the values with new values
+        """Increment the values with new values
         """
         self.values += values
 
     def calculate_volume(self, area=None, radial_volume=False):
-        """
-        Bin volume
+        """Bin volume
         """
         if radial_volume:
             self.volume = sphere_volume(self.centers + self.width / 2) - sphere_volume(
@@ -85,8 +79,7 @@ class Bin:
                 self.volume = self.width * area
 
     def generate_rdf(self):
-        """
-        Generate an rdf bin counts
+        """Generate an rdf bin counts
         """
         self.calculate_volume(radial_volume=True)
         _sum = np.sum(self.values)
@@ -98,8 +91,7 @@ class Bin:
         return rdf
 
     def save_bin(self, subdomain, folder):
-        """
-        Save the bin
+        """Save the bin
         """
         if subdomain.rank != 0:
             return  # Only the root process saves the bins
@@ -120,8 +112,7 @@ class Bin:
 
 
 class Bins:
-    """
-    Container for managing multiple bins.
+    """Container for managing multiple bins.
     """
 
     def __init__(self, starts, ends, num_bins, labels, names=None):
@@ -130,8 +121,7 @@ class Bins:
         self.bins = self.initialize_bins(starts, ends, num_bins, labels, names)
 
     def initialize_bins(self, starts, ends, num_bins, labels, names=None):
-        """
-        Initialize the bins
+        """Initialize the bins
         """
         if names is None:
             names = [str(label) for label in labels]
@@ -145,19 +135,17 @@ class Bins:
         return bins
 
     def update_bins(self, values: Dict[int, np.ndarray]):
-        """
-        Update the bin counts
+        """Update the bin counts
 
         Args:
             values (Dict[np.ndarray]): counts to add
-        """
 
+        """
         for label, data in values.items():
             self.bins[label].values += data
 
     def save_bins(self, subdomain, folder):
-        """
-        Save the bins
+        """Save the bins
         """
         if subdomain.rank != 0:
             return  # Only the root process saves the bins
@@ -179,8 +167,7 @@ class Bins:
 
 
 def count_locations(coordinates, dimension, bin, subdomain=None):
-    """
-    Count the number of atoms in a bin
+    """Count the number of atoms in a bin
 
     Args:
         atoms (PyAtomList): A pmmoto PyAtomList
@@ -188,6 +175,7 @@ def count_locations(coordinates, dimension, bin, subdomain=None):
         bins (Bin): A pmmoto bin. Results are stored in bin.values
 
     Note: Repeated calls to this function increment bin.values!
+
     """
     _counts = _bins._count_locations(
         coordinates, dimension, bin.num_bins, bin.width, bin.start
@@ -200,14 +188,14 @@ def count_locations(coordinates, dimension, bin, subdomain=None):
 
 
 def sum_masses(coordinates, dimension, bin, masses, subdomain=None):
-    """
-    Sums the number of atoms in a bin
+    """Sums the number of atoms in a bin
 
     Args:
         atoms (PyAtomList): A pmmoto PyAtomList
         dimension (int): Dimension to sum the bins
         bins (Bin): A pmmoto bin
         masses (np array): atom masses
+
     """
     _masses = _bins._sum_masses(
         coordinates, masses, dimension, bin.num_bins, bin.width, bin.start
@@ -220,12 +208,12 @@ def sum_masses(coordinates, dimension, bin, masses, subdomain=None):
 
 
 def _sum_process_bins(subdomain, counts):
-    """
-    Sum the bins across all processes
+    """Sum the bins across all processes
 
     Args:
         subdomain (subdomain): A pmmoto subdomain
         counts (np array): A numpy array of counts
+
     """
     _all_counts = communication.all_gather(counts)
 

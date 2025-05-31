@@ -6,8 +6,7 @@ import time
 
 @profiling_utils.profile("profiling/domain_generation_sphere_pack.prof")
 def test_domain_generation_sphere_pack():
-    """
-    Profiling for domain generation.
+    """Profiling for domain generation.
     Note: Cannot be used on python 12!!!!
     """
     num_spheres = 500
@@ -25,8 +24,7 @@ def test_domain_generation_sphere_pack():
 
 
 def test_domain_generation_sphere_pack_verlet():
-    """
-    Profiling for domain generation.
+    """Profiling for domain generation.
     Note: Cannot be used on python 12!!!!
     """
     num_spheres = 50000
@@ -48,8 +46,7 @@ def test_domain_generation_sphere_pack_verlet():
 
 
 def test_domain_generation_sphere_pack_kd():
-    """
-    Profile the generation of the Verlet lists
+    """Profile the generation of the Verlet lists
     """
     num_spheres = 50000
     spheres = np.random.rand(num_spheres, 4)

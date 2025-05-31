@@ -5,8 +5,7 @@ import pytest
 
 
 def setup_random():
-    """
-    Setup for benchmarking porosimetry with random binary grid.
+    """Setup for benchmarking porosimetry with random binary grid.
     """
     voxels = (400, 400, 400)
     prob_zero = 0.3
@@ -17,8 +16,7 @@ def setup_random():
 
 
 def setup_inkbottle():
-    """
-    Setup for benchmarking porosimetry with inkbottle case.
+    """Setup for benchmarking porosimetry with inkbottle case.
     """
     voxels = (560, 120, 120)
     box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))

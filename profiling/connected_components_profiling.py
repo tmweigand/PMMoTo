@@ -5,13 +5,11 @@ import profiling_utils
 
 @profiling_utils.profile("profiling/connect_components.prof")
 def test_connected_components():
-    """
-    Profiling for connected components.
+    """Profiling for connected components.
     To run:
         python profiling/edt_profiling.py
     Note: Cannot be used on python 12!!!!
     """
-
     voxels = (600, 600, 600)
     prob_zero = 0.5
     seed = 1
@@ -27,13 +25,11 @@ def test_connected_components():
 
 @profiling_utils.profile("profiling/connect_components_periodic.prof")
 def test_connected_components_periodic():
-    """
-    Profiling for connected components.
+    """Profiling for connected components.
     To run:
         python profiling/edt_profiling.py
     Note: Cannot be used on python 12!!!!
     """
-
     voxels = (600, 600, 600)
     prob_zero = 0.5
     seed = 1

@@ -26,10 +26,8 @@ def initialize(
     pad=(1, 1, 1),
     verlet_domains=(1, 1, 1),
 ):
+    """Initialize PMMoTo domain and subdomain classes and check for valid inputs.
     """
-    Initialize PMMoTo domain and subdomain classes and check for valid inputs.
-    """
-
     # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
 
     pmmoto_domain = domain.Domain(
@@ -67,12 +65,10 @@ def deconstruct_grid(
     pad=(1, 1, 1),
     reservoir_voxels=0,
 ):
-    """
-    Deconstruct the grid from a single process to multiple subdomains and images
+    """Deconstruct the grid from a single process to multiple subdomains and images
 
     The shape of the img must equal subdomain.domain.voxels!
     """
-
     num_procs = np.prod(subdomains)
     _domain = subdomain.domain
 

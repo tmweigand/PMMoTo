@@ -12,8 +12,7 @@ __all_ = ["create_sets_and_merge"]
 
 @dataclasses.dataclass
 class Count:
-    """
-    Set count dataclass
+    """Set count dataclass
     """
 
     all: int
@@ -22,8 +21,7 @@ class Count:
 
 
 class Sets(object):
-    """
-    Class for containing sets
+    """Class for containing sets
     """
 
     def __init__(self, subdomain, set_count=0):
@@ -35,8 +33,7 @@ class Sets(object):
         # self.boundary_set_map = [[] for _ in orientation.features]
 
     def collect_boundary_set_info(self, data, grid, label):
-        """
-        Loop through each set and determine if a boundary set.
+        """Loop through each set and determine if a boundary set.
         If so create a boundary set instance
         """
         pass
@@ -63,8 +60,7 @@ class Sets(object):
         # self.get_boundary_set_map()
 
     def collect_internal_set_info(self, node_data, grid, label_count):
-        """
-        Initialize Set class for internal sets
+        """Initialize Set class for internal sets
         """
         pass
         # for label in range(0, label_count):
@@ -79,8 +75,7 @@ class Sets(object):
         #             self.sets[label] = sset
 
     def get_boundary_set_map(self):
-        """
-        Populate the list that contains the subdomain features and the set on that feature
+        """Populate the list that contains the subdomain features and the set on that feature
         """
         pass
         # for local_ID, sset in self.boundary_sets.items():
@@ -89,23 +84,20 @@ class Sets(object):
         #             self.boundary_set_map[n_feature].append(local_ID)
 
     def match_boundary_sets(self, n_sets):
-        """
-        Loop through own boundary and neighbor boundary procs and match by boundary nodes
+        """Loop through own boundary and neighbor boundary procs and match by boundary nodes
         """
         for local_ID, sset in self.boundary_sets.items():
             sset.match_boundary_sets(n_sets)
             self.matched_sets[local_ID] = sset.match_data.matches
 
     def get_num_global_nodes(self, n_sets):
-        """
-        Update the number of global nodes due to double counting the buffer nodes
+        """Update the number of global nodes due to double counting the buffer nodes
         """
         for sset in self.boundary_sets:
             sset.get_num_global_nodes(n_sets)
 
     def single_get_global_ID(self, all_set_data, merged_sets):
-        """
-        Determine the global IDs for all sets
+        """Determine the global IDs for all sets
         """
         internal_set_counts = {}
         for n_proc, proc_match in enumerate(all_set_data):
@@ -119,11 +111,9 @@ class Sets(object):
         return count_ID
 
     def single_merge_matched_sets(self, all_set_data):
-        """
-        Single Process!!
+        """Single Process!!
         Take list of matched sets from all processes and merge
         """
-
         if self.subdomain.rank == 0:
             matches, merged_sets = _sets._single_merge_matched_sets(all_set_data)
             count_ID = self.single_get_global_ID(all_set_data, merged_sets)
@@ -142,8 +132,7 @@ class Sets(object):
         return all_matches
 
     def gen_global_ID_mapping(self, matched_sets):
-        """
-        Generate the local to global ID mapping for all sets
+        """Generate the local to global ID mapping for all sets
         """
         # local_global_map = -np.ones(self.count.all,dtype=np.int64)
         local_global_map = {}
@@ -160,15 +149,13 @@ class Sets(object):
         return local_global_map
 
     def update_global_ID(self, local_global_map):
-        """
-        Update the global_ID of every set
+        """Update the global_ID of every set
         """
         for local_ID, sset in self.sets.items():
             sset.set_global_ID(local_global_map[local_ID])
 
     def update_boundary_sets(self, boundary_data):
-        """
-        Update the infor on the matched boundary sets
+        """Update the infor on the matched boundary sets
         """
         for key, value in boundary_data["matches"].items():
             self.sets[key[1]].update_boundary_set(value)
@@ -179,8 +166,7 @@ def create_sets_and_merge(
     subdomain,
     label_count,
 ):
-    """
-    Find the sets on the boundaries of all subdomains and merge them to form one set
+    """Find the sets on the boundaries of all subdomains and merge them to form one set
     """
     pass
     # boundary_node_data = voxels.get_boundary_voxels(

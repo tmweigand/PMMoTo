@@ -23,8 +23,7 @@ __all__ = [
 
 
 def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
-    """
-    Generate a binary grid of the provided shape where
+    """Generate a binary grid of the provided shape where
     each voxel is a random selection (0 or 1), with a specified probability.
 
     Args:
@@ -34,6 +33,7 @@ def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
 
     Returns:
         np.ndarray: A NumPy array with the specified shape, containing random 0s and 1s.
+
     """
     if not (0 <= p_zero <= 1):
         raise ValueError("Probability p_zero must be between 0 and 1.")
@@ -45,8 +45,7 @@ def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
 
 
 def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None):
-    """
-    Generate a smoothed binary grid of the provided shape where
+    """Generate a smoothed binary grid of the provided shape where
     each voxel is a random selection (0 or 1), with a specified probability.
 
     Args:
@@ -57,6 +56,7 @@ def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None
 
     Returns:
         np.ndarray: A NumPy array with the specified shape, containing smoothed random 0s and 1s.
+
     """
     if not (0 <= p_zero <= 1):
         raise ValueError("Probability p_zero must be between 0 and 1.")
@@ -81,8 +81,7 @@ def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None
 
 
 def gen_linear_img(shape, dim):
-    """
-    Generates an image that varies from 0-N-1 along dim
+    """Generates an image that varies from 0-N-1 along dim
     """
     n = shape[dim]
     linear_values = np.linspace(0, n - 1, n, endpoint=True)
@@ -96,8 +95,7 @@ def gen_linear_img(shape, dim):
 
 
 def gen_pm_spheres_domain(subdomain, spheres, kd=False):
-    """
-    Generate binary porous media (pm) domain from sphere data that contains radii
+    """Generate binary porous media (pm) domain from sphere data that contains radii
     """
     _spheres = particles.initialize_spheres(subdomain, spheres)
 
@@ -111,8 +109,7 @@ def gen_pm_spheres_domain(subdomain, spheres, kd=False):
 
 
 def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=False):
-    """
-    Generate binary porous media (pm) domain from atom data, types and cutoff
+    """Generate binary porous media (pm) domain from atom data, types and cutoff
     """
     _atoms = particles.initialize_atoms(
         subdomain, atom_locations, atom_radii, atom_types
@@ -130,10 +127,8 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
 def gen_pm_atom_file(
     subdomain, lammps_file, atom_radii, type_map=None, add_periodic=False, kd=False
 ):
+    """Generate binary porous media (pm) domain from atom data, types and cutoff
     """
-    Generate binary porous media (pm) domain from atom data, types and cutoff
-    """
-
     positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
 
     _atoms = particles.initialize_atoms(
@@ -155,11 +150,9 @@ def gen_pm_atom_file(
 
 
 def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
-    """
-    Generate an inkbottle with reservoirs.
+    """Generate an inkbottle with reservoirs.
     To generate an elliptical inkbottle, r_y and r_z can be used.
     """
-
     _img = _domain_generation.gen_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], r_y, r_z
     )
@@ -174,8 +167,7 @@ def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
 
 
 def gen_mp_constant(porous_media, fluid_phase=1):
-    """
-    Set the pore space to be a specific fluid phase
+    """Set the pore space to be a specific fluid phase
     """
     img = np.where(porous_media.img == 1, fluid_phase, 0).astype(np.uint8)
     mp = multiphase.Multiphase(porous_media, img, 2)
@@ -184,8 +176,7 @@ def gen_mp_constant(porous_media, fluid_phase=1):
 
 
 def gen_mp_from_grid(mp, grid):
-    """
-    Set the multiphase pore space accoring to input grid
+    """Set the multiphase pore space accoring to input grid
     """
     mp.mp_grid = grid
 

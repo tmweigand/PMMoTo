@@ -7,8 +7,7 @@ from mpi4py import MPI
 
 
 def test_porosimetry_sizes():
-    """
-    Test probe diamterr sizes for linear and logarithmic
+    """Test probe diamterr sizes for linear and logarithmic
     """
     min_value = 0
     max_value = 10
@@ -31,19 +30,15 @@ def test_porosimetry_sizes():
 
 @pytest.mark.xfail
 def test_porosimetry_sizes_input_fail():
+    """Ensuring checks are behaving correctly
     """
-    ensuring checks are behaving correctly
-    """
-
     values = pmmoto.filters.porosimetry.get_sizes(5, 1, 5)
     values = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
 
 
 def test_porosimetry():
+    """Single process test for porosimetry
     """
-    Single process test for porosimetry
-    """
-
     radius = 0.03
 
     spheres, domain_data = pmmoto.io.data_read.read_sphere_pack_xyzr_domain(
@@ -88,8 +83,7 @@ def test_porosimetry():
 
 
 def test_modes():
-    """
-    Test morph, dt, and hybrid porosimetry modes.
+    """Test morph, dt, and hybrid porosimetry modes.
     Expected output is all should be equal to eachother.
     """
     radius = 0.030001
@@ -124,10 +118,8 @@ def test_modes():
 
 
 def test_porosimetry_inlet():
+    """Ensure when inlet = True, that only voxels connected in inlet are > 0
     """
-    Ensure when inlet = True, that only voxels connected in inlet are > 0
-    """
-
     radius = 0.02
     voxels = (100, 100, 100)
     inlet = ((1, 0), (0, 0), (0, 0))
@@ -159,8 +151,7 @@ def test_porosimetry_inlet():
 
 
 def test_pore_size_distribution():
-    """
-    Test generation of pore size distribution for an inkbottle
+    """Test generation of pore size distribution for an inkbottle
     """
     voxels = (560, 120, 120)
     box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
@@ -179,8 +170,7 @@ def test_pore_size_distribution():
 
 @pytest.mark.skip
 def test_lammps_psd():
-    """
-    Test for reading membrane files for psd.
+    """Test for reading membrane files for psd.
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

@@ -6,8 +6,7 @@ from . import orientation
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
-    """
-    Collection of subdomains. Used to divide domain into subdomain
+    """Collection of subdomains. Used to divide domain into subdomain
     and pass properties to subdomain
     """
 
@@ -29,8 +28,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         )
 
     def gen_map(self):
-        """
-        Generate process lookup map.
+        """Generate process lookup map.
         -2: Wall Boundary Condition
         -1: No Assumption Boundary Condition
         >=0: proc_ID
@@ -63,10 +61,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         return _map
 
     def get_neighbor_ranks(self, sd_index: tuple[np.intp, np.intp, np.intp]):
+        """Determine the neighbor process rank
         """
-        Determine the neighbor process rank
-        """
-
         neighbor_ranks = {}
         feature_types = ["faces", "edges", "corners"]
         for feature_type in feature_types:
@@ -86,6 +82,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         Args:
             sd_index (tuple[int, int, int]): _description_
             feature_index (tuple[int, int, int]): _description_
+
         """
         index = []
         for n in range(self.dims):

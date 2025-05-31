@@ -20,8 +20,7 @@ __all__ = [
 
 
 def save_particle_data(file_name: str, subdomain, particles, **kwargs):
-    """
-    Save particle data as VTK PolyData
+    """Save particle data as VTK PolyData
     """
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
@@ -58,8 +57,7 @@ def save_particle_data(file_name: str, subdomain, particles, **kwargs):
 
 
 def create_pvtu_file(file_name: str, subdomain):
-    """
-    Create a .pvtu file that groups all .vtu files.
+    """Create a .pvtu file that groups all .vtu files.
     """
     comm = MPI.COMM_WORLD
     num_procs = comm.Get_size()
@@ -111,8 +109,7 @@ def create_pvtu_file(file_name: str, subdomain):
 
 
 def save_img_data_serial(file_name: str, subdomains: dict, img: dict, **kwargs):
-    """
-    This functions saves a decomposed image that is one a single process
+    """This functions saves a decomposed image that is one a single process
     """
     if type(subdomains) is not dict:
         subdomains = {0: subdomains}
@@ -135,8 +132,8 @@ def save_img_data_parallel(file_name, subdomain, img, additional_img=None):
         file_name (_type_): _description_
         subdomain (_type_): _description_
         img (_type_): _description_
-    """
 
+    """
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
     comm.barrier()
@@ -148,10 +145,8 @@ def save_img_data_parallel(file_name, subdomain, img, additional_img=None):
 
 
 def save_img(file_name, img, resolution=None, **kwargs):
+    """Save an image as is.
     """
-    Save an image as is.
-    """
-
     io_utils.check_file_path(file_name)
 
     if resolution is None:
@@ -174,10 +169,8 @@ def save_img(file_name, img, resolution=None, **kwargs):
 def save_extended_img_data_parallel(
     file_name, subdomain, img, extension=((0, 0), (0, 0), (0, 0)), additional_img=None
 ):
+    """Save an image where img.shape > subdomain.voxels
     """
-    Save an image where img.shape > subdomain.voxels
-    """
-
     if img.shape == subdomain.voxels:
         raise ValueError(
             f"Invalid img size! img has same shape as subdomain.voxels {img.shape}. Use save_img_data_proc"
@@ -206,7 +199,6 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
         extend only needed if another_img.shape != img.shape
 
     """
-
     if img.shape != subdomain.voxels:
         raise ValueError(
             f"Invalid img size! img has shape {img.shape} but your subdomain only has {subdomain.voxels} voxels "
@@ -254,7 +246,6 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
 
 def save_extended_img_data_proc(file_name, subdomain, img, extension):
     """_summary_"""
-
     io_utils.check_file_path(file_name)
     file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
 
@@ -282,8 +273,7 @@ def save_extended_img_data_proc(file_name, subdomain, img, extension):
 def write_parallel_VTK_img(
     file_name, subdomain, img, additional_img=None, extension=((0, 0), (0, 0), (0, 0))
 ):
-    """
-    Wrapper to evtk.writeParallelVTKGrid
+    """Wrapper to evtk.writeParallelVTKGrid
     """
     local_file_proc = (
         file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."

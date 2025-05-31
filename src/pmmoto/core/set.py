@@ -1,12 +1,10 @@
 import numpy as np
 import dataclasses
-from . import _set
 
 
 @dataclasses.dataclass
 class Subdomain:
-    """
-    Subdomain info for set class
+    """Subdomain info for set class
     """
 
     boundary: bool = False
@@ -18,8 +16,7 @@ class Subdomain:
 
 @dataclasses.dataclass
 class Voxels:
-    """
-    Node info for set class
+    """Node info for set class
     """
 
     nodes: np.array
@@ -28,8 +25,7 @@ class Voxels:
 
 
 class Set:
-    """
-    A group is a set of voxels. Initilization requires the subdomain information, the local id of the set, and the phase id or the unifer of the voxels.
+    """A group is a set of voxels. Initilization requires the subdomain information, the local id of the set, and the phase id or the unifer of the voxels.
     """
 
     def __init__(self, subdomain, local_ID, phase):
@@ -42,14 +38,12 @@ class Set:
         self.boundary_data = None
 
     def set_voxels(self, voxels, grid_shape):
-        """
-        Collect the voxel data
+        """Collect the voxel data
         """
         self.data = Voxels(voxels, grid_shape)
 
     def set_subdomain_info(self, boundary, boundary_index, inlet=False, outlet=False):
-        """
-        Set subdomain information
+        """Set subdomain information
         """
         self.subdomain_data = Subdomain(
             boundary, np.asarray(boundary_index), inlet, outlet
@@ -57,11 +51,9 @@ class Set:
         self.get_set_neighbors()
 
     def get_set_neighbors(self):
-        """
-        Loop through all features and collect neighbor ranks
+        """Loop through all features and collect neighbor ranks
         This also cleans up subdomain_data.index if boundaries are external/not periodic
         """
-
         n_procs = self.subdomain_data.n_procs
 
         # Faces
@@ -94,13 +86,11 @@ class Set:
         self.set_boundary_flag()
 
     def set_boundary_flag(self):
-        """
-        If the boundary_index is zero, the set is not on the boundary.
+        """If the boundary_index is zero, the set is not on the boundary.
         """
         self.subdomain_data.boundary = False
 
     def set_global_ID(self, global_ID):
-        """
-        Set the global_ID
+        """Set the global_ID
         """
         self.global_ID = global_ID

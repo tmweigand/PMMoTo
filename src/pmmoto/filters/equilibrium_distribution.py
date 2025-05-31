@@ -19,13 +19,11 @@ def drainage(
     method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
     save=False,
 ):
-    """
-    This is a morphological approach to determining the equilibrium
+    """This is a morphological approach to determining the equilibrium
     fluid distribution for a multiphase system.
 
     The updated img is stored in multiphase.img.
     """
-
     # Ensure capillary pressures are in a sorted list
     if isinstance(capillary_pressures, (int, float)):
         capillary_pressures = [capillary_pressures]
@@ -107,13 +105,11 @@ def drainage(
 
 
 def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
-    """
-    This method for drainage follows Hilpert and Miller 2001
+    """This method for drainage follows Hilpert and Miller 2001
     The radius(r) is defined as:
         r = 2*gamma / p_c
     where gamma is the surface tensions and p_c is the capillary pressure.
     """
-
     # Compute morphological changes based on capillary pressure
     radius = multiphase.get_probe_radius(capillary_pressure, gamma)
 
@@ -134,14 +130,12 @@ def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
 
 
 def _contact_angle_method(multiphase, capillary_pressure, gamma, contact_angle):
-    """
-    This method for drainage follows Schulz and Becker 2007.
+    """This method for drainage follows Schulz and Becker 2007.
     The radius(r) is  defined as:
         r = 2*gamma*cos(theta) / p_c
     where gamma is the surface tensions, theta is the contact angle,
     and p_c is the capillary pressure.
     """
-
     # Compute morphological changes based on capillary pressure
     radius = multiphase.get_probe_radius(capillary_pressure, gamma, contact_angle)
 
@@ -164,15 +158,13 @@ def _contact_angle_method(multiphase, capillary_pressure, gamma, contact_angle):
 def _extended_contact_angle_method(
     multiphase, capillary_pressure, gamma, contact_angle
 ):
-    """
-    This method for drainage follows Schulz and Wargo 2015.
+    """This method for drainage follows Schulz and Wargo 2015.
     In this work the radius (r) of erosion step includes the contact angle
     but the dilation does not.
 
 
     This method does not yield good results
     """
-
     # Compute morphological changes based on capillary pressure
     erosion_radius = multiphase.get_probe_radius(
         capillary_pressure, gamma, contact_angle

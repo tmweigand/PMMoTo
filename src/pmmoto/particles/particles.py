@@ -17,8 +17,7 @@ __all__ = [
 
 
 def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
-    """
-    Convert a list of atom names (C,H,N,O) to id
+    """Convert a list of atom names (C,H,N,O) to id
     """
     element_table = atom_universal_force_field()
 
@@ -32,8 +31,7 @@ def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
 
 
 def _load_uff_data(file_name=None):
-    """
-    Read universal force field file for atom radius lookup
+    """Read universal force field file for atom radius lookup
     Can query the dictionary based on:
         Atom Name
         Atomic Number (i.e. 1 = H, 6 = C)
@@ -60,8 +58,7 @@ def _load_uff_data(file_name=None):
 def uff_radius(
     atom_names: Optional[List[str]] = None, atomic_numbers: Optional[List[int]] = None
 ) -> Dict[int, float]:
-    """
-    Collect the radius by Atom Name or Atomic Number, but not both.
+    """Collect the radius by Atom Name or Atomic Number, but not both.
 
     Units of radii are Angstroms!
 
@@ -71,8 +68,8 @@ def uff_radius(
 
     Returns:
         Dict[int, float]: Dictionary mapping atomic numbers to their radii.
-    """
 
+    """
     if (atom_names is None) == (atomic_numbers is None):
         raise ValueError(
             "Provide either 'atom_names' or 'atomic_numbers', but not both."
@@ -109,8 +106,7 @@ def initialize_atoms(
     trim_intersecting: bool = False,
     trim_within: bool = False,
 ) -> "AtomMap":
-    """
-    Initialize a list of particles efficiently with memory management.
+    """Initialize a list of particles efficiently with memory management.
 
     Args:
         subdomain: Domain subdivision object
@@ -125,8 +121,8 @@ def initialize_atoms(
 
     Returns:
         AtomMap: Python Class that wraps atoms. See _particles.pyx
-    """
 
+    """
     if not atom_coordinates.flags["C_CONTIGUOUS"]:
         atom_coordinates = np.ascontiguousarray(atom_coordinates)
 
@@ -163,13 +159,11 @@ def initialize_spheres(
     trim_intersecting=False,
     trim_within=False,
 ):
-    """
-    Initialize a list of spheres.
+    """Initialize a list of spheres.
     Particles that do not cross the subdomain boundary are deleted
     If add_periodic: particles that cross the domain boundary will be add.
     If set_own: particles owned by a subdomain will be identified
     """
-
     if not radii:
         _spheres = spheres[:, 0:3]
         radii = spheres[:, 3]

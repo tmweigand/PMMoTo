@@ -11,8 +11,7 @@ __all__ = [
 
 
 def functionals(subdomain,grid):
-    """
-    Calculate the minkowki functionals.
+    """Calculate the minkowki functionals.
 
     Only want values for own_nodes, however, 
     algorithm skips last index for bcs. 

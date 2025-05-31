@@ -3,8 +3,7 @@ import pmmoto
 
 
 def setup():
-    """
-    Setup for for benchmarking morphological operators
+    """Setup for for benchmarking morphological operators
     """
     voxels = (600, 600, 600)
     prob_zero = 0.1
@@ -16,10 +15,8 @@ def setup():
 
 @profiling_utils.profile("profiling/morph_addition_fft_small_r.prof")
 def test_morp_addition_fft_small_r(sd, img, radius):
+    """Wrapper to addition
     """
-    Wrapper to addition
-    """
-
     morp_addition_fft = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
         img=img,
@@ -30,8 +27,7 @@ def test_morp_addition_fft_small_r(sd, img, radius):
 
 @profiling_utils.profile("profiling/morph_addition_fft_large_r.prof")
 def test_morp_addition_fft_large_r(sd, img, radius):
-    """
-    Wrapper to addition
+    """Wrapper to addition
     """
     morp_addition_fft = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
@@ -43,8 +39,7 @@ def test_morp_addition_fft_large_r(sd, img, radius):
 
 @profiling_utils.profile("profiling/morph_addition_edt_small_r.prof")
 def test_morp_addition_edt_small_r(sd, img, radius):
-    """
-    Wrapper to addition
+    """Wrapper to addition
     """
     morp_addition_edt = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,
@@ -56,8 +51,7 @@ def test_morp_addition_edt_small_r(sd, img, radius):
 
 @profiling_utils.profile("profiling/morph_addition_edt_large_r.prof")
 def test_morp_addition_edt_large_r(sd, img, radius):
-    """
-    Wrapper to addition
+    """Wrapper to addition
     """
     morp_addition_edt = pmmoto.filters.morphological_operators.addition(
         subdomain=sd,

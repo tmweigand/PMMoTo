@@ -9,10 +9,8 @@ import pytest
 
 @pytest.mark.skip(reason="TBD")
 def test_phase_exists():
+    """Check to make sure utils.phase_exists works properly
     """
-    Check to make sure utils.phase_exists works properly
-    """
-
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()

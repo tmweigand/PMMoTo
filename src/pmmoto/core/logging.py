@@ -19,8 +19,7 @@ class MPIFormatter(logging.Formatter):
 
 
 def setup_logger(name="pmmoto", log_dir="logs"):
-    """
-    Configure logging for both serial and parallel runs
+    """Configure logging for both serial and parallel runs
 
     Args:
         name: Logger name (default: "pmmoto")
@@ -28,6 +27,7 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     Returns:
         logging.Logger: Configured logger instance
+
     """
     # Disable the root logger to prevent duplicate messages
     logging.getLogger().handlers.clear()

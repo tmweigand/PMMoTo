@@ -5,8 +5,7 @@ import pytest
 
 
 def setup():
-    """
-    Setup for for benchmarking morphological operators
+    """Setup for for benchmarking morphological operators
     """
     voxels = (600, 600, 600)
     prob_zero = 0.3

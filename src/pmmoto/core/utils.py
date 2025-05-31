@@ -36,8 +36,7 @@ def check_img_for_solid(subdomain, img):
 
 
 def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
-    """
-    Ensure Input Parameters are Valid
+    """Ensure Input Parameters are Valid
     """
     check_input_nodes(nodes)
     check_subdomain_size(mpi_size, subdomains)
@@ -59,8 +58,7 @@ def check_input_nodes(nodes):
 
 
 def check_subdomain_size(mpi_size, subdomains):
-    """
-    Check subdomain size and ensure mpi size is equal to num_subdomains
+    """Check subdomain size and ensure mpi size is equal to num_subdomains
     """
     error = False
     for n in subdomains:
@@ -79,8 +77,7 @@ def check_subdomain_size(mpi_size, subdomains):
 
 
 def check_boundaries(boundaries):
-    """
-    Check boundaries and boundary pairs
+    """Check boundaries and boundary pairs
     """
     error = False
     for d in boundaries:
@@ -95,8 +92,7 @@ def check_boundaries(boundaries):
 
 
 def check_inlet_outlet(boundaries, inlet, outlet):
-    """
-    Check inlet and outlet conditions
+    """Check inlet and outlet conditions
     """
     error = False
 
@@ -131,12 +127,12 @@ def check_inlet_outlet(boundaries, inlet, outlet):
 
 
 def check_padding(mpi_size, boundaries) -> bool:
-    """
-    Determine if padding needs to be added to the domain/subdomain
+    """Determine if padding needs to be added to the domain/subdomain
 
     Args:
         mpi_size (int): number of mpi processes
         boundaries (tuple): boundary conditions
+
     """
     pad = False
     if mpi_size > 1:
@@ -152,25 +148,25 @@ def check_padding(mpi_size, boundaries) -> bool:
 
 
 def unpad(img, pad):
-    """
-    Removes padding from a NumPy array.
+    """Removes padding from a NumPy array.
 
-    Parameters:
+    Parameters
+    ----------
         img (np.ndarray): The padded array.
         pad (list or tuple): Padding amounts in the format [[before_0, after_0], [before_1, after_1], ...].
 
-    Returns:
+    Returns
+    -------
         np.ndarray: The unpadded array.
+
     """
     slices = tuple(slice(p[0], img.shape[i] - p[1]) for i, p in enumerate(pad))
     return np.ascontiguousarray(img[slices])
 
 
 def constant_pad_img(img, pad, pad_value):
+    """Pad a grid with a constant value
     """
-    Pad a grid with a constant value
-    """
-
     img = np.pad(
         img,
         ((pad[0][0], pad[0][1]), (pad[1][0], pad[1][1]), (pad[2][0], pad[2][1])),
@@ -181,8 +177,7 @@ def constant_pad_img(img, pad, pad_value):
 
 
 def own_img(subdomain, img):
-    """
-    Pass array with only nodes owned py that process
+    """Pass array with only nodes owned py that process
     """
     own = subdomain.get_own_voxels()
     img_out = img[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
@@ -191,8 +186,7 @@ def own_img(subdomain, img):
 
 
 def phase_exists(grid, phase):
-    """
-    Determine if phase exists in grid
+    """Determine if phase exists in grid
     """
     phase_exists = False
     local_count = np.count_nonzero(grid == phase)
@@ -206,8 +200,7 @@ def phase_exists(grid, phase):
 
 
 def determine_maximum(img):
-    """
-    Determine the global maximum of an input image
+    """Determine the global maximum of an input image
     """
     local_max = np.amax(img)
 
@@ -217,8 +210,7 @@ def determine_maximum(img):
 
 
 def bin_image(subdomain, img, own=True):
-    """
-    This function counts the number of times each unique element occurs in the input array
+    """This function counts the number of times each unique element occurs in the input array
     """
     if own:
         _img = own_img(subdomain, img)
@@ -245,18 +237,19 @@ def global_grid(grid, index, local_grid):
 
 
 def decompose_img(img, start, shape, padded_img=False):
-    """
-    Decompose an image
+    """Decompose an image
 
-    Parameters:
+    Parameters
+    ----------
     - img: np.ndarray, the input array.
     - start: tuple, the starting index for the slice.
     - shape: tuple, the shape of the slice.
 
-    Returns:
+    Returns
+    -------
     - local_img: np.ndarray, the resulting wrapped slice.
-    """
 
+    """
     # Create indices with wrapping
     index = [None, None, None]
     for n, (_start, _shape) in enumerate(zip(start, shape)):
@@ -267,17 +260,18 @@ def decompose_img(img, start, shape, padded_img=False):
 
 
 def check_subdomain_condition(subdomain, condition_fn, args, error_message, error_args):
-    """
-    Checks a generic condition on the subdomain using provided arguments.
+    """Checks a generic condition on the subdomain using provided arguments.
     If an error is detected on any rank, all ranks are terminated.
 
-    Parameters:
+    Parameters
+    ----------
         subdomain: Object with attributes `rank` and `own_voxels`
         condition_fn: Callable(subdomain, *args) -> bool
             A function that returns True if there is an error condition
         args: Tuple of arguments to pass to condition_fn
         error_message: str, a format string for the error message
         error_args: Tuple of arguments to format into error_message
+
     """
     local_error = condition_fn(subdomain, *args)
     if local_error:

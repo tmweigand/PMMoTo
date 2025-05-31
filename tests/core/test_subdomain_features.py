@@ -6,8 +6,7 @@ import pmmoto
 
 
 def generate_padded_subdomain(rank, pad, reservoir_voxels):
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain
     """
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
     boundary_types = ((0, 0), (1, 1), (2, 2))
@@ -32,10 +31,8 @@ def generate_padded_subdomain(rank, pad, reservoir_voxels):
 
 
 def test_collect_features():
+    """Test for subdomain features
     """
-    Test for subdomain features
-    """
-
     rank = 0
     pad = (1, 1, 1)
     reservoir_voxels = 0
@@ -54,10 +51,8 @@ def test_collect_features():
 
 
 def test_feature_voxels_face():
+    """Test get_feature_voxels
     """
-    Test get_feature_voxels
-    """
-
     feature_id = (-1, 0, 0)
     voxels = (10, 10, 10)
     pad = [[0, 0], [0, 0], [0, 0]]
@@ -107,10 +102,8 @@ def test_feature_voxels_face():
 
 
 def test_feature_voxels_edge():
+    """Test get_feature_voxels
     """
-    Test get_feature_voxels
-    """
-
     feature_id = (-1, 0, 1)
     voxels = (10, 10, 10)
     pad = [[0, 0], [0, 0], [0, 0]]
@@ -141,10 +134,8 @@ def test_feature_voxels_edge():
 
 
 def test_feature_voxels_corner():
+    """Test get_feature_voxels
     """
-    Test get_feature_voxels
-    """
-
     feature_id = (1, 1, -1)
     voxels = (10, 10, 10)
     pad = [[0, 0], [0, 0], [0, 0]]
@@ -176,10 +167,8 @@ def test_feature_voxels_corner():
 
 @pytest.mark.figures
 def test_feature_voxels_figure():
+    """Generate output to visually inspect get_feature_voxels
     """
-    Generate output to visually inspect get_feature_voxels
-    """
-
     voxels = (20, 20, 20)
     img = np.zeros(voxels)
     pad = [[1, 1], [1, 1], [1, 1]]
@@ -219,11 +208,9 @@ def test_feature_voxels_figure():
 
 
 def test_collect_periodic_features():
-    """
-    Check function that loops through the subdomain features and
+    """Check function that loops through the subdomain features and
     returns a list of all of the periodic ones.
     """
-
     rank = 26
     pad = (1, 1, 1)
     reservoir_voxels = 0
@@ -237,11 +224,9 @@ def test_collect_periodic_features():
 
 
 def test_collect_periodic_corrections():
-    """
-    Check function that loops through the subdomain features and
+    """Check function that loops through the subdomain features and
     returns a list of all of the periodic corrections.
     """
-
     rank = 26
     pad = (1, 1, 1)
     reservoir_voxels = 0

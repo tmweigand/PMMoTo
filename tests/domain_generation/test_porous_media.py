@@ -5,8 +5,7 @@ import pmmoto
 
 
 def test_porosity():
-    """
-    Ensures correct calculation of porosity
+    """Ensures correct calculation of porosity
     """
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
     img = np.zeros(sd.voxels)

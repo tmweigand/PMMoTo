@@ -1,7 +1,6 @@
 from pmmoto import initialize
 from pmmoto import domain_generation
 from pmmoto import filters
-import pytest
 
 
 def test_pmmoto_connected_components(benchmark):

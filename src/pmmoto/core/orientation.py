@@ -4,8 +4,7 @@ __all__ = ["get_boundary_id"]
 
 
 def get_boundary_id(boundary_index):
-    """
-    Determine boundary ID
+    """Determine boundary ID
     Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
     Output: boundary_ID
     """
@@ -24,8 +23,7 @@ def get_boundary_id(boundary_index):
 
 
 def add_faces(boundary_features):
-    """
-    Since loop_info are by face, need to add face index for edges and corners in case
+    """Since loop_info are by face, need to add face index for edges and corners in case
     edge and corner n_procs are < 0 but face is valid.
     """
     for n in range(0, num_features):
@@ -186,13 +184,12 @@ features["corners"] = corners
 
 
 def get_features():
-    """
-    Grab a dictionary of all features
+    """Grab a dictionary of all features
 
     Returns:
         _type_: _description_
-    """
 
+    """
     features = [
         (-1, 0, 0),
         (1, 0, 0),
@@ -285,8 +282,7 @@ allFaces = [
 
 
 def get_index_ordering(inlet, outlet):
-    """
-    This function rearranges the loop_info ordering so
+    """This function rearranges the loop_info ordering so
     the inlet and outlet faces are first.
     """
     order = [0, 1, 2]
@@ -299,8 +295,7 @@ def get_index_ordering(inlet, outlet):
 
 
 def get_send_halo(struct_ratio, buffer, dim):
-    """
-    Determine slices of face, edge, and corner neighbor to send data
+    """Determine slices of face, edge, and corner neighbor to send data
     structRatio is size of voxel window to send and is [nx,ny,nz]
     buffer is the subDomain.buffer
     dim is grid.shape
@@ -370,11 +365,9 @@ def get_send_halo(struct_ratio, buffer, dim):
 
 
 def get_recv_halo(halo, buffer, dim):
-    """
-    Determine slices of face, edge, and corner neighbor to recieve data
+    """Determine slices of face, edge, and corner neighbor to recieve data
     Buffer is always updated on edges and corners due to geometry contraints
     """
-
     recv_faces = np.empty([num_faces, 3], dtype=object)
     recv_edges = np.empty([num_edges, 3], dtype=object)
     recv_corners = np.empty([num_corners, 3], dtype=object)
@@ -429,14 +422,12 @@ def get_recv_halo(halo, buffer, dim):
 
 
 def get_send_buffer(subdomain, buffer, dim):
-    """
-    Determine slices of face, edge, and corner neighbor to send data
+    """Determine slices of face, edge, and corner neighbor to send data
     structRatio is size of voxel window to send and is [nx,ny,nz]
     buffer is the subDomain.buffer
     dim is grid.shape
     Buffer is always updated on edges and corners due to geometry contraints
     """
-
     send_faces = {}
     send_edges = {}
     send_corners = {}
@@ -472,11 +463,9 @@ def get_send_buffer(subdomain, buffer, dim):
 
 
 def get_recv_buffer(buffer, dim):
-    """
-    Determine slices of face, edge, and corner neighbor to recieve data
+    """Determine slices of face, edge, and corner neighbor to recieve data
     Buffer is always updated on edges and corners due to geometry contraints
     """
-
     recv_faces = {}
     recv_edges = {}
     recv_corners = {}

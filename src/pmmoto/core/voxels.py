@@ -20,8 +20,7 @@ __all__ = [
 
 
 def renumber_image(img, conversion_map: dict):
-    """
-    Renumbers an image using a provided mapping.
+    """Renumbers an image using a provided mapping.
 
     Args:
         img (Any): The image to be renumbered. Typically, this will be a 3D or 2D array-like structure.
@@ -41,8 +40,8 @@ def renumber_image(img, conversion_map: dict):
         conversion_map = {1: 101, 2: 102}
         renumber_image(img, conversion_map)
         # Output: [[101, 102], [102, 101]]
-    """
 
+    """
     img = _voxels.renumber_grid(img, conversion_map)
 
     return np.ascontiguousarray(img)
@@ -51,8 +50,7 @@ def renumber_image(img, conversion_map: dict):
 def get_nearest_boundary_index(
     subdomain, img, label, dimension=None, which_voxels="all"
 ):
-    """
-    Determines the index nearest each subdomain boundary face for a specified
+    """Determines the index nearest each subdomain boundary face for a specified
     label in img. The start and end locations can be controlled but
 
         which_voxels = "all" start = 0, end = 0
@@ -65,8 +63,8 @@ def get_nearest_boundary_index(
     Args:
         subdomain (_type_): _description_
         img (_type_): _description_
-    """
 
+    """
     if dimension is not None and dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
@@ -102,8 +100,7 @@ def get_nearest_boundary_index(
 
 
 def get_boundary_voxels(subdomain, img, neighbors_only=False):
-    """
-    This function returns the values on the boundary features.
+    """This function returns the values on the boundary features.
 
     The features are divided into:
 
@@ -116,6 +113,7 @@ def get_boundary_voxels(subdomain, img, neighbors_only=False):
 
     Returns:
         dict: Dictionary of boundary voxels.
+
     """
     out_voxels = {}
 
@@ -137,8 +135,7 @@ def get_boundary_voxels(subdomain, img, neighbors_only=False):
 
 
 def get_id(x, total_voxels):
-    """
-    Wrapper to _get_id.
+    """Wrapper to _get_id.
 
     Determine the ID for a voxel.
 
@@ -151,6 +148,7 @@ def get_id(x, total_voxels):
 
     Note:
         Periodic boundary conditions are applied by using modulo arithmetic.
+
     """
     id = _voxels.get_id(
         np.array(x, dtype=np.int64), np.array(total_voxels, dtype=np.uint64)
@@ -164,6 +162,7 @@ def gen_grid_to_label_map(grid, labels):
     Args:
         grid (_type_): _description_
         label_grid (_type_): _description_
+
     """
     assert grid.shape == labels.shape
 
@@ -178,13 +177,13 @@ def count_label_voxels(grid, map):
     Args:
         grid (_type_): _description_
         map (_type_): _description_
+
     """
     _map = _voxels.count_label_voxels(grid, map)
 
 
 def boundary_voxels_pack(subdomain, boundary_voxels):
-    """
-    This function packs the data to send based on get_boundary_voxels
+    """This function packs the data to send based on get_boundary_voxels
     """
     send_data = {}
     periodic_data = {}
@@ -209,15 +208,13 @@ def boundary_voxels_pack(subdomain, boundary_voxels):
 
 
 def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
-    """
-    Unpack the neighboring boundary neighbor data. This also handles
+    """Unpack the neighboring boundary neighbor data. This also handles
     periodic boundary conditions.
 
     The feature_id for the return value has been accounted for:
         own_data[feature_id] = data_out[feature_id]
 
     """
-
     data_out = {}
 
     feature_types = ["faces", "edges", "corners"]
@@ -234,8 +231,7 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
 def match_neighbor_boundary_voxels(
     subdomain, boundary_voxels, recv_data, skip_zero=False
 ):
-    """
-    Matches boundary voxels of the subdomain with neighboring voxels and returns unique matches.
+    """Matches boundary voxels of the subdomain with neighboring voxels and returns unique matches.
 
     Args:
         subdomain (object): Subdomain object containing feature information.
@@ -248,6 +244,7 @@ def match_neighbor_boundary_voxels(
         dict: Unique matches in the format
         key: (subdomain rank, own voxel)
         neighbor: list[neighbor rank, neighbor voxel)]
+
     """
     unique_matches = {}
 
@@ -291,8 +288,8 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
     Args:
         subdomain (_type_): _description_
         matches (_type_): _description_
-    """
 
+    """
     ### Send number of labels on rank for re-labeling
     matches["label_count"] = label_count
     all_matches = communication.all_gather(matches)
@@ -353,13 +350,13 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
 
 
 def gen_inlet_label_map(subdomain, label_grid):
-    """
-    Determine which face is on inlet.
+    """Determine which face is on inlet.
     Currently restricted to a single face
 
     Args:
         subdomain (_type_): _description_
         label_grid (_type_): _description_
+
     """
     inlet_labels = np.empty(0)
     for feature_id, feature in subdomain.features["faces"].items():
@@ -375,13 +372,13 @@ def gen_inlet_label_map(subdomain, label_grid):
 
 
 def gen_outlet_label_map(subdomain, label_grid):
-    """
-    Determine which face is on outlet.
+    """Determine which face is on outlet.
     Currently restricted to a single face
 
     Args:
         subdomain (_type_): _description_
         label_grid (_type_): _description_
+
     """
     outlet_labels = np.empty(0)
     for feature_id, feature in subdomain.features["faces"].items():

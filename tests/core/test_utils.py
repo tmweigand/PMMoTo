@@ -63,8 +63,7 @@ def test_decompose_img_2():
 
 
 def test_pad():
-    """
-    Test of padding and un-padding an array
+    """Test of padding and un-padding an array
     """
     voxels = (25, 25, 25)
 
@@ -83,8 +82,7 @@ def test_pad():
 
 @pytest.mark.mpi(min_size=8)
 def test_determine_max():
-    """
-    Test to ensure we can find the global maximum
+    """Test to ensure we can find the global maximum
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -98,8 +96,7 @@ def test_determine_max():
 
 
 def test_bin_image():
-    """
-    Test for counting occurrences of a value
+    """Test for counting occurrences of a value
     """
     N = 10
     sd = pmmoto.initialize((N, N, N))
@@ -123,10 +120,8 @@ def test_bin_image():
 
 @pytest.mark.mpi(min_size=8)
 def test_bin_image_parallel():
+    """Test for counting occurrences of a value
     """
-    Test for counting occurrences of a value
-    """
-
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -151,8 +146,7 @@ def test_bin_image_parallel():
 
 
 def test_check_img_for_solid():
-    """
-    Ensure solid-0 exists on image
+    """Ensure solid-0 exists on image
     """
     sd = pmmoto.initialize((10, 10, 10))
     img = np.zeros(sd.voxels)
@@ -162,8 +156,7 @@ def test_check_img_for_solid():
 
 @pytest.mark.xfail
 def test_check_img_for_solid_fail():
-    """
-    Ensure solid-0 exists on image
+    """Ensure solid-0 exists on image
     """
     sd = pmmoto.initialize((10, 10, 10))
     img = np.ones(sd.voxels)
