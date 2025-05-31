@@ -5,8 +5,7 @@ import pytest
 
 
 def setup_random():
-    """Setup for benchmarking porosimetry with random binary grid.
-    """
+    """Set up benchmarking data for porosimetry with a random binary grid."""
     voxels = (400, 400, 400)
     prob_zero = 0.3
     seed = 1
@@ -16,8 +15,7 @@ def setup_random():
 
 
 def setup_inkbottle():
-    """Setup for benchmarking porosimetry with inkbottle case.
-    """
+    """Set up benchmarking data for porosimetry with the inkbottle case."""
     voxels = (560, 120, 120)
     box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
     inlet = ((0, 1), (0, 0), (0, 0))
@@ -29,10 +27,10 @@ def setup_inkbottle():
 
 @pytest.mark.order(1)
 def test_random_morph_mode_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (morph mode, small radius) on random grid."""
     radius = 0.004
     sd, img = setup_random()
-    morph_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -43,10 +41,10 @@ def test_random_morph_mode_small_r(benchmark):
 
 @pytest.mark.order(2)
 def test_random_morph_mode_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (morph mode, large radius) on random grid."""
     radius = 0.1
     sd, img = setup_random()
-    morph_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -57,10 +55,10 @@ def test_random_morph_mode_large_r(benchmark):
 
 @pytest.mark.order(3)
 def test_inkbottle_morph_mode_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (morph mode, small radius) on inkbottle case."""
     radius = 0.26
     sd, img = setup_inkbottle()
-    morph_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -72,10 +70,10 @@ def test_inkbottle_morph_mode_small_r(benchmark):
 
 @pytest.mark.order(4)
 def test_inkbottle_morph_mode_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (morph mode, large radius) on inkbottle case."""
     radius = 1.2545
     sd, img = setup_inkbottle()
-    morph_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -87,10 +85,10 @@ def test_inkbottle_morph_mode_large_r(benchmark):
 
 @pytest.mark.order(5)
 def test_random_distance_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (distance mode, small radius) on random grid."""
     radius = 0.004
     sd, img = setup_random()
-    distance_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -101,10 +99,10 @@ def test_random_distance_small_r(benchmark):
 
 @pytest.mark.order(6)
 def test_random_distance_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (distance mode, large radius) on random grid."""
     radius = 0.1
     sd, img = setup_random()
-    distance_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -115,10 +113,10 @@ def test_random_distance_large_r(benchmark):
 
 @pytest.mark.order(7)
 def test_inkbottle_distance_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (distance mode, small radius) on inkbottle case."""
     radius = 0.26
     sd, img = setup_inkbottle()
-    distance_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -130,10 +128,10 @@ def test_inkbottle_distance_small_r(benchmark):
 
 @pytest.mark.order(8)
 def test_inkbottle_distance_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (distance mode, large radius) on inkbottle case."""
     radius = 1.2545
     sd, img = setup_inkbottle()
-    distance_mode = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -145,10 +143,10 @@ def test_inkbottle_distance_large_r(benchmark):
 
 @pytest.mark.order(9)
 def test_random_hybrid_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (hybrid mode, small radius) on random grid."""
     radius = 0.004
     sd, img = setup_random()
-    hybrid = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -159,10 +157,10 @@ def test_random_hybrid_small_r(benchmark):
 
 @pytest.mark.order(10)
 def test_random_hybrid_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (hybrid mode, large radius) on random grid."""
     radius = 0.1
     sd, img = setup_random()
-    hybrid = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -173,10 +171,10 @@ def test_random_hybrid_large_r(benchmark):
 
 @pytest.mark.order(11)
 def test_inkbottle_hybrid_small_r(benchmark):
-    """ """
+    """Benchmark porosimetry (hybrid mode, small radius) on inkbottle case."""
     radius = 0.26
     sd, img = setup_inkbottle()
-    hybrid = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
@@ -188,10 +186,10 @@ def test_inkbottle_hybrid_small_r(benchmark):
 
 @pytest.mark.order(12)
 def test_inkbottle_hybrid_large_r(benchmark):
-    """ """
+    """Benchmark porosimetry (hybrid mode, large radius) on inkbottle case."""
     radius = 1.2545
     sd, img = setup_inkbottle()
-    hybrid = benchmark(
+    _ = benchmark(
         filters.porosimetry.porosimetry,
         subdomain=sd,
         img=img,
