@@ -42,6 +42,11 @@ dev = [
     "interrogate>=1.5.0",
     "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master"
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx_rtd_theme",
+    "myst-parser"
+]
 
 [tool.ruff]
 line-length = 100
@@ -56,3 +61,5 @@ ignore = ["D107", "D203", "D213"]
 fail-under = 90
 ignore-init-method = true
 ignore-module = true
+
+
