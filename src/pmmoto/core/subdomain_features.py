@@ -1,7 +1,6 @@
 """subdomain_features.py"""
 
 import numpy as np
-import itertools
 
 from . import orientation
 
@@ -13,8 +12,7 @@ __all__ = [
 
 
 class Feature(object):
-    """
-    Base class for holding features: {face, edge, corner} information for a subdomain.
+    """Base class for holding features: {face, edge, corner} information for a subdomain.
     This is the main abstraction for handling boundary conditions and parallel communication
     """
 
@@ -31,11 +29,11 @@ class Feature(object):
         self.loop = None
 
     def convert_feature_id(self, index=None):
-        """
-        Convert the feature if of type (int,int,int) -> int
+        """Convert the feature if of type (int,int,int) -> int
 
         Returns:
             int: feature id
+
         """
         if index is None:
             index = self.feature_id
@@ -43,8 +41,7 @@ class Feature(object):
 
 
 class Face(Feature):
-    """
-    Face information for a subdomain
+    """Face information for a subdomain
     """
 
     def __init__(
@@ -73,6 +70,7 @@ class Face(Feature):
 
         Returns:
             bool: True if on inlet
+
         """
         return inlet
 
@@ -81,6 +79,7 @@ class Face(Feature):
 
         Returns:
             bool: True if on outlet
+
         """
         return outlet
 
@@ -89,12 +88,12 @@ class Face(Feature):
 
         Returns:
             bool: True if periodic
+
         """
         return boundary_type == "periodic"
 
     def get_periodic_correction(self) -> tuple[int, ...]:
-        """
-        Determine spatial correction factor if periodic
+        """Determine spatial correction factor if periodic
         """
         _period_correction = [0, 0, 0]
         if self.periodic:
@@ -103,8 +102,7 @@ class Face(Feature):
         return tuple(_period_correction)
 
     def get_global_boundary(self, global_boundary) -> bool:
-        """
-        Determine if the face is an external boundary
+        """Determine if the face is an external boundary
         """
         return global_boundary
 
@@ -116,18 +114,19 @@ class Face(Feature):
 
         Returns:
             _type_: _description_
+
         """
         for feature_id, stride in zip(self.feature_id, strides):
             if feature_id != 0:
                 return stride
 
     def get_direction(self):
-        """
-        Determine if the face is point in the forward direction:
+        """Determine if the face is point in the forward direction:
             -1 for the non-negative feature id
 
         Returns:
             _type_: _description_
+
         """
         forward = True
         for feature_id in self.feature_id:
@@ -136,9 +135,8 @@ class Face(Feature):
         return forward
 
     def index_to_entry(self, entry, value):
-        """
-        Use the feature id to set a value of a list:
-            ((n,n),(n,n),(n,n))
+        """Use the feature id to set a value of a list:
+        ((n,n),(n,n),(n,n))
         """
         for dim, f_id in enumerate(self.feature_id):
             if f_id > 0:
@@ -149,12 +147,12 @@ class Face(Feature):
         return entry
 
     def get_slice(self):
-        """
-        For some situations, like with wall boundary types, it is convenient to operate
+        """For some situations, like with wall boundary types, it is convenient to operate
         on the entire slice of the img as opposed to being broken down by edges and corner.
 
         Returns:
             list[slices]
+
         """
         face_slice = [slice(None) for _ in range(3)]
         for dim, f_id in enumerate(self.feature_id):
@@ -167,8 +165,7 @@ class Face(Feature):
 
 
 class Edge(Feature):
-    """
-    Edge information for a subdomain
+    """Edge information for a subdomain
     Need to distinguish between internal and external edges.
     There are 12 external corners. All others are termed internal
     """
@@ -193,12 +190,12 @@ class Edge(Feature):
 
         Returns:
             bool: True if periodic
+
         """
         return boundary_type == "periodic"
 
     def get_periodic_correction(self) -> tuple[int, ...]:
-        """
-        Determine spatial correction factor if periodic
+        """Determine spatial correction factor if periodic
         """
         _period_correction = [0, 0, 0]
         for face in self.info["faces"]:
@@ -210,16 +207,13 @@ class Edge(Feature):
         return tuple(_period_correction)
 
     def get_global_boundary(self, global_boundary) -> bool:
+        """Determine if the edge is an external boundary
         """
-        Determine if the edge is an external boundary
-        """
-
         return global_boundary
 
 
 class Corner(Feature):
-    """
-    Corner information for a subdomain.
+    """Corner information for a subdomain.
     Need to distinguish between internal and external corners.
     There are 8 external corners. All others are termed internal
     """
@@ -243,12 +237,12 @@ class Corner(Feature):
 
         Returns:
             bool: True if periodic
+
         """
         return boundary_type == "periodic"
 
     def get_periodic_correction(self) -> tuple[int, ...]:
-        """
-        Determine spatial correction factor (shift) if periodic
+        """Determine spatial correction factor (shift) if periodic
         """
         _period_correction = [0, 0, 0]
         for n_face in self.info["faces"]:
@@ -260,10 +254,8 @@ class Corner(Feature):
         return tuple(_period_correction)
 
     def get_global_boundary(self, global_boundary) -> bool:
+        """Determine if the corner is a global boundary
         """
-        Determine if the corner is a global boundary
-        """
-
         return global_boundary
 
 
@@ -277,10 +269,8 @@ def collect_features(
     pad=None,
     reservoir_pad=None,
 ):
+    """Collect information for faces, edges, and corners
     """
-    Collect information for faces, edges, and corners
-    """
-
     faces = {}
     edges = {}
     corners = {}
@@ -336,8 +326,7 @@ def collect_features(
 
 
 def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
-    """
-    Compute feature-specific (i.e face, edge, corner) voxel ranges with optional padding.
+    """Compute feature-specific (i.e face, edge, corner) voxel ranges with optional padding.
 
     This function generates voxel ranges for a given feature based on the `feature_id`,
     `voxels`, and an optional `pad` parameter. It returns a dictionary with ranges for
@@ -366,8 +355,8 @@ def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
           - 0: Includes the entire range (or adjusted range if padding exists).
           - 1: Specifies the end of the axis.
         - For wall boundary conditions, the walls are stores as neighbor.
-    """
 
+    """
     # Determine if padding is active
     padded = pad is not None and np.any(pad)
 
@@ -424,11 +413,11 @@ def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
 
 
 def collect_periodic_features(features):
-    """
-    Loop through features and collect periodic ones
+    """Loop through features and collect periodic ones
 
     Args:
         features (_type_): _description_
+
     """
     periodic_features = []
     feature_types = ["faces", "edges", "corners"]
@@ -441,11 +430,11 @@ def collect_periodic_features(features):
 
 
 def collect_periodic_corrections(features):
-    """
-    Loop through features and collect periodic ones
+    """Loop through features and collect periodic ones
 
     Args:
         features (_type_): _description_
+
     """
     periodic_corrections = {}
     feature_types = ["faces", "edges", "corners"]

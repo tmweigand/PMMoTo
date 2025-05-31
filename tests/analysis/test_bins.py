@@ -3,13 +3,11 @@
 import numpy as np
 import pmmoto
 from mpi4py import MPI
-import matplotlib.pyplot as plt
 import pytest
 
 
 def test_bin_centers():
-    """
-    Dummy check for bins
+    """Dummy check for bins
     """
     start = 0
     end = 1
@@ -35,10 +33,8 @@ def test_bin_centers():
 
 
 def test_bin():
+    """Test bins
     """
-    Test bins
-    """
-
     start = 0
     end = 3
     num_bins = 25
@@ -58,10 +54,8 @@ def test_bin():
 
 
 def test_bins():
+    """Test bins
     """
-    Test bins
-    """
-
     start = [0, 1]
     end = [3, 2.8]
     num_bins = [25, 50]
@@ -76,10 +70,8 @@ def test_bins():
 
 
 def test_count_locations():
+    """Test binning coordinates
     """
-    Test binning coordinates
-    """
-
     start = 0
     end = 3
     num_bins = 25
@@ -114,10 +106,8 @@ def test_count_locations():
 
 
 def test_count_membrane():
+    """Test if membrane atoms are being counted.
     """
-    Test if membrane atoms are being counted.
-    """
-
     membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
     positions, types, domain = pmmoto.io.data_read.py_read_lammps_atoms(membrane_file)
 
@@ -136,8 +126,7 @@ def test_count_membrane():
 
 @pytest.mark.mpi(min_size=8)
 def test_count_membrane_parallel():
-    """
-    Test if membrane atoms are being counted correctly in parallel
+    """Test if membrane atoms are being counted correctly in parallel
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -188,10 +177,8 @@ def test_count_membrane_parallel():
 
 
 def test_sum_masses():
+    """Tests summing masses of atoms based on location.
     """
-    Tests summing masses of atoms based on location.
-    """
-
     start = 0
     end = 3
     num_bins = 25
@@ -232,10 +219,8 @@ def test_sum_masses():
 
 
 def test_sum_membrane_mass():
+    """Test membrane mass counting.
     """
-    Test membrane mass counting.
-    """
-
     membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
     positions, types, masses, domain = pmmoto.io.data_read.py_read_lammps_atoms(
         membrane_file, include_mass=True
@@ -262,8 +247,7 @@ def test_sum_membrane_mass():
 
 @pytest.mark.mpi(min_size=8)
 def test_sum_membrane_mass_parallel():
-    """
-    Test membrane mass counting.
+    """Test membrane mass counting.
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

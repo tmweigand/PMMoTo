@@ -3,10 +3,8 @@ import pmmoto
 
 
 def test_decomposed_domain():
+    """Test decomposition of domain
     """
-    Test decomposition of domain
-    """
-
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
     boundary_types = ((0, 0), (1, 1), (2, 2))
     inlet = ((1, 0), (0, 0), (0, 0))

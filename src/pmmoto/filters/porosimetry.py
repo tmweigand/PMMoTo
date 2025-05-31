@@ -18,8 +18,7 @@ __all__ = [
 
 
 def get_sizes(min_value, max_value, num_values, spacing="linear"):
-    """
-    Give list of pore sizes based on inputs provided
+    """Give list of pore sizes based on inputs provided
     """
     if min_value >= max_value:
         raise ValueError(
@@ -59,15 +58,13 @@ def porosimetry(
     multiphase=None,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
-    """
-    Perform a morphological erosion followed by a morphological dilation.
+    """Perform a morphological erosion followed by a morphological dilation.
     If inlet, the foreground voxels must be connected to the inlet.
 
     Additionally, allow for different radii to specified for the erosion and dilation.
     To do this, provide a list where the first entry is the erosion radius and the
     second entry is the dilation radius.
     """
-
     if isinstance(radius, (int, float)):
         erosion_radius = radius
         dilation_radius = radius
@@ -137,8 +134,7 @@ def pore_size_distribution(
     inlet=False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
-    """
-    Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
+    """Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
     Calls porosimetry function with single size and returns img_results.
     """
     if radii is not None:
@@ -180,8 +176,7 @@ def plot_pore_size_distribution(
     pore_size_counts: Dict[float, float],
     plot_type: Literal["cdf", "pdf"] = "pdf",
 ):
-    """
-    Plots pore size distribution.
+    """Plots pore size distribution.
     plot_type: (string) choose between cumulative distribution function, or probability density function
     """
     io_utils.check_file_path(file_name)

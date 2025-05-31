@@ -20,8 +20,7 @@ logger = get_logger()
 
 
 def all_gather(data):
-    """
-    Wrapper to allgather
+    """Wrapper to allgather
     """
     all_data = comm.allgather(data)
 
@@ -29,8 +28,7 @@ def all_gather(data):
 
 
 def gather(data):
-    """
-    Wrapper to gather
+    """Wrapper to gather
     """
     all_data = comm.gather(data, root=0)
 
@@ -38,8 +36,7 @@ def gather(data):
 
 
 def all_reduce(data):
-    """
-    Wrapper to allreduce
+    """Wrapper to allreduce
     """
     all_data = comm.allreduce(data, op=MPI.SUM)
 
@@ -47,8 +44,7 @@ def all_reduce(data):
 
 
 def update_buffer(subdomain, img, buffer=None):
-    """
-    Organize the communication to update the padding/buffer on subdomains and account for periodic boundary conditions.
+    """Organize the communication to update the padding/buffer on subdomains and account for periodic boundary conditions.
 
     Args:
         subdomain (object): The subdomain object containing features and neighbor information.
@@ -57,8 +53,8 @@ def update_buffer(subdomain, img, buffer=None):
 
     Returns:
         numpy.ndarray: The updated grid with the buffer data.
-    """
 
+    """
     if buffer is not None:
 
         # Ensure buffer does not span more than 1 subdomain
@@ -91,8 +87,7 @@ def update_buffer(subdomain, img, buffer=None):
 
 
 def buffer_pack(subdomain, img, extended_loop=None):
-    """
-    Packs the buffer data for communication.
+    """Packs the buffer data for communication.
 
     Args:
         subdomain (object): The subdomain object containing features.
@@ -100,8 +95,8 @@ def buffer_pack(subdomain, img, extended_loop=None):
 
     Returns:
         dict: A dictionary containing the packed buffer data.
-    """
 
+    """
     buffer_data = {}
     feature_types = ["faces", "edges", "corners"]
     for feature_type in feature_types:
@@ -122,8 +117,7 @@ def buffer_pack(subdomain, img, extended_loop=None):
 
 
 def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
-    """
-    This function updates the padding of a subdomain.
+    """This function updates the padding of a subdomain.
     Alternatively, if pad_extend is a tuple of pad size like: ((1, 1), (1, 1), (1, 1)),
     a new image is returned. Boundary conditions are applied to the extended image.
     """
@@ -152,8 +146,7 @@ def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
 
 
 def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
-    """
-    Send data between processes for faces, edges, and corners.
+    """Send data between processes for faces, edges, and corners.
     This also swaps the feature ids!!
 
     Args:
@@ -164,6 +157,7 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
 
     Returns:
         dict: Received data from neighboring processes. If unpack is True, returns unpacked received data.
+
     """
     recv_data = {}
     data_per_process = {}
@@ -224,8 +218,7 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
 
 
 def send_recv(rank, data_per_process):
-    """
-    Performs non-blocking sends and receives for inter-process communication.
+    """Performs non-blocking sends and receives for inter-process communication.
     Uses a two-phase communication pattern to avoid deadlocks.
     """
     send_requests = {}

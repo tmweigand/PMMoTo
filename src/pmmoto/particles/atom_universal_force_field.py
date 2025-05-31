@@ -1,6 +1,5 @@
 def atom_universal_force_field():
-    """
-    Universal force field data given as element name or atomic number
+    """Universal force field data given as element name or atomic number
     and yields atomic number and sigma (Angstroms). To use with pmmoto,
     must divide by 2 so a radius.
 

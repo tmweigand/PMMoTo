@@ -5,8 +5,7 @@ import math
 
 
 class Lattice:
-    """
-    Generate common lattice packings.
+    """Generate common lattice packings.
     Note that this currently add more objects than needed
     """
 
@@ -21,11 +20,11 @@ class Lattice:
         return 0.0
 
     def generate_lattice(self):
-        """
-        Generate an lattice for a given unit cell size and lattice type
+        """Generate an lattice for a given unit cell size and lattice type
 
         Returns:
             numpy.ndarray: Array of shape (N, 4) containing lattice points and sphere radius.
+
         """
         basis_vectors = self.get_basis_vectors()
         radius = self.get_radius()
@@ -72,8 +71,7 @@ class BodyCenteredCubic(Lattice):
         super().__init__(subdomain, lattice_constant)
 
     def get_basis_vectors(self):
-        """
-        Corner atom and body centered atom.
+        """Corner atom and body centered atom.
         +1 is added to loop when generating.
         """
         return np.array([[0, 0, 0], [0.5, 0.5, 0.5]])

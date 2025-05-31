@@ -21,11 +21,9 @@ __all__ = [
 
 
 def gen_struct_ratio(resolution, radius):
-    """
-    Generate the structuring element dimensions for halo communication
+    """Generate the structuring element dimensions for halo communication
     https://www.iwaenc.org/proceedings/1997/nsip97/pdf/scan/ns970226.pdf
     """
-
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list of length 2 or 3")
 
@@ -42,19 +40,20 @@ def gen_struct_ratio(resolution, radius):
 
 
 def gen_struct_element(resolution, radius):
-    """
-    Generate the structuring element for FFT morphology approach.
+    """Generate the structuring element for FFT morphology approach.
 
-    Parameters:
+    Parameters
+    ----------
         resolution (list or tuple): Resolution in each dimension (2D: [x, y], 3D: [x, y, z]).
         radius (float): Radius of the structuring element.
 
-    Returns:
+    Returns
+    -------
         tuple: (struct_ratio, struct_element), where:
             - struct_ratio: Array of structuring ratios.
             - struct_element: 2D or 3D array representing the structuring element.
-    """
 
+    """
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list or tuple of length 2 or 3.")
 
@@ -75,8 +74,7 @@ def gen_struct_element(resolution, radius):
 
 
 def addition(subdomain, img, radius, fft=False):
-    """
-    Perform a morphological dilation on a binary domain
+    """Perform a morphological dilation on a binary domain
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
@@ -109,8 +107,7 @@ def addition(subdomain, img, radius, fft=False):
 
 
 def dilate(subdomain, img, radius, fft=False):
-    """
-    Wrapper to morph_add
+    """Wrapper to morph_add
     """
     img_out = addition(subdomain, img, radius, fft)
 
@@ -118,8 +115,7 @@ def dilate(subdomain, img, radius, fft=False):
 
 
 def subtraction(subdomain, img, radius, fft=False):
-    """
-    Perform a morpological subtraction
+    """Perform a morpological subtraction
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
@@ -156,8 +152,7 @@ def subtraction(subdomain, img, radius, fft=False):
 
 
 def erode(subdomain, grid, radius, fft=False):
-    """
-    Wrapper to morph_subtract
+    """Wrapper to morph_subtract
     """
     grid_out = subtraction(subdomain, grid, radius, fft)
 
@@ -165,8 +160,7 @@ def erode(subdomain, grid, radius, fft=False):
 
 
 def opening(subdomain, grid, radius, fft=False):
-    """
-    Morphological opening
+    """Morphological opening
     """
     _erode = subtraction(subdomain, grid, radius, fft)
     open_map = addition(subdomain, _erode, radius, fft)
@@ -174,8 +168,7 @@ def opening(subdomain, grid, radius, fft=False):
 
 
 def closing(subdomain, grid, radius, fft=False):
-    """
-    Morphological opening
+    """Morphological opening
     """
     _dilate = addition(subdomain, grid, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
@@ -183,14 +176,13 @@ def closing(subdomain, grid, radius, fft=False):
 
 
 def check_radii(subdomain, radii):
-    """
-    Validates that each radius in the list does not exceed the subdomain size.
+    """Validates that each radius in the list does not exceed the subdomain size.
 
     Args:
         subdomain: Object with `own_voxels` and `rank` attributes.
         radii: Iterable of buffer radii to check against the subdomain.
-    """
 
+    """
     error_message = (
         "The specified radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
         "To resolve this, use a different subdomain topology—for example, change the configuration of subdomains from (%s).\n"

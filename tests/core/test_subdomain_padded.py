@@ -5,8 +5,7 @@ import pmmoto
 
 
 def generate_padded_subdomain(rank, pad, reservoir_voxels):
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain
     """
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
     boundary_types = ((0, 0), (1, 1), (2, 2))
@@ -31,10 +30,8 @@ def generate_padded_subdomain(rank, pad, reservoir_voxels):
 
 
 def test_subdomain():
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     rank = 12
     pad = (1, 1, 1)
     reservoir_voxels = 1
@@ -78,10 +75,8 @@ def test_subdomain():
 
 
 def test_subdomain_2():
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     rank = 26
     pad = (2, 2, 2)
     reservoir_voxels = 3
@@ -139,10 +134,8 @@ def test_subdomain_2():
 
 
 def test_subdomain_3():
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     rank = 0
     pad = (1, 1, 1)
     reservoir_voxels = 3
@@ -198,8 +191,7 @@ def test_subdomain_3():
 
 
 def test_own_voxels():
-    """
-    Ensures that walls are correctly added to a porous media img
+    """Ensures that walls are correctly added to a porous media img
     """
     boundary_types = ((1, 1), (1, 1), (1, 1))
     sd = pmmoto.initialize(

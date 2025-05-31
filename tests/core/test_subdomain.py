@@ -7,10 +7,8 @@ import pmmoto
 
 
 def test_subdomain(generate_subdomain):
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     rank = 12
     sd = generate_subdomain(rank)
 
@@ -42,10 +40,8 @@ def test_subdomain(generate_subdomain):
 
 
 def test_subdomain_2(generate_subdomain):
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     rank = 26
     sd = generate_subdomain(rank)
 
@@ -85,8 +81,7 @@ def test_subdomain_2(generate_subdomain):
 
 
 def test_subdomain_3(generate_subdomain):
-    """
-    Test for subdomain
+    """Test for subdomain
     """
     rank = 0
     sd = generate_subdomain(rank)
@@ -128,8 +123,7 @@ def test_subdomain_3(generate_subdomain):
 
 @pytest.mark.figures
 def test_subdomain_figures(generate_subdomain):
-    """
-    Generate images for testing subdomain
+    """Generate images for testing subdomain
     """
     rank = 0
     sd = pmmoto.initialize(
@@ -158,8 +152,7 @@ def test_subdomain_figures(generate_subdomain):
 
 
 def test_walls():
-    """
-    Ensures that walls are correctly added to a porous media img
+    """Ensures that walls are correctly added to a porous media img
     """
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
 
@@ -182,8 +175,7 @@ def test_walls():
 
 
 def test_get_img_index():
-    """
-    Ensure the correct index is provided given physical coordinates
+    """Ensure the correct index is provided given physical coordinates
     """
     sd = pmmoto.initialize((10, 10, 10))
 

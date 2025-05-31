@@ -6,8 +6,7 @@ from . import _set
 
 @dataclasses.dataclass
 class Matches:
-    """
-    Subdomain info for set class
+    """Subdomain info for set class
     """
 
     match_lookup: dict
@@ -15,8 +14,7 @@ class Matches:
 
 
 class BoundarySet(set.Set):
-    """
-    Boundary Set Class
+    """Boundary Set Class
     """
 
     def __init__(
@@ -38,8 +36,7 @@ class BoundarySet(set.Set):
         self.get_set_neighbors()
 
     def set_boundary_data(self):
-        """
-        Set the boundary data that is to be sent to neighboring processes
+        """Set the boundary data that is to be sent to neighboring processes
         """
         self.boundary_data = _set.SetDataSend(
             self.local_ID,
@@ -52,20 +49,17 @@ class BoundarySet(set.Set):
         self.sort_boundary_nodes()
 
     def add_internal_nodes(self, nodes):
-        """
-        Add intenral nodes to SetNodes data class
+        """Add intenral nodes to SetNodes data class
         """
         self.node_data.nodes = np.append(self.node_data.nodes, nodes)
 
     def sort_boundary_nodes(self):
-        """
-        Sort boundary nodes to searing is more efficient
+        """Sort boundary nodes to searing is more efficient
         """
         self.boundary_nodes = np.sort(self.boundary_nodes)
 
     def match_boundary_sets(self, n_sets):
-        """
-        Determine which neighboring sets match by comparing boundary nodes global ID
+        """Determine which neighboring sets match by comparing boundary nodes global ID
         n_sets are based on feature
         """
         match_lookup = {}
@@ -91,13 +85,11 @@ class BoundarySet(set.Set):
         self.match_data = SetMatches(match_lookup, matches)
 
     def get_num_global_nodes(self):
-        """
-        Determine the total number of nodes for a set. Subdomains are padded so need to remove.
+        """Determine the total number of nodes for a set. Subdomains are padded so need to remove.
         """
 
     def update_boundary_set(self, boundary_data):
-        """
-        Update boundary set information after matching from neighboring procs
+        """Update boundary set information after matching from neighboring procs
         """
         self.boundary_data = boundary_data
         self.global_ID = boundary_data.global_ID

@@ -11,8 +11,7 @@ __all__ = ["generate_rdf", "bin_distances"]
 
 
 class RDF:
-    """
-    Radial distribution function class
+    """Radial distribution function class
     RDF = g(r) where:
       r is the radial distance and
       g is the free energy.
@@ -39,14 +38,12 @@ class RDF:
         self.bounds = None
 
     def interpolate_rdf(self, radius):
-        """
-        Given a radius return the rdf
+        """Given a radius return the rdf
         """
         return np.interp(radius, self.radii, self.rdf)
 
     def potential_mean_force(self, k_b=0.0083144621, temp=300):
-        """
-        Potential mean force (pmf)
+        """Potential mean force (pmf)
         """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -54,8 +51,7 @@ class RDF:
 
 
 class Bounded_RDF(RDF):
-    """
-    Bounded radial distribution function class
+    """Bounded radial distribution function class
     where the intepolated function is restricted to:
         g(r)> 0 : r : g(r) = 1
 
@@ -70,8 +66,7 @@ class Bounded_RDF(RDF):
 
     @classmethod
     def from_rdf(cls, rdf_instance: RDF, eps: float = 0) -> "Bounded_RDF":
-        """
-        Create a Bounded_RDF instance from an existing RDF instance.
+        """Create a Bounded_RDF instance from an existing RDF instance.
 
         Args:
             rdf_instance: An instance of the RDF class
@@ -83,6 +78,7 @@ class Bounded_RDF(RDF):
         Example:
             >>> rdf = RDF("H2O", 1, radii, rdf_data)
             >>> bounded_rdf = Bounded_RDF.from_rdf(rdf)
+
         """
         return cls(
             name=rdf_instance.name,
@@ -93,9 +89,8 @@ class Bounded_RDF(RDF):
         )
 
     def determine_bounds(self, radii, rdf, eps=0):
-        """
-        Get the the r values of the bounded RDF such that:
-            g(r) > 0 : r : g(r) = 1
+        """Get the the r values of the bounded RDF such that:
+        g(r) > 0 : r : g(r) = 1
         """
         bounds = [0, len(rdf)]
         bounds[0] = self.find_min_radius(rdf, eps)
@@ -108,18 +103,16 @@ class Bounded_RDF(RDF):
         return bounds
 
     def find_min_radius(self, rdf, eps=0):
-        """
-        Find the smallest r values from the RDF data such that:
-             min r where g(r) > eps
+        """Find the smallest r values from the RDF data such that:
+        min r where g(r) > eps
         """
         r_loc = np.where(rdf < 1e-3)[0][-1]
 
         return r_loc
 
     def find_max_radius(self, rdf):
-        """
-        Find the smallest r value from the RDF data such that:
-          all g(r) values are non-zero after r
+        """Find the smallest r value from the RDF data such that:
+        all g(r) values are non-zero after r
         """
         find_r = rdf - self.rdf
         r_loc = np.where([find_r < 0])[1][0]
@@ -127,8 +120,7 @@ class Bounded_RDF(RDF):
         return r_loc
 
     def get_bounded_RDF_data(self, radii, rdf, bounds):
-        """
-        Set the bounds of the radial distribution function
+        """Set the bounds of the radial distribution function
         """
         r_out = radii[bounds[0] : bounds[1]]
         rdf_out = rdf[bounds[0] : bounds[1]]
@@ -136,8 +128,7 @@ class Bounded_RDF(RDF):
         return r_out, rdf_out
 
     def interpolate_radius_from_pmf(self, pmf_in):
-        """
-        Determine the radius given G.
+        """Determine the radius given G.
 
         """
         pmf = self.potential_mean_force()
@@ -151,8 +142,7 @@ class Bounded_RDF(RDF):
 
 
 def generate_rdf(bins, binned_distances):
-    """
-    Generate an rdf from binned distances
+    """Generate an rdf from binned distances
     """
     rdf = {}
     for label, binned in binned_distances.items():
@@ -166,8 +156,7 @@ def generate_rdf(bins, binned_distances):
 
 
 def bin_distances(subdomain, probe_atom_list, atoms, bins):
-    """
-    Finds the atoms that are within a radius of probe atom and bins the distances
+    """Finds the atoms that are within a radius of probe atom and bins the distances
 
     Args:
         subdomain: Subdomain object containing rank information
@@ -177,8 +166,8 @@ def bin_distances(subdomain, probe_atom_list, atoms, bins):
 
     Returns:
         RDFBins with updated bin counts from all processes
-    """
 
+    """
     if not isinstance(probe_atom_list, _particles.PyAtomList):
         raise TypeError(
             f"Expected probe_atom_list to be of type PyAtomList, got {type(probe_atom_list)}"

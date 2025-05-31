@@ -1,14 +1,11 @@
 """test_features.py"""
 
-import numpy as np
 import pmmoto
 
 
 def test_feature():
+    """Test the Feature base class
     """
-    test the Feature base class
-    """
-
     feature_id = (0, 0, 0)
     neighbor_rank = [0]
     boundary_type = 0
@@ -19,8 +16,7 @@ def test_feature():
 
 
 def test_face():
-    """
-    Test the face feature class
+    """Test the face feature class
     """
     feature_id = (1, 0, 0)
     neighbor_rank = [0]
@@ -48,8 +44,7 @@ def test_face():
 
 
 def test_edge():
-    """
-    Test the edge feature class
+    """Test the edge feature class
     """
     feature_id = (1, 1, 0)
     neighbor_rank = [0]
@@ -77,8 +72,7 @@ def test_edge():
 
 
 def test_corner():
-    """
-    Test the corner feature class
+    """Test the corner feature class
     """
     feature_id = (1, 1, -1)
     neighbor_rank = [0]

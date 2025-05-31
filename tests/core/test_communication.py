@@ -80,10 +80,8 @@ def test_update_buffer():
 
 @pytest.mark.mpi(min_size=8)
 def test_communicate_features():
+    """Ensure that features are being communicated to neighbor processes
     """
-    Ensure that features are being communicated to neighbor processes
-    """
-
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -116,10 +114,8 @@ def test_communicate_features():
 
 @pytest.mark.mpi(min_size=8)
 def test_update_buffer_with_buffer():
+    """Ensure that features are being communicated to neighbor processes
     """
-    Ensure that features are being communicated to neighbor processes
-    """
-
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 

@@ -6,8 +6,7 @@ from ..filters import distance
 
 
 class PorousMedia:
-    """
-    Porous media class
+    """Porous media class
     """
 
     def __init__(self, subdomain, img):
@@ -18,16 +17,14 @@ class PorousMedia:
 
     @property
     def porosity(self):
-        """
-        Getter for porosity, calculates if None.
+        """Getter for porosity, calculates if None.
         """
         if self._porosity is None:
             self.set_porosity()
         return self._porosity
 
     def set_porosity(self):
-        """
-        Calculate the porosity of porous media
+        """Calculate the porosity of porous media
         """
         own_img = utils.own_img(self.subdomain, self.img)
 
@@ -42,23 +39,20 @@ class PorousMedia:
 
     @property
     def distance(self):
-        """
-        Getter for euclidean distance, calculates if None.
+        """Getter for euclidean distance, calculates if None.
         """
         if self._distance is None:
             self.set_distance()
         return self._distance
 
     def set_distance(self):
-        """
-        Calculate the euclidean distance
+        """Calculate the euclidean distance
         """
         self._distance = distance.edt(img=self.img, subdomain=self.subdomain)
 
 
 def gen_pm(subdomain, img):
-    """
-    Initialize the porous media class and set inlet/outlet/wall bcs
+    """Initialize the porous media class and set inlet/outlet/wall bcs
     Gather loop_info for efficient looping
     """
     pm = PorousMedia(subdomain=subdomain, img=img)

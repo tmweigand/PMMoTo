@@ -19,20 +19,21 @@ class Multiphase:
         self.fluids = list(range(1, num_phases + 1))
 
     def update_img(self, img):
-        """
-        Update the multiphase img
+        """Update the multiphase img
         """
         self.img = img
 
     def get_volume_fraction(self, phase: int, img=None) -> float:
-        """
-        Calculate the volume fraction of a given phase in a multiphase image.
+        """Calculate the volume fraction of a given phase in a multiphase image.
 
-        Parameters:
+        Parameters
+        ----------
             phase (int): The phase ID to compute the volume fraction for.
 
-        Returns:
+        Returns
+        -------
             float: The volume fraction of the specified phase.
+
         """
         if img is None:
             img = self.img
@@ -50,8 +51,7 @@ class Multiphase:
         return total_voxel_count / total_voxels
 
     def get_saturation(self, phase: int, img=None) -> float:
-        """
-        Calculate the saturation of a multiphase image
+        """Calculate the saturation of a multiphase image
         """
         if img is None:
             img = self.img
@@ -59,8 +59,7 @@ class Multiphase:
 
     @staticmethod
     def get_probe_radius(pc, gamma=1, contact_angle=0):
-        """
-        Return the probe radius given a capillary pressure, surface tension and contact_angle
+        """Return the probe radius given a capillary pressure, surface tension and contact_angle
         """
         if pc == 0:
             r_probe = 0
@@ -70,7 +69,6 @@ class Multiphase:
 
     @staticmethod
     def get_pc(radius, gamma=1):
-        """
-        Return the capillary pressure given a surface tension and radius
+        """Return the capillary pressure given a surface tension and radius
         """
         return 2.0 * gamma / radius

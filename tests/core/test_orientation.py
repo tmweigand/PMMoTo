@@ -1,11 +1,8 @@
 """test_orientation.py"""
 
-import numpy as np
-import pmmoto
 
 
 def test_orientation():
-    """
-    Generic test
+    """Generic test
     """
     assert True

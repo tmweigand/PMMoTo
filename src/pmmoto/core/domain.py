@@ -1,10 +1,8 @@
-from typing import Literal
 import numpy as np
 
 
 class Domain:
-    """
-    Information for domain including:
+    """Information for domain including:
 
     - size_domain: Size of the domain in physical units
     - boundary_types:
@@ -34,8 +32,7 @@ class Domain:
         self.length = self.get_length()
 
     def get_length(self) -> tuple[float, ...]:
-        """
-        Calculate the length of the domain
+        """Calculate the length of the domain
         """
         length = np.zeros([self.dims], dtype=np.float64)
         for n in range(0, self.dims):
@@ -44,8 +41,7 @@ class Domain:
         return tuple(length)
 
     def get_volume(self):
-        """
-        Calculate the length of the domain
+        """Calculate the length of the domain
         """
         length = np.zeros([self.dims], dtype=np.float64)
         for n in range(0, self.dims):
@@ -54,8 +50,7 @@ class Domain:
         return np.prod(length)
 
     def periodic_check(self) -> bool:
-        """
-        Check if any external boundary is periodic boundary
+        """Check if any external boundary is periodic boundary
         """
         periodic = False
         for d_bound in self.boundary_types:
@@ -65,11 +60,11 @@ class Domain:
         return periodic
 
     def get_origin(self) -> tuple[float, ...]:
-        """
-        Determine the domain origin from box
+        """Determine the domain origin from box
 
         Returns:
             tuple[float,...]: Domain origin
+
         """
         origin = [0, 0, 0]
         for n, box_dim in enumerate(self.box):

@@ -37,9 +37,9 @@ class XmlWriter:
         if (addDeclaration): self.addDeclaration()
 
     def addComment(self, sstr):
-        """ Adds (open and close) a single comment contained in string sstr. 
-            TODO: Add a smart check for the position of the comments in the file. For now,
-                  we rely on the caller.
+        """Adds (open and close) a single comment contained in string sstr.
+        TODO: Add a smart check for the position of the comments in the file. For now,
+              we rely on the caller.
         """
         if self.openTag: 
             self.stream.write(b">")

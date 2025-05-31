@@ -5,8 +5,7 @@ from . import domain as pmmoto_domain
 
 
 class DiscretizedDomain(pmmoto_domain.Domain):
-    """
-    Class for discretizing the domain
+    """Class for discretizing the domain
     """
 
     def __init__(self, voxels: tuple[int, ...] = (1, 1, 1), **kwargs):
@@ -25,8 +24,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         )
 
     def get_resolution(self) -> tuple[float, ...]:
-        """
-        Get domain length and voxel size
+        """Get domain length and voxel size
         """
         res = np.zeros([self.dims])
         for n in range(0, self.dims):
@@ -37,8 +35,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
 
     @staticmethod
     def get_coords(box, voxels, resolution):
-        """
-        Determine the physical locations of voxel centroids
+        """Determine the physical locations of voxel centroids
         """
         coords = []
         for voxels, box, resolution in zip(voxels, box, resolution):

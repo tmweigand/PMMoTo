@@ -8,10 +8,8 @@ import pmmoto
 
 
 def test_edt_2d():
+    """Test the Euclidean transform code for a single process and non-periodic domain
     """
-    Test the Euclidean transform code for a single process and non-periodic domain
-    """
-
     voxels = (10, 50)
     prob_zero = 0.1
     seed = 1
@@ -22,8 +20,7 @@ def test_edt_2d():
 
 
 def test_edt_3d():
-    """
-    Test the Euclidean transform code for a single process and non-periodic domain
+    """Test the Euclidean transform code for a single process and non-periodic domain
     """
     img = np.ones([4, 4, 4], dtype=np.uint8)
     img[3, 3, 3] = 0
@@ -34,8 +31,7 @@ def test_edt_3d():
 
 
 def test_initial_parabolic_envelope():
-    """
-    Test the initial distance sweep with full array
+    """Test the initial distance sweep with full array
     """
     img = np.array([1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1], dtype=np.uint8)
 
@@ -50,8 +46,7 @@ def test_initial_parabolic_envelope():
 
 
 def test_initial_parabolic_envelope_correctors():
-    """
-    Test the initial distance sweep with correctors
+    """Test the initial distance sweep with correctors
     """
     img = np.array([1, 1, 0, 1, 1, 1, 1, 1, 1], dtype=np.uint8)
 
@@ -71,8 +66,7 @@ def test_initial_parabolic_envelope_correctors():
 
 
 def test_periodic_2d():
-    """
-    Tests for periodic domains
+    """Tests for periodic domains
     """
     voxels = (60, 60)
     prob_zero = 0.1
@@ -99,10 +93,8 @@ def test_periodic_2d():
 
 
 def test_periodic_2d_2():
+    """Tests for periodic domains
     """
-    Tests for periodic domains
-    """
-
     ## Generate and test 2d periodic domain in 1-dimension
     voxels = (6, 6)
     prob_zero = 0.1
@@ -130,8 +122,7 @@ def test_periodic_2d_2():
 
 
 def test_periodic_2d_3():
-    """
-    Tests for periodic domains
+    """Tests for periodic domains
     """
     voxels = (500, 500)
     prob_zero = 0.2
@@ -234,8 +225,7 @@ def test_boundary_hull_1d():
 
 
 def test_periodic_3d():
-    """
-    Tests for periodic domains
+    """Tests for periodic domains
     """
     voxels = (100, 100, 100)
     prob_zero = 0.1
@@ -291,10 +281,8 @@ def test_periodic_3d():
 
 @pytest.mark.mpi(min_size=8)
 def test_pmmoto_3d_parallel():
+    """Tests EDT with pmmoto
     """
-    Tests EDT with pmmoto
-    """
-
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
@@ -337,10 +325,8 @@ def test_pmmoto_3d_parallel():
 
 
 def test_periodic_3d_2():
+    """Tests for periodic domains
     """
-    Tests for periodic domains
-    """
-
     voxels = (50, 50, 50)  # img = np.ones(voxels, dtype=np.uint8)
     prob_zero = 0.2
     seed = 1246
@@ -377,8 +363,7 @@ def test_periodic_3d_2():
 
 
 def test_edt_single_non_periodic():
-    """
-    Check to make sure this is called as it needs no correctors. Domain is unit length so max edt must be less than zero.
+    """Check to make sure this is called as it needs no correctors. Domain is unit length so max edt must be less than zero.
     Pretty inefficient approach.
     """
     voxels = (10, 10, 10)

@@ -1,14 +1,12 @@
 """subdomain_padded.py"""
 
-import warnings
 import numpy as np
 from ..core import subdomain
 from ..core import subdomain_features
 
 
 class PaddedSubdomain(subdomain.Subdomain):
-    """
-    Padded subdomain to facilitate development of parallel algorithms
+    """Padded subdomain to facilitate development of parallel algorithms
     """
 
     def __init__(
@@ -56,8 +54,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         )
 
     def get_padding(self, pad: tuple[int, ...]) -> tuple[tuple[int, int], ...]:
-        """
-        Add pad to boundaries of subdomain. Padding is applied to all boundaries
+        """Add pad to boundaries of subdomain. Padding is applied to all boundaries
         except 'end' boundary type and 'wall' boundary type, where pad is limited to 1.
         Check is performed for wall boundary conditions if trying to extend an image which this function is used for.
         Padding must be equal on opposite feature!
@@ -66,8 +63,8 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         Returns:
              tuple[tuple[int, int], ...]: list of length == dim
-        """
 
+        """
         _pad = [[0, 0], [0, 0], [0, 0]]
         for dim, ind in enumerate(self.index):
             if ind == 0 and self.domain.boundary_types[dim][0] == 0:
@@ -95,8 +92,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         return tuple(tuple(sublist) for sublist in _pad)
 
     def extend_padding(self, pad: tuple[int, ...]):
-        """
-        Extend pad to boundaries of subdomain. Padding is applied to all boundaries
+        """Extend pad to boundaries of subdomain. Padding is applied to all boundaries
         except 'end' boundary type and 'wall' boundary type, where pad is limited to 1.
         Check is performed for wall boundary conditions if trying to extend an image which this function is used for.
         Padding must be equal on opposite feature!
@@ -105,8 +101,8 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         Returns:
              dict:
-        """
 
+        """
         _pad = [[0, 0], [0, 0], [0, 0]]
         for dim, ind in enumerate(self.index):
             if ind == 0 and self.domain.boundary_types[dim][0] in {0, 1}:
@@ -140,8 +136,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         return pad, loop
 
     def get_padded_voxels(self) -> tuple[int, ...]:
-        """
-        Calculate number of voxels in each subdomain.
+        """Calculate number of voxels in each subdomain.
         This can be very bad when voxels ~= ranks or something like that
         """
         voxels = [0, 0, 0]
@@ -155,8 +150,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         return tuple(voxels)
 
     def get_padded_box(self):
-        """
-        Determine the bounding box for each subdomain.
+        """Determine the bounding box for each subdomain.
         Note: subdomains are divided such that voxel spacing is constant
         """
         box = []
@@ -182,8 +176,7 @@ class PaddedSubdomain(subdomain.Subdomain):
     def get_reservoir_padding(
         self, reservoir_voxels: int
     ) -> tuple[tuple[int, int], ...]:
-        """
-        Determine inlet/outlet info and pad img but only inlet!
+        """Determine inlet/outlet info and pad img but only inlet!
         Convert to tuple of tuples - overly complicated
         """
         if reservoir_voxels == 0:
@@ -197,14 +190,14 @@ class PaddedSubdomain(subdomain.Subdomain):
         return tuple((_pad[i], _pad[i + 1]) for i in range(0, len(_pad), 2))
 
     def get_start(self) -> tuple[int, ...]:
-        """
-        Determine the start of the subdomain. used for saving as vtk
+        """Determine the start of the subdomain. used for saving as vtk
         Start is the minimum voxel ID
         Args:
             sd_index (tuple[int, int, int]): subdomain index
 
         Returns:
             tuple[int,...]: start
+
         """
         _start = [0, 0, 0]
 
@@ -219,11 +212,11 @@ class PaddedSubdomain(subdomain.Subdomain):
         return tuple(start)
 
     def get_own_voxels(self):
-        """
-        Determine the index for the voxels owned by this subdomain
+        """Determine the index for the voxels owned by this subdomain
 
         Returns:
             _type_: _description_
+
         """
         own_voxels = np.zeros([6], dtype=np.int64)
         for dim, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
@@ -233,8 +226,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         return own_voxels
 
     def update_reservoir(self, img, value):
-        """
-        Enforce a constant value in reservoir
+        """Enforce a constant value in reservoir
         """
         for dim, (start_pad, end_pad) in enumerate(self.reservoir_pad):
             if start_pad > 0:

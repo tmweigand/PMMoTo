@@ -1,6 +1,5 @@
 """dataRead.py"""
 
-import os
 import gzip
 import numpy as np
 
@@ -20,8 +19,7 @@ __all__ = [
 
 
 def read_sphere_pack_xyzr_domain(input_file):
-    """
-    Read in sphere pack given in x,y,z,radius order including domain bounding box
+    """Read in sphere pack given in x,y,z,radius order including domain bounding box
 
     Input File Format:
         x_min x_max
@@ -31,7 +29,6 @@ def read_sphere_pack_xyzr_domain(input_file):
         x2 y2 z2 r2
         x3 y3 z3 r3
     """
-
     # Check input file and proceed of exists
     io_utils.check_file(input_file)
 
@@ -64,8 +61,7 @@ def read_sphere_pack_xyzr_domain(input_file):
 
 
 def read_r_lookup_file(input_file, power=1):
-    """
-    Read in the radius lookup file for LAMMPS simulations
+    """Read in the radius lookup file for LAMMPS simulations
 
     Actually reading in sigma
 
@@ -90,11 +86,9 @@ def read_r_lookup_file(input_file, power=1):
 
 
 def py_read_lammps_atoms(input_file, include_mass=False):
-    """
-    Read position of atoms from LAMMPS file
+    """Read position of atoms from LAMMPS file
     atom_map must sync with LAMMPS ID
     """
-
     io_utils.check_file(input_file)
 
     if input_file.endswith(".gz"):
@@ -148,8 +142,7 @@ def py_read_lammps_atoms(input_file, include_mass=False):
 
 
 def read_lammps_atoms(input_file, type_map=None):
-    """
-    Call to c++ read
+    """Call to c++ read
 
     type_map (dict, optional): Mapping of (type, charge) pairs to new types
     Example: {(1, 0.4): 2, (1, -0.4): 3}
@@ -164,9 +157,8 @@ def read_lammps_atoms(input_file, type_map=None):
 
 
 def read_atom_map(input_file):
-    """
-    Read in the atom mapping file which has the following format:
-        atom_id, element_name, atom_name
+    """Read in the atom mapping file which has the following format:
+    atom_id, element_name, atom_name
     """
     # Check input file and proceed of exists
     io_utils.check_file(input_file)
@@ -185,15 +177,13 @@ def read_atom_map(input_file):
 
 
 def read_rdf(input_folder):
-    """
-    Read input folder containing radial distribution function data of the form
+    """Read input folder containing radial distribution function data of the form
 
         radial distance, rdf(r)
 
     Folder must contain file called `atom_map.txt`
     Files for all listed atoms of name 'atom_name'.rdf
     """
-
     # Check folder exists
     io_utils.check_folder(input_folder)
 
@@ -220,15 +210,13 @@ def read_rdf(input_folder):
 
 
 def read_binned_distances_rdf(input_folder):
-    """
-    Read input folder containing radial distribution function data of the form
+    """Read input folder containing radial distribution function data of the form
 
         radial distance, rdf(r)
 
     Folder must contain file called `atom_map.txt`
     Files for all listed atoms of name 'atom_name'.rdf
     """
-
     # Check folder exists
     io_utils.check_folder(input_folder)
 

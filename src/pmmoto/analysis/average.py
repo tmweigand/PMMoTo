@@ -9,8 +9,7 @@ __all__ = [
     ]
 
 def linear(subdomain,data,direction):
-    """
-    Calculate the linear average along given direction 
+    """Calculate the linear average along given direction
     """
     grid = utils.own_grid(data,subdomain.index_own_nodes)
     proc_map = subdomain.domain.global_map[1:-1,1:-1,1:-1]

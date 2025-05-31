@@ -6,8 +6,7 @@ from ..core import subdomain_padded
 
 
 class VerletSubdomain(subdomain_padded.PaddedSubdomain):
-    """
-    Verlet subdomains divide a subdomain into smaller Verlet domains.
+    """Verlet subdomains divide a subdomain into smaller Verlet domains.
     """
 
     def __init__(
@@ -31,10 +30,8 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
     def from_subdomain(
         cls, rank, decomposed_domain, pad, reservoir_voxels, verlet_domains
     ):
+        """Alternative constructor that initializes from an existing Subdomain instance.
         """
-        Alternative constructor that initializes from an existing Subdomain instance.
-        """
-
         return cls(
             rank=rank,
             decomposed_domain=decomposed_domain,
@@ -44,8 +41,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         )
 
     def get_verlet_voxels(self):
-        """
-        Determine the number of voxels for each verlet subdomain
+        """Determine the number of voxels for each verlet subdomain
         """
         verlet_voxels = [[0, 0, 0] for _ in range(self.num_verlet)]
         for n in range(self.num_verlet):
@@ -55,8 +51,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         return tuple(verlet_voxels)
 
     def get_verlet_loop(self):
-        """
-        Collect the loop information for each verlet subdomain
+        """Collect the loop information for each verlet subdomain
         """
         loop = np.zeros([self.num_verlet, 3, 2], dtype=np.uintp)
         for n, voxels in enumerate(self.verlet_voxels):
@@ -74,8 +69,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         return loop
 
     def get_verlet_centroid(self):
-        """
-        Determine the center of the verlet domain
+        """Determine the center of the verlet domain
         """
         centroid = np.zeros([self.num_verlet, 3], dtype=np.double)
         for n in range(self.num_verlet):
@@ -90,8 +84,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         return centroid
 
     def get_maximum_diameter(self):
-        """
-        Determine the maximum diameter of the verlet subdomain
+        """Determine the maximum diameter of the verlet subdomain
         """
         max_diameter = np.zeros([self.num_verlet], dtype=np.double)
         for n in range(self.num_verlet):
@@ -105,8 +98,7 @@ class VerletSubdomain(subdomain_padded.PaddedSubdomain):
         return max_diameter
 
     def get_verlet_box(self):
-        """
-        Determine the box of the verlet subdomain
+        """Determine the box of the verlet subdomain
         """
         box = {}
         for n in range(self.num_verlet):

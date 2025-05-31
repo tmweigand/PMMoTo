@@ -1,12 +1,10 @@
 import pytest
-import numpy as np
 import pmmoto
 
 
 @pytest.fixture
 def padded_subdomain():
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain
     """
     box = ((0, 1), (0, 1), (0, 1))
     boundary_types = ((2, 2), (2, 2), (2, 2))

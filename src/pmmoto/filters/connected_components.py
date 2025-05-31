@@ -13,12 +13,10 @@ __all__ = [
 
 
 def connect_components(img, subdomain, return_label_count=True):
-    """
-    Create sets for all phases in img.
+    """Create sets for all phases in img.
 
     Note: Zero is background and will not join to any other voxel!
     """
-
     # max_label = label_count
     label_img, label_count = cc3d.connected_components(
         img, return_N=True, out_dtype=np.uint64
@@ -42,6 +40,7 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
         subdomain (_type_): _description_
         label_grid (_type_): _description_
         label_count (_type_): _description_
+
     """
     boundary_labels = voxels.get_boundary_voxels(
         subdomain=subdomain, img=label_grid, neighbors_only=True
@@ -65,8 +64,7 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
 
 
 def gen_img_to_label_map(img, labeled_img):
-    """
-    Collect the label to phase mapping for all labels
+    """Collect the label to phase mapping for all labels
     """
     return voxels.gen_grid_to_label_map(
         img,
@@ -75,8 +73,7 @@ def gen_img_to_label_map(img, labeled_img):
 
 
 def phase_count(phase_map):
-    """
-    Count the number of labels for a given phase
+    """Count the number of labels for a given phase
     """
     phase_count = {}
     for label in phase_map:
@@ -90,8 +87,7 @@ def phase_count(phase_map):
 
 
 def inlet_outlet_labels(subdomain, labeled_img):
-    """
-    Collect the labels that are on the inlet and outlet
+    """Collect the labels that are on the inlet and outlet
     """
     sd_inlet = voxels.gen_inlet_label_map(subdomain, labeled_img)
     sd_outlet = voxels.gen_outlet_label_map(subdomain, labeled_img)
@@ -111,13 +107,12 @@ def inlet_outlet_labels(subdomain, labeled_img):
 
 
 def inlet_outlet_connections(subdomain, labeled_img):
-    """
-    Determine the labels that are connected to both the inlet and outlet
+    """Determine the labels that are connected to both the inlet and outlet
 
     Returns:
         _type_: _description_
-    """
 
+    """
     connected = inlet_outlet_labels(subdomain, labeled_img)
     connections = []
     for label_id, label in connected.items():
@@ -128,8 +123,7 @@ def inlet_outlet_connections(subdomain, labeled_img):
 
 
 def inlet_connected_img(subdomain, img, phase=None):
-    """
-    This function return an img where all voxels are connected to the inlet.
+    """This function return an img where all voxels are connected to the inlet.
 
     If phase is specified, all other phases are set to zero leaving only connected
     voxels of the specified phase.
@@ -161,13 +155,11 @@ def inlet_connected_img(subdomain, img, phase=None):
 
 
 def outlet_connected_img(subdomain, img, phase=None):
-    """
-    This function return an img where all voxels are connected to the inlet.
+    """This function return an img where all voxels are connected to the inlet.
 
     If phase is specified, all other phases are set to zero leaving only connected
     voxels of the specified phase.
     """
-
     # Generate labels for each phase
     labeled_img = connect_components(img, subdomain, return_label_count=False)
 
