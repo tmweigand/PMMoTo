@@ -37,9 +37,7 @@ class Sets(object):
     def collect_boundary_set_info(self, data, grid, label):
         """
         Loop through each set and determine if a boundary set.
-        If so:
-            create a boundary set instance
-
+        If so create a boundary set instance
         """
         pass
         # if data["boundary"][label]:

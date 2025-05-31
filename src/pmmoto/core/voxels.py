@@ -104,13 +104,18 @@ def get_nearest_boundary_index(
 def get_boundary_voxels(subdomain, img, neighbors_only=False):
     """
     This function returns the values on the boundary features.
-    The features are divided into
-        own: feature voxels owned by subdomain
-        neighbor: feature voxels owned by a neighbor subdomain
+
+    The features are divided into:
+
+    - own: feature voxels owned by subdomain
+    - neighbor: feature voxels owned by a neighbor subdomain
 
     Args:
-        subdomain (_type_): _description_
-        img (_type_): _description_
+        subdomain (_type_): Description of subdomain.
+        img (_type_): Description of img.
+
+    Returns:
+        dict: Dictionary of boundary voxels.
     """
     out_voxels = {}
 
@@ -133,16 +138,19 @@ def get_boundary_voxels(subdomain, img, neighbors_only=False):
 
 def get_id(x, total_voxels):
     """
-    Wrapper to _get_id
+    Wrapper to _get_id.
 
     Determine the ID for a voxel.
-    Input:
-        - x: 3D index of the voxel (x, y, z)
-        - total_voxels: Size of the domain (number of voxels in each dimension)
-    Output:
-        - Global or local ID of the voxel.
-    Period
-    Periodic boundary conditions are applied by using modulo arithmetic.
+
+    Args:
+        x: 3D index of the voxel (x, y, z)
+        total_voxels: Size of the domain (number of voxels in each dimension)
+
+    Returns:
+        int: Global or local ID of the voxel.
+
+    Note:
+        Periodic boundary conditions are applied by using modulo arithmetic.
     """
     id = _voxels.get_id(
         np.array(x, dtype=np.int64), np.array(total_voxels, dtype=np.uint64)
