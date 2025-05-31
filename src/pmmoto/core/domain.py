@@ -5,12 +5,14 @@ import numpy as np
 class Domain:
     """
     Information for domain including:
-        size_domain: Size of the domain in physical units
-        boundary_types:  0: No assumption made
-                         1: Wall boundary condition
-                         2: Periodic boundary condition - Opposing face must also be 2!
-        inlet: True/False boundary must be 0
-        outlet: True/False boundary must be 0
+
+    - size_domain: Size of the domain in physical units
+    - boundary_types:
+        0: No assumption made
+        1: Wall boundary condition
+        2: Periodic boundary condition - Opposing face must also be 2!
+    - inlet: True/False boundary must be 0
+    - outlet: True/False boundary must be 0
 
     """
 
