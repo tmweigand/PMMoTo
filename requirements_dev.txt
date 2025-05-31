@@ -1,5 +1,23 @@
-tox>=4.0.0
+# Testing
 pytest>=8.1
 pytest-cov>=2.12.1
-pytest_benchmark>=5.1.0
-pytest-mpi>=0.6
+pytest-benchmark>=5.1.0
+pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master
+
+# Linting and formatting
+ruff>=0.3.0
+black>=24.3.0
+mypy>=1.0
+
+# Docstring and code documentation
+interrogate>=1.5.0
+
+# Build and environment management
+tox>=4.0.0
+build>=1.0.3
+twine>=4.0.2
+
+# Optional: for type checking with numpy/scipy
+types-setuptools
+types-requests
+types-PyYAML
