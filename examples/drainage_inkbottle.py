@@ -1,5 +1,3 @@
-"""drainage_inkbottle.py"""
-
 from mpi4py import MPI
 import matplotlib.pyplot as plt
 import pmmoto
@@ -54,7 +52,7 @@ capillary_pressure = [
 
 
 def drain_ink_bottle():
-    """This is an example that simulates morphological drainage of an inkbottle.
+    """Simulate morphological drainage of an inkbottle.
 
     To run this file:
         mpirun -np 8 python examples/drainage_inkbottle.py
