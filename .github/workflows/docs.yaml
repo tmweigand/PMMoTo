@@ -6,7 +6,7 @@ on:
       - clean_up_for_v1
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macOS-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,8 +18,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          brew install mpich zlib
           python -m pip install --upgrade pip
-          pip install -r docs/requirements.txt
+          pip install -e .[docs]
 
       - name: Clean and generate docs
         run: |
