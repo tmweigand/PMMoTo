@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
     "sphinx.ext.githubpages",
+    "myst_parser",
 ]
 
 autodoc_mock_imports = [
@@ -45,6 +46,11 @@ html_show_index = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 html_static_path = ["_static"]
 

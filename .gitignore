@@ -22,6 +22,5 @@ docs/_build/
 docs/.doctrees/
 docs/_static/*.js
 docs/_static/*.css
-docs/_static/*.png
 *.pyc
 __pycache__/
