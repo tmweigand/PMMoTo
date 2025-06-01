@@ -4,10 +4,9 @@ on:
   push:
     branches:
       - clean_up_for_v1
-
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macOS-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,16 +18,25 @@ jobs:
 
       - name: Install dependencies
         run: |
+          brew install mpich zlib
           python -m pip install --upgrade pip
-          pip install -r docs/requirements.txt
+          pip install -e .[docs]
 
-      - name: Build docs
+      - name: Clean and generate docs
         run: |
+          rm -rf docs/pmmoto.*.rst docs/modules.rst docs/_build/html
+          sphinx-apidoc -o docs/ src/pmmoto --force --module-first
           cd docs
           make html
+
+      - name: List built docs
+        run: |
+          ls -lh docs/_build/html/genindex.html
+          ls -lh docs/_build/html/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.GH_PAGES_TOKEN }}
           publish_dir: ./docs/_build/html
+          force_orphan: true # Ensures old files are removed

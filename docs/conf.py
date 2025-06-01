@@ -22,6 +22,8 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
+    "sphinx.ext.githubpages",
+    "myst_parser",
 ]
 
 autodoc_mock_imports = [
@@ -31,12 +33,24 @@ autodoc_mock_imports = [
 autoclass_content = "both"
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "../src/pmmoto/io/evtk/*"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# If your root document is not index.rst, uncomment and set this:
+# master_doc = "index"
+
+# Show "Show Source" links and the general index page
+html_show_sourcelink = True
+html_show_index = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 html_static_path = ["_static"]
 

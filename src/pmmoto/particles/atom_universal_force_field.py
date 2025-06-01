@@ -13,7 +13,7 @@ def atom_universal_force_field():
                              and divided by 2 to yield radius.
 
     Data source:
-        https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms
+    https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms
 
     Returns:
         dict: Mapping of element names or atomic numbers to (atomic_number, radius).
