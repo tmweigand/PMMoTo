@@ -1,3 +1,9 @@
+name: Build and Deploy Sphinx Docs
+
+on:
+  push:
+    branches:
+      - clean_up_for_v1
 jobs:
   build:
     runs-on: ubuntu-latest
