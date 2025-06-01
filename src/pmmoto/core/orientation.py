@@ -1,12 +1,23 @@
+"""orientation.py
+
+Defines orientation and feature indexing utilities for PMMoTo subdomains.
+"""
+
 import numpy as np
 
 __all__ = ["get_boundary_id"]
 
 
 def get_boundary_id(boundary_index):
-    """Determine boundary ID
-    Input: boundary_ID[3] corresponding to [x,y,z] and values of -1,0,1
-    Output: boundary_ID
+    """Determine boundary ID from a boundary index.
+
+    Args:
+        boundary_index (list[int] or tuple[int]): Boundary index for [x, y, z],
+        values -1, 0, 1.
+
+    Returns:
+        int: Encoded boundary ID.
+
     """
     params = [[0, 9, 18], [0, 3, 6], [0, 1, 2]]
 
@@ -23,8 +34,14 @@ def get_boundary_id(boundary_index):
 
 
 def add_faces(boundary_features):
-    """Since loop_info are by face, need to add face index for edges and corners in case
+    """Add face indices for edges and corners in boundary_features.
+
+    Since loop_info are by face, need to add face index for edges and corners in case
     edge and corner n_procs are < 0 but face is valid.
+
+    Args:
+        boundary_features (list[bool]): List of boundary feature flags.
+
     """
     for n in range(0, num_features):
         if boundary_features[n]:
@@ -184,10 +201,10 @@ features["corners"] = corners
 
 
 def get_features():
-    """Grab a dictionary of all features
+    """Return a list of all feature IDs (faces, edges, corners).
 
     Returns:
-        _type_: _description_
+        list[tuple[int, int, int]]: List of feature IDs.
 
     """
     features = [
@@ -282,8 +299,15 @@ allFaces = [
 
 
 def get_index_ordering(inlet, outlet):
-    """This function rearranges the loop_info ordering so
-    the inlet and outlet faces are first.
+    """Rearrange the loop_info ordering so the inlet and outlet faces are first.
+
+    Args:
+        inlet (tuple): Inlet flags for each face.
+        outlet (tuple): Outlet flags for each face.
+
+    Returns:
+        list[int]: New ordering of axes.
+
     """
     order = [0, 1, 2]
     for n in range(0, 3):
@@ -292,232 +316,3 @@ def get_index_ordering(inlet, outlet):
             order.insert(0, n)
 
     return order
-
-
-def get_send_halo(struct_ratio, buffer, dim):
-    """Determine slices of face, edge, and corner neighbor to send data
-    structRatio is size of voxel window to send and is [nx,ny,nz]
-    buffer is the subDomain.buffer
-    dim is grid.shape
-    Buffer is always updated on edges and corners due to geometry contraints
-    """
-    send_faces = np.empty([num_faces, 3], dtype=object)
-    send_edges = np.empty([num_edges, 3], dtype=object)
-    send_corner = np.empty([num_corners, 3], dtype=object)
-
-    #############
-    ### Faces ###
-    #############
-    for f_index in faces:
-        f_ID = faces[f_index]["ID"]
-        for n in range(len(f_ID)):
-            if f_ID[n] != 0:
-                if f_ID[n] > 0:
-                    send_faces[f_index, n] = slice(
-                        dim[n] - struct_ratio[n * 2 + 1] - buffer[n * 2 + 1] - 1,
-                        dim[n] - buffer[n * 2 + 1] - 1,
-                    )
-                else:
-                    send_faces[f_index, n] = slice(
-                        buffer[n * 2] + 1, buffer[n * 2] + struct_ratio[n * 2] + 1
-                    )
-            else:
-                send_faces[f_index, n] = slice(None, None)
-    #############
-
-    #############
-    ### Edges ###
-    #############
-    for e_index in edges:
-        e_ID = edges[e_index]["ID"]
-        for n in range(len(e_ID)):
-            if e_ID[n] != 0:
-                if e_ID[n] > 0:
-                    send_edges[e_index, n] = slice(
-                        dim[n] - struct_ratio[n * 2 + 1] - buffer[n * 2 + 1] - 1,
-                        dim[n] - 1,
-                    )
-                else:
-                    send_edges[e_index, n] = slice(
-                        buffer[n * 2], buffer[n * 2] + struct_ratio[n * 2] + 1
-                    )
-            else:
-                send_edges[e_index, n] = slice(None, None)
-    #############
-
-    ###############
-    ### Corners ###
-    ###############
-    for c_index in corners:
-        c_ID = corners[c_index]["ID"]
-        for n in range(len(c_ID)):
-            if c_ID[n] > 0:
-                send_corner[c_index, n] = slice(
-                    dim[n] - struct_ratio[n * 2 + 1] - buffer[n * 2 + 1] - 1, dim[n] - 1
-                )
-            else:
-                send_corner[c_index, n] = slice(
-                    buffer[n * 2], buffer[n * 2] + struct_ratio[n * 2] + 1
-                )
-    ###############
-
-    return send_faces, send_edges, send_corner
-
-
-def get_recv_halo(halo, buffer, dim):
-    """Determine slices of face, edge, and corner neighbor to recieve data
-    Buffer is always updated on edges and corners due to geometry contraints
-    """
-    recv_faces = np.empty([num_faces, 3], dtype=object)
-    recv_edges = np.empty([num_edges, 3], dtype=object)
-    recv_corners = np.empty([num_corners, 3], dtype=object)
-
-    #############
-    ### Faces ###
-    #############
-    for f_index in faces:
-        f_ID = faces[f_index]["ID"]
-        for n in range(len(f_ID)):
-            if f_ID[n] != 0:
-                if f_ID[n] > 0:
-                    recv_faces[f_index, n] = slice(dim[n] - halo[n * 2 + 1], dim[n])
-                else:
-                    recv_faces[f_index, n] = slice(None, halo[n * 2])
-            else:
-                recv_faces[f_index, n] = slice(halo[n * 2], dim[n] - halo[n * 2 + 1])
-    #############
-
-    #############
-    ### Edges ###
-    #############
-    for e_index in edges:
-        e_ID = edges[e_index]["ID"]
-        for n in range(len(e_ID)):
-            if e_ID[n] != 0:
-                if e_ID[n] > 0:
-                    recv_edges[e_index, n] = slice(
-                        dim[n] - halo[n * 2 + 1] - buffer[n * 2 + 1], dim[n]
-                    )
-                else:
-                    recv_edges[e_index, n] = slice(None, halo[n * 2] + buffer[n * 2])
-            else:
-                recv_edges[e_index, n] = slice(halo[n * 2], dim[n] - halo[n * 2 + 1])
-    #############
-
-    ###############
-    ### Corners ###
-    ###############
-    for c_index in corners:
-        c_ID = corners[c_index]["ID"]
-        for n in range(len(c_ID)):
-            if c_ID[n] > 0:
-                recv_corners[c_index, n] = slice(
-                    dim[n] - halo[n * 2 + 1] - buffer[n * 2 + 1], dim[n]
-                )
-            else:
-                recv_corners[c_index, n] = slice(None, halo[n * 2] + buffer[n * 2])
-    ###############
-
-    return recv_faces, recv_edges, recv_corners
-
-
-def get_send_buffer(subdomain, buffer, dim):
-    """Determine slices of face, edge, and corner neighbor to send data
-    structRatio is size of voxel window to send and is [nx,ny,nz]
-    buffer is the subDomain.buffer
-    dim is grid.shape
-    Buffer is always updated on edges and corners due to geometry contraints
-    """
-    send_faces = {}
-    send_edges = {}
-    send_corners = {}
-
-    ## Flatten buffer
-    # buffer = [_pad for dim in buffer_in for _pad in dim]
-
-    for feature_id, feature in subdomain.features["faces"].items():
-        send_faces[feature_id] = np.empty(3, dtype=object)
-        for _, n in enumerate(feature_id):
-            send_faces[feature_id][n] = slice(
-                feature.loop[n][0],
-                feature.loop[n][1],
-            )
-
-    for feature_id, feature in subdomain.features["edges"].items():
-        send_edges[feature_id] = np.empty(3, dtype=object)
-        for _, n in enumerate(feature_id):
-            send_edges[feature_id][n] = slice(
-                feature.loop[n][0],
-                feature.loop[n][1],
-            )
-
-    for feature_id, feature in subdomain.features["corners"].items():
-        send_corners[feature_id] = np.empty(3, dtype=object)
-        for _, n in enumerate(feature_id):
-            send_corners[feature_id][n] = slice(
-                feature.loop[n][0],
-                feature.loop[n][1],
-            )
-
-    return send_faces, send_edges, send_corners
-
-
-def get_recv_buffer(buffer, dim):
-    """Determine slices of face, edge, and corner neighbor to recieve data
-    Buffer is always updated on edges and corners due to geometry contraints
-    """
-    recv_faces = {}
-    recv_edges = {}
-    recv_corners = {}
-
-    #############
-    ### Faces ###
-    #############
-    for feature_id in faces.keys():
-        recv_faces[feature_id] = np.empty(3, dtype=object)
-        for f_id, n in enumerate(feature_id):
-            if f_id != 0:
-                if f_id > 0:
-                    recv_faces[feature_id][n] = slice(
-                        dim[n] - buffer[n * 2 + 1], dim[n]
-                    )
-                else:
-                    recv_faces[feature_id][n] = slice(None, buffer[n * 2])
-            else:
-                recv_faces[feature_id][n] = slice(
-                    buffer[n * 2], dim[n] - buffer[n * 2 + 1]
-                )
-    #############
-
-    #############
-    ### Edges ###
-    #############
-    for feature_id in edges.keys():
-        recv_edges[feature_id] = np.empty(3, dtype=object)
-        for e_id, n in enumerate(feature_id):
-            if e_id != 0:
-                if e_id > 0:
-                    recv_edges[feature_id][n] = slice(
-                        dim[n] - buffer[n * 2 + 1], dim[n]
-                    )
-                else:
-                    recv_edges[feature_id][n] = slice(None, buffer[n * 2])
-            else:
-                recv_edges[feature_id][n] = slice(
-                    buffer[n * 2], dim[n] - buffer[n * 2 + 1]
-                )
-    #############
-
-    ###############
-    ### Corners ###
-    ###############
-    for feature_id in corners.keys():
-        recv_corners[feature_id] = np.empty(3, dtype=object)
-        for c_id, n in enumerate(feature_id):
-            if c_id > 0:
-                recv_corners[feature_id][n] = slice(dim[n] - buffer[n * 2 + 1], dim[n])
-            else:
-                recv_corners[feature_id][n] = slice(None, buffer[n * 2])
-    ###############
-
-    return recv_faces, recv_edges, recv_corners

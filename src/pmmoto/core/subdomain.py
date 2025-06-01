@@ -1,4 +1,7 @@
-"""subdomains.py"""
+"""subdomains.py
+
+Defines the Subdomain class for domain decomposition and parallelization in PMMoTo.
+"""
 
 import numpy as np
 
@@ -8,14 +11,20 @@ from ..core import subdomain_features
 
 
 class Subdomain(domain_discretization.DiscretizedDomain):
-    """Parallelization is via decomposition of domain into subdomains
-    """
+    """Decompose the domain into subdomains for parallelization."""
 
     def __init__(
         self,
         rank: int,
         decomposed_domain,
     ):
+        """Initialize a Subdomain.
+
+        Args:
+            rank (int): Rank of the subdomain.
+            decomposed_domain: Decomposed domain object.
+
+        """
         self.rank = rank
         self.domain = decomposed_domain
         self.index = self.get_index(self.rank, self.domain.subdomains)
@@ -44,14 +53,30 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     @staticmethod
     def get_index(rank, subdomains) -> tuple[np.intp, ...]:
-        """Determine the index of the subdomain
+        """Determine the index of the subdomain in the decomposition.
+
+        Args:
+            rank (int): The rank of the subdomain.
+            subdomains (tuple): Number of subdomains in each dimension.
+
+        Returns:
+            tuple: Index of the subdomain.
+
         """
         return np.unravel_index(rank, subdomains)
 
     @staticmethod
     def get_voxels(index, domain_voxels, subdomains) -> tuple[int, ...]:
         """Calculate number of voxels in each subdomain.
-        This can be very bad when voxels ~= ranks or something like that
+
+        Args:
+            index (tuple): Index of the subdomain.
+            domain_voxels (tuple): Number of voxels in the full domain.
+            subdomains (tuple): Number of subdomains in each dimension.
+
+        Returns:
+            tuple[int, ...]: Number of voxels in each dimension for this subdomain.
+
         """
         voxels = [0, 0, 0]
         for dim, ind in enumerate(index):
@@ -65,8 +90,16 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     def get_box(self, voxels):
         """Determine the bounding box for each subdomain.
-        Note: subdomains are divided such that voxel spacing
-        is constant
+
+        Note:
+            Subdomains are divided such that voxel spacing is constant.
+
+        Args:
+            voxels (tuple): Number of voxels in each dimension.
+
+        Returns:
+            tuple: Bounding box for each dimension.
+
         """
         box = []
         for dim, ind in enumerate(self.index):
@@ -80,7 +113,11 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return tuple(box)
 
     def get_length(self) -> tuple[float, ...]:
-        """Calculate the length of the domain
+        """Calculate the length of the subdomain in each dimension.
+
+        Returns:
+            tuple[float, ...]: Length in each dimension.
+
         """
         length = np.zeros([self.domain.dims], dtype=np.float64)
         for n in range(0, self.domain.dims):
@@ -90,9 +127,12 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     def get_global_boundary(self):
         """Determine if the features are on the domain boundary.
-        For a feature to be on a domain boundary, the following must be true:
 
-            subdomain index must contain either 0 or number of subdomains
+        For a feature to be on a domain boundary, the subdomain index must contain
+        either 0 or the number of subdomains.
+
+        Returns:
+            dict: Mapping from feature to boolean indicating global boundary.
 
         """
         global_boundary = {}
@@ -120,19 +160,15 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return global_boundary
 
     def get_boundary_types(self, global_boundary, neighbor_ranks):
-        """Determines the boundary type for each feature in the computational domain.
+        """Determine the boundary type for each feature in the computational domain.
 
         Args:
-            global_boundary (dict): A dictionary mapping features to boolean values indicating
-                                    whether they belong to the global boundary.
-            neighbor_ranks (dict): A dictionary mapping features to the neighbor process rank.
+            global_boundary (dict): Mapping features to boolean for global boundary.
+            neighbor_ranks (dict): Mapping features to neighbor process rank.
 
         Returns:
-            dict: A dictionary mapping each feature to its corresponding boundary type.
-                Possible values: "end", "wall", "periodic", or "internal".
-
-        Raises:
-            Exception: If an unexpected boundary type is encountered.
+            dict: Mapping each feature to its boundary type
+                ("end", "wall", "periodic", "internal").
 
         """
         boundary_type = {}
@@ -168,8 +204,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
     def get_inlet(self):
         """Determine if subdomain is on inlet.
-        Inlet requires the global boundary to be of type 0
-        Also change orientation of how inlet is stored here
+
+        Inlet requires the global boundary to be of type 0.
+        Also changes orientation of how inlet is stored here.
+
+        Returns:
+            np.ndarray: Inlet flags for each face.
+
         """
         dims = len(self.index)
         inlet = np.zeros([dims * 2], dtype=np.uint8)
@@ -185,8 +226,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return inlet
 
     def get_outlet(self):
-        """Determine if subdomain is on outlet
-        Also change orientation of how outlet is stored here
+        """Determine if subdomain is on outlet.
+
+        Also changes orientation of how outlet is stored here.
+
+        Returns:
+            np.ndarray: Outlet flags for each face.
+
         """
         dims = len(self.index)
         outlet = np.zeros([dims * 2], dtype=np.uint8)
@@ -199,13 +245,12 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return outlet
 
     def get_start(self) -> tuple[int, ...]:
-        """Determine the start of the subdomain. used for saving as vtk
-        Start is the minimum voxel ID
-        Args:
-            sd_index (tuple[int, int, int]): subdomain index
+        """Determine the start of the subdomain for saving as vtk.
+
+        Start is the minimum voxel ID.
 
         Returns:
-            tuple[int,...]: start
+            tuple[int, ...]: Start index for each dimension.
 
         """
         _start = [0, 0, 0]
@@ -217,7 +262,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return tuple(_start)
 
     def set_wall_bcs(self, img):
-        """If wall boundary conditions are specified, force solid on external boundaries.
+        """Force solid on external boundaries if wall boundary conditions are specified.
+
+        Args:
+            img (np.ndarray): Image array to update.
+
+        Returns:
+            np.ndarray: Updated image array with wall boundaries set to solid.
 
         """
         feature_types = ["faces"]
@@ -229,7 +280,11 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return img
 
     def get_centroid(self):
-        """Determine the centroid of a subdomain
+        """Determine the centroid of a subdomain.
+
+        Returns:
+            np.ndarray: Centroid coordinates.
+
         """
         centroid = np.zeros(3, dtype=np.double)
         for dim, side in enumerate(self.box):
@@ -238,7 +293,11 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return centroid
 
     def get_radius(self):
-        """Determine the centroid of a subdomain
+        """Determine the radius of a subdomain.
+
+        Returns:
+            float: Radius of the subdomain.
+
         """
         diameter = 0
         for dim, side in enumerate(self.box):
@@ -248,10 +307,10 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return np.sqrt(diameter) / 2
 
     def get_origin(self) -> tuple[float, ...]:
-        """Determine the domain origin from box
+        """Determine the domain origin from box.
 
         Returns:
-            tuple[float,...]: Domain origin
+            tuple[float, ...]: Domain origin.
 
         """
         origin = [0, 0, 0]
@@ -269,7 +328,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             coordinates (tuple[float, float, float]): The (x, y, z) coordinates.
 
         Returns:
-            tuple[int, int, int]: The (i, j, k) index in the img array.
+            tuple[int, int, int] or None: The (i, j, k) index in the img array,
+            or None if out of bounds.
 
         """
         indices = [0, 0, 0]

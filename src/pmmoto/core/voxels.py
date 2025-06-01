@@ -1,4 +1,7 @@
-"""voxel.py"""
+"""voxel.py
+
+Core voxel operations for PMMoTo.
+"""
 
 import numpy as np
 from . import _voxels
@@ -20,10 +23,10 @@ __all__ = [
 
 
 def renumber_image(img, conversion_map: dict):
-    """Renumbers an image using a provided mapping.
+    """Renumber an image using a provided mapping.
 
     Args:
-        img (Any): The image to be renumbered. Typically, this will be a 3D or 2D array-like structure.
+        img (Any): The image to be renumbered.
         conversion_map (dict): A dictionary mapping current image IDs to new image IDs.
             Example: {1: 101, 2: 102, ...}
             Note: All IDs in `img` must be defined in `conversion_map`.
@@ -50,19 +53,26 @@ def renumber_image(img, conversion_map: dict):
 def get_nearest_boundary_index(
     subdomain, img, label, dimension=None, which_voxels="all"
 ):
-    """Determines the index nearest each subdomain boundary face for a specified
-    label in img. The start and end locations can be controlled but
+    """Get the index nearest each subdomain boundary face for a specified label.
 
+    The start and end locations can be controlled by `which_voxels`:
         which_voxels = "all" start = 0, end = 0
         which_voxels = "own" start = pad[0], end = pad[1]
         which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
 
-    Note: The boundary index is always with respect to img.shape[dimension].
-    Start and end are used for searching.
+    Note:
+        The boundary index is always with respect to img.shape[dimension].
+        Start and end are used for searching.
 
     Args:
-        subdomain (_type_): _description_
-        img (_type_): _description_
+        subdomain: Subdomain object.
+        img: Image array.
+        label: Label to search for.
+        dimension (int or None): Dimension to search along (0, 1, 2) or None for all.
+        which_voxels (str): Which voxels to consider ("all", "own", "pad").
+
+    Returns:
+        dict: Dictionary of boundary indices for each face.
 
     """
     if dimension is not None and dimension not in {0, 1, 2}:
@@ -100,16 +110,16 @@ def get_nearest_boundary_index(
 
 
 def get_boundary_voxels(subdomain, img, neighbors_only=False):
-    """This function returns the values on the boundary features.
+    """Return the values on the boundary features.
 
     The features are divided into:
-
     - own: feature voxels owned by subdomain
     - neighbor: feature voxels owned by a neighbor subdomain
 
     Args:
-        subdomain (_type_): Description of subdomain.
-        img (_type_): Description of img.
+        subdomain: Subdomain object.
+        img: Image array.
+        neighbors_only (bool): If True, only include neighbor voxels.
 
     Returns:
         dict: Dictionary of boundary voxels.
@@ -135,13 +145,11 @@ def get_boundary_voxels(subdomain, img, neighbors_only=False):
 
 
 def get_id(x, total_voxels):
-    """Wrapper to _get_id.
-
-    Determine the ID for a voxel.
+    """Get the global or local ID for a voxel.
 
     Args:
-        x: 3D index of the voxel (x, y, z)
-        total_voxels: Size of the domain (number of voxels in each dimension)
+        x: 3D index of the voxel (x, y, z).
+        total_voxels: Size of the domain (number of voxels in each dimension).
 
     Returns:
         int: Global or local ID of the voxel.
@@ -157,11 +165,14 @@ def get_id(x, total_voxels):
 
 
 def gen_grid_to_label_map(grid, labels):
-    """_summary_
+    """Generate a mapping from grid indices to labels.
 
     Args:
-        grid (_type_): _description_
-        label_grid (_type_): _description_
+        grid: Grid array.
+        labels: Label array.
+
+    Returns:
+        Mapping array.
 
     """
     assert grid.shape == labels.shape
@@ -172,18 +183,29 @@ def gen_grid_to_label_map(grid, labels):
 
 
 def count_label_voxels(grid, map):
-    """_summary_
+    """Count the number of voxels for each label in the grid.
 
     Args:
-        grid (_type_): _description_
-        map (_type_): _description_
+        grid: Grid array.
+        map: Mapping array.
+
+    Returns:
+        None
 
     """
     _map = _voxels.count_label_voxels(grid, map)
 
 
 def boundary_voxels_pack(subdomain, boundary_voxels):
-    """This function packs the data to send based on get_boundary_voxels
+    """Pack the data to send based on get_boundary_voxels.
+
+    Args:
+        subdomain: Subdomain object.
+        boundary_voxels: Dictionary of boundary voxels.
+
+    Returns:
+        tuple: (send_data, periodic_data)
+
     """
     send_data = {}
     periodic_data = {}
@@ -208,11 +230,20 @@ def boundary_voxels_pack(subdomain, boundary_voxels):
 
 
 def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
-    """Unpack the neighboring boundary neighbor data. This also handles
-    periodic boundary conditions.
+    """Unpack the neighboring boundary neighbor data.
+
+    This also handles periodic boundary conditions.
 
     The feature_id for the return value has been accounted for:
         own_data[feature_id] = data_out[feature_id]
+
+    Args:
+        subdomain: Subdomain object.
+        boundary_voxels: Dictionary of boundary voxels.
+        recv_data: Received neighbor data.
+
+    Returns:
+        dict: Unpacked boundary voxel data.
 
     """
     data_out = {}
@@ -231,19 +262,18 @@ def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
 def match_neighbor_boundary_voxels(
     subdomain, boundary_voxels, recv_data, skip_zero=False
 ):
-    """Matches boundary voxels of the subdomain with neighboring voxels and returns unique matches.
+    """Match boundary voxels  with subdomain neighbor voxels and return unique matches.
 
     Args:
-        subdomain (object): Subdomain object containing feature information.
-        boundary_voxels (dict): Dictionary with 'own' and 'neighbor' boundary voxel data.
-        recv_data (dict): Received data containing neighbor voxel information.
-        skip_zero (bool): Determines if matches with label of 0 should be added.
-                         Useful for connnected componentes.
+        subdomain: Subdomain object containing feature information.
+        boundary_voxels: Dictionary with 'own' and 'neighbor' boundary voxel data.
+        recv_data: Received data containing neighbor voxel information.
+        skip_zero (bool): If True, skip matches with label 0.
 
     Returns:
-        dict: Unique matches in the format
-        key: (subdomain rank, own voxel)
-        neighbor: list[neighbor rank, neighbor voxel)]
+        dict: Unique matches in the format:
+            key: (subdomain rank, own voxel)
+            neighbor: list[neighbor rank, neighbor voxel)]
 
     """
     unique_matches = {}
@@ -283,11 +313,15 @@ def match_neighbor_boundary_voxels(
 
 
 def match_global_boundary_voxels(subdomain, matches, label_count):
-    """_summary_
+    """Generate a global label map for matched boundary voxels.
 
     Args:
-        subdomain (_type_): _description_
-        matches (_type_): _description_
+        subdomain: Subdomain object.
+        matches: Matches dictionary.
+        label_count: Number of labels on this rank.
+
+    Returns:
+        tuple: (final_map, global_label_count)
 
     """
     ### Send number of labels on rank for re-labeling
@@ -305,8 +339,18 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
 
 
 def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, own=None):
-    """ """
+    """Generate the local to global label mapping for all ranks.
 
+    Args:
+        all_matches: List of matches from all ranks.
+        boundary_map: Mapping of boundary labels.
+        boundary_label_count: Number of boundary labels.
+        own (int, optional): If set, return only for this rank.
+
+    Returns:
+        tuple or dict: (final_map, max_label) or (final_map[own], max_label)
+
+    """
     local_counts = [matches["label_count"] for matches in all_matches]
     boundary_counts = [len(matches) for matches in all_matches]
 
@@ -351,11 +395,15 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
 
 def gen_inlet_label_map(subdomain, label_grid):
     """Determine which face is on inlet.
-    Currently restricted to a single face
+
+    Currently restricted to a single face.
 
     Args:
-        subdomain (_type_): _description_
-        label_grid (_type_): _description_
+        subdomain: Subdomain object.
+        label_grid: Label array.
+
+    Returns:
+        np.ndarray: Array of inlet labels.
 
     """
     inlet_labels = np.empty(0)
@@ -373,11 +421,15 @@ def gen_inlet_label_map(subdomain, label_grid):
 
 def gen_outlet_label_map(subdomain, label_grid):
     """Determine which face is on outlet.
-    Currently restricted to a single face
+
+    Currently restricted to a single face.
 
     Args:
-        subdomain (_type_): _description_
-        label_grid (_type_): _description_
+        subdomain: Subdomain object.
+        label_grid: Label array.
+
+    Returns:
+        np.ndarray: Array of outlet labels.
 
     """
     outlet_labels = np.empty(0)
