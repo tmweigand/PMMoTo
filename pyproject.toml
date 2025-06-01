@@ -55,6 +55,9 @@ line-length = 88
 line-length = 88
 target-version = "py311"
 src = ["src"]
+exclude = [
+    "src/pmmoto/io/evtk",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "D"]  # E = pycodestyle, F = pyflakes, D = pydocstyle

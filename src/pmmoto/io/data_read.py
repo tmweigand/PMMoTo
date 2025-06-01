@@ -1,4 +1,8 @@
-"""dataRead.py"""
+"""dataRead.py
+
+Provides functions for reading various simulation and atomistic data formats
+used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.
+"""
 
 import gzip
 import numpy as np
@@ -19,7 +23,7 @@ __all__ = [
 
 
 def read_sphere_pack_xyzr_domain(input_file):
-    """Read in sphere pack given in x,y,z,radius order including domain bounding box
+    """Read a sphere pack file with x, y, z, radius and domain bounding box.
 
     Input File Format:
         x_min x_max
@@ -27,7 +31,17 @@ def read_sphere_pack_xyzr_domain(input_file):
         z_min z_max
         x1 y1 z1 r1
         x2 y2 z2 r2
-        x3 y3 z3 r3
+        ...
+
+    Args:
+        input_file (str): Path to the input file.
+
+    Returns:
+        tuple: (sphere_data, domain_data)
+            - sphere_data (np.ndarray): Array of shape (N, 4) for sphere positions
+                                        and radii.
+            - domain_data (tuple): Domain bounding box as ((x_min, x_max), ...).
+
     """
     # Check input file and proceed of exists
     io_utils.check_file(input_file)
@@ -61,12 +75,17 @@ def read_sphere_pack_xyzr_domain(input_file):
 
 
 def read_r_lookup_file(input_file, power=1):
-    """Read in the radius lookup file for LAMMPS simulations
+    """Read the radius lookup file for LAMMPS simulations (sigma values).
 
-    Actually reading in sigma
+    File Format:
+        Atom_ID epsilon sigma
 
-    File is:
-    Atom_ID epsilon sigma
+    Args:
+        input_file (str): Path to the lookup file.
+        power (float, optional): Multiplier for sigma values.
+
+    Returns:
+        dict: Mapping from atom ID to sigma value.
 
     """
     io_utils.check_file(input_file)
@@ -86,8 +105,19 @@ def read_r_lookup_file(input_file, power=1):
 
 
 def py_read_lammps_atoms(input_file, include_mass=False):
-    """Read position of atoms from LAMMPS file
-    atom_map must sync with LAMMPS ID
+    """Read atom positions from a LAMMPS file.
+
+    Args:
+        input_file (str): Path to the LAMMPS file.
+        include_mass (bool, optional): Whether to include mass data.
+
+    Returns:
+        tuple: (atom_position, atom_type, [masses,] domain_data)
+            - atom_position (np.ndarray): Atom positions.
+            - atom_type (np.ndarray): Atom types.
+            - masses (np.ndarray, optional): Atom masses if include_mass is True.
+            - domain_data (np.ndarray): Domain bounding box.
+
     """
     io_utils.check_file(input_file)
 
@@ -103,7 +133,7 @@ def py_read_lammps_atoms(input_file, include_mass=False):
     count_atom = 0
     for n_line, line in enumerate(lines):
         if n_line == 1:
-            time_step = float(line)
+            _ = float(line)  # Time
         elif n_line == 3:
             num_objects = int(line)
             atom_position = np.zeros([num_objects, 3], dtype=np.double)
@@ -142,10 +172,16 @@ def py_read_lammps_atoms(input_file, include_mass=False):
 
 
 def read_lammps_atoms(input_file, type_map=None):
-    """Call to c++ read
+    """Read atom positions and types from a LAMMPS file using C++ backend.
 
-    type_map (dict, optional): Mapping of (type, charge) pairs to new types
-    Example: {(1, 0.4): 2, (1, -0.4): 3}
+    Args:
+        input_file (str): Path to the LAMMPS file.
+        type_map (dict, optional): Mapping of (type, charge) pairs to new types.
+            Example: {(1, 0.4): 2, (1, -0.4): 3}
+
+    Returns:
+        tuple: (positions, types, domain, timestep)
+
     """
     from . import _data_read
 
@@ -157,8 +193,17 @@ def read_lammps_atoms(input_file, type_map=None):
 
 
 def read_atom_map(input_file):
-    """Read in the atom mapping file which has the following format:
-    atom_id, element_name, atom_name
+    """Read the atom mapping file.
+
+    File Format:
+        atom_id, element_name, atom_name
+
+    Args:
+        input_file (str): Path to the atom map file.
+
+    Returns:
+        dict: Mapping from atom ID to element and atom name.
+
     """
     # Check input file and proceed of exists
     io_utils.check_file(input_file)
@@ -177,12 +222,23 @@ def read_atom_map(input_file):
 
 
 def read_rdf(input_folder):
-    """Read input folder containing radial distribution function data of the form
+    """Read a folder containing radial distribution function (RDF) data.
 
+    Folder must contain:
+        - atom_map.txt
+        - Files for all listed atoms named 'atom_name'.rdf
+
+    Each .rdf file format:
         radial distance, rdf(r)
 
-    Folder must contain file called `atom_map.txt`
-    Files for all listed atoms of name 'atom_name'.rdf
+    Args:
+        input_folder (str): Path to the folder.
+
+    Returns:
+        tuple: (atom_map, rdf_out)
+            - atom_map (dict): Atom mapping.
+            - rdf_out (dict): Mapping from atom ID to RDF object.
+
     """
     # Check folder exists
     io_utils.check_folder(input_folder)
@@ -210,12 +266,23 @@ def read_rdf(input_folder):
 
 
 def read_binned_distances_rdf(input_folder):
-    """Read input folder containing radial distribution function data of the form
+    """Read a folder containing binned RDF data.
 
+    Folder must contain:
+        - atom_map.txt
+        - Files for all listed atoms named 'atom_name'.rdf
+
+    Each .rdf file format:
         radial distance, rdf(r)
 
-    Folder must contain file called `atom_map.txt`
-    Files for all listed atoms of name 'atom_name'.rdf
+    Args:
+        input_folder (str): Path to the folder.
+
+    Returns:
+        tuple: (atom_map, rdf_out)
+            - atom_map (dict): Atom mapping.
+            - rdf_out (dict): Mapping from atom ID to RDF object.
+
     """
     # Check folder exists
     io_utils.check_folder(input_folder)
