@@ -511,7 +511,7 @@ class VtkFile:
         self.openAppendedData()
         dsize = np_to_vtk[dtype].size
         block_size = dsize * ncomp * nelem
-        if self.largeFile == False:
+        if not self.largeFile:
             writeBlockSize(self.xml.stream, block_size)
         else:
             writeBlockSize64Bit(self.xml.stream, block_size)
