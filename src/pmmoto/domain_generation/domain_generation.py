@@ -1,3 +1,9 @@
+"""domain_generation.py
+
+Functions for generating random, smoothed, and structured porous media images,
+as well as initializing PorousMedia and Multiphase objects for PMMoTo.
+"""
+
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from . import _domain_generation
@@ -23,16 +29,15 @@ __all__ = [
 
 
 def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
-    """Generate a binary grid of the provided shape where
-    each voxel is a random selection (0 or 1), with a specified probability.
+    """Generate a random binary grid with specified probability for zeros.
 
     Args:
         shape (tuple): Shape of the binary grid (e.g., (depth, rows, columns)).
         p_zero (float): Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.
-        seed (int, optional): Seed for the random number generator. If None, the results are not reproducible.
+        seed (int, optional): Seed for the random number generator.
 
     Returns:
-        np.ndarray: A NumPy array with the specified shape, containing random 0s and 1s.
+        np.ndarray: Random binary grid.
 
     """
     if not (0 <= p_zero <= 1):
@@ -45,17 +50,16 @@ def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
 
 
 def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None):
-    """Generate a smoothed binary grid of the provided shape where
-    each voxel is a random selection (0 or 1), with a specified probability.
+    """Generate a smoothed random binary grid.
 
     Args:
-        shape (tuple): Shape of the binary grid (e.g., (depth, rows, columns)).
-        p_zero (float): Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.
-        smoothness (float): Controls the smoothness of the output grid. Higher values
-                            result in smoother transitions between 0 and 1.
+        shape (tuple): Shape of the binary grid.
+        p_zero (float): Probability of a 0 occurring.
+        smoothness (float): Controls the smoothness of the output grid.
+        seed (int, optional): Seed for the random number generator.
 
     Returns:
-        np.ndarray: A NumPy array with the specified shape, containing smoothed random 0s and 1s.
+        np.ndarray: Smoothed random binary grid.
 
     """
     if not (0 <= p_zero <= 1):
@@ -81,7 +85,15 @@ def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None
 
 
 def gen_linear_img(shape, dim):
-    """Generates an image that varies from 0-N-1 along dim
+    """Generate an image that varies linearly from 0 to N-1 along a given dimension.
+
+    Args:
+        shape (tuple): Shape of the output image.
+        dim (int): Dimension along which to vary.
+
+    Returns:
+        np.ndarray: Linear image.
+
     """
     n = shape[dim]
     linear_values = np.linspace(0, n - 1, n, endpoint=True)
@@ -95,7 +107,16 @@ def gen_linear_img(shape, dim):
 
 
 def gen_pm_spheres_domain(subdomain, spheres, kd=False):
-    """Generate binary porous media (pm) domain from sphere data that contains radii
+    """Generate binary porous media domain from sphere data.
+
+    Args:
+        subdomain: Subdomain object.
+        spheres: Sphere data array.
+        kd (bool, optional): Use KD-tree for efficiency.
+
+    Returns:
+        PorousMedia: Initialized porous media object.
+
     """
     _spheres = particles.initialize_spheres(subdomain, spheres)
 
@@ -109,7 +130,18 @@ def gen_pm_spheres_domain(subdomain, spheres, kd=False):
 
 
 def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=False):
-    """Generate binary porous media (pm) domain from atom data, types and cutoff
+    """Generate binary porous media domain from atom data.
+
+    Args:
+        subdomain: Subdomain object.
+        atom_locations: Atom coordinates.
+        atom_radii: Atom radii.
+        atom_types: Atom types.
+        kd (bool, optional): Use KD-tree for efficiency.
+
+    Returns:
+        PorousMedia: Initialized porous media object.
+
     """
     _atoms = particles.initialize_atoms(
         subdomain, atom_locations, atom_radii, atom_types
@@ -127,7 +159,19 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
 def gen_pm_atom_file(
     subdomain, lammps_file, atom_radii, type_map=None, add_periodic=False, kd=False
 ):
-    """Generate binary porous media (pm) domain from atom data, types and cutoff
+    """Generate binary porous media domain from a LAMMPS atom file.
+
+    Args:
+        subdomain: Subdomain object.
+        lammps_file (str): Path to LAMMPS atom file.
+        atom_radii: Atom radii.
+        type_map (dict, optional): Mapping of atom types.
+        add_periodic (bool, optional): Add periodic atoms.
+        kd (bool, optional): Use KD-tree for efficiency.
+
+    Returns:
+        PorousMedia: Initialized porous media object.
+
     """
     positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
 
@@ -150,8 +194,16 @@ def gen_pm_atom_file(
 
 
 def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
-    """Generate an inkbottle with reservoirs.
-    To generate an elliptical inkbottle, r_y and r_z can be used.
+    """Generate an inkbottle-shaped porous media with reservoirs.
+
+    Args:
+        subdomain: Subdomain object.
+        r_y (float, optional): Elliptical scaling in y.
+        r_z (float, optional): Elliptical scaling in z.
+
+    Returns:
+        PorousMedia: Initialized porous media object.
+
     """
     _img = _domain_generation.gen_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], r_y, r_z
@@ -167,7 +219,15 @@ def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
 
 
 def gen_mp_constant(porous_media, fluid_phase=1):
-    """Set the pore space to be a specific fluid phase
+    """Set the pore space to a specific fluid phase.
+
+    Args:
+        porous_media: PorousMedia object.
+        fluid_phase (int, optional): Fluid phase to assign.
+
+    Returns:
+        Multiphase: Initialized multiphase object.
+
     """
     img = np.where(porous_media.img == 1, fluid_phase, 0).astype(np.uint8)
     mp = multiphase.Multiphase(porous_media, img, 2)
@@ -176,7 +236,15 @@ def gen_mp_constant(porous_media, fluid_phase=1):
 
 
 def gen_mp_from_grid(mp, grid):
-    """Set the multiphase pore space accoring to input grid
+    """Set the multiphase pore space according to an input grid.
+
+    Args:
+        mp: Multiphase object.
+        grid (np.ndarray): Grid to assign.
+
+    Returns:
+        Multiphase: Updated multiphase object.
+
     """
     mp.mp_grid = grid
 

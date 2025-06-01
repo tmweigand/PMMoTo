@@ -1,4 +1,7 @@
-"""multiphase.py"""
+"""multiphase.py
+
+Defines the Multiphase class for handling multiphase images and related calculations.
+"""
 
 import numpy as np
 from ..core import communication
@@ -6,9 +9,17 @@ from ..core import utils
 
 
 class Multiphase:
-    """Multiphase Class"""
+    """Class for handling multiphase images and phase calculations."""
 
     def __init__(self, porous_media, img, num_phases: int):
+        """Initialize a Multiphase object.
+
+        Args:
+            porous_media: PorousMedia object.
+            img (np.ndarray): Multiphase image.
+            num_phases (int): Number of phases.
+
+        """
         if porous_media.img is None:
             raise ValueError("Error: The porous_media image (img) is None.")
         self.porous_media = porous_media
@@ -19,19 +30,22 @@ class Multiphase:
         self.fluids = list(range(1, num_phases + 1))
 
     def update_img(self, img):
-        """Update the multiphase img
+        """Update the multiphase image.
+
+        Args:
+            img (np.ndarray): New multiphase image.
+
         """
         self.img = img
 
     def get_volume_fraction(self, phase: int, img=None) -> float:
         """Calculate the volume fraction of a given phase in a multiphase image.
 
-        Parameters
-        ----------
+        Args:
             phase (int): The phase ID to compute the volume fraction for.
+            img (np.ndarray, optional): Image to use. Defaults to self.img.
 
-        Returns
-        -------
+        Returns:
             float: The volume fraction of the specified phase.
 
         """
@@ -51,7 +65,15 @@ class Multiphase:
         return total_voxel_count / total_voxels
 
     def get_saturation(self, phase: int, img=None) -> float:
-        """Calculate the saturation of a multiphase image
+        """Calculate the saturation of a multiphase image.
+
+        Args:
+            phase (int): The phase ID to compute the saturation for.
+            img (np.ndarray, optional): Image to use. Defaults to self.img.
+
+        Returns:
+            float: The saturation of the specified phase.
+
         """
         if img is None:
             img = self.img
@@ -59,7 +81,16 @@ class Multiphase:
 
     @staticmethod
     def get_probe_radius(pc, gamma=1, contact_angle=0):
-        """Return the probe radius given a capillary pressure, surface tension and contact_angle
+        """Return the probe radius.
+
+        Args:
+            pc (float): Capillary pressure.
+            gamma (float, optional): Surface tension. Defaults to 1.
+            contact_angle (float, optional): Contact angle in degrees. Defaults to 0.
+
+        Returns:
+            float: Probe radius.
+
         """
         if pc == 0:
             r_probe = 0
@@ -69,6 +100,14 @@ class Multiphase:
 
     @staticmethod
     def get_pc(radius, gamma=1):
-        """Return the capillary pressure given a surface tension and radius
+        """Return the capillary pressure given a surface tension and radius.
+
+        Args:
+            radius (float): Probe radius.
+            gamma (float, optional): Surface tension. Defaults to 1.
+
+        Returns:
+            float: Capillary pressure.
+
         """
         return 2.0 * gamma / radius

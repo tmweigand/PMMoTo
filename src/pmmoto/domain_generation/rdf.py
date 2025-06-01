@@ -1,4 +1,8 @@
-"""rdf.py"""
+"""rdf.py
+
+Radial distribution function (RDF) utilities for PMMoTo.
+Provides classes and functions for reading, generating, and binning RDF data.
+"""
 
 import numpy as np
 import warnings
@@ -11,25 +15,26 @@ __all__ = ["generate_rdf", "bin_distances"]
 
 
 class RDF:
-    """Radial distribution function class
+    """Radial distribution function (RDF) class.
+
     RDF = g(r) where:
       r is the radial distance and
       g is the free energy.
-
-    An alternative is:
-     G = -k_b*T ln g(r) / sum_{r=0}^{r_f} g(r) where:
-      k_b is the Boltzmann constant
-      T is the temperature
-      r_f is pairwise distance cutoff
-
-    This is a common output for MD simulations.
-    See: https://docs.lammps.org/compute_rdf.html
 
     This class reads in LAMMPS generated output and generates
     a new interpolated function.
     """
 
     def __init__(self, name, atom_id, radii, rdf):
+        """Initialize RDF object.
+
+        Args:
+            name (str): Atom or species name.
+            atom_id (int): Atom ID.
+            radii (np.ndarray): Array of radial distances.
+            rdf (np.ndarray): Array of RDF values.
+
+        """
         self.name = name
         self.atom_id = atom_id
         self.radii = radii
@@ -38,12 +43,27 @@ class RDF:
         self.bounds = None
 
     def interpolate_rdf(self, radius):
-        """Given a radius return the rdf
+        """Interpolate the RDF at a given radius.
+
+        Args:
+            radius (float): Radius at which to interpolate.
+
+        Returns:
+            float: Interpolated RDF value.
+
         """
         return np.interp(radius, self.radii, self.rdf)
 
     def potential_mean_force(self, k_b=0.0083144621, temp=300):
-        """Potential mean force (pmf)
+        """Compute the potential mean force (pmf).
+
+        Args:
+            k_b (float, optional): Boltzmann constant.
+            temp (float, optional): Temperature.
+
+        Returns:
+            np.ndarray: PMF values.
+
         """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -51,15 +71,25 @@ class RDF:
 
 
 class Bounded_RDF(RDF):
-    """Bounded radial distribution function class
-    where the intepolated function is restricted to:
+    """Bounded radial distribution function class.
+
+    The interpolated function is restricted to:
         g(r)> 0 : r : g(r) = 1
 
-    This class finds those bounds and introduces a function
-     r(g)
+    This class finds those bounds and introduces a function r(g).
     """
 
     def __init__(self, name, atom_id, radii, rdf, eps=0):
+        """Initialize Bounded_RDF object.
+
+        Args:
+            name (str): Atom or species name.
+            atom_id (int): Atom ID.
+            radii (np.ndarray): Array of radial distances.
+            rdf (np.ndarray): Array of RDF values.
+            eps (float, optional): Epsilon for determining bounds.
+
+        """
         super().__init__(name, atom_id, radii, rdf)
         self.bounds = self.determine_bounds(radii, rdf, eps)
         self.radii, self.rdf = self.get_bounded_RDF_data(radii, rdf, self.bounds)
@@ -69,15 +99,11 @@ class Bounded_RDF(RDF):
         """Create a Bounded_RDF instance from an existing RDF instance.
 
         Args:
-            rdf_instance: An instance of the RDF class
-            eps: Epsilon value for determining bounds (default: 0)
+            rdf_instance (RDF): An instance of the RDF class.
+            eps (float, optional): Epsilon value for determining bounds.
 
         Returns:
-            A new Bounded_RDF instance with the same data but bounded
-
-        Example:
-            >>> rdf = RDF("H2O", 1, radii, rdf_data)
-            >>> bounded_rdf = Bounded_RDF.from_rdf(rdf)
+            Bounded_RDF: New bounded RDF instance.
 
         """
         return cls(
@@ -89,8 +115,16 @@ class Bounded_RDF(RDF):
         )
 
     def determine_bounds(self, radii, rdf, eps=0):
-        """Get the the r values of the bounded RDF such that:
-        g(r) > 0 : r : g(r) = 1
+        """Get the r values of the bounded RDF such that g(r) > 0 : r : g(r) = 1.
+
+        Args:
+            radii (np.ndarray): Array of radial distances.
+            rdf (np.ndarray): Array of RDF values.
+            eps (float, optional): Epsilon for determining bounds.
+
+        Returns:
+            list: Indices for lower and upper bounds.
+
         """
         bounds = [0, len(rdf)]
         bounds[0] = self.find_min_radius(rdf, eps)
@@ -103,16 +137,29 @@ class Bounded_RDF(RDF):
         return bounds
 
     def find_min_radius(self, rdf, eps=0):
-        """Find the smallest r values from the RDF data such that:
-        min r where g(r) > eps
+        """Find the smallest r value from the RDF data such that min r where g(r) > eps.
+
+        Args:
+            rdf (np.ndarray): Array of RDF values.
+            eps (float, optional): Epsilon threshold.
+
+        Returns:
+            int: Index of minimum radius.
+
         """
         r_loc = np.where(rdf < 1e-3)[0][-1]
 
         return r_loc
 
     def find_max_radius(self, rdf):
-        """Find the smallest r value from the RDF data such that:
-        all g(r) values are non-zero after r
+        """Find the smallest r from the data so all g(r) values are non-zero after r.
+
+        Args:
+            rdf (np.ndarray): Array of RDF values.
+
+        Returns:
+            int: Index of maximum radius.
+
         """
         find_r = rdf - self.rdf
         r_loc = np.where([find_r < 0])[1][0]
@@ -120,7 +167,16 @@ class Bounded_RDF(RDF):
         return r_loc
 
     def get_bounded_RDF_data(self, radii, rdf, bounds):
-        """Set the bounds of the radial distribution function
+        """Set the bounds of the radial distribution function.
+
+        Args:
+            radii (np.ndarray): Array of radial distances.
+            rdf (np.ndarray): Array of RDF values.
+            bounds (list): Indices for lower and upper bounds.
+
+        Returns:
+            tuple: (r_out, rdf_out) bounded arrays.
+
         """
         r_out = radii[bounds[0] : bounds[1]]
         rdf_out = rdf[bounds[0] : bounds[1]]
@@ -128,7 +184,13 @@ class Bounded_RDF(RDF):
         return r_out, rdf_out
 
     def interpolate_radius_from_pmf(self, pmf_in):
-        """Determine the radius given G.
+        """Determine the radius given a potential mean force (pmf) value.
+
+        Args:
+            pmf_in (float): PMF value.
+
+        Returns:
+            float: Interpolated radius.
 
         """
         pmf = self.potential_mean_force()
@@ -142,7 +204,15 @@ class Bounded_RDF(RDF):
 
 
 def generate_rdf(bins, binned_distances):
-    """Generate an rdf from binned distances
+    """Generate an RDF from binned distances.
+
+    Args:
+        bins: RDFBins object containing shell volumes.
+        binned_distances (dict): Mapping from label to binned distances.
+
+    Returns:
+        dict: Mapping from label to normalized RDF values.
+
     """
     rdf = {}
     for label, binned in binned_distances.items():
@@ -156,21 +226,22 @@ def generate_rdf(bins, binned_distances):
 
 
 def bin_distances(subdomain, probe_atom_list, atoms, bins):
-    """Finds the atoms that are within a radius of probe atom and bins the distances
+    """Find atoms within a radius of probe atom and bin the distances.
 
     Args:
-        subdomain: Subdomain object containing rank information
-        probe_atom_list: List of probe atoms to calculate RDF from
-        atoms: AtomMap containing target atoms
-        bins: RDFBins object containing binning information
+        subdomain: Subdomain object containing rank information.
+        probe_atom_list: List of probe atoms to calculate RDF from.
+        atoms: AtomMap containing target atoms.
+        bins: RDFBins object containing binning information.
 
     Returns:
-        RDFBins with updated bin counts from all processes
+        None. Updates bins in-place with binned counts from all processes.
 
     """
     if not isinstance(probe_atom_list, _particles.PyAtomList):
         raise TypeError(
-            f"Expected probe_atom_list to be of type PyAtomList, got {type(probe_atom_list)}"
+            f"Expected probe_atom_list to be of type PyAtomList."
+            f"Received {type(probe_atom_list)}"
         )
 
     # Generate bins
