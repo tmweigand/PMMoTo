@@ -1,3 +1,8 @@
+"""logging.py
+
+Setup of the logger
+"""
+
 import logging
 import os
 from datetime import datetime
@@ -13,6 +18,7 @@ class MPIFormatter(logging.Formatter):
         super().__init__(*args, **kwargs)
 
     def format(self, record):
+        """Add mpi information"""
         record.rank = self.rank
         record.size = self.size
         return super().format(record)
@@ -43,7 +49,6 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     # Get MPI rank
     rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
 
     # Create handlers
     formatter = MPIFormatter(

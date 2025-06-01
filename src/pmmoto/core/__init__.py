@@ -1,3 +1,22 @@
+"""Initialize the core subpackage and import core modules for PMMoTo.
+
+This package provides core domain, subdomain, and utility functionality.
+"""
+
+__all__ = [
+    "orientation",
+    "communication",
+    "domain",
+    "domain_decompose",
+    "domain_discretization",
+    "subdomain",
+    "subdomain_padded",
+    "subdomain_features",
+    "subdomain_verlet",
+    "utils",
+    "voxels",
+]
+
 from . import orientation
 from . import communication
 from . import domain
