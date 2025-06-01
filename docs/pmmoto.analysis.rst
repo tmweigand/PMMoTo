@@ -1,21 +1,42 @@
 pmmoto.analysis package
 =======================
 
+.. automodule:: pmmoto.analysis
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+pmmoto.analysis.average module
+------------------------------
 
-   pmmoto.analysis.average
-   pmmoto.analysis.bins
-   pmmoto.analysis.minkowski
-   pmmoto.analysis.stats
+.. automodule:: pmmoto.analysis.average
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-Module contents
----------------
+pmmoto.analysis.bins module
+---------------------------
 
-.. automodule:: pmmoto.analysis
+.. automodule:: pmmoto.analysis.bins
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.analysis.minkowski module
+--------------------------------
+
+.. automodule:: pmmoto.analysis.minkowski
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.analysis.stats module
+----------------------------
+
+.. automodule:: pmmoto.analysis.stats
    :members:
    :show-inheritance:
    :undoc-members:

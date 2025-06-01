@@ -1,6 +1,12 @@
-# from .stats import *
-# from .minkowski import *
-# from .average import *
+"""Initialize the analysis subpackage for PMMoTo.
+
+Provides statistical, Minkowski, averaging, and binning analysis utilities.
+"""
+
 from . import bins
 
-__all__ = ["stats", "minkowski", "average"]
+# from . import stats
+# from . import minkowski
+# from . import average
+
+__all__ = ["stats", "minkowski", "average", "bins"]

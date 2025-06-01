@@ -1,6 +1,11 @@
 pmmoto.io package
 =================
 
+.. automodule:: pmmoto.io
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Subpackages
 -----------
 
@@ -12,17 +17,26 @@ Subpackages
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+pmmoto.io.data\_read module
+---------------------------
 
-   pmmoto.io.data_read
-   pmmoto.io.io_utils
-   pmmoto.io.output
+.. automodule:: pmmoto.io.data_read
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-Module contents
----------------
+pmmoto.io.io\_utils module
+--------------------------
 
-.. automodule:: pmmoto.io
+.. automodule:: pmmoto.io.io_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.io.output module
+-----------------------
+
+.. automodule:: pmmoto.io.output
    :members:
    :show-inheritance:
    :undoc-members:

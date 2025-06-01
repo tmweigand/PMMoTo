@@ -1,6 +1,11 @@
 pmmoto package
 ==============
 
+.. automodule:: pmmoto
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Subpackages
 -----------
 
@@ -17,15 +22,10 @@ Subpackages
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+pmmoto.particles module
+-----------------------
 
-   pmmoto.particles
-
-Module contents
----------------
-
-.. automodule:: pmmoto
+.. automodule:: pmmoto.particles
    :members:
    :show-inheritance:
    :undoc-members:

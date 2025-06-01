@@ -1,21 +1,42 @@
 pmmoto.io.evtk package
 ======================
 
+.. automodule:: pmmoto.io.evtk
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+pmmoto.io.evtk.evtk module
+--------------------------
 
-   pmmoto.io.evtk.evtk
-   pmmoto.io.evtk.hl
-   pmmoto.io.evtk.vtk
-   pmmoto.io.evtk.xml
+.. automodule:: pmmoto.io.evtk.evtk
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-Module contents
----------------
+pmmoto.io.evtk.hl module
+------------------------
 
-.. automodule:: pmmoto.io.evtk
+.. automodule:: pmmoto.io.evtk.hl
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.io.evtk.vtk module
+-------------------------
+
+.. automodule:: pmmoto.io.evtk.vtk
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.io.evtk.xml module
+-------------------------
+
+.. automodule:: pmmoto.io.evtk.xml
    :members:
    :show-inheritance:
    :undoc-members:
