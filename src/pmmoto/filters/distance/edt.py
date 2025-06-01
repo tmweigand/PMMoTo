@@ -1,3 +1,9 @@
+"""edt.py
+
+Exact Euclidean Distance Transform (EDT) functions for 2D and 3D images,
+with support for periodic boundaries and distributed subdomains.
+"""
+
 import numpy as np
 from pmmoto.core import _voxels
 from pmmoto.core import communication
@@ -8,11 +14,14 @@ __all__ = ["edt", "edt2d", "edt3d"]
 
 
 def edt(img, subdomain=None):
-    """Calculate the exact Euclidean transform of an image
+    """Calculate the exact Euclidean transform of an image.
 
     Args:
-        subdomain (_type_): _description_
-        img (numpy array): _description_
+        img (np.ndarray): Input binary image.
+        subdomain (optional): Subdomain object for distributed/periodic support.
+
+    Returns:
+        np.ndarray: Euclidean distance transform of the image.
 
     """
     if subdomain is not None:
@@ -33,9 +42,15 @@ def edt(img, subdomain=None):
 
 
 def corrected_edt(img, subdomain):
-    """This performs an edt with correctors, meaning this can run with periodic
-    boundary conditions and distributed memory. The correct pass information along each dimension
-    to correct the algorithm.
+    """Perform an EDT with correctors for periodic boundaries and distributed memory.
+
+    Args:
+        img (np.ndarray): Input binary image.
+        subdomain: Subdomain object.
+
+    Returns:
+        np.ndarray: Corrected Euclidean distance transform.
+
     """
     img_out = np.copy(img).astype(np.float32)
 
@@ -73,9 +88,16 @@ def corrected_edt(img, subdomain):
 
 
 def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
-    """Perform an exact Euclidean transform on a image
-    For the first pass, collect all the solids (or transitions on all faces)
-    The direction needs to be completed first. Then the off-direction need to be correct.
+    """Perform an exact Euclidean transform on a 2D image.
+
+    Args:
+        img (np.ndarray): Input binary image.
+        periodic (list[bool], optional): Periodicity for each dimension.
+        resolution (tuple[float], optional): Voxel spacing for each dimension.
+
+    Returns:
+        np.ndarray: Euclidean distance transform of the image.
+
     """
     img_out = np.copy(img).astype(np.float32)
 
@@ -168,9 +190,17 @@ def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
 def edt3d(
     img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0), squared=False
 ):
-    """Perform an exact Euclidean transform on a image
-    For the first pass, collect all the solids (or transitions on all faces)
-    The direction needs to be completed first. Then the off-direction need to be correct.
+    """Perform an exact Euclidean transform on a 3D image.
+
+    Args:
+        img (np.ndarray): Input binary image.
+        periodic (list[bool], optional): Periodicity for each dimension.
+        resolution (tuple[float], optional): Voxel spacing for each dimension.
+        squared (bool, optional): If True, return squared distances.
+
+    Returns:
+        np.ndarray: Euclidean distance transform of the image.
+
     """
     img_out = np.copy(img).astype(np.float32)
 
@@ -260,20 +290,19 @@ def get_nearest_boundary_distance(
     which_voxels="all",
     distance_to="all",
 ):
-    """Determines the distance of the index nearest each subdomain boundary face for a specified
-    label in img. The start and end locations can be controlled but
-
-        which_voxels = "all" start = 0, end = 0
-        which_voxels = "own" start = pad[0], end = pad[1]
-        which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
+    """Determine the distance to the nearest subdomain boundary face for label.
 
     Args:
-        subdomain (_type_): _description_
-        img (_type_): _description_
-        label (_type_): _description_
-        dimension (_type_): _description_
-        which_voxels (str, optional): _description_. Defaults to "all".
-        distance_to (str, optional): _description_. Defaults to "all".
+        subdomain: Subdomain object.
+        img (np.ndarray): Input binary image.
+        label: Label to search for.
+        dimension (int): Dimension to search along.
+        which_voxels (str, optional): Voxels to consider ("all", "own", "pad").
+        distance_to (str, optional): Distance to compute:
+                                    "all", "own", "pad", "neighbor".
+
+    Returns:
+        dict: Dictionary of distances for each face.
 
     """
     if dimension is not None and dimension not in {0, 1, 2}:
@@ -347,13 +376,17 @@ def get_nearest_boundary_distance(
 
 def get_initial_correctors(subdomain, img, dimension=None):
     """Get the initial correctors for a subdomain and image.
-    The correctors is defined as the absolute distance to the nearest solid
-        (or phase change for multiphase).
 
-    The correctors are adjusted as:
-        lower_corrector = neighbor_data +
-        upper_corrector = neighbor_data +
+    The correctors are defined as the absolute distance to the nearest solid
+    (or phase change for multiphase).
 
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Input binary image.
+        dimension (int, optional): Dimension to compute correctors for.
+
+    Returns:
+        tuple: (lower_correctors, upper_correctors)
 
     """
     if dimension is not None and dimension not in {0, 1, 2}:
@@ -396,8 +429,20 @@ def get_initial_correctors(subdomain, img, dimension=None):
 
 def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
     """Get the boundary hull for a subdomain and image.
-    Always pad the domain by 1 to allow for exact update of img aka account for subdomain padding
-    and make it so the pad is correct on the update
+
+    Always pad the domain by 1 to allow for exact update of img and account for
+    subdomain padding.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Image to update.
+        og_img (np.ndarray): Original image.
+        dimension (int): Dimension to compute hull for.
+        num_hull (int, optional): Number of hull points.
+
+    Returns:
+        tuple: (lower_hull, upper_hull)
+
     """
     if dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")

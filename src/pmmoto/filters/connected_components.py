@@ -1,3 +1,9 @@
+"""Connected components labeling and inlet/outlet connectivity utilities for PMMoTo.
+
+Provides functions for labeling connected regions, mapping labels to phases,
+and extracting inlet/outlet-connected regions in distributed or periodic domains.
+"""
+
 import numpy as np
 import cc3d
 from collections import defaultdict
@@ -13,9 +19,19 @@ __all__ = [
 
 
 def connect_components(img, subdomain, return_label_count=True):
-    """Create sets for all phases in img.
+    """Label connected components (sets) for all phases in img.
 
-    Note: Zero is background and will not join to any other voxel!
+    Note:
+        Zero is background and will not join to any other voxel.
+
+    Args:
+        img (np.ndarray): Input binary image.
+        subdomain: Subdomain object.
+        return_label_count (bool, optional): If True, return (label_img, label_count).
+
+    Returns:
+        tuple or np.ndarray: (label_img, label_count) or label_img.
+
     """
     # max_label = label_count
     label_img, label_count = cc3d.connected_components(
@@ -34,12 +50,15 @@ def connect_components(img, subdomain, return_label_count=True):
 
 
 def connect_subdomain_boundaries(subdomain, label_grid, label_count):
-    """_summary_
+    """Connect labels across subdomain boundaries for distributed/periodic domains.
 
     Args:
-        subdomain (_type_): _description_
-        label_grid (_type_): _description_
-        label_count (_type_): _description_
+        subdomain: Subdomain object.
+        label_grid (np.ndarray): Labeled image.
+        label_count (int): Number of labels.
+
+    Returns:
+        tuple: (label_grid, global_label_count)
 
     """
     boundary_labels = voxels.get_boundary_voxels(
@@ -64,7 +83,15 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
 
 
 def gen_img_to_label_map(img, labeled_img):
-    """Collect the label to phase mapping for all labels
+    """Generate a mapping from label to phase for all labels.
+
+    Args:
+        img (np.ndarray): Input image.
+        labeled_img (np.ndarray): Labeled image.
+
+    Returns:
+        dict: Mapping from label to phase.
+
     """
     return voxels.gen_grid_to_label_map(
         img,
@@ -73,7 +100,14 @@ def gen_img_to_label_map(img, labeled_img):
 
 
 def phase_count(phase_map):
-    """Count the number of labels for a given phase
+    """Count the number of labels for each phase.
+
+    Args:
+        phase_map (dict): Mapping from label to phase.
+
+    Returns:
+        dict: Mapping from phase to count.
+
     """
     phase_count = {}
     for label in phase_map:
@@ -87,7 +121,15 @@ def phase_count(phase_map):
 
 
 def inlet_outlet_labels(subdomain, labeled_img):
-    """Collect the labels that are on the inlet and outlet
+    """Collect the labels that are on the inlet and outlet.
+
+    Args:
+        subdomain: Subdomain object.
+        labeled_img (np.ndarray): Labeled image.
+
+    Returns:
+        dict: Mapping from label to {"inlet": bool, "outlet": bool}.
+
     """
     sd_inlet = voxels.gen_inlet_label_map(subdomain, labeled_img)
     sd_outlet = voxels.gen_outlet_label_map(subdomain, labeled_img)
@@ -107,10 +149,14 @@ def inlet_outlet_labels(subdomain, labeled_img):
 
 
 def inlet_outlet_connections(subdomain, labeled_img):
-    """Determine the labels that are connected to both the inlet and outlet
+    """Determine the labels that are connected to both the inlet and outlet.
+
+    Args:
+        subdomain: Subdomain object.
+        labeled_img (np.ndarray): Labeled image.
 
     Returns:
-        _type_: _description_
+        list: List of label IDs connected to both inlet and outlet.
 
     """
     connected = inlet_outlet_labels(subdomain, labeled_img)
@@ -123,10 +169,19 @@ def inlet_outlet_connections(subdomain, labeled_img):
 
 
 def inlet_connected_img(subdomain, img, phase=None):
-    """This function return an img where all voxels are connected to the inlet.
+    """Return an image where all voxels are connected to the inlet.
 
-    If phase is specified, all other phases are set to zero leaving only connected
+    If phase is specified, all other phases are set to zero, leaving only connected
     voxels of the specified phase.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Input image.
+        phase (optional): Phase to filter for.
+
+    Returns:
+        np.ndarray: Image with only inlet-connected voxels.
+
     """
     # Generate labels for each phase
     labeled_img = connect_components(img, subdomain, return_label_count=False)
@@ -155,10 +210,19 @@ def inlet_connected_img(subdomain, img, phase=None):
 
 
 def outlet_connected_img(subdomain, img, phase=None):
-    """This function return an img where all voxels are connected to the inlet.
+    """Return an image where all voxels are connected to the outlet.
 
-    If phase is specified, all other phases are set to zero leaving only connected
+    If phase is specified, all other phases are set to zero, leaving only connected
     voxels of the specified phase.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Input image.
+        phase (optional): Phase to filter for.
+
+    Returns:
+        np.ndarray: Image with only outlet-connected voxels.
+
     """
     # Generate labels for each phase
     labeled_img = connect_components(img, subdomain, return_label_count=False)
