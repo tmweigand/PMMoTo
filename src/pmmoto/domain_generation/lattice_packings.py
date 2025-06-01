@@ -1,29 +1,54 @@
-"""lattice_packings.py"""
+"""lattice_packings.py
+
+Defines classes for generating common lattice packings (SC, BCC, FCC) for PMMoTo.
+"""
 
 import numpy as np
 import math
 
 
 class Lattice:
-    """Generate common lattice packings.
-    Note that this currently add more objects than needed
+    """Base class for generating common lattice packings.
+
+    Note:
+        This currently adds more objects than needed.
+
     """
 
     def __init__(self, subdomain, lattice_constant):
+        """Initialize a Lattice.
+
+        Args:
+            subdomain: Subdomain object.
+            lattice_constant (float): Lattice constant (unit cell size).
+
+        """
         self.subdomain = subdomain
         self.lattice_constant = lattice_constant
 
     def get_basis_vectors(self):
+        """Return the basis vectors for the lattice.
+
+        Returns:
+            np.ndarray: Array of basis vectors.
+
+        """
         return np.empty()
 
     def get_radius(self):
+        """Return the sphere radius for the lattice.
+
+        Returns:
+            float: Sphere radius.
+
+        """
         return 0.0
 
     def generate_lattice(self):
-        """Generate an lattice for a given unit cell size and lattice type
+        """Generate a lattice for a given unit cell size and lattice type.
 
         Returns:
-            numpy.ndarray: Array of shape (N, 4) containing lattice points and sphere radius.
+            np.ndarray: Array of shape (N, 4) of lattice points and sphere radius.
 
         """
         basis_vectors = self.get_basis_vectors()
@@ -41,57 +66,64 @@ class Lattice:
                     cell_origin = np.array([i, j, k]) * self.lattice_constant
                     for basis in basis_vectors:
                         atom_pos = tuple(cell_origin + basis * self.lattice_constant)
-                        points.add(
-                            (*atom_pos, radius)
-                        )  # Store as tuple to avoid duplicates - should improve this
-
+                        points.add((*atom_pos, radius))
         return np.array(list(points))
 
 
 class SimpleCubic(Lattice):
+    """Simple Cubic (SC) lattice."""
+
     def __init__(self, subdomain, lattice_constant):
         super().__init__(subdomain, lattice_constant)
 
     def get_basis_vectors(self):
-        return np.array([0, 0, 0])
+        """Return basis vectors for SC lattice."""
+        return np.array([[0, 0, 0]])
 
     def get_coordination_number(self):
+        """Return coordination number for SC lattice."""
         return 6
 
     def get_packing_efficiency(self):
+        """Return packing efficiency (percent) for SC lattice."""
         return 52  # percent
 
     def get_radius(self):
-        # Radius is half the lattice constant for SC
+        """Return sphere radius for SC lattice."""
         return self.lattice_constant / 2.0
 
 
 class BodyCenteredCubic(Lattice):
+    """Body Centered Cubic (BCC) lattice."""
+
     def __init__(self, subdomain, lattice_constant):
         super().__init__(subdomain, lattice_constant)
 
     def get_basis_vectors(self):
-        """Corner atom and body centered atom.
-        +1 is added to loop when generating.
-        """
+        """Return basis vectors for BCC lattice (corner and body center)."""
         return np.array([[0, 0, 0], [0.5, 0.5, 0.5]])
 
     def get_coordination_number(self):
+        """Return coordination number for BCC lattice."""
         return 8.0
 
     def get_packing_efficiency(self):
+        """Return packing efficiency (percent) for BCC lattice."""
         return 68.0  # percent
 
     def get_radius(self):
-        # Radius for BCC
+        """Return sphere radius for BCC lattice."""
         return self.lattice_constant * math.sqrt(3) / 4.0
 
 
 class FaceCenteredCubic(Lattice):
+    """Face Centered Cubic (FCC) lattice."""
+
     def __init__(self, subdomain, lattice_constant):
         super().__init__(subdomain, lattice_constant)
 
     def get_basis_vectors(self):
+        """Return basis vectors for FCC lattice."""
         return np.array(
             [
                 [0, 0, 0],
@@ -102,13 +134,15 @@ class FaceCenteredCubic(Lattice):
         )
 
     def get_coordination_number(self):
+        """Return coordination number for FCC lattice."""
         return 12
 
     def get_packing_efficiency(self):
+        """Return packing efficiency (percent) for FCC lattice."""
         return 74  # percent
 
     def get_radius(self):
-        # Radius for FCC
+        """Return sphere radius for FCC lattice."""
         return self.lattice_constant * math.sqrt(2) / 4.0
 
 
