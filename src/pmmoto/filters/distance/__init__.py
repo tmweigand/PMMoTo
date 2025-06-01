@@ -1,5 +1,5 @@
 """Distance transform filters for PMMoTo."""
 
-from . import edt
+from .edt import edt, edt2d, edt3d
 
-__all__ = ["edt"]
+__all__ = ["edt", "edt2d", "edt3d"]
