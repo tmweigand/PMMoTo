@@ -23,9 +23,9 @@ jobs:
 
       - name: Clean and generate docs
         run: |
-          rm -rf docs/pmmoto.*.rst docs/modules.rst docs/_build
+          rm -rf docs/pmmoto.*.rst docs/modules.rst docs/_build/html
           sphinx-apidoc -o docs/ src/pmmoto --force --module-first
-          make -C docs clean html
+          make -C docs html
 
       - name: List built docs
         run: |
