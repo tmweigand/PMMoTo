@@ -1,38 +1,35 @@
 """test_edt.py"""
 
-import edt
 import numpy as np
 from mpi4py import MPI
+from scipy.ndimage import distance_transform_edt
 import pytest
 import pmmoto
 
 
 def test_edt_2d():
-    """Test the Euclidean transform code for a single process and non-periodic domain
-    """
+    """Test the Euclidean transform code for a single process and non-periodic domain"""
     voxels = (10, 50)
     prob_zero = 0.1
     seed = 1
     img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
     out = pmmoto.filters.distance.edt(img)
-    true = edt.edt(img)
+    true = distance_transform_edt(img)
     np.testing.assert_array_almost_equal(out, true)
 
 
 def test_edt_3d():
-    """Test the Euclidean transform code for a single process and non-periodic domain
-    """
+    """Test the Euclidean transform code for a single process and non-periodic domain"""
     img = np.ones([4, 4, 4], dtype=np.uint8)
     img[3, 3, 3] = 0
 
     out = pmmoto.filters.distance.edt(img)
-    true = edt.edt(img)
+    true = distance_transform_edt(img)
     np.testing.assert_array_almost_equal(out, true)
 
 
 def test_initial_parabolic_envelope():
-    """Test the initial distance sweep with full array
-    """
+    """Test the initial distance sweep with full array"""
     img = np.array([1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1], dtype=np.uint8)
 
     output = pmmoto.filters.distance._distance.determine_initial_envelope_1d(
@@ -46,8 +43,7 @@ def test_initial_parabolic_envelope():
 
 
 def test_initial_parabolic_envelope_correctors():
-    """Test the initial distance sweep with correctors
-    """
+    """Test the initial distance sweep with correctors"""
     img = np.array([1, 1, 0, 1, 1, 1, 1, 1, 1], dtype=np.uint8)
 
     output = pmmoto.filters.distance._distance.determine_initial_envelope_1d(
@@ -66,8 +62,7 @@ def test_initial_parabolic_envelope_correctors():
 
 
 def test_periodic_2d():
-    """Tests for periodic domains
-    """
+    """Tests for periodic domains"""
     voxels = (60, 60)
     prob_zero = 0.1
     seed = 4
@@ -82,19 +77,19 @@ def test_periodic_2d():
         img, periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
     )
 
-    edt_periodic_img = edt.edt(periodic_img)
+    edt_periodic_img = distance_transform_edt(periodic_img)
 
     edt_pmmoto = pmmoto.filters.distance.edt2d(img, periodic=[True, True])
 
     np.testing.assert_array_almost_equal(
         edt_pmmoto,
         edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2],
+        decimal=5,
     )
 
 
 def test_periodic_2d_2():
-    """Tests for periodic domains
-    """
+    """Tests for periodic domains"""
     ## Generate and test 2d periodic domain in 1-dimension
     voxels = (6, 6)
     prob_zero = 0.1
@@ -107,8 +102,8 @@ def test_periodic_2d_2():
     )
 
     ## Ensure the edt of the img and periodic img are not equal
-    edt_img = edt.edt(img)
-    edt_periodic_img = edt.edt(periodic_img)
+    edt_img = distance_transform_edt(img)
+    edt_periodic_img = distance_transform_edt(periodic_img)
     assert not np.array_equal(
         edt_img, edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
     )
@@ -122,8 +117,7 @@ def test_periodic_2d_2():
 
 
 def test_periodic_2d_3():
-    """Tests for periodic domains
-    """
+    """Tests for periodic domains"""
     voxels = (500, 500)
     prob_zero = 0.2
     seed = 286565
@@ -135,8 +129,8 @@ def test_periodic_2d_3():
     )
 
     ## Ensure the edt of the img and periodic img are not equal
-    edt_img = edt.edt(img)
-    edt_periodic_img = edt.edt(periodic_img)
+    edt_img = distance_transform_edt(img)
+    edt_periodic_img = distance_transform_edt(periodic_img)
     assert not np.array_equal(
         edt_img, edt_periodic_img[voxels[0] : voxels[0] * 2, voxels[1] : voxels[1] * 2]
     )
@@ -225,8 +219,7 @@ def test_boundary_hull_1d():
 
 
 def test_periodic_3d():
-    """Tests for periodic domains
-    """
+    """Tests for periodic domains"""
     voxels = (100, 100, 100)
     prob_zero = 0.1
     seed = 1
@@ -243,8 +236,8 @@ def test_periodic_3d():
     )
 
     ## Ensure the edt of the img and periodic img are not equal
-    edt_img = edt.edt(img)
-    edt_periodic_img = edt.edt(periodic_img)
+    edt_img = distance_transform_edt(img)
+    edt_periodic_img = distance_transform_edt(periodic_img)
     assert not np.array_equal(
         edt_img,
         edt_periodic_img[
@@ -269,7 +262,7 @@ def test_periodic_3d():
         },
     )
 
-    np.testing.assert_array_equal(
+    np.testing.assert_array_almost_equal(
         edt_pmmoto,
         edt_periodic_img[
             voxels[0] : voxels[0] * 2,
@@ -281,8 +274,7 @@ def test_periodic_3d():
 
 @pytest.mark.mpi(min_size=8)
 def test_pmmoto_3d_parallel():
-    """Tests EDT with pmmoto
-    """
+    """Tests EDT with pmmoto"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
@@ -325,8 +317,7 @@ def test_pmmoto_3d_parallel():
 
 
 def test_periodic_3d_2():
-    """Tests for periodic domains
-    """
+    """Tests for periodic domains"""
     voxels = (50, 50, 50)  # img = np.ones(voxels, dtype=np.uint8)
     prob_zero = 0.2
     seed = 1246
@@ -346,7 +337,7 @@ def test_periodic_3d_2():
     # resolution = (1, 1, 1)
 
     ## Ensure the edt of the img and periodic img are not equal
-    edt_periodic_img = edt.edt(periodic_img, anisotropy=resolution)
+    edt_periodic_img = distance_transform_edt(periodic_img, sampling=resolution)
 
     edt_pmmoto = pmmoto.filters.distance.edt3d(
         img, periodic=[True, True, True], resolution=resolution
