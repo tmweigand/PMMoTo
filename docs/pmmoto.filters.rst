@@ -1,6 +1,11 @@
 pmmoto.filters package
 ======================
 
+.. automodule:: pmmoto.filters
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Subpackages
 -----------
 
@@ -12,19 +17,42 @@ Subpackages
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+pmmoto.filters.connected\_components module
+-------------------------------------------
 
-   pmmoto.filters.connected_components
-   pmmoto.filters.distance
-   pmmoto.filters.equilibrium_distribution
-   pmmoto.filters.morphological_operators
-   pmmoto.filters.porosimetry
+.. automodule:: pmmoto.filters.connected_components
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-Module contents
----------------
+pmmoto.filters.distance module
+------------------------------
 
-.. automodule:: pmmoto.filters
+.. automodule:: pmmoto.filters.distance
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.filters.equilibrium\_distribution module
+-----------------------------------------------
+
+.. automodule:: pmmoto.filters.equilibrium_distribution
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.filters.morphological\_operators module
+----------------------------------------------
+
+.. automodule:: pmmoto.filters.morphological_operators
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.filters.porosimetry module
+---------------------------------
+
+.. automodule:: pmmoto.filters.porosimetry
    :members:
    :show-inheritance:
    :undoc-members:

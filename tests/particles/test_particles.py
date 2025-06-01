@@ -6,8 +6,7 @@ import pmmoto
 
 
 def test_particles():
-    """Test for generating a radial distribution function form atom data
-    """
+    """Test for generating a radial distribution function form atom data"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -37,8 +36,7 @@ def test_particles():
 
 
 def test_gen_periodic_spheres():
-    """Test the addition of periodic spheres
-    """
+    """Test the addition of periodic spheres"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
@@ -75,8 +73,7 @@ def test_gen_periodic_spheres():
 
 
 def test_trim_particles():
-    """Test the addition of periodic spheres
-    """
+    """Test the addition of periodic spheres"""
     sd = pmmoto.initialize(voxels=(10, 10, 10))
 
     spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
@@ -101,8 +98,7 @@ def test_trim_particles():
 
 
 def test_group_atoms():
-    """Test the creation of atom lists
-    """
+    """Test the creation of atom lists"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
@@ -129,8 +125,7 @@ def test_group_atoms():
 
 
 def test_spheres():
-    """Test the creation of sphere lists
-    """
+    """Test the creation of sphere lists"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
@@ -143,8 +138,7 @@ def test_spheres():
 
 
 def test_cleanup():
-    """Test deletion of particle lists
-    """
+    """Test deletion of particle lists"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
@@ -167,8 +161,7 @@ def test_cleanup():
 
 
 def test_uff_radius():
-    """Test for the universal force field lookup to convert atoms to radii.
-    """
+    """Test for the universal force field lookup to convert atoms to radii."""
     atom_names = ["C", "H", "N", "O"]
     radii_names = pmmoto.particles.uff_radius(atom_names=atom_names)
 
@@ -181,8 +174,7 @@ def test_uff_radius():
 
 
 def test_atoms_with_masses():
-    """Test deletion of particle lists
-    """
+    """Test deletion of particle lists"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
@@ -207,8 +199,7 @@ def test_atoms_with_masses():
 
 
 def test_count_own():
-    """Test deletion of particle lists
-    """
+    """Test deletion of particle lists"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
 
     # No periodic spheres
