@@ -1,21 +1,25 @@
+# PMMoTo
+
 ![Tests](https://github.com/tmweigand/PMMoTo/actions/workflows/tests.yml/badge.svg)
 
 ![logo-1-text](https://github.com/tmweigand/PMMoTo/assets/68024672/5f667c8f-5498-4597-9af0-76fd6a9bc59a)
 
 ---
 
-**PMMoto** is a parallel, morphological, multiphase pore-scale simulation toolkit for porous media research. It provides efficient, scalable algorithms for simulating XXX in complex geometries using MPI-based parallelization.
+**PMMoTo** (Parallel Morphological Multiphase Toolkit) is an open-source, MPI-parallelized Python/C++ toolkit for simulating multiphase flow and morphological processes in complex porous media. PMMoTo provides efficient, scalable algorithms for generating, analyzing, and simulating pore-scale phenomena in 2D and 3D domains, with a focus on high-performance computing and extensibility.
 
 ---
 
 ## Features
 
-- **Parallel domain decomposition** using MPI for large-scale simulations
-- **Morphological drainage and imbibition** algorithms
-- Flexible support for custom porous media generation (e.g., sphere packs, molecular dynamics simulations)
-- Capillary pressure–saturation curve computation
-- Output in parallel VTK formats for visualization
-- Modular design for extensibility
+- **Parallel domain decomposition** using MPI for distributed-memory simulations
+- **Morphological drainage and imbibition** algorithms for capillary-dominated flow
+- **Flexible porous media generation**: random fields, sphere packs, atomistic models, and more
+- **Multiphase simulation**: support for multiple fluid phases and wettability
+- **Distance transforms**: exact Euclidean distance transforms with periodic and distributed support
+- **Capillary pressure–saturation curve computation** and other pore-scale analysis tools
+- **Parallel VTK output** for visualization in ParaView and other tools
+- **Modular, extensible design**: Python/C++ hybrid, easy to add new algorithms
 
 ---
 
@@ -42,7 +46,7 @@
    pip install -r requirements.txt
    ```
 
-3. **Build any required C/C++ extensions** (if needed):
+3. **Build C/C++ extensions (required for performance):**
    ```bash
    python setup.py build_ext --inplace
    ```
@@ -51,20 +55,18 @@
 
 ## Usage
 
-### Running a Drainage Simulation
-
-Example: Morphological drainage in an inkbottle geometry
+### Example: Morphological Drainage in an Inkbottle Geometry
 
 ```bash
 mpirun -np 8 python examples/drainage_inkbottle.py
 ```
 
-- Output images and data will be saved in the `examples/` or `data_out/` directories.
+- Output images and data are saved in `examples/` or `data_out/`.
 - Results can be visualized with ParaView or other VTK-compatible tools.
 
 ### Custom Porous Media
 
-You can use or implement your own porous media generator and pass it to the simulation driver. See `examples/drainage_inkbottle.py` for details.
+You can generate custom porous media using built-in generators (random, spheres, atoms) or your own. See `examples/drainage_inkbottle.py` and the `domain_generation` module for details.
 
 ---
 
@@ -72,12 +74,13 @@ You can use or implement your own porous media generator and pass it to the simu
 
 ```
 src/pmmoto/
-    core/               # Core parallel and utility routines
-    domain_generation/  # Porous media generation functions
-    filters/            # Morphological and equilibrium algorithms
-    io/                 # Input/output and VTK export
-    analysis/           # Analysis tools
-    examples/           # Example scripts
+    core/               # Core parallel and utility routines (domain, subdomain, communication, utils)
+    domain_generation/  # Porous media and multiphase domain generation
+    filters/            # Morphological and distance transform algorithms
+    io/                 # Input/output, VTK export, data readers
+    analysis/           # Analysis tools (Minkowski functionals, etc.)
+    particles/          # Particle and atom data structures
+    examples/           # Example scripts and workflows
     tests/              # Unit and integration tests
 ```
 
@@ -102,7 +105,7 @@ mpirun -np 8 python -m pytest tests/
 
 ## Citing
 
-If you use PMMoto in your research, please cite the relevant publication (add citation here if available).
+If you use PMMoTo in your research, please cite the relevant publication (add citation here if available).
 
 ---
 
@@ -118,4 +121,4 @@ For questions, issues, or contributions, please open an issue or pull request on
 
 ---
 
-**PMMoto** — Parallel Morphological Multiphase Toolkit for Porous Media Simulation
+**PMMoTo** — Parallel Morphological Multiphase Toolkit for Porous Media Simulation
