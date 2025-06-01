@@ -1,4 +1,7 @@
-"""porosimetry.py"""
+"""porosimetry.py
+
+Functions for pore size analysis and morphological porosimetry in PMMoTo.
+"""
 
 from typing import Literal, Dict
 import numpy as np
@@ -18,7 +21,20 @@ __all__ = [
 
 
 def get_sizes(min_value, max_value, num_values, spacing="linear"):
-    """Give list of pore sizes based on inputs provided
+    """Generate a list of pore sizes based on input parameters.
+
+    Args:
+        min_value (float): Minimum pore size.
+        max_value (float): Maximum pore size.
+        num_values (int): Number of values to generate.
+        spacing (str, optional): "linear" or "log" spacing. Defaults to "linear".
+
+    Returns:
+        np.ndarray: Array of pore sizes in non-increasing order.
+
+    Raises:
+        ValueError: If input parameters are invalid.
+
     """
     if min_value >= max_value:
         raise ValueError(
@@ -36,7 +52,7 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
     elif spacing == "log":
         if min_value < 1:
             raise ValueError(
-                f"Error: min_value {min_value} must be greater than or equal to 1 for log spacing"
+                f"Error: min_value {min_value} must be greater than or equal to 1"
             )
 
         # convert min/max to log10 exponents
@@ -58,12 +74,19 @@ def porosimetry(
     multiphase=None,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
-    """Perform a morphological erosion followed by a morphological dilation.
-    If inlet, the foreground voxels must be connected to the inlet.
+    """Perform morphological porosimetry (erosion/dilation) on a porous medium.
 
-    Additionally, allow for different radii to specified for the erosion and dilation.
-    To do this, provide a list where the first entry is the erosion radius and the
-    second entry is the dilation radius.
+    Args:
+        subdomain: Subdomain object.
+        porous_media: Porous media object with .img and .distance attributes.
+        radius (float or list): Erosion/dilation radius or [erosion, dilation].
+        inlet (bool, optional): If True, require connectivity to inlet.
+        multiphase (optional): Optional multiphase constraint.
+        mode (str, optional): "hybrid", "distance", or "morph".
+
+    Returns:
+        np.ndarray: Resulting binary image after porosimetry.
+
     """
     if isinstance(radius, (int, float)):
         erosion_radius = radius
@@ -134,8 +157,19 @@ def pore_size_distribution(
     inlet=False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
 ):
-    """Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
-    Calls porosimetry function with single size and returns img_results.
+    """Generate image where values are the radius of the largest sphere centered there.
+
+    Args:
+        subdomain: Subdomain object.
+        porous_media: Porous media object with .img and .distance attributes.
+        radii (list or np.ndarray, optional): List of radii to use.
+                                              If None, computed from the distance.
+        inlet (bool, optional): If True, require connectivity to inlet.
+        mode (str, optional): "hybrid", "distance", or "morph".
+
+    Returns:
+        np.ndarray: Image with pore size values.
+
     """
     if radii is not None:
         if isinstance(radii, (int, float)):
@@ -176,8 +210,16 @@ def plot_pore_size_distribution(
     pore_size_counts: Dict[float, float],
     plot_type: Literal["cdf", "pdf"] = "pdf",
 ):
-    """Plots pore size distribution.
-    plot_type: (string) choose between cumulative distribution function, or probability density function
+    """Plot and save the pore size distribution as a PNG.
+
+    Args:
+        file_name (str): Output file base name.
+        pore_size_counts (dict): Mapping from pore size radius to count.
+        plot_type (str, optional): cdf for cumulative or pdf for probability density.
+
+    Returns:
+        None
+
     """
     io_utils.check_file_path(file_name)
     out_file = file_name + "pore_size_distribution.png"

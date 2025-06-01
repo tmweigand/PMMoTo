@@ -1,4 +1,8 @@
-"""morphological_operators.py"""
+"""morphological_operators.py
+
+Morphological operations for binary images, including dilation, erosion,
+opening, and closing, with support for parallel subdomains and FFT-based methods.
+"""
 
 import math
 import numpy as np
@@ -21,8 +25,18 @@ __all__ = [
 
 
 def gen_struct_ratio(resolution, radius):
-    """Generate the structuring element dimensions for halo communication
-    https://www.iwaenc.org/proceedings/1997/nsip97/pdf/scan/ns970226.pdf
+    """Generate the structuring element dimensions for halo communication.
+
+    Args:
+        resolution (list or tuple): Resolution in each dimension (2D or 3D).
+        radius (float): Radius of the structuring element.
+
+    Returns:
+        np.ndarray: Array of structuring ratios for each dimension.
+
+    Raises:
+        ValueError: If resolution is not length 2 or 3, or radius is too small.
+
     """
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list of length 2 or 3")
@@ -42,16 +56,17 @@ def gen_struct_ratio(resolution, radius):
 def gen_struct_element(resolution, radius):
     """Generate the structuring element for FFT morphology approach.
 
-    Parameters
-    ----------
-        resolution (list or tuple): Resolution in each dimension (2D: [x, y], 3D: [x, y, z]).
+    Args:
+        resolution (list or tuple): Resolution in each dimension (2D or 3D).
         radius (float): Radius of the structuring element.
 
-    Returns
-    -------
-        tuple: (struct_ratio, struct_element), where:
+    Returns:
+        tuple: (struct_ratio, struct_element)
             - struct_ratio: Array of structuring ratios.
             - struct_element: 2D or 3D array representing the structuring element.
+
+    Raises:
+        ValueError: If resolution is not isotropic or not length 2/3.
 
     """
     if len(resolution) not in {2, 3}:
@@ -74,7 +89,17 @@ def gen_struct_element(resolution, radius):
 
 
 def addition(subdomain, img, radius, fft=False):
-    """Perform a morphological dilation on a binary domain
+    """Perform a morphological dilation on a binary domain.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Dilation radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Dilated binary image.
+
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
@@ -90,7 +115,8 @@ def addition(subdomain, img, radius, fft=False):
         _grid = fftconvolve(halo_img, struct_element, mode="same") > 0.1
         _grid_out = _grid.astype(np.uint8)
     else:
-        # Calls "local" distance transform since halo_img is padded with the maximum distance allowed
+        # Calls "local" distance transform
+        # since halo_img is padded with the maximum distance allowed
         _grid_distance = distance.edt3d(
             np.logical_not(halo_img),
             resolution=subdomain.domain.resolution,
@@ -107,7 +133,17 @@ def addition(subdomain, img, radius, fft=False):
 
 
 def dilate(subdomain, img, radius, fft=False):
-    """Wrapper to morph_add
+    """Morphological dilation (addition).
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Dilation radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Dilated binary image.
+
     """
     img_out = addition(subdomain, img, radius, fft)
 
@@ -115,7 +151,17 @@ def dilate(subdomain, img, radius, fft=False):
 
 
 def subtraction(subdomain, img, radius, fft=False):
-    """Perform a morpological subtraction
+    """Perform a morphological subtraction (erosion) on a binary domain.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Erosion radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Eroded binary image.
+
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
@@ -152,7 +198,17 @@ def subtraction(subdomain, img, radius, fft=False):
 
 
 def erode(subdomain, grid, radius, fft=False):
-    """Wrapper to morph_subtract
+    """Morphological erosion (subtraction).
+
+    Args:
+        subdomain: Subdomain object.
+        grid (np.ndarray): Binary image.
+        radius (float): Erosion radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Eroded binary image.
+
     """
     grid_out = subtraction(subdomain, grid, radius, fft)
 
@@ -160,7 +216,17 @@ def erode(subdomain, grid, radius, fft=False):
 
 
 def opening(subdomain, grid, radius, fft=False):
-    """Morphological opening
+    """Morphological opening (erosion followed by dilation).
+
+    Args:
+        subdomain: Subdomain object.
+        grid (np.ndarray): Binary image.
+        radius (float): Structuring element radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Opened binary image.
+
     """
     _erode = subtraction(subdomain, grid, radius, fft)
     open_map = addition(subdomain, _erode, radius, fft)
@@ -168,7 +234,17 @@ def opening(subdomain, grid, radius, fft=False):
 
 
 def closing(subdomain, grid, radius, fft=False):
-    """Morphological opening
+    """Morphological closing (dilation followed by erosion).
+
+    Args:
+        subdomain: Subdomain object.
+        grid (np.ndarray): Binary image.
+        radius (float): Structuring element radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Closed binary image.
+
     """
     _dilate = addition(subdomain, grid, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
@@ -176,16 +252,20 @@ def closing(subdomain, grid, radius, fft=False):
 
 
 def check_radii(subdomain, radii):
-    """Validates that each radius in the list does not exceed the subdomain size.
+    """Validate that each radius in the list does not exceed the subdomain size.
 
     Args:
         subdomain: Object with `own_voxels` and `rank` attributes.
         radii: Iterable of buffer radii to check against the subdomain.
 
+    Raises:
+        ValueError: If any radius exceeds the subdomain size.
+
     """
     error_message = (
-        "The specified radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
-        "To resolve this, use a different subdomain topology—for example, change the configuration of subdomains from (%s).\n"
+        "The radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
+        "To resolve this, use a different subdomain topology"
+        "for example, change the configuration of subdomains from (%s).\n"
         "Simulation stopping.\n"
     )
 
