@@ -1,12 +1,10 @@
 import pytest
-import numpy as np
 import pmmoto
 
 
 @pytest.fixture
 def generate_subdomain():
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain
     THis allows rank to be passed as an argument
     """
 
@@ -55,8 +53,7 @@ def generate_subdomain():
 
 @pytest.fixture
 def generate_simple_subdomain():
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain
     THis allows rank to be passed as an argument
     """
 

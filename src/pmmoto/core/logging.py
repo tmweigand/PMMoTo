@@ -1,3 +1,8 @@
+"""logging.py
+
+Setup of the logger
+"""
+
 import logging
 import os
 from datetime import datetime
@@ -13,14 +18,14 @@ class MPIFormatter(logging.Formatter):
         super().__init__(*args, **kwargs)
 
     def format(self, record):
+        """Add mpi information"""
         record.rank = self.rank
         record.size = self.size
         return super().format(record)
 
 
 def setup_logger(name="pmmoto", log_dir="logs"):
-    """
-    Configure logging for both serial and parallel runs
+    """Configure logging for both serial and parallel runs
 
     Args:
         name: Logger name (default: "pmmoto")
@@ -28,6 +33,7 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     Returns:
         logging.Logger: Configured logger instance
+
     """
     # Disable the root logger to prevent duplicate messages
     logging.getLogger().handlers.clear()
@@ -43,7 +49,6 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     # Get MPI rank
     rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
 
     # Create handlers
     formatter = MPIFormatter(

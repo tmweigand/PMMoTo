@@ -5,7 +5,6 @@ import numpy
 
 Cython.Compiler.Options.annotate = True
 
-import subprocess
 import sys
 
 # try:

@@ -2,14 +2,12 @@
 
 import numpy as np
 import pmmoto
-from pmmoto.core import voxels
 from pmmoto.core import _voxels
 import pytest
 
 
 def test_voxls_get_id():
-    """
-    Simple test to check voxel id mapping.
+    """Simple test to check voxel id mapping.
     """
     x = [1, 2, 7]
     v = [5, 6, 5]
@@ -23,11 +21,9 @@ def test_voxls_get_id():
 
 
 def test_1d_slice_extraction():
-    """
-    Test for ensuring looping through 1d slice is working with c++ interface
+    """Test for ensuring looping through 1d slice is working with c++ interface
     FOr the 2 direction, check on the diagonal
     """
-
     # Example data
     n = 5
     img = np.arange(n**3, dtype=np.uint8).reshape(n, n, n)
@@ -169,10 +165,8 @@ def test_1d_slice_extraction():
 
 
 def test_get_nearest_boundary_index_1d():
+    """Test for ensuring get_nearest_boundary_index works in 1d. Same c++ function is called in 3d so simpler for testing.
     """
-    Test for ensuring get_nearest_boundary_index works in 1d. Same c++ function is called in 3d so simpler for testing.
-    """
-
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
 
@@ -186,10 +180,8 @@ def test_get_nearest_boundary_index_1d():
 
 
 def test_get_nearest_boundary_index_1d_pad():
+    """Adding ability to "de"-pad the image for the 1d case
     """
-    Adding ability to "de"-pad the image for the 1d case
-    """
-
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
 
@@ -252,10 +244,8 @@ def test_get_nearest_boundary_index_1d_pad():
 
 
 def test_get_nearest_boundary_index():
+    """Test for ensuring get_nearest_boundary_index works. duh
     """
-    Test for ensuring get_nearest_boundary_index works. duh
-    """
-
     # Example data
     img = np.array(
         [
@@ -325,10 +315,8 @@ def test_get_nearest_boundary_index():
 
 @pytest.mark.figures
 def test_get_nearest_boundary_index_figure(generate_padded_subdomain):
+    """Test for ensuring get_nearest_boundary_index works. duh
     """
-    Test for ensuring get_nearest_boundary_index works. duh
-    """
-
     rank = 0
     sd = generate_padded_subdomain(rank)
 

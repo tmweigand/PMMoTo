@@ -1,14 +1,10 @@
 """test_rdf.py"""
 
-import numpy as np
 import pmmoto
-import pytest
-import matplotlib.pyplot as plt
 
 
 def test_rdf():
-    """
-    Test for checking rdf values
+    """Test for checking rdf values
     """
     atom_folder = "tests/test_data/atom_data/"
     atom_map, rdf = pmmoto.io.data_read.read_rdf(atom_folder)
@@ -19,8 +15,7 @@ def test_rdf():
 
 
 def test_bounded_rdf():
-    """
-    Test for checking rdf values
+    """Test for checking rdf values
     """
     atom_folder = "tests/test_data/atom_data/"
     atom_map, rdf = pmmoto.io.data_read.read_rdf(atom_folder)

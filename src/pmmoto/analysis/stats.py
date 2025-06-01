@@ -10,8 +10,7 @@ __all__ = ["get_minimum", "get_maximum", "get_volume_fraction", "get_saturation"
 
 
 def get_minimum(subdomain, data):
-    """
-    Determine the global minimum of the data
+    """Determine the global minimum of the data
     """
     if subdomain.size > 1:
         own_data = utils.own_grid(data, subdomain.index_own_nodes)
@@ -23,8 +22,7 @@ def get_minimum(subdomain, data):
 
 
 def get_maximum(subdomain, data):
-    """
-    Determine the global maximum of the data
+    """Determine the global maximum of the data
     """
     if subdomain.size > 1:
         own_data = utils.own_grid(data, subdomain.index_own_nodes)
@@ -36,8 +34,7 @@ def get_maximum(subdomain, data):
 
 
 def get_volume_fraction(subdomain, data, phase):
-    """
-    Calculate the volume fraction of a given phase
+    """Calculate the volume fraction of a given phase
     """
     own_grid = utils.own_grid(data, subdomain.index_own_nodes)
     local_phase_nodes = np.count_nonzero(own_grid == phase)
@@ -47,10 +44,8 @@ def get_volume_fraction(subdomain, data, phase):
 
 
 def get_saturation(subdomain, data, phase, porousmedia=None):
+    """Calculate the saturation of a given phase
     """
-    Calculate the saturation of a given phase
-    """
-
     volume_fraction = get_volume_fraction(subdomain, data, phase)
 
     if porousmedia is not None:

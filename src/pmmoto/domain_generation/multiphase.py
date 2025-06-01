@@ -19,22 +19,26 @@ class Multiphase:
         self.fluids = list(range(1, num_phases + 1))
 
     def update_img(self, img):
-        """
-        Update the multiphase img
+        """Update the multiphase img
         """
         self.img = img
 
-    def get_volume_fraction(self, phase: int) -> float:
-        """
-        Calculate the volume fraction of a given phase in a multiphase image.
+    def get_volume_fraction(self, phase: int, img=None) -> float:
+        """Calculate the volume fraction of a given phase in a multiphase image.
 
-        Parameters:
+        Parameters
+        ----------
             phase (int): The phase ID to compute the volume fraction for.
 
-        Returns:
+        Returns
+        -------
             float: The volume fraction of the specified phase.
+
         """
-        local_img = utils.own_img(self.subdomain, self.img)
+        if img is None:
+            img = self.img
+
+        local_img = utils.own_img(self.subdomain, img)
         local_voxel_count = np.count_nonzero(local_img == phase)
 
         total_voxel_count = (
@@ -46,16 +50,16 @@ class Multiphase:
         total_voxels = np.prod(self.subdomain.domain.voxels)
         return total_voxel_count / total_voxels
 
-    def get_saturation(self, phase):
+    def get_saturation(self, phase: int, img=None) -> float:
+        """Calculate the saturation of a multiphase image
         """
-        Calculate the saturation of a multiphase image
-        """
-        return self.get_volume_fraction(phase) / self.porous_media.porosity
+        if img is None:
+            img = self.img
+        return self.get_volume_fraction(phase, img) / self.porous_media.porosity
 
     @staticmethod
     def get_probe_radius(pc, gamma=1, contact_angle=0):
-        """
-        Return the probe radius given a capillary pressure, surface tension and contact_angle
+        """Return the probe radius given a capillary pressure, surface tension and contact_angle
         """
         if pc == 0:
             r_probe = 0
@@ -65,7 +69,6 @@ class Multiphase:
 
     @staticmethod
     def get_pc(radius, gamma=1):
-        """
-        Return the capillary pressure given a surface tension and radius
+        """Return the capillary pressure given a surface tension and radius
         """
         return 2.0 * gamma / radius

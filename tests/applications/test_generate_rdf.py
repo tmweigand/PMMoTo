@@ -29,11 +29,9 @@ dual_key_dict = {
 
 
 def read_lammps_atoms(input_file, label_map):
-    """
-    Read position of atoms from LAMMPS file
+    """Read position of atoms from LAMMPS file
     atom_map must sync with LAMMPS ID
     """
-
     io_utils.check_file(input_file)
 
     if input_file.endswith(".gz"):
@@ -82,8 +80,7 @@ def gen_radii(atom_ids, value):
 @pytest.mark.skip
 # @pytest.mark.mpi(min_size=8)
 def generate_rdf():
-    """
-    Test for generating a radial distribution function from LAMMPS data
+    """Test for generating a radial distribution function from LAMMPS data
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

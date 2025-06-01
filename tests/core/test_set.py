@@ -1,7 +1,5 @@
 """test_set.py"""
 
-import numpy as np
-import pmmoto
 
 
 def test_set():

@@ -16,16 +16,14 @@ def drainage(
     capillary_pressures,
     gamma=1,
     contact_angle=0,
-    method: Literal["standard", "contact_angle"] = "standard",
+    method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
     save=False,
 ):
-    """
-    This is a morphological approach to determining the equilibrium
+    """This is a morphological approach to determining the equilibrium
     fluid distribution for a multiphase system.
 
     The updated img is stored in multiphase.img.
     """
-
     # Ensure capillary pressures are in a sorted list
     if isinstance(capillary_pressures, (int, float)):
         capillary_pressures = [capillary_pressures]
@@ -42,12 +40,21 @@ def drainage(
         if contact_angle != 0:
             raise ValueError("The standard approach requires a zero contact angle!")
         approach = _standard_method
+        update_img = True
     elif method == "contact_angle":
         if contact_angle == 0:
             logging.warning(
                 "The contact angle is zero. This will yield same results as the standard approach."
             )
         approach = _contact_angle_method
+        update_img = True
+    elif method == "extended_contact_angle":
+        if contact_angle == 0:
+            logging.warning(
+                "The contact angle is zero. This will yield same results as the standard approach."
+            )
+        approach = _extended_contact_angle_method
+        update_img = True
     else:
         raise ValueError(f"{method} is not implemented. ")
 
@@ -66,9 +73,13 @@ def drainage(
         )
 
         # Update the phase distribution
-        multiphase.update_img(
-            np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
-        )
+        if update_img:
+            multiphase.update_img(
+                np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
+            )
+            mp_img = multiphase.img
+        else:
+            mp_img = np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
 
         if save:
             save_img_data_parallel(
@@ -76,11 +87,12 @@ def drainage(
                     ".", "_"
                 ),
                 multiphase.subdomain,
-                multiphase.img,
+                mp_img,
+                additional_img={"morph": morph},
             )
 
         # Store wetting phase saturation
-        w_saturation[n] = multiphase.get_saturation(2)
+        w_saturation[n] = multiphase.get_saturation(2, mp_img)
 
         if multiphase.subdomain.rank == 0:
             logging.info(
@@ -93,10 +105,11 @@ def drainage(
 
 
 def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
+    """This method for drainage follows Hilpert and Miller 2001
+    The radius(r) is defined as:
+        r = 2*gamma / p_c
+    where gamma is the surface tensions and p_c is the capillary pressure.
     """
-    This method for drainage follows Hilpert and Miller 2001
-    """
-
     # Compute morphological changes based on capillary pressure
     radius = multiphase.get_probe_radius(capillary_pressure, gamma)
 
@@ -117,17 +130,50 @@ def _standard_method(multiphase, capillary_pressure, gamma, contact_angle):
 
 
 def _contact_angle_method(multiphase, capillary_pressure, gamma, contact_angle):
+    """This method for drainage follows Schulz and Becker 2007.
+    The radius(r) is  defined as:
+        r = 2*gamma*cos(theta) / p_c
+    where gamma is the surface tensions, theta is the contact angle,
+    and p_c is the capillary pressure.
     """
-    This method for drainage follows Schulz and Wargo 2015.
-    This paper seems to have many typos/ errors?
-    ..For example Eqations 1 and 5 show dimeter but should be radii.
-    """
+    # Compute morphological changes based on capillary pressure
+    radius = multiphase.get_probe_radius(capillary_pressure, gamma, contact_angle)
 
+    # Check if radius is larger than resolution
+    if radius < min(multiphase.subdomain.domain.resolution):
+        morph = np.zeros_like(multiphase.pm_img)
+    else:
+        morph = porosimetry(
+            subdomain=multiphase.subdomain,
+            porous_media=multiphase.porous_media,
+            radius=radius,
+            inlet=True,
+            multiphase=multiphase,
+            mode="hybrid",
+        )
+
+    return morph
+
+
+def _extended_contact_angle_method(
+    multiphase, capillary_pressure, gamma, contact_angle
+):
+    """This method for drainage follows Schulz and Wargo 2015.
+    In this work the radius (r) of erosion step includes the contact angle
+    but the dilation does not.
+
+
+    This method does not yield good results
+    """
     # Compute morphological changes based on capillary pressure
     erosion_radius = multiphase.get_probe_radius(
         capillary_pressure, gamma, contact_angle
     )
-    dilation_radius = multiphase.get_probe_radius(capillary_pressure, gamma)
+
+    # Mutiply again by cosine of contact angle
+    dilation_radius = multiphase.get_probe_radius(
+        capillary_pressure, gamma, contact_angle
+    ) * np.abs(np.cos(np.deg2rad(contact_angle)))
 
     radius = [erosion_radius, dilation_radius]
 
