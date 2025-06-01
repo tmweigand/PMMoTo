@@ -24,8 +24,9 @@ jobs:
 
       - name: Build docs
         run: |
-          cd docs
-          make html
+          rm -rf docs/pmmoto.*.rst docs/modules.rst
+          sphinx-apidoc -o docs/ src/pmmoto --force --module-first
+          make -C docs html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
