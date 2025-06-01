@@ -58,7 +58,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "D"]  # E = pycodestyle, F = pyflakes, D = pydocstyle
-ignore = ["D100"]
+ignore = ["D107", "D203", "D213", "D400", "D415", "D200"]
 
 [tool.interrogate]
 fail-under = 90

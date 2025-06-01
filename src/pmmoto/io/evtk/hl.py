@@ -806,7 +806,7 @@ def cylinderToVTK(
     # Define connectivity
     conn = np.zeros(4 * ncells, dtype=np.int64)
     ii = 0
-    for l in range(nlayers):
+    for layer in range(nlayers):
         for p in range(npilars):
             p0 = p
             if p + 1 == npilars:
@@ -814,8 +814,8 @@ def cylinderToVTK(
             else:
                 p1 = p + 1  # circular loop
 
-            n0 = p0 + l * npilars
-            n1 = p1 + l * npilars
+            n0 = p0 + layer * npilars
+            n1 = p1 + layer * npilars
             n2 = n0 + npilars
             n3 = n1 + npilars
 

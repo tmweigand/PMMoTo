@@ -22,7 +22,7 @@ def setup():
 
 
 @pytest.mark.benchmark
-def test_morp_addition_fft_small_r(benchmark):
+def test_morph_addition_fft_small_r(benchmark):
     """Benchmark morphological addition (FFT method, small radius).
 
     Args:
@@ -42,7 +42,7 @@ def test_morp_addition_fft_small_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_fft_large_r(benchmark):
+def test_morph_addition_fft_large_r(benchmark):
     """Benchmark morphological addition (FFT method, large radius).
 
     Args:
@@ -62,7 +62,7 @@ def test_morp_addition_fft_large_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_edt_small_r(benchmark):
+def test_morph_addition_edt_small_r(benchmark):
     """Benchmark morphological addition (EDT method, small radius).
 
     Args:
@@ -82,7 +82,7 @@ def test_morp_addition_edt_small_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_edt_large_r(benchmark):
+def test_morph_addition_edt_large_r(benchmark):
     """Benchmark morphological addition (EDT method, large radius).
 
     Args:

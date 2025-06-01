@@ -93,8 +93,7 @@ def test_connect_componets_bcs_0(generate_simple_subdomain):
 
 
 def test_connect_componets_bcs_1(generate_simple_subdomain):
-    """Same as above but add 1 to img so label count is 1000
-    """
+    """Same as above but add 1 to img so label count is 1000"""
     sd = generate_simple_subdomain(0, specified_types=((0, 0), (0, 0), (0, 0)))
     img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
     img = img + 1
@@ -148,7 +147,7 @@ def test_connect_componets_partial_periodic(generate_simple_subdomain):
 
 
 @pytest.mark.mpi(min_size=8)
-def test_connect_componets_partial_periodic(generate_simple_subdomain):
+def test_connect_componets_partial_periodic_parallel(generate_simple_subdomain):
     """ """
     p_x = ((2, 2), (0, 0), (0, 0))
     p_y = ((0, 0), (2, 2), (0, 0))
@@ -182,8 +181,7 @@ def test_connect_componets_partial_periodic(generate_simple_subdomain):
 
 
 def test_inlet_connected_img():
-    """Test for passing in an image and only return where labels are on the inlet
-    """
+    """Test for passing in an image and only return where labels are on the inlet"""
     voxels = (20, 20, 20)
     inlet = ((1, 0), (0, 0), (0, 0))
     sd = pmmoto.initialize(voxels=voxels, inlet=inlet)
