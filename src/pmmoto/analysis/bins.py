@@ -35,7 +35,7 @@ class Bin:
         end: float,
         num_bins: int,
         name: Optional[str] = None,
-        values: Optional[np.ndarray] = None,
+        values: Optional[NDArray[float]] = None,
     ):
         """Initialize a Bin.
 
