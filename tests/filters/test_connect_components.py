@@ -1,3 +1,9 @@
+"""Unit tests for connected components and inlet/outlet labeling in PMMoTo.
+
+These tests cover parallel and serial connected components labeling,
+periodic and non-periodic domains, and inlet-connected region detection.
+"""
+
 import numpy as np
 from mpi4py import MPI
 import pmmoto
@@ -5,9 +11,8 @@ import pytest
 
 
 @pytest.mark.mpi(min_size=8)
-def test_connect_componets(generate_simple_subdomain):
-    """ """
-
+def test_connect_components(generate_simple_subdomain):
+    """Connected components labeling and inlet/outlet label detection in parallel."""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = False
@@ -38,9 +43,8 @@ def test_connect_componets(generate_simple_subdomain):
 
 
 @pytest.mark.mpi(min_size=8)
-def test_connect_componets_periodic(generate_simple_subdomain):
-    """ """
-
+def test_connect_components_periodic(generate_simple_subdomain):
+    """Test connected components with periodic boundaries in parallel."""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
@@ -70,10 +74,8 @@ def test_connect_componets_periodic(generate_simple_subdomain):
     assert sorted(connected_labels) == []
 
 
-def test_connect_componets_bcs_0(generate_simple_subdomain):
-    """This test calls pmmoto  but only depends on the cc3d dependency.
-    The label count is 999 because 0 is background.
-    """
+def test_connect_components_bcs_0(generate_simple_subdomain):
+    """Test connected components with background label 0. Should ignore background."""
     sd = generate_simple_subdomain(0, specified_types=((0, 0), (0, 0), (0, 0)))
     img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
 
@@ -92,8 +94,8 @@ def test_connect_componets_bcs_0(generate_simple_subdomain):
     assert label_count == np.prod(sd.domain.voxels) - 1
 
 
-def test_connect_componets_bcs_1(generate_simple_subdomain):
-    """Same as above but add 1 to img so label count is 1000"""
+def test_connect_components_bcs_1(generate_simple_subdomain):
+    """Test connected components with all labels nonzero. Should count all voxels."""
     sd = generate_simple_subdomain(0, specified_types=((0, 0), (0, 0), (0, 0)))
     img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
     img = img + 1
@@ -113,8 +115,8 @@ def test_connect_componets_bcs_1(generate_simple_subdomain):
     assert label_count == np.prod(sd.domain.voxels)
 
 
-def test_connect_componets_partial_periodic(generate_simple_subdomain):
-    """ """
+def test_connect_components_partial_periodic(generate_simple_subdomain):
+    """Test connected components with partial periodic boundaries in serial."""
     p_x = ((2, 2), (0, 0), (0, 0))
     p_y = ((0, 0), (2, 2), (0, 0))
     p_z = ((0, 0), (0, 0), (2, 2))
@@ -125,7 +127,6 @@ def test_connect_componets_partial_periodic(generate_simple_subdomain):
     for p in [p_x, p_y, p_z, p_xy, p_xz]:
         sd = generate_simple_subdomain(0, specified_types=p)
         img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
-        img = img
 
         subdomains = (1, 1, 1)
         sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
@@ -135,20 +136,16 @@ def test_connect_componets_partial_periodic(generate_simple_subdomain):
             rank=0,
         )
 
-        cc, label_count = pmmoto.filters.connected_components.connect_components(
+        _, label_count = pmmoto.filters.connected_components.connect_components(
             local_img, sd_local, return_label_count=True
-        )
-
-        connected_labels = pmmoto.filters.connected_components.inlet_outlet_labels(
-            sd_local, cc
         )
 
         assert label_count == np.prod(sd.domain.voxels)
 
 
 @pytest.mark.mpi(min_size=8)
-def test_connect_componets_partial_periodic_parallel(generate_simple_subdomain):
-    """ """
+def test_connect_components_partial_periodic_parallel(generate_simple_subdomain):
+    """Connected components with partial and full periodic boundaries in parallel."""
     p_x = ((2, 2), (0, 0), (0, 0))
     p_y = ((0, 0), (2, 2), (0, 0))
     p_z = ((0, 0), (0, 0), (2, 2))
@@ -181,7 +178,7 @@ def test_connect_componets_partial_periodic_parallel(generate_simple_subdomain):
 
 
 def test_inlet_connected_img():
-    """Test for passing in an image and only return where labels are on the inlet"""
+    """Test that only regions connected to the inlet are labeled as connected."""
     voxels = (20, 20, 20)
     inlet = ((1, 0), (0, 0), (0, 0))
     sd = pmmoto.initialize(voxels=voxels, inlet=inlet)

@@ -5,6 +5,7 @@ Bin utilities for PMMoTo, including 1D and radial bins, and distributed bin coun
 
 from typing import Dict, Optional
 import numpy as np
+from numpy.typing import NDArray
 from . import _bins
 from ..io import io_utils
 from ..core import communication
@@ -12,7 +13,7 @@ from ..core import communication
 __all__ = ["count_locations"]
 
 
-def sphere_volume(radius):
+def sphere_volume(radius: float) -> float:
     """Calculate the volume of a sphere given its radius.
 
     Args:
@@ -64,11 +65,11 @@ class Bin:
         self.get_bin_width()
         self.get_bin_centers()
 
-    def get_bin_width(self):
+    def get_bin_width(self) -> None:
         """Calculate and set the bin width."""
         self.width = (self.end - self.start) / self.num_bins
 
-    def get_bin_centers(self):
+    def get_bin_centers(self) -> None:
         """Calculate and set the bin centers."""
         self.centers = np.linspace(
             self.start + self.width / 2,
@@ -76,7 +77,7 @@ class Bin:
             self.num_bins,
         )
 
-    def set_values(self, values: np.ndarray):
+    def set_values(self, values: NDArray) -> None:
         """Set the bin values.
 
         Args:
@@ -85,7 +86,7 @@ class Bin:
         """
         self.values = values
 
-    def update_values(self, values: np.ndarray):
+    def update_values(self, values: np.ndarray) -> None:
         """Increment the bin values with new values.
 
         Args:
@@ -94,7 +95,7 @@ class Bin:
         """
         self.values += values
 
-    def calculate_volume(self, area=None, radial_volume=False):
+    def calculate_volume(self, area: float = None, radial_volume: bool = False) -> None:
         """Calculate the bin volume.
 
         Args:
@@ -110,7 +111,7 @@ class Bin:
             if area:
                 self.volume = self.width * area
 
-    def generate_rdf(self):
+    def generate_rdf(self) -> NDArray[float]:
         """Generate an RDF from bin counts.
 
         Returns:
@@ -126,7 +127,7 @@ class Bin:
 
         return rdf
 
-    def save_bin(self, subdomain, folder):
+    def save_bin(self, subdomain: "Subdomain", folder: str) -> None:
         """Save the bin data to a file.
 
         Args:

@@ -1,3 +1,8 @@
+"""Profiling script for drainage simulation in PMMoTo.
+
+Profiles drainage calculation in an inkbottle geometry.
+"""
+
 import pmmoto
 
 import profiling_utils

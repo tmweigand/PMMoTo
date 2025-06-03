@@ -7,8 +7,7 @@ import pytest
 
 
 def test_voxls_get_id():
-    """Simple test to check voxel id mapping.
-    """
+    """Simple test to check voxel id mapping."""
     x = [1, 2, 7]
     v = [5, 6, 5]
     id = pmmoto.core.voxels.get_id(x, v)
@@ -21,8 +20,9 @@ def test_voxls_get_id():
 
 
 def test_1d_slice_extraction():
-    """Test for ensuring looping through 1d slice is working with c++ interface
-    FOr the 2 direction, check on the diagonal
+    """Test for ensuring looping through 1d slice is working with c++ interface.
+
+    For the 2 direction, check on the diagonal
     """
     # Example data
     n = 5
@@ -165,7 +165,9 @@ def test_1d_slice_extraction():
 
 
 def test_get_nearest_boundary_index_1d():
-    """Test for ensuring get_nearest_boundary_index works in 1d. Same c++ function is called in 3d so simpler for testing.
+    """Test for ensuring get_nearest_boundary_index works in 1d.
+
+    Same c++ function is called in 3d so simpler for testing.
     """
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
@@ -180,8 +182,7 @@ def test_get_nearest_boundary_index_1d():
 
 
 def test_get_nearest_boundary_index_1d_pad():
-    """Adding ability to "de"-pad the image for the 1d case
-    """
+    """Adding ability to "de"-pad the image for the 1d case"""
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
 
@@ -244,8 +245,7 @@ def test_get_nearest_boundary_index_1d_pad():
 
 
 def test_get_nearest_boundary_index():
-    """Test for ensuring get_nearest_boundary_index works. duh
-    """
+    """Test for ensuring get_nearest_boundary_index works. duh"""
     # Example data
     img = np.array(
         [
@@ -315,8 +315,7 @@ def test_get_nearest_boundary_index():
 
 @pytest.mark.figures
 def test_get_nearest_boundary_index_figure(generate_padded_subdomain):
-    """Test for ensuring get_nearest_boundary_index works. duh
-    """
+    """Test for ensuring get_nearest_boundary_index works. duh"""
     rank = 0
     sd = generate_padded_subdomain(rank)
 
@@ -327,26 +326,22 @@ def test_get_nearest_boundary_index_figure(generate_padded_subdomain):
         subdomain=sd, img=img, label=0, which_voxels="own"
     )
 
-    # img_out = np.ones_like(img)
-    # for feature_id, index in boundary_index.items():
-    #     for nx in range(index.shape[0]):
-    #         for ny in range(index.shape[1]):
-    #             if feature_id[0] != 0:
-    #                 if index[nx, ny] > -1:
-    #                     img_out[int(index[nx, ny]), nx, ny] = 0
-    #                 else:
-    #                     img_out[0, nx, ny] = 255
-    #             if feature_id[1] != 0:
-    #                 if index[nx, ny] > -1:
-    #                     img_out[nx, int(index[nx, ny]), ny] = 0
-    #                 else:
-    #                     img_out[nx, 0, ny] = 255
-    #             if feature_id[2] != 0:
-    #                 if index[nx, ny] > -1:
-    #                     img_out[nx, ny, int(index[nx, ny])] = 0
-    #                 else:
-    #                     img_out[nx, ny, 0] = 255
-
-    # pmmoto.io.output.save_grid(
-    #     "data_out/test_voxels_random", img, **{"img_out": img_out}
-    # )
+    img_out = np.ones_like(img)
+    for feature_id, index in boundary_index.items():
+        for nx in range(index.shape[0]):
+            for ny in range(index.shape[1]):
+                if feature_id[0] != 0:
+                    if index[nx, ny] > -1:
+                        img_out[int(index[nx, ny]), nx, ny] = 0
+                    else:
+                        img_out[0, nx, ny] = 255
+                if feature_id[1] != 0:
+                    if index[nx, ny] > -1:
+                        img_out[nx, int(index[nx, ny]), ny] = 0
+                    else:
+                        img_out[nx, 0, ny] = 255
+                if feature_id[2] != 0:
+                    if index[nx, ny] > -1:
+                        img_out[nx, ny, int(index[nx, ny])] = 0
+                    else:
+                        img_out[nx, ny, 0] = 255

@@ -202,8 +202,9 @@ def test_feature_voxels_figure():
 
 
 def test_collect_periodic_features():
-    """Check function that loops through the subdomain features and
-    returns a list of all of the periodic ones.
+    """Check function that loops through the subdomain features
+
+    Returns a list of all of the periodic ones.
     """
     rank = 26
     pad = (1, 1, 1)
@@ -218,8 +219,9 @@ def test_collect_periodic_features():
 
 
 def test_collect_periodic_corrections():
-    """Check function that loops through the subdomain features and
-    returns a list of all of the periodic corrections.
+    """Check function that loops through the subdomain features.
+
+    Returns a list of all of the periodic corrections.
     """
     rank = 26
     pad = (1, 1, 1)

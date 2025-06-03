@@ -354,8 +354,9 @@ def test_periodic_3d_2():
 
 
 def test_edt_single_non_periodic():
-    """Check to make sure this is called as it needs no correctors. Domain is unit length so max edt must be less than zero.
-    Pretty inefficient approach.
+    """Check to make sure this is called as it needs no correctors.
+
+    Domain is unit length so max edt must be less than zero.
     """
     voxels = (10, 10, 10)
     prob_zero = 0.1

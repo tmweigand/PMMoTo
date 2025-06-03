@@ -1,3 +1,8 @@
+"""Profiling script for connected components in PMMoTo.
+
+Profiles connected components labeling and inlet/outlet label mapping.
+"""
+
 import pmmoto
 
 import profiling_utils
