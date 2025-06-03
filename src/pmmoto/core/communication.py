@@ -1,10 +1,11 @@
 """communication.py"""
 
+from typing import TypeVar, List, Optional, Union
+import numpy as np
+from mpi4py import MPI
 from . import utils
 from .logging import get_logger
 
-import numpy as np
-from mpi4py import MPI
 
 __all__ = [
     "all_gather",
@@ -16,52 +17,78 @@ __all__ = [
 
 
 comm = MPI.COMM_WORLD
+
+_OP_MAP: dict[str, MPI.Op] = {
+    "sum": MPI.SUM,
+    "prod": MPI.PROD,
+    "max": MPI.MAX,
+    "min": MPI.MIN,
+    "land": MPI.LAND,
+    "band": MPI.BAND,
+    "lor": MPI.LOR,
+    "bor": MPI.BOR,
+    "lxor": MPI.LXOR,
+    "bxor": MPI.BXOR,
+    "minloc": MPI.MINLOC,
+    "maxloc": MPI.MAXLOC,
+}
+
+T = TypeVar("T")
+
 logger = get_logger()
 
 
-def all_gather(data):
+def all_gather(data: T) -> List[T]:
     """Gather data from all processes and return the combined result.
 
     Args:
         data: Data to be gathered from each process.
 
     Returns:
-        list: List containing data from all processes.
+        List containing data from all processes.
 
     """
-    all_data = comm.allgather(data)
-
-    return all_data
+    return comm.allgather(data)
 
 
-def gather(data):
+def gather(data: T, root: int = 0) -> Optional[List[T]]:
     """Gather data from all processes to the root process.
 
     Args:
         data: Data to be gathered from each process.
+        root: Rank of the root process that receives the data.
 
     Returns:
-        list or None: List of data on root process, None on others.
+        List of data on root process, None on others.
 
     """
-    all_data = comm.gather(data, root=0)
-
-    return all_data
+    return comm.gather(data, root=root)
 
 
-def all_reduce(data):
-    """Reduce data from all processes using sum and distribute the result.
+def all_reduce(data: T, op: Union[str, MPI.Op] = "sum") -> T:
+    """Reduce data from all processes using the given operation and distribute the result.
 
     Args:
-        data: Data to be reduced.
+        data: Local data to reduce (e.g., int, float, NumPy array).
+        op: MPI operation or string alias (e.g., 'sum', 'max').
 
     Returns:
-        The reduced result, distributed to all processes.
+        The reduced result, available to all processes.
+
+    Raises:
+        ValueError: If the provided operation is not supported.
 
     """
-    all_data = comm.allreduce(data, op=MPI.SUM)
+    if isinstance(op, str):
+        try:
+            op = _OP_MAP[op.lower()]
+        except KeyError:
+            raise ValueError(f"Unsupported reduction operation string: {op!r}")
 
-    return all_data
+    elif not isinstance(op, MPI.Op):
+        raise TypeError("Operation must be an MPI.Op or string alias")
+
+    return comm.allreduce(data, op=op)
 
 
 def update_buffer(subdomain, img, buffer=None):
