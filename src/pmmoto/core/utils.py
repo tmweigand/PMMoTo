@@ -229,7 +229,9 @@ def constant_pad_img(img, pad, pad_value):
     return img
 
 
-def own_img(subdomain: "Subdomain", img: NDArray) -> NDArray:
+def own_img(
+    subdomain: "Subdomain", img: NDArray, own_voxels: NDArray[np.int64] = None
+) -> NDArray:
     """Return array with only nodes owned by the current process.
 
     Args:
@@ -240,7 +242,11 @@ def own_img(subdomain: "Subdomain", img: NDArray) -> NDArray:
         np.ndarray: Array of owned voxels.
 
     """
-    own = subdomain.get_own_voxels()
+    if own_voxels is not None:
+        own = own_voxels
+    else:
+        own = subdomain.get_own_voxels()
+
     img_out = img[own[0] : own[1], own[2] : own[3], own[4] : own[5]]
 
     return np.ascontiguousarray(img_out)

@@ -184,6 +184,15 @@ class Face(Feature):
 
         return tuple(face_slice)
 
+    def map_to_index(self) -> int:
+        """Return the 1d-index for face."""
+        for dim, f_id in enumerate(self.feature_id):
+            if f_id < 0:
+                index = dim * 2
+            elif f_id > 0:
+                index = dim * 2 + 1
+        return index
+
 
 class Edge(Feature):
     """Edge information for a subdomain.

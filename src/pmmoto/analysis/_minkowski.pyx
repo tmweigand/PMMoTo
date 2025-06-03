@@ -23,7 +23,7 @@ np.import_array()
 # {{{ functionals
 
 @cython.binding(True)
-cpdef functionals(np.ndarray image, nodes, res = None, norm=False):
+cpdef functionals(np.ndarray image, voxels, res = None, norm=False, parallel = False):
     r"""Compute the Minkowski functionals in 2D or 3D.
 
     This function computes the Minkowski functionals for the Numpy array `image`. Both
@@ -183,7 +183,7 @@ cpdef functionals(np.ndarray image, nodes, res = None, norm=False):
         else:
             raise ValueError('Input image and resolution need to be the same dimension')
 
-        return _functionals_3d(image, res0, res1, res2, nodes, factor, norm)
+        return _functionals_3d(image, res0, res1, res2, voxels, factor, norm, parallel)
     else:
         raise ValueError('Can only handle 2D or 3D images')
 
@@ -260,9 +260,10 @@ def _functionals_3d(
         double res0, 
         double res1, 
         double res2,
-        np.ndarray[long, ndim=1, mode="c"] nodes,
+        np.ndarray[long, ndim=1, mode="c"] voxels,
         double factor,
-        bint norm):
+        bint norm,
+        bint parallel = False):
 
     cdef double volume 
     cdef double surface 
@@ -282,17 +283,14 @@ def _functionals_3d(
         res1, 
         res2)
 
-    #print(np.asarray(h))
-
-    h = comm.allreduce(np.asarray(h),op = MPI.SUM)
-
-    #print(np.asarray(h))
+    if parallel:
+        h = comm.allreduce(np.asarray(h),op = MPI.SUM)
 
     status = c_functionals_3d(
         &image[0,0,0],
-        nodes[0], 
-        nodes[1], 
-        nodes[2],
+        voxels[0], 
+        voxels[1], 
+        voxels[2],
         res0, 
         res1, 
         res2,

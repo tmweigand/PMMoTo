@@ -5,6 +5,7 @@ facilitating parallel algorithms in PMMoTo.
 """
 
 import numpy as np
+from numpy.typing import NDArray
 from ..core import subdomain
 from ..core import subdomain_features
 
@@ -241,7 +242,7 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return tuple(start)
 
-    def get_own_voxels(self):
+    def get_own_voxels(self) -> NDArray[np.int64]:
         """Determine the index for the voxels owned by this subdomain.
 
         Returns:

@@ -22,9 +22,7 @@ def functionals(
 ) -> Tuple[float, float, float, float]:
     r"""Calculate the Minkowski functionals for a subdomain.
 
-    Only values for own_nodes are returned.
     The algorithm skips the last index for boundary conditions.
-    If not a +1 external boundary, keep the padding.
 
     Args:
         subdomain: Subdomain object.
@@ -53,25 +51,25 @@ def functionals(
         excluding padding and ghost regions, and are normalized by the voxel size.
 
     """
-    if subdomain.domain.num_subdomains == 1 and not np.any(
-        np.array(subdomain.boundary_types) == 2
-    ):
-        _functionals = _minkowski.functionals(
-            img.astype(bool),
-            np.array(subdomain.domain.voxels),
-            subdomain.domain.resolution,
-        )
-    else:
-        _index_own_nodes = np.copy(subdomain.index_own_nodes)
-        for face in [1, 3, 5]:  # +1 external faces
-            if subdomain.boundary_type[face] == -1:  # Internal boundary
-                _index_own_nodes[face] += 1
-
+    if subdomain.domain.num_subdomains == 1:
         own_img = utils.own_img(subdomain, img)
         _functionals = _minkowski.functionals(
             own_img.astype(bool),
             np.array(subdomain.domain.voxels),
             subdomain.domain.resolution,
+        )
+    else:
+        own_voxels = subdomain.get_own_voxels()
+        for feature_id, feature in subdomain.features["faces"].items():
+            if feature.boundary_type == "internal" and np.sum(feature_id) > 0:
+                own_voxels[feature.map_to_index()] += 1
+
+        own_img = utils.own_img(subdomain, img, own_voxels)
+        _functionals = _minkowski.functionals(
+            own_img.astype(bool),
+            np.array(subdomain.domain.voxels),
+            subdomain.domain.resolution,
+            parallel=True,
         )
 
     return _functionals
