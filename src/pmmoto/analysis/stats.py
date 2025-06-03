@@ -64,9 +64,9 @@ def get_maximum(subdomain: "Subdomain", img: NDArray, own: bool = True) -> Any:
     """
     if own:
         own_img = utils.own_img(subdomain, img)
-        _min = np.max(own_img)
+        _max = np.max(own_img)
     else:
-        _min = np.max(img)
+        _max = np.max(img)
 
     if subdomain.domain.num_subdomains > 1:
         _max = communication.all_reduce(_max, op="max")
