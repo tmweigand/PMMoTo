@@ -1,3 +1,8 @@
+"""Profiling script for domain generation in PMMoTo.
+
+Profiles the performance of sphere pack domain generation with KD-tree and Verlet lists.
+"""
+
 import profiling_utils
 import pmmoto
 import numpy as np

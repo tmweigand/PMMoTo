@@ -3,11 +3,6 @@
 Provides porous media, multiphase, and domain generation utilities.
 """
 
-"""PMMoTo domain generation utilities.
-
-This subpackage provides porous media, multiphase, and domain generation tools.
-"""
-
 from . import (
     multiphase,
     porousmedia,

@@ -8,8 +8,7 @@ import pytest
 
 
 def test_gen_struct_ratio():
-    """Convert sphere radius to num of voxels.
-    """
+    """Convert sphere radius to num of voxels."""
     struct_ratio = pmmoto.filters.morphological_operators.gen_struct_ratio(
         resolution=[0.5, 0.5, 0.5], radius=1
     )
@@ -18,8 +17,7 @@ def test_gen_struct_ratio():
 
 
 def test_gen_struct_element():
-    """Generate a spherical/circular structuring element
-    """
+    """Generate a spherical/circular structuring element"""
     _, struct_element = pmmoto.filters.morphological_operators.gen_struct_element(
         resolution=[0.01, 0.01, 0.01], radius=0.03
     )
@@ -29,8 +27,7 @@ def test_gen_struct_element():
 
 @pytest.mark.mpi(min_size=8)
 def test_morphological_addition():
-    """Generate a spherical/circular structuring element
-    """
+    """Generate a spherical/circular structuring element"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -65,8 +62,7 @@ def test_morphological_addition():
 
 @pytest.mark.mpi(min_size=8)
 def test_morphological_subtraction():
-    """Generate a spherical/circular structuring element
-    """
+    """Generate a spherical/circular structuring element"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -103,8 +99,7 @@ def test_morphological_subtraction():
 def morphological_operator(
     operator, rank, sd, img, subdomains, probe_radius, boundary_type, test_scipy=False
 ):
-    """Wrapper for more efficient tests
-    """
+    """Morphological test helper"""
     if operator == "addition":
         morph_operator = pmmoto.filters.morphological_operators.addition
         scipy_operator = scipy.ndimage.binary_dilation

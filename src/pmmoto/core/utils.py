@@ -7,6 +7,7 @@ MPI-aware operations, and subdomain/grid management.
 ### Core Utility Functions ###
 import sys
 import numpy as np
+from numpy.typing import NDArray
 from mpi4py import MPI
 from .logging import get_logger
 from . import communication
@@ -26,13 +27,13 @@ __all__ = [
 ]
 
 
-def raise_error():
+def raise_error() -> None:
     """Exit gracefully by finalizing MPI and exiting the program."""
     MPI.Finalize()
     sys.exit()
 
 
-def check_img_for_solid(subdomain, img):
+def check_img_for_solid(subdomain, img) -> None:
     """Warn if a subdomain contains only pore voxels (no solid).
 
     Args:
@@ -48,7 +49,7 @@ def check_img_for_solid(subdomain, img):
         )
 
 
-def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
+def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet) -> None:
     """Ensure input parameters are valid for simulation.
 
     Args:
@@ -66,7 +67,7 @@ def check_inputs(mpi_size, subdomains, nodes, boundaries, inlet, outlet):
     check_inlet_outlet(boundaries, inlet, outlet)
 
 
-def check_input_nodes(nodes):
+def check_input_nodes(nodes) -> None:
     """Check that all node counts are positive integers.
 
     Args:
@@ -84,7 +85,7 @@ def check_input_nodes(nodes):
         raise_error()
 
 
-def check_subdomain_size(mpi_size, subdomains):
+def check_subdomain_size(mpi_size, subdomains) -> None:
     """Check subdomain size and ensure MPI size matches number of subdomains.
 
     Args:
@@ -108,7 +109,7 @@ def check_subdomain_size(mpi_size, subdomains):
         raise_error()
 
 
-def check_boundaries(boundaries):
+def check_boundaries(boundaries) -> None:
     """Check that boundary IDs are valid (0, 1, or 2).
 
     Args:
@@ -127,7 +128,7 @@ def check_boundaries(boundaries):
         raise_error()
 
 
-def check_inlet_outlet(boundaries, inlet, outlet):
+def check_inlet_outlet(boundaries, inlet, outlet) -> None:
     """Check inlet and outlet conditions for validity.
 
     Args:
@@ -168,7 +169,7 @@ def check_inlet_outlet(boundaries, inlet, outlet):
         raise_error()
 
 
-def check_padding(mpi_size, boundaries) -> bool:
+def check_padding(mpi_size: int, boundaries) -> bool:
     """Determine if padding needs to be added to the domain/subdomain.
 
     Args:
@@ -228,7 +229,7 @@ def constant_pad_img(img, pad, pad_value):
     return img
 
 
-def own_img(subdomain, img):
+def own_img(subdomain: "Subdomain", img: NDArray) -> NDArray:
     """Return array with only nodes owned by the current process.
 
     Args:
@@ -376,31 +377,3 @@ def check_subdomain_condition(subdomain, condition_fn, args, error_message, erro
         if subdomain.rank == 0:
             logger.error("Terminating all processes due to distributed error condition")
         raise_error()
-
-
-# def reconstruct_grid_to_root(subdomain,grid):
-#     """This function (re)constructs a grid from all proccesses to root
-#     """
-
-#     if subdomain.ID == 0:
-#         sd_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
-#         grid_all = np.empty((subdomain.domain.num_subdomains), dtype = object)
-#         sd_all[0] = subdomain
-#         grid_all[0] = grid
-#         for neigh in range(1,subdomain.domain.num_subdomains):
-#             sd_all[neigh] = comm.recv(source=neigh)
-#             grid_all[neigh] = comm.recv(source=neigh)
-
-#     if subdomain.ID > 0:
-#         comm.send(subdomain,dest=0)
-#         comm.send(grid,dest=0)
-
-#     if subdomain.ID == 0:
-#         grid_out = np.zeros(subdomain.domain.nodes)
-#         for n in range(0,subdomain.domain.num_subdomains):
-#             _own_grid = own_grid(grid_all[n],sd_all[n].index_own_nodes)
-#             grid_out = global_grid(grid_out,sd_all[n].index_global,_own_grid)
-
-#         return grid_out
-
-#     return 0

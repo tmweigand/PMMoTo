@@ -36,10 +36,10 @@ include = ["pmmoto*"]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
-    "mypy>=1.0",
+    "mypy>=1.15",
     "tox>=3.24",
     "pytest_benchmark>=5.1.0",
-    "ruff>=0.3.0",
+    "ruff>=0.11.5",
     "interrogate>=1.5.0",
     "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master"
 ]
@@ -69,4 +69,10 @@ fail-under = 90
 ignore-init-method = true
 ignore-module = true
 
-
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+show_error_codes = true
+namespace_packages = true
+mypy_path = "src"

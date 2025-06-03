@@ -1,3 +1,8 @@
+"""Benchmarks for porosimetry algorithms in PMMoTo.
+
+Includes tests for random and inkbottle domains using morph, distance, and hybrid modes.
+"""
+
 from pmmoto import domain_generation
 from pmmoto import filters
 from pmmoto import initialize

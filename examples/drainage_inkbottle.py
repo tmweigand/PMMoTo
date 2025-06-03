@@ -1,3 +1,9 @@
+"""Example: Morphological drainage simulation in an inkbottle geometry using PMMoTo.
+
+Run with:
+    mpirun -np 8 python examples/drainage_inkbottle.py
+"""
+
 from mpi4py import MPI
 import matplotlib.pyplot as plt
 import pmmoto

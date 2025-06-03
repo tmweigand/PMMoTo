@@ -155,7 +155,7 @@ def test_cleanup():
 
     atom_radii = {_id: 0.1 for _id in atom_ids}
 
-    atoms = pmmoto.particles.initialize_atoms(
+    _ = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, by_type=False
     )
 
@@ -193,7 +193,7 @@ def test_atoms_with_masses():
 
     atom_masses = {_id: 0.3 for _id in atom_ids}
 
-    atoms = pmmoto.particles.initialize_atoms(
+    _ = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=False
     )
 
