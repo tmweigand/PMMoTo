@@ -6,6 +6,7 @@ MPI-aware operations, and subdomain/grid management.
 
 ### Core Utility Functions ###
 import sys
+from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 from mpi4py import MPI
@@ -230,7 +231,7 @@ def constant_pad_img(img, pad, pad_value):
 
 
 def own_img(
-    subdomain: "Subdomain", img: NDArray, own_voxels: NDArray[np.int64] = None
+    subdomain: "Subdomain", img: NDArray, own_voxels: NDArray[np.integer[Any]] = None
 ) -> NDArray:
     """Return array with only nodes owned by the current process.
 

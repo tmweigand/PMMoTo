@@ -3,8 +3,9 @@
 Defines the Subdomain class for domain decomposition and parallelization in PMMoTo.
 """
 
+from typing import Any
 import numpy as np
-
+from numpy.typing import NDArray
 from . import orientation
 from ..core import domain_discretization
 from ..core import subdomain_features
@@ -39,7 +40,9 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         )
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
-        self.start = self.get_start()
+        self.start = self.get_start(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
         self.features = subdomain_features.collect_features(
@@ -244,19 +247,21 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return outlet
 
-    def get_start(self) -> tuple[int, ...]:
-        """Determine the start of the subdomain for saving as vtk.
-
-        Start is the minimum voxel ID.
+    @staticmethod
+    def get_start(index, domain_voxels, subdomains) -> tuple[int, ...]:
+        """Determine the start of the subdomain. used for saving as vtk
+        Start is the minimum voxel ID
+        Args:
+            sd_index (tuple[int, int, int]): subdomain index
 
         Returns:
-            tuple[int, ...]: Start index for each dimension.
+            tuple[int,...]: start
 
         """
         _start = [0, 0, 0]
 
-        for dim, _index in enumerate(self.index):
-            sd_voxels, _ = divmod(self.domain.voxels[dim], self.domain.subdomains[dim])
+        for dim, _index in enumerate(index):
+            sd_voxels, _ = divmod(domain_voxels[dim], subdomains[dim])
             _start[dim] = sd_voxels * _index
 
         return tuple(_start)
@@ -342,3 +347,16 @@ class Subdomain(domain_discretization.DiscretizedDomain):
                 return None
 
         return tuple(indices)
+
+    def get_own_voxels(self) -> NDArray[np.integer[Any]]:
+        """Determine the index for the voxels owned by this subdomain.
+
+        Returns:
+            np.ndarray: Array of indices for owned voxels.
+
+        """
+        own_voxels = np.zeros([6], dtype=np.int64)
+        for dim, voxels in enumerate(self.voxels):
+            own_voxels[dim * 2 + 1] = voxels
+
+        return own_voxels
