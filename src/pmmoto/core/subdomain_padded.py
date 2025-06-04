@@ -52,7 +52,13 @@ class PaddedSubdomain(subdomain.Subdomain):
         self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
 
         self.outlet = self.get_outlet()
-        self.start = self.get_start()
+        self.start = self.get_start(
+            self.index,
+            self.domain.voxels,
+            self.domain.subdomains,
+            self.pad,
+            self.reservoir_pad,
+        )
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
         self.features = subdomain_features.collect_features(
@@ -221,26 +227,55 @@ class PaddedSubdomain(subdomain.Subdomain):
 
         return tuple((_pad[i], _pad[i + 1]) for i in range(0, len(_pad), 2))
 
-    def get_start(self) -> tuple[int, ...]:
-        """Determine the start of the subdomain.
-
-        Used for saving as vtk. Start is the minimum voxel ID.
+    @staticmethod
+    def get_start(
+        index,
+        domain_voxels,
+        subdomains,
+        pad=((0, 0), (0, 0), (0, 0)),
+        reservoir_pad=((0, 0), (0, 0), (0, 0)),
+    ) -> tuple[int, ...]:
+        """Determine the start of the subdomain. used for saving as vtk
+        Start is the minimum voxel ID
+        Args:
+            index (tuple[int, int, int]): subdomain index
 
         Returns:
-            tuple[int, ...]: Start index for each dimension.
+            tuple[int,...]: start
 
         """
         _start = [0, 0, 0]
 
-        for dim, _index in enumerate(self.index):
-            sd_voxels, _ = divmod(self.domain.voxels[dim], self.domain.subdomains[dim])
+        for dim, _index in enumerate(index):
+            sd_voxels, _ = divmod(domain_voxels[dim], subdomains[dim])
             _start[dim] = sd_voxels * _index
 
         start = [0, 0, 0]
         for dim, s in enumerate(_start):
-            start[dim] = s - self.pad[dim][0] - self.reservoir_pad[dim][0]
+            start[dim] = s - pad[dim][0] - reservoir_pad[dim][0]
 
         return tuple(start)
+
+    # def get_start(self) -> tuple[int, ...]:
+    #     """Determine the start of the subdomain.
+
+    #     Used for saving as vtk. Start is the minimum voxel ID.
+
+    #     Returns:
+    #         tuple[int, ...]: Start index for each dimension.
+
+    #     """
+    #     _start = [0, 0, 0]
+
+    #     for dim, _index in enumerate(self.index):
+    #         sd_voxels, _ = divmod(self.domain.voxels[dim], self.domain.subdomains[dim])
+    #         _start[dim] = sd_voxels * _index
+
+    #     start = [0, 0, 0]
+    #     for dim, s in enumerate(_start):
+    #         start[dim] = s - self.pad[dim][0] - self.reservoir_pad[dim][0]
+
+    #     return tuple(start)
 
     def get_own_voxels(self) -> NDArray[np.int64]:
         """Determine the index for the voxels owned by this subdomain.

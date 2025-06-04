@@ -7,18 +7,21 @@ This module provides routines to compute the four Minkowski functionals
 binary image and a PMMoTo subdomain.
 """
 
-from typing import Tuple, Any
+from __future__ import annotations
+from typing import Tuple, TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 from pmmoto.analysis import _minkowski
 from pmmoto.core import utils
 
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain import Subdomain
 
 __all__ = ["functionals"]
 
 
 def functionals(
-    subdomain: Any, img: NDArray[np.bool_]
+    subdomain: Subdomain, img: NDArray[np.bool_]
 ) -> Tuple[float, float, float, float]:
     r"""Calculate the Minkowski functionals for a subdomain.
 
@@ -55,7 +58,7 @@ def functionals(
         own_img = utils.own_img(subdomain, img)
         _functionals = _minkowski.functionals(
             own_img.astype(bool),
-            np.array(subdomain.domain.voxels),
+            subdomain.domain.voxels,
             subdomain.domain.resolution,
         )
     else:
@@ -67,7 +70,7 @@ def functionals(
         own_img = utils.own_img(subdomain, img, own_voxels)
         _functionals = _minkowski.functionals(
             own_img.astype(bool),
-            np.array(subdomain.domain.voxels),
+            subdomain.domain.voxels,
             subdomain.domain.resolution,
             parallel=True,
         )

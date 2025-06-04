@@ -3,6 +3,7 @@
 Defines the DiscretizedDomain class for discretizing a physical domain into voxels.
 """
 
+from typing import Any
 import numpy as np
 from . import domain as pmmoto_domain
 
@@ -14,7 +15,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
     calculation of voxel resolution and coordinates.
     """
 
-    def __init__(self, voxels: tuple[int, ...] = (1, 1, 1), **kwargs):
+    def __init__(self, voxels: tuple[int, ...] = (1, 1, 1), **kwargs: Any):
         """Initialize a discretized domain.
 
         Args:

@@ -183,7 +183,7 @@ cpdef functionals(np.ndarray image, voxels, res = None, norm=False, parallel = F
         else:
             raise ValueError('Input image and resolution need to be the same dimension')
 
-        return _functionals_3d(image, res0, res1, res2, voxels, factor, norm, parallel)
+        return _functionals_3d(image, res0, res1, res2, voxels[0],voxels[1], voxels[2], factor, norm, parallel)
     else:
         raise ValueError('Can only handle 2D or 3D images')
 
@@ -260,7 +260,9 @@ def _functionals_3d(
         double res0, 
         double res1, 
         double res2,
-        np.ndarray[long, ndim=1, mode="c"] voxels,
+        int voxels0,
+        int voxels1,
+        int voxels2,
         double factor,
         bint norm,
         bint parallel = False):
@@ -288,9 +290,9 @@ def _functionals_3d(
 
     status = c_functionals_3d(
         &image[0,0,0],
-        voxels[0], 
-        voxels[1], 
-        voxels[2],
+        voxels0, 
+        voxels1, 
+        voxels2,
         res0, 
         res1, 
         res2,

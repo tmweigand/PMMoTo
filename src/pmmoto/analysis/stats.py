@@ -1,22 +1,31 @@
 """Statistical analysis utilities for PMMoTo.
 
-Provides functions to compute global minimum and maximum values across distributed subdomains.
+Provides functions to compute global minimum and maximum values across subdomains.
 """
 
+from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from pmmoto.core import utils
 from pmmoto.core import communication
+
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain import Subdomain
+
 
 __all__ = ["get_minimum", "get_maximum"]
 
 
-def get_minimum(subdomain: "Subdomain", img: NDArray, own: bool = True) -> Any:
+def get_minimum(
+    subdomain: Subdomain,
+    img: NDArray[np.floating[Any] | np.integer[Any]],
+    own: bool = True,
+) -> Any:
     """Compute the global minimum value from a distributed image array.
 
     Depending on the `own` flag, the function either restricts the computation
-    to the local portion of the image owned by the given subdomain or uses the full image.
+    to the local portion of the image owned by the subdomain or uses the full image.
     If the domain is distributed across multiple subdomains, a parallel reduction is
     performed to obtain the global minimum.
 
@@ -43,11 +52,15 @@ def get_minimum(subdomain: "Subdomain", img: NDArray, own: bool = True) -> Any:
     return _min
 
 
-def get_maximum(subdomain: "Subdomain", img: NDArray, own: bool = True) -> Any:
+def get_maximum(
+    subdomain: Subdomain,
+    img: NDArray[np.floating[Any] | np.integer[Any]],
+    own: bool = True,
+) -> Any:
     """Compute the global maximum value from a distributed image array.
 
     Depending on the `own` flag, the function either restricts the computation
-    to the local portion of the image owned by the given subdomain or uses the full image.
+    to the local portion of the image owned by the subdomain or uses the full image.
     If the domain is distributed across multiple subdomains, a parallel reduction is
     performed to obtain the global maximum.
 
