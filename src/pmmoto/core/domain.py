@@ -3,6 +3,7 @@
 Defines the Domain class for representing the physical simulation domain in PMMoTo.
 """
 
+from typing import Any
 import numpy as np
 
 
@@ -27,9 +28,21 @@ class Domain:
     def __init__(
         self,
         box: tuple[tuple[float, float], ...],
-        boundary_types: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
-        inlet: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
-        outlet: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+        boundary_types: tuple[tuple[int, int], ...] = (
+            (0, 0),
+            (0, 0),
+            (0, 0),
+        ),
+        inlet: tuple[tuple[bool, bool], ...] = (
+            (False, False),
+            (False, False),
+            (False, False),
+        ),
+        outlet: tuple[tuple[int, int], ...] = (
+            (False, False),
+            (False, False),
+            (False, False),
+        ),
     ):
         """Initialize a Domain.
 
@@ -62,7 +75,7 @@ class Domain:
             length[n] = self.box[n][1] - self.box[n][0]
         return tuple(length)
 
-    def get_volume(self):
+    def get_volume(self) -> np.floating[Any]:
         """Calculate the volume of the domain.
 
         Returns:
@@ -95,7 +108,7 @@ class Domain:
             tuple[float, ...]: Domain origin.
 
         """
-        origin = [0, 0, 0]
+        origin: list[float] = [0.0] * len(self.box)
         for n, box_dim in enumerate(self.box):
             origin[n] = box_dim[0]
         return tuple(origin)

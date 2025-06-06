@@ -4,508 +4,280 @@ Defines feature classes and utilities for handling subdomain faces, edges, and c
 including boundary and periodicity information.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import numpy as np
 
-from . import orientation
+from .features import Face, Edge, Corner
+from .orientation import FEATURE_MAP
 
-__all__ = [
-    "collect_features",
-    "get_feature_voxels",
-    "collect_periodic_features",
-]
-
-
-class Feature(object):
-    """Base class for holding feature: {face, edge, corner} information.
-
-    This is the main abstraction for handling boundary conditions
-    and parallel communication.
-    """
-
-    def __init__(self, feature_id, neighbor_rank, boundary_type, global_boundary=None):
-        """Initialize a Feature.
-
-        Args:
-            feature_id: Feature identifier (tuple).
-            neighbor_rank: Neighboring process rank.
-            boundary_type: Boundary type (e.g., "wall", "periodic").
-            global_boundary: Whether this is a global boundary (bool).
-
-        """
-        self.feature_id = feature_id
-        self.neighbor_rank = neighbor_rank
-        self.boundary_type = boundary_type
-        self.global_boundary = global_boundary
-        self.periodic = False
-        self.periodic_correction = (0, 0, 0)
-        self.info = None
-        self.opp_info = None
-        self.extend = [[0, 0], [0, 0], [0, 0]]
-        self.loop = None
-
-    def convert_feature_id(self, index=None):
-        """Convert the feature if of type (int,int,int) -> int
-
-        Returns:
-            int: feature id
-
-        """
-        if index is None:
-            index = self.feature_id
-        return orientation.get_boundary_id(index)
+if TYPE_CHECKING:
+    from .subdomain import Subdomain
+    from .subdomain_padded import PaddedSubdomain
 
 
-class Face(Feature):
-    """Face information for a subdomain."""
+class SubdomainFeatures:
+    """Container for all features (faces, edges, corners) of a subdomain."""
 
     def __init__(
         self,
-        feature_id,
-        neighbor_rank,
-        boundary_type,
-        global_boundary=None,
-        inlet=None,
-        outlet=None,
+        subdomain: Subdomain | PaddedSubdomain,
+        voxels: tuple[int, ...],
+        pad: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
     ):
-        """Initialize a Face feature.
-
-        Args:
-            feature_id: Feature identifier (tuple).
-            neighbor_rank: Neighboring process rank.
-            boundary_type: Boundary type.
-            global_boundary: Whether this is a global boundary (bool).
-            inlet: Whether this face is an inlet (bool).
-            outlet: Whether this face is an outlet (bool).
-
-        """
-        assert feature_id in orientation.faces
-        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
-        self.info = orientation.faces[feature_id]
-        self.opp_info = orientation.faces[feature_id]["opp"]
-        self.global_boundary = self.get_global_boundary(global_boundary)
-        self.periodic = self.is_periodic(boundary_type)
-        self.inlet = self.is_inlet(inlet)
-        self.outlet = self.is_outlet(outlet)
-        self.periodic_correction = self.get_periodic_correction()
-        self.forward = self.get_direction()
-        self.slice = self.get_slice()
-
-    def is_inlet(self, inlet) -> bool:
-        """Determine if the face is on the inlet
-
-        Returns:
-            bool: True if on inlet
-
-        """
-        return inlet
-
-    def is_outlet(self, outlet) -> bool:
-        """Determine if the face is on the outlet
-
-        Returns:
-            bool: True if on outlet
-
-        """
-        return outlet
-
-    def is_periodic(self, boundary_type) -> bool:
-        """Determine if the face is a periodic face
-
-        Returns:
-            bool: True if periodic
-
-        """
-        return boundary_type == "periodic"
-
-    def get_periodic_correction(self) -> tuple[int, ...]:
-        """Determine spatial correction factor if periodic"""
-        _period_correction = [0, 0, 0]
-        if self.periodic:
-            _period_correction[self.info["argOrder"][0]] = self.info["dir"]
-
-        return tuple(_period_correction)
-
-    def get_global_boundary(self, global_boundary) -> bool:
-        """Determine if the face is an external boundary"""
-        return global_boundary
-
-    def get_strides(self, strides):
-        """_summary_
-
-        Args:
-            strides (tuple): The output from a NumPy array .strides
-
-        Returns:
-            _type_: _description_
-
-        """
-        for feature_id, stride in zip(self.feature_id, strides):
-            if feature_id != 0:
-                return stride
-
-    def get_direction(self):
-        """Determine if the face is point in the forward direction.
-
-            -1 for the non-negative feature id
-
-        Returns:
-            _type_: _description_
-
-        """
-        forward = True
-        for feature_id in self.feature_id:
-            if feature_id == 1:
-                forward = False
-        return forward
-
-    def index_to_entry(self, entry, value):
-        """Use the feature id to set a value of a list."""
-        for dim, f_id in enumerate(self.feature_id):
-            if f_id > 0:
-                entry[dim][1] = value
-            elif f_id < 0:
-                entry[dim][0] = value
-
-        return entry
-
-    def get_slice(self):
-        """Extract 2d slice
-
-        Returns:
-            list[slices]
-
-        """
-        face_slice = [slice(None) for _ in range(3)]
-        for dim, f_id in enumerate(self.feature_id):
-            if f_id == -1:
-                face_slice[dim] = 0
-            elif f_id == 1:
-                face_slice[dim] = -1
-
-        return tuple(face_slice)
-
-    def map_to_index(self) -> int:
-        """Return the 1d-index for face."""
-        for dim, f_id in enumerate(self.feature_id):
-            if f_id < 0:
-                index = dim * 2
-            elif f_id > 0:
-                index = dim * 2 + 1
-        return index
-
-
-class Edge(Feature):
-    """Edge information for a subdomain.
-
-    Need to distinguish between internal and external edges.
-    There are 12 external corners. All others are termed internal.
-    """
-
-    def __init__(
-        self,
-        feature_id,
-        neighbor_rank,
-        boundary_type,
-        global_boundary=None,
-    ):
-        """Initialize an Edge feature.
-
-        Args:
-            feature_id: Feature identifier (tuple).
-            neighbor_rank: Neighboring process rank.
-            boundary_type: Boundary type.
-            global_boundary: Whether this is a global boundary (bool).
-
-        """
-        assert feature_id in orientation.edges
-        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
-        self.info = orientation.edges[feature_id]
-        self.periodic = self.is_periodic(boundary_type)
-        self.opp_info = orientation.edges[feature_id]["opp"]
-        self.global_boundary = self.get_global_boundary(global_boundary)
-        self.periodic_correction = self.get_periodic_correction()
-
-    def is_periodic(self, boundary_type) -> bool:
-        """Determine if an edge is a periodic edge
-
-        Returns:
-            bool: True if periodic
-
-        """
-        return boundary_type == "periodic"
-
-    def get_periodic_correction(self) -> tuple[int, ...]:
-        """Determine spatial correction factor if periodic"""
-        _period_correction = [0, 0, 0]
-        for face in self.info["faces"]:
-            if self.boundary_type == "periodic":
-                _period_correction[orientation.faces[face]["argOrder"][0]] = (
-                    orientation.faces[face]["dir"]
-                )
-
-        return tuple(_period_correction)
-
-    def get_global_boundary(self, global_boundary) -> bool:
-        """Determine if the edge is an external boundary"""
-        return global_boundary
-
-
-class Corner(Feature):
-    """Corner information for a subdomain.
-
-    Need to distinguish between internal and external corners.
-    There are 8 external corners. All others are termed internal.
-    """
-
-    def __init__(
-        self,
-        feature_id,
-        neighbor_rank,
-        boundary_type,
-        global_boundary=None,
-    ):
-        """Initialize a Corner feature.
-
-        Args:
-            feature_id: Feature identifier (tuple).
-            neighbor_rank: Neighboring process rank.
-            boundary_type: Boundary type.
-            global_boundary: Whether this is a global boundary (bool).
-
-        """
-        super().__init__(feature_id, neighbor_rank, boundary_type, global_boundary)
-        self.info = orientation.corners[feature_id]
-        self.periodic = self.is_periodic(boundary_type)
-        self.opp_info = orientation.corners[feature_id]["opp"]
-        self.periodic_correction = self.get_periodic_correction()
-        self.global_boundary = self.get_global_boundary(global_boundary)
-
-    def is_periodic(self, boundary_type) -> bool:
-        """Determine if a corner is a periodic corner
-
-        Returns:
-            bool: True if periodic
-
-        """
-        return boundary_type == "periodic"
-
-    def get_periodic_correction(self) -> tuple[int, ...]:
-        """Determine spatial correction factor (shift) if periodic"""
-        _period_correction = [0, 0, 0]
-        for n_face in self.info["faces"]:
-            if self.boundary_type == "periodic":
-                _period_correction[orientation.faces[n_face]["argOrder"][0]] = (
-                    orientation.faces[n_face]["dir"]
-                )
-
-        return tuple(_period_correction)
-
-    def get_global_boundary(self, global_boundary) -> bool:
-        """Determine if the corner is a global boundary"""
-        return global_boundary
-
-
-def collect_features(
-    neighbor_ranks,
-    global_boundary,
-    boundary_types,
-    voxels,
-    inlet=None,
-    outlet=None,
-    pad=None,
-    reservoir_pad=None,
-):
-    """Collect information for faces, edges, and corners for a subdomain.
-
-    Args:
-        neighbor_ranks (dict): Mapping from feature_id to neighbor rank.
-        global_boundary (dict): Mapping from feature_id to global boundary bool.
-        boundary_types (dict): Mapping from feature_id to boundary type.
-        voxels (tuple): Number of voxels in each dimension.
-        inlet (tuple, optional): Inlet flags for faces.
-        outlet (tuple, optional): Outlet flags for faces.
-        pad (tuple, optional): Padding for each dimension.
-        reservoir_pad (tuple, optional): Reservoir padding for each dimension.
-
-    Returns:
-        dict: Dictionary with keys "faces", "edges", "corners" mapping to their
-            respective feature objects.
-
-    """
-    faces = {}
-    edges = {}
-    corners = {}
-
-    if inlet is None:
-        inlet = (False, False, False, False, False, False)
-    if outlet is None:
-        outlet = (False, False, False, False, False, False)
-
-    ### Faces
-    for feature in orientation.faces.keys():
-        face_dim = np.nonzero(feature)[0][0]
-        index = face_dim * 2 if feature[face_dim] < 0 else face_dim * 2 + 1
-        faces[feature] = Face(
-            feature_id=feature,
-            neighbor_rank=neighbor_ranks[feature],
-            boundary_type=boundary_types[feature],
-            global_boundary=global_boundary[feature],
-            inlet=inlet[index],
-            outlet=outlet[index],
-        )
-        faces[feature].loop = get_feature_voxels(
-            feature, voxels, boundary_type=boundary_types[feature], pad=pad
-        )
-
-    ### Edges
-    for feature in orientation.edges.keys():
-        edges[feature] = Edge(
-            feature_id=feature,
-            neighbor_rank=neighbor_ranks[feature],
-            boundary_type=boundary_types[feature],
-            global_boundary=global_boundary[feature],
-        )
-        edges[feature].loop = get_feature_voxels(
-            feature, voxels, boundary_type=boundary_types[feature], pad=pad
-        )
-
-    ### Corners
-    for feature in orientation.corners.keys():
-        corners[feature] = Corner(
-            feature_id=feature,
-            neighbor_rank=neighbor_ranks[feature],
-            boundary_type=boundary_types[feature],
-            global_boundary=global_boundary[feature],
-        )
-        corners[feature].loop = get_feature_voxels(
-            feature, voxels, boundary_type=boundary_types[feature], pad=pad
-        )
-
-    data_out = {"faces": faces, "edges": edges, "corners": corners}
-
-    return data_out
-
-
-def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
-    """Compute feature-specific voxel ranges with optional padding.
-
-    This function generates voxel ranges for a given feature based on the `feature_id`,
-    `voxels`, and an optional `pad` parameter. It returns a dictionary with ranges for
-    "own" voxels and, if applicable, "neighbor" voxels.
-
-    Args:
-        feature_id (tuple[int]): Feature identifiers for each axis (-1, 0, or 1).
-        voxels (tuple[int]): Lengths of the voxel dimensions along each axis.
-        boundary_type (str, optional): Boundary type ("wall", "periodic", etc.).
-        pad (tuple[tuple[int, int]], optional): Padding for each axis as
-            ((before, after), ...).
-
-    Returns:
-        dict: Dictionary with keys:
-            - "own": np.ndarray of shape (3, 2) with voxel ranges for the feature's own
-                voxels.
-            - "neighbor" (optional): np.ndarray of shape (3, 2) with voxel ranges for
-                neighboring voxels if padding is specified.
-
-    Notes:
-        - If `pad` is None or contains only zeros, the function assumes no padding.
-        - The `feature_id` determines how voxel ranges are computed for each axis:
-          - -1: Specifies the start of the axis.
-          - 0: Includes the entire range (or adjusted range if padding exists).
-          - 1: Specifies the end of the axis.
-        - For wall boundary conditions, the walls are stored as neighbor.
-
-    """
-    # Determine if padding is active
-    padded = pad is not None and np.any(pad)
-
-    # Default pad values
-    if not padded:
-        pad = np.zeros((len(voxels), 2), dtype=int)
-
-    # Initialize loop dictionary
-    loop = {"own": np.zeros((len(voxels), 2), dtype=np.uint64)}
-    if padded:
-        loop["neighbor"] = np.zeros((len(voxels), 2), dtype=np.uint64)
-
-    for n, length in enumerate(voxels):
-
-        if feature_id[n] == -1:
-            lower_pad = pad[n][0]
-            if lower_pad != 0:
-                if boundary_type == "wall":
-                    loop["own"][n] = [1, 2]
-                else:
-                    loop["own"][n] = [lower_pad, lower_pad * 2]
+        self.subdomain = subdomain
+        self.pad = pad
+        self.faces: dict[tuple[int, ...], Face] = {}
+        self.edges: dict[tuple[int, ...], Edge] = {}
+        self.corners: dict[tuple[int, ...], Corner] = {}
+        self.collect_features()
+        self.set_feature_voxels(voxels)
+
+    def set_feature_voxels(self, voxels: tuple[int, ...]) -> None:
+        """Set the own and neighbor voxels for each feature"""
+        for group in (self.faces, self.edges, self.corners):
+            for feature in group.values():
+                feature.get_voxels(voxels, self.pad)
+
+    def collect_features(self) -> None:
+        """Collect information for faces, edges, and corners for a subdomain."""
+        self._collect_faces()
+        self._collect_edges()
+        self._collect_corners()
+
+    def _collect_faces(self) -> None:
+        """Collect Face"""
+        ### Faces
+        for feature in FEATURE_MAP.faces:
+            face_dim = np.nonzero(feature)[0][0]
+            if feature[face_dim] > 0:
+                side = 1
             else:
-                loop["own"][n] = [0, 1]
-            if "neighbor" in loop:
-                if boundary_type == "wall":
-                    loop["neighbor"][n] = [0, 1]
-                else:
-                    loop["neighbor"][n] = [0, lower_pad]
+                side = 0
 
-        elif feature_id[n] == 1:
-            upper_pad = pad[n][1]
-            if upper_pad != 0:
-                if boundary_type == "wall":
-                    loop["own"][n] = [length - 2, length - 1]
-                else:
-                    loop["own"][n] = [length - upper_pad * 2, length - upper_pad]
-            else:
-                loop["own"][n] = [length - 1, length]
-            if "neighbor" in loop:
-                if boundary_type == "wall":
-                    loop["neighbor"][n] = [length - 1, length]
-                else:
-                    loop["neighbor"][n] = [length - upper_pad, length]
+            self.faces[feature] = Face(
+                feature_id=feature,
+                neighbor_rank=self.subdomain.neighbor_ranks[feature],
+                boundary_type=self.subdomain.feature_boundary_types[feature],
+                global_boundary=self.subdomain.global_boundary[feature],
+                inlet=self.subdomain.inlet[face_dim][side],
+                outlet=self.subdomain.outlet[face_dim][side],
+            )
 
-        else:
-            if padded:
-                loop["own"][n] = [pad[n][0], length - pad[n][1]]
-            else:
-                loop["own"][n] = [0, length]
-            if "neighbor" in loop:
-                loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
+    def _collect_edges(self) -> None:
+        """Collect Edges"""
+        for feature in FEATURE_MAP.edges:
+            self.edges[feature] = Edge(
+                feature_id=feature,
+                neighbor_rank=self.subdomain.neighbor_ranks[feature],
+                boundary_type=self.subdomain.feature_boundary_types[feature],
+                global_boundary=self.subdomain.global_boundary[feature],
+            )
 
-    return loop
+    def _collect_corners(self) -> None:
+        """Collect Corners"""
+        for feature in FEATURE_MAP.corners:
+            self.corners[feature] = Corner(
+                feature_id=feature,
+                neighbor_rank=self.subdomain.neighbor_ranks[feature],
+                boundary_type=self.subdomain.feature_boundary_types[feature],
+                global_boundary=self.subdomain.global_boundary[feature],
+            )
+
+    def collect_periodic_features(self) -> list[tuple[int, ...]]:
+        """Collect all periodic features from a features dictionary.
+
+        Returns:
+            list: List of feature_ids that are periodic.
+
+        """
+        periodic_features = []
+        for group in (self.faces, self.edges, self.corners):
+            for feature in group.values():
+                if feature.periodic:
+                    periodic_features.append(feature.feature_id)
+
+        return periodic_features
+
+    def collect_periodic_corrections(self) -> dict[tuple[int, ...], tuple[int, ...]]:
+        """Collect periodic correction vectors for all periodic features.
+
+        Args:
+            features (dict): Dictionary with keys "faces", "edges", "corners".
+
+        Returns:
+            dict: Mapping from feature_id to periodic correction tuple.
+
+        """
+        per_corrections = {}
+        for group in (self.faces, self.edges, self.corners):
+            for feature in group.values():
+                if feature.periodic:
+                    per_corrections[feature.feature_id] = feature.periodic_correction
+
+        return per_corrections
 
 
-def collect_periodic_features(features):
-    """Collect all periodic features from a features dictionary.
+# def get_feature_voxels(
+#     feature_id: tuple[int, ...],
+#     voxels: tuple[int, ...],
+#     boundary_type: Optional[str] = None,
+#     pad: Optional[Tuple[Tuple[int, int], ...]] = None,
+# ) -> dict[str, np.ndarray]:
+#     """Compute voxel index ranges for a feature face and optional neighbor region."""
+#     ndim = len(voxels)
+#     pad_array = np.array(pad) if pad else np.zeros((ndim, 2), dtype=int)
+#     padded = np.any(pad_array)
 
-    Args:
-        features (dict): Dictionary with keys "faces", "edges", "corners".
+#     own = np.zeros((ndim, 2), dtype=np.uint64)
+#     neighbor = np.zeros((ndim, 2), dtype=np.uint64) if padded else None
 
-    Returns:
-        list: List of feature_ids that are periodic.
+#     for i in range(ndim):
+#         f_id = feature_id[i]
+#         length = voxels[i]
+#         p_before, p_after = pad_array[i]
 
-    """
-    periodic_features = []
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in features[feature_type].items():
-            if feature.periodic:
-                periodic_features.append(feature_id)
+#         if f_id == -1:
+#             own[i] = compute_lower_face(length, p_before, boundary_type)
+#             if padded:
+#                 neighbor[i] = compute_lower_neighbor(length, p_before, boundary_type)
 
-    return periodic_features
+#         elif f_id == 1:
+#             own[i] = compute_upper_face(length, p_after, boundary_type)
+#             if padded:
+#                 neighbor[i] = compute_upper_neighbor(length, p_after, boundary_type)
+
+#         else:  # f_id == 0
+#             own[i] = [p_before, length - p_after]
+#             if padded:
+#                 neighbor[i] = [p_before, length - p_after]
+
+#     result = {"own": own}
+#     if padded:
+#         result["neighbor"] = neighbor
+#     return result
 
 
-def collect_periodic_corrections(features):
-    """Collect periodic correction vectors for all periodic features.
+# def get_feature_voxels(feature_id, voxels, boundary_type=None, pad=None):
+#     """Compute feature-specific voxel ranges with optional padding.
 
-    Args:
-        features (dict): Dictionary with keys "faces", "edges", "corners".
+#     This function generates voxel ranges for a given feature based on the `feature_id`,
+#     `voxels`, and an optional `pad` parameter. It returns a dictionary with ranges for
+#     "own" voxels and, if applicable, "neighbor" voxels.
 
-    Returns:
-        dict: Mapping from feature_id to periodic correction tuple.
+#     Args:
+#         feature_id (tuple[int]): Feature identifiers for each axis (-1, 0, or 1).
+#         voxels (tuple[int]): Lengths of the voxel dimensions along each axis.
+#         boundary_type (str, optional): Boundary type ("wall", "periodic", etc.).
+#         pad (tuple[tuple[int, int]], optional): Padding for each axis as
+#             ((before, after), ...).
 
-    """
-    periodic_corrections = {}
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in features[feature_type].items():
-            if feature.periodic:
-                periodic_corrections[feature_id] = feature.periodic_correction
+#     Returns:
+#         dict: Dictionary with keys:
+#             - "own": np.ndarray of shape (3, 2) with voxel ranges for the feature's own
+#                 voxels.
+#             - "neighbor" (optional): np.ndarray of shape (3, 2) with voxel ranges for
+#                 neighboring voxels if padding is specified.
 
-    return periodic_corrections
+#     Notes:
+#         - If `pad` is None or contains only zeros, the function assumes no padding.
+#         - The `feature_id` determines how voxel ranges are computed for each axis:
+#           - -1: Specifies the start of the axis.
+#           - 0: Includes the entire range (or adjusted range if padding exists).
+#           - 1: Specifies the end of the axis.
+#         - For wall boundary conditions, the walls are stored as neighbor.
+
+#     """
+#     # Determine if padding is active
+#     padded = pad is not None and np.any(pad)
+
+#     # Default pad values
+#     if not padded:
+#         pad = np.zeros((len(voxels), 2), dtype=int)
+
+#     # Initialize loop dictionary
+#     loop = {"own": np.zeros((len(voxels), 2), dtype=np.uint64)}
+#     if padded:
+#         loop["neighbor"] = np.zeros((len(voxels), 2), dtype=np.uint64)
+
+#     for n, length in enumerate(voxels):
+
+#         if feature_id[n] == -1:
+#             lower_pad = pad[n][0]
+#             if lower_pad != 0:
+#                 if boundary_type == "wall":
+#                     loop["own"][n] = [1, 2]
+#                 else:
+#                     loop["own"][n] = [lower_pad, lower_pad * 2]
+#             else:
+#                 loop["own"][n] = [0, 1]
+#             if "neighbor" in loop:
+#                 if boundary_type == "wall":
+#                     loop["neighbor"][n] = [0, 1]
+#                 else:
+#                     loop["neighbor"][n] = [0, lower_pad]
+
+#         elif feature_id[n] == 1:
+#             upper_pad = pad[n][1]
+#             if upper_pad != 0:
+#                 if boundary_type == "wall":
+#                     loop["own"][n] = [length - 2, length - 1]
+#                 else:
+#                     loop["own"][n] = [length - upper_pad * 2, length - upper_pad]
+#             else:
+#                 loop["own"][n] = [length - 1, length]
+#             if "neighbor" in loop:
+#                 if boundary_type == "wall":
+#                     loop["neighbor"][n] = [length - 1, length]
+#                 else:
+#                     loop["neighbor"][n] = [length - upper_pad, length]
+
+#         else:
+#             if padded:
+#                 loop["own"][n] = [pad[n][0], length - pad[n][1]]
+#             else:
+#                 loop["own"][n] = [0, length]
+#             if "neighbor" in loop:
+#                 loop["neighbor"][n] = [pad[n][0], length - pad[n][1]]
+
+#     return loop
+
+
+# def collect_periodic_features(features):
+#     """Collect all periodic features from a features dictionary.
+
+#     Args:
+#         features (dict): Dictionary with keys "faces", "edges", "corners".
+
+#     Returns:
+#         list: List of feature_ids that are periodic.
+
+#     """
+#     periodic_features = []
+#     feature_types = ["faces", "edges", "corners"]
+#     for feature_type in feature_types:
+#         for feature_id, feature in features[feature_type].items():
+#             if feature.periodic:
+#                 periodic_features.append(feature_id)
+
+#     return periodic_features
+
+
+# def collect_periodic_corrections(features):
+#     """Collect periodic correction vectors for all periodic features.
+
+#     Args:
+#         features (dict): Dictionary with keys "faces", "edges", "corners".
+
+#     Returns:
+#         dict: Mapping from feature_id to periodic correction tuple.
+
+#     """
+#     periodic_corrections = {}
+#     feature_types = ["faces", "edges", "corners"]
+#     for feature_type in feature_types:
+#         for feature_id, feature in features[feature_type].items():
+#             if feature.periodic:
+#                 periodic_corrections[feature_id] = feature.periodic_correction
+
+#     return periodic_corrections

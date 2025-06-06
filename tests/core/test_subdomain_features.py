@@ -1,6 +1,5 @@
 """test_subdomain_features.py"""
 
-import pytest
 import numpy as np
 import pmmoto
 
@@ -158,47 +157,6 @@ def test_feature_voxels_corner():
     np.testing.assert_array_equal(
         feature_voxels["neighbor"], np.array([[9, 10], [9, 10], [0, 1]])
     )
-
-
-@pytest.mark.figures
-def test_feature_voxels_figure():
-    """Generate output to visually inspect get_feature_voxels"""
-    voxels = (20, 20, 20)
-    img = np.zeros(voxels)
-    pad = [[1, 1], [1, 1], [1, 1]]
-    extension = [[2, 0], [2, 0], [2, 0]]
-    summed = [[3, 0], [3, 0], [3, 0]]
-
-    feature_id = (-1, 0, 0)
-
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
-
-    summed = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=summed
-    )
-
-    print("feature", feature_voxels)
-    print(summed)
-
-    updated_img = pmmoto.core.utils.constant_pad_img(img, extension, 255)
-
-    img[
-        feature_voxels["own"][0][0] : feature_voxels["own"][0][1],
-        feature_voxels["own"][1][0] : feature_voxels["own"][1][1],
-        feature_voxels["own"][2][0] : feature_voxels["own"][2][1],
-    ] = 1
-
-    pmmoto.io.save_img("data_out/test_feature_voxels", img)
-
-    updated_img[
-        feature_voxels["neighbor"][0][0] : feature_voxels["neighbor"][0][1],
-        feature_voxels["neighbor"][1][0] : feature_voxels["neighbor"][1][1],
-        feature_voxels["neighbor"][2][0] : feature_voxels["neighbor"][2][1],
-    ] = 2
-
-    pmmoto.io.save_img("data_out/test_feature_voxels_updated", updated_img)
 
 
 def test_collect_periodic_features():

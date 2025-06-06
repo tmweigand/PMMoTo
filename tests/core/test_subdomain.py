@@ -1,16 +1,35 @@
 """test_subdomain.py"""
 
-import pytest
 import numpy as np
 
 import pmmoto
 
 
-def test_subdomain(generate_subdomain):
-    """Test for subdomain
-    """
+def setup_domain(rank: int) -> pmmoto.core.subdomain.Subdomain:
+    """Set up domain"""
+    box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
+    boundary_types = ((0, 0), (1, 1), (2, 2))
+    inlet = ((True, False), (False, False), (False, False))
+    outlet = ((False, True), (False, False), (False, False))
+    voxels = (100, 100, 100)
+    subdomains = (3, 3, 3)
+    sd = pmmoto.initialize(
+        voxels=voxels,
+        box=box,
+        boundary_types=boundary_types,
+        inlet=inlet,
+        outlet=outlet,
+        subdomains=subdomains,
+        rank=rank,
+        pad=(0, 0, 0),
+    )
+    return sd
+
+
+def test_subdomain() -> None:
+    """Test for subdomain"""
     rank = 12
-    sd = generate_subdomain(rank)
+    sd = setup_domain(rank)
 
     assert sd.index == (1, 1, 0)
 
@@ -26,24 +45,17 @@ def test_subdomain(generate_subdomain):
         else:
             assert not is_global_boundary
 
-    # for feature_id, boundary_type in sd.boundary_types.items():
-    #     if feature_id == (0, 0, -1):
-    #         assert boundary_type == "periodic"
-    #     else:
-    #         assert boundary_type == "internal"
+    np.testing.assert_array_equal(sd.inlet, ((0, 0), (0, 0), (0, 0)))
 
-    np.testing.assert_array_equal(sd.inlet, [0, 0, 0, 0, 0, 0])
-
-    np.testing.assert_array_equal(sd.outlet, [0, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(sd.outlet, ((0, 0), (0, 0), (0, 0)))
 
     assert sd.start == (33, 33, 0)
 
 
-def test_subdomain_2(generate_subdomain):
-    """Test for subdomain
-    """
+def test_subdomain_2() -> None:
+    """Test for subdomain"""
     rank = 26
-    sd = generate_subdomain(rank)
+    sd = setup_domain(rank)
 
     assert sd.index == (2, 2, 2)
 
@@ -67,24 +79,17 @@ def test_subdomain_2(generate_subdomain):
         else:
             assert not is_global_boundary
 
-    # for feature_id, boundary_type in sd.boundary_types.items():
-    #     if feature_id in global_features:
-    #         assert boundary_type == global_features[feature_id]
-    #     else:
-    #         assert boundary_type == "internal"
+    np.testing.assert_array_equal(sd.inlet, ((0, 0), (0, 0), (0, 0)))
 
-    np.testing.assert_array_equal(sd.inlet, [0, 0, 0, 0, 0, 0])
-
-    np.testing.assert_array_equal(sd.outlet, [0, 1, 0, 0, 0, 0])
+    np.testing.assert_array_equal(sd.outlet, ((0, 1), (0, 0), (0, 0)))
 
     assert sd.start == (66, 66, 66)
 
 
-def test_subdomain_3(generate_subdomain):
-    """Test for subdomain
-    """
+def test_subdomain_3() -> None:
+    """Test for subdomain"""
     rank = 0
-    sd = generate_subdomain(rank)
+    sd = setup_domain(rank)
 
     assert sd.index == (0, 0, 0)
 
@@ -114,46 +119,15 @@ def test_subdomain_3(generate_subdomain):
     #     else:
     #         assert boundary_type == "internal"
 
-    np.testing.assert_array_equal(sd.inlet, [1, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(sd.inlet, ((1, 0), (0, 0), (0, 0)))
 
-    np.testing.assert_array_equal(sd.outlet, [0, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(sd.outlet, ((0, 0), (0, 0), (0, 0)))
 
     assert sd.start == (0, 0, 0)
 
 
-@pytest.mark.figures
-def test_subdomain_figures(generate_subdomain):
-    """Generate images for testing subdomain
-    """
-    rank = 0
-    sd = pmmoto.initialize(
-        voxels=(100, 100, 100),
-        boundary_types=((1, 1), (1, 1), (2, 2)),
-        rank=rank,
-        subdomains=(2, 2, 2),
-        pad=(2, 2, 2),
-    )
-
-    img = np.zeros(sd.voxels)
-
-    kind = "neighbor"
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in sd.features[feature_type].items():
-            print(feature_id, feature.neighbor_rank, feature.boundary_type)
-            if feature.neighbor_rank > -1:
-                img[
-                    feature.loop[kind][0][0] : feature.loop[kind][0][1],
-                    feature.loop[kind][1][0] : feature.loop[kind][1][1],
-                    feature.loop[kind][2][0] : feature.loop[kind][2][1],
-                ] = 1
-
-    pmmoto.io.output.save_img_data_proc("data_out/test_subdomain", sd, img)
-
-
-def test_walls():
-    """Ensures that walls are correctly added to a porous media img
-    """
+def test_walls() -> None:
+    """Ensures that walls are correctly added to a porous media img"""
     sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
 
     img = np.ones(sd.voxels)
@@ -174,9 +148,8 @@ def test_walls():
     assert not np.all(img[:, :, -2] == 0)
 
 
-def test_get_img_index():
-    """Ensure the correct index is provided given physical coordinates
-    """
+def test_get_img_index() -> None:
+    """Ensure the correct index is provided given physical coordinates"""
     sd = pmmoto.initialize((10, 10, 10))
 
     assert sd.get_img_index((0.5, 0.5, 0.5)) == (5, 5, 5)

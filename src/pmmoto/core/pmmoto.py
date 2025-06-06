@@ -5,6 +5,7 @@ import numpy as np
 from . import domain_decompose
 from . import domain
 from . import domain_discretization
+from . import subdomain
 from . import subdomain_padded
 from . import subdomain_verlet
 from . import utils
@@ -14,16 +15,28 @@ __all__ = ["initialize", "deconstruct_grid"]
 
 
 def initialize(
-    voxels,
-    box=((0, 1.0), (0, 1.0), (0, 1)),
-    subdomains=(1, 1, 1),
-    boundary_types=((0, 0), (0, 0), (0, 0)),
-    inlet=((0, 0), (0, 0), (0, 0)),
-    outlet=((0, 0), (0, 0), (0, 0)),
-    reservoir_voxels=0,
-    rank=0,
-    pad=(1, 1, 1),
-    verlet_domains=(1, 1, 1),
+    voxels: tuple[int, ...],
+    box: tuple[tuple[float, float], ...] = ((0, 1.0), (0, 1.0), (0, 1)),
+    subdomains: tuple[int, ...] = (1, 1, 1),
+    boundary_types: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+    inlet: tuple[tuple[bool, bool], ...] = (
+        (False, False),
+        (False, False),
+        (False, False),
+    ),
+    outlet: tuple[tuple[bool, bool], ...] = (
+        (False, False),
+        (False, False),
+        (False, False),
+    ),
+    reservoir_voxels: int = 0,
+    rank: int = 0,
+    pad: tuple[int, ...] = (1, 1, 1),
+    verlet_domains: None | tuple[int, ...] = None,
+) -> (
+    subdomain.Subdomain
+    | subdomain_padded.PaddedSubdomain
+    | subdomain_verlet.VerletSubdomain
 ):
     """Initialize PMMoTo domain and subdomain classes and check for valid inputs."""
     # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
@@ -44,15 +57,27 @@ def initialize(
         )
     )
 
-    verlet_subdomain = subdomain_verlet.VerletSubdomain.from_subdomain(
-        rank=rank,
-        decomposed_domain=pmmoto_decomposed_domain,
-        pad=pad,
-        reservoir_voxels=reservoir_voxels,
-        verlet_domains=verlet_domains,
-    )
+    if pad == (0, 0, 0) and verlet_domains is None:
+        _subdomain = subdomain.Subdomain(
+            rank=rank, decomposed_domain=pmmoto_decomposed_domain
+        )
+    elif verlet_domains is None:
+        _subdomain = subdomain_padded.PaddedSubdomain(
+            rank=rank,
+            decomposed_domain=pmmoto_decomposed_domain,
+            pad=pad,
+            reservoir_voxels=reservoir_voxels,
+        )
+    elif verlet_domains is not None:
+        _subdomain = subdomain_verlet.VerletSubdomain.from_subdomain(
+            rank=rank,
+            decomposed_domain=pmmoto_decomposed_domain,
+            pad=pad,
+            reservoir_voxels=reservoir_voxels,
+            verlet_domains=verlet_domains,
+        )
 
-    return verlet_subdomain
+    return _subdomain
 
 
 def deconstruct_grid(

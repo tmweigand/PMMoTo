@@ -3,9 +3,16 @@
 Defines the DecomposedDomain class for dividing a discretized domain into subdomains.
 """
 
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
+from typing_extensions import Self
 import numpy as np
+from numpy.typing import NDArray
 from . import domain_discretization
 from . import orientation
+
+if TYPE_CHECKING:
+    from .domain_discretization import DiscretizedDomain
 
 
 class DecomposedDomain(domain_discretization.DiscretizedDomain):
@@ -14,11 +21,11 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
     Used to divide the domain into subdomains and pass properties to each subdomain.
     """
 
-    def __init__(self, subdomains: tuple[int, ...] = (1, 1, 1), **kwargs):
+    def __init__(self, subdomains: tuple[int, ...] = (1, 1, 1), **kwargs: Any):
         """Initialize a DecomposedDomain.
 
         Args:
-            subdomains (tuple[int, ...], optional): Number of subdomains
+            subdomains (tuple[int, int, int] optional): Number of subdomains
             **kwargs: Additional arguments passed to DiscretizedDomain.
 
         """
@@ -28,12 +35,14 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         self.map = self.gen_map()
 
     @classmethod
-    def from_discretized_domain(cls, discretized_domain, subdomains):
+    def from_discretized_domain(
+        cls, discretized_domain: DiscretizedDomain, subdomains: tuple[int, ...]
+    ) -> Self:
         """Create a DecomposedDomain from an existing DiscretizedDomain and subdomains.
 
         Args:
             discretized_domain (DiscretizedDomain): The discretized domain object.
-            subdomains (tuple[int, ...]): Number of subdomains in each dimension.
+            subdomains (tuple[int, int, int] Number of subdomains in each dimension.
 
         Returns:
             DecomposedDomain: New decomposed domain instance.
@@ -48,7 +57,7 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
             subdomains=subdomains,
         )
 
-    def gen_map(self):
+    def gen_map(self) -> NDArray[np.int64]:
         """Generate process lookup map for subdomains.
 
         Map values:
@@ -87,20 +96,23 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
         return _map
 
-    def get_neighbor_ranks(self, sd_index: tuple[np.intp, np.intp, np.intp]):
+    def get_neighbor_ranks(
+        self, sd_index: tuple[int, ...]
+    ) -> dict[tuple[int, ...], int]:
         """Determine the neighbor process rank for each feature.
 
         Args:
-            sd_index (tuple[np.intp, np.intp, np.intp]): Index of the subdomain.
+            sd_index (tuple[int, int, int]): Index of the subdomain.
 
         Returns:
             dict: Mapping from feature index to neighbor rank.
 
         """
-        neighbor_ranks = {}
+        neighbor_ranks: dict[tuple[int, ...], int] = {}
         feature_types = ["faces", "edges", "corners"]
+        features = orientation.FaceEdgeCornerMap(dim=3).features
         for feature_type in feature_types:
-            for feature_index in orientation.features[feature_type].keys():
+            for feature_index in features[feature_type].keys():
                 neighbor_ranks[feature_index] = self._get_neighbor_ranks(
                     sd_index, feature_index
                 )
@@ -108,8 +120,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
     def _get_neighbor_ranks(
         self,
-        sd_index: tuple[np.intp, np.intp, np.intp],
-        feature_index: tuple[int, int, int],
+        sd_index: tuple[int, ...],
+        feature_index: tuple[int, ...],
     ) -> int:
         """Get the neighbor rank for a specific feature.
 
