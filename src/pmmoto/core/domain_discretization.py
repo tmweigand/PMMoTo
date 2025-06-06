@@ -3,9 +3,15 @@
 Defines the DiscretizedDomain class for discretizing a physical domain into voxels.
 """
 
-from typing import Any
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
+from typing_extensions import Self
 import numpy as np
+from numpy.typing import NDArray
 from . import domain as pmmoto_domain
+
+if TYPE_CHECKING:
+    from .domain import Domain
 
 
 class DiscretizedDomain(pmmoto_domain.Domain):
@@ -19,7 +25,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         """Initialize a discretized domain.
 
         Args:
-            voxels (tuple[int, ...], optional): Number of voxels in each dimension.
+            voxels (tuple[int, int, int], optional): Number of voxels in each dimension.
             **kwargs: Additional arguments passed to the base Domain class.
 
         """
@@ -28,12 +34,12 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         self.resolution = self.get_resolution()
 
     @classmethod
-    def from_domain(cls, domain, voxels):
+    def from_domain(cls, domain: Domain, voxels: tuple[int, ...]) -> Self:
         """Create a DiscretizedDomain from an existing Domain and voxel counts.
 
         Args:
             domain (Domain): The base domain object.
-            voxels (tuple[int, ...]): Number of voxels in each dimension.
+            voxels (tuple[int, int, int]): Number of voxels in each dimension.
 
         Returns:
             DiscretizedDomain: New discretized domain instance.
@@ -51,7 +57,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         """Calculate the physical size of each voxel in every dimension.
 
         Returns:
-            tuple[float, ...]: Resolution (voxel size) in each dimension.
+            tuple[float, float, float] Resolution (voxel size) in each dimension.
 
         """
         res = np.zeros([self.dims])
@@ -61,20 +67,25 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         return tuple(res)
 
     @staticmethod
-    def get_coords(box, voxels, resolution):
+    def get_coords(
+        box: tuple[tuple[float, float], ...],
+        voxels: tuple[int, ...],
+        resolution: tuple[float, ...],
+    ) -> list[NDArray[np.float64]]:
         """Determine the physical locations of voxel centroids.
 
         Args:
-            box (tuple[tuple[float, float], ...]): Physical bounds for each dimension.
-            voxels (tuple[int, ...]): Number of voxels in each dimension.
-            resolution (tuple[float, ...]): Voxel size in each dimension.
+            box (tuple[tuple[float, float], tuple[float, float],tuple[float, float]]
+                Physical bounds for each dimension.
+            voxels (tuple[int,int, int]): Number of voxels in each dimension.
+            resolution (tuple[float, float, float]): Voxel size in each dimension.
 
         Returns:
             list[np.ndarray]: List of arrays with centroid coordinates.
 
         """
         coords = []
-        for voxels, box, resolution in zip(voxels, box, resolution):
-            half = 0.5 * resolution
-            coords.append(np.linspace(box[0] + half, box[1] - half, voxels))
+        for _voxels, _box, _resolution in zip(voxels, box, resolution):
+            half = 0.5 * _resolution
+            coords.append(np.linspace(_box[0] + half, _box[1] - half, _voxels))
         return coords

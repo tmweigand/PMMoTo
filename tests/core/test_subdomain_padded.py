@@ -4,13 +4,14 @@ import numpy as np
 import pmmoto
 
 
-def generate_padded_subdomain(rank, pad, reservoir_voxels):
-    """Generate a padded subdomain
-    """
+def generate_padded_subdomain(
+    rank: int, pad: tuple[int, ...], reservoir_voxels: int
+) -> pmmoto.core.subdomain_padded.PaddedSubdomain:
+    """Generate a padded subdomain"""
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
     boundary_types = ((0, 0), (1, 1), (2, 2))
-    inlet = ((1, 0), (0, 0), (0, 0))
-    outlet = ((0, 1), (0, 0), (0, 0))
+    inlet = ((True, False), (False, False), (False, False))
+    outlet = ((False, True), (False, False), (False, False))
     voxels = (100, 100, 100)
     subdomains = (3, 3, 3)
 
@@ -29,9 +30,8 @@ def generate_padded_subdomain(rank, pad, reservoir_voxels):
     return sd
 
 
-def test_subdomain():
-    """Test for subdomain
-    """
+def test_subdomain() -> None:
+    """Test for subdomain"""
     rank = 12
     pad = (1, 1, 1)
     reservoir_voxels = 1
@@ -42,6 +42,7 @@ def test_subdomain():
     np.testing.assert_array_equal(sd.pad, ((1, 1), (1, 1), (1, 1)))
 
     assert sd.voxels == (35, 35, 35)
+    assert sd.own_voxels == (33, 33, 33)
 
     assert sd.box == (
         (84.36, 92.41000000000001),
@@ -55,15 +56,13 @@ def test_subdomain():
         else:
             assert not is_global_boundary
 
-    for feature_id, boundary_type in sd.boundary_types.items():
-        if feature_id == (0, 0, -1):
-            assert boundary_type == "periodic"
-        else:
-            assert boundary_type == "internal"
+    np.testing.assert_array_equal(
+        sd.inlet, [[False, False], [False, False], [False, False]]
+    )
 
-    np.testing.assert_array_equal(sd.inlet, [0, 0, 0, 0, 0, 0])
-
-    np.testing.assert_array_equal(sd.outlet, [0, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(
+        sd.outlet, [[False, False], [False, False], [False, False]]
+    )
 
     assert sd.start == (32, 32, -1)
 
@@ -74,9 +73,8 @@ def test_subdomain():
     np.testing.assert_array_equal(own_voxels, [1, 34, 1, 34, 1, 34])
 
 
-def test_subdomain_2():
-    """Test for subdomain
-    """
+def test_subdomain_2() -> None:
+    """Test for subdomain"""
     rank = 26
     pad = (2, 2, 2)
     reservoir_voxels = 3
@@ -114,12 +112,6 @@ def test_subdomain_2():
         else:
             assert not is_global_boundary
 
-    # for feature_id, boundary_type in sd.boundary_types.items():
-    #     if feature_id in global_features or sd.neighbor_ranks[feature_id] < 0:
-    #         assert boundary_type == global_features[feature_id]
-    #     else:
-    #         assert boundary_type == "internal"
-
     np.testing.assert_array_equal(sd.inlet, [0, 0, 0, 0, 0, 0])
 
     np.testing.assert_array_equal(sd.outlet, [0, 1, 0, 0, 0, 0])
@@ -133,9 +125,8 @@ def test_subdomain_2():
     np.testing.assert_array_equal(own_voxels, [2, 36, 2, 36, 2, 36])
 
 
-def test_subdomain_3():
-    """Test for subdomain
-    """
+def test_subdomain_3() -> None:
+    """Test for subdomain"""
     rank = 0
     pad = (1, 1, 1)
     reservoir_voxels = 3
@@ -190,9 +181,8 @@ def test_subdomain_3():
     np.testing.assert_array_equal(own_voxels, [3, 36, 1, 34, 1, 34])
 
 
-def test_own_voxels():
-    """Ensures that walls are correctly added to a porous media img
-    """
+def test_own_voxels() -> None:
+    """Ensures that walls are correctly added to a porous media img"""
     boundary_types = ((1, 1), (1, 1), (1, 1))
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
