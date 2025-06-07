@@ -9,6 +9,7 @@ __all__ = [
     "domain",
     "domain_decompose",
     "domain_discretization",
+    "features",
     "subdomain",
     "subdomain_padded",
     "subdomain_features",
@@ -22,6 +23,7 @@ from . import communication
 from . import domain
 from . import domain_decompose
 from . import domain_discretization
+from . import features
 from . import subdomain
 from . import subdomain_padded
 from . import subdomain_features

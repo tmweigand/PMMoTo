@@ -3,17 +3,25 @@
 Core voxel operations for PMMoTo.
 """
 
+from __future__ import annotations
+from typing import TypeVar, Literal
 import numpy as np
+from numpy.typing import NDArray
 from . import _voxels
 from . import communication
+from .subdomain import Subdomain
+from .subdomain_padded import PaddedSubdomain
+from .subdomain_verlet import VerletSubdomain
 
+
+T = TypeVar("T", bound=np.generic)
 
 __all__ = [
     "renumber_image",
     "get_nearest_boundary_index",
     "get_id",
     "get_boundary_voxels",
-    "gen_grid_to_label_map",
+    "gen_img_to_label_map",
     "gen_inlet_label_map",
     "gen_outlet_label_map",
     "count_label_voxels",
@@ -22,7 +30,7 @@ __all__ = [
 ]
 
 
-def renumber_image(img, conversion_map: dict):
+def renumber_image(img: NDArray[T], conversion_map: dict[T, T]) -> NDArray[T]:
     """Renumber an image using a provided mapping.
 
     Args:
@@ -45,71 +53,121 @@ def renumber_image(img, conversion_map: dict):
         # Output: [[101, 102], [102, 101]]
 
     """
-    img = _voxels.renumber_grid(img, conversion_map)
+    _img: NDArray[T] = _voxels.renumber_img(img, conversion_map)
 
-    return np.ascontiguousarray(img)
+    return np.ascontiguousarray(_img)
 
 
 def get_nearest_boundary_index(
-    subdomain, img, label, dimension=None, which_voxels="all"
-):
-    """Get the index nearest each subdomain boundary face for a specified label.
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    label: int,
+    dimension: None | int = None,
+    which_voxels: Literal["all", "own", "pad"] = "all",
+) -> dict[tuple[int, ...], NDArray[T]]:
+    """Determine the nearest boundary index to a given label
 
-    The start and end locations can be controlled by `which_voxels`:
-        which_voxels = "all" start = 0, end = 0
-        which_voxels = "own" start = pad[0], end = pad[1]
-        which_voxels = "pad" start = 2*pad[0], end = 2*pad[1]
-
-    Note:
-        The boundary index is always with respect to img.shape[dimension].
-        Start and end are used for searching.
-
-    Args:
-        subdomain: Subdomain object.
-        img: Image array.
-        label: Label to search for.
-        dimension (int or None): Dimension to search along (0, 1, 2) or None for all.
-        which_voxels (str): Which voxels to consider ("all", "own", "pad").
-
-    Returns:
-        dict: Dictionary of boundary indices for each face.
-
+    If which_voxels == "all", always use base version.
+    If which_voxels == "own" or "pad", use extended version
+        (only if subdomain supports padding).
     """
     if dimension is not None and dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
-    lower_skip = 0
-    upper_skip = 0
+    if which_voxels == "all":
+        return get_nearest_boundary_index_base(
+            subdomain=subdomain,
+            img=img,
+            label=label,
+            dimension=dimension,
+        )
+    else:
+        if not isinstance(subdomain, (PaddedSubdomain, VerletSubdomain)):
+            raise TypeError(
+                f"which_voxels={which_voxels!r} requires a PaddedSubdomain or VerletSubdomain, "
+                f"but got {type(subdomain).__name__}."
+            )
 
-    boundary_index = {}
+        return get_nearest_boundary_index_extended(
+            subdomain=subdomain,
+            img=img,
+            label=label,
+            dimension=dimension,
+            which_voxels=which_voxels,
+        )
 
-    for feature_id, feature in subdomain.features["faces"].items():
+
+def get_nearest_boundary_index_base(
+    subdomain: Subdomain,
+    img: NDArray[T],
+    label: int,
+    dimension: None | int = None,
+) -> dict[tuple[int, ...], NDArray[T]]:
+    """Get nearest boundary index without considering padding."""
+    boundary_index: dict[tuple[int, ...], NDArray[T]] = {}
+
+    for feature_id, feature in subdomain.features.faces.items():
         if dimension is None or feature_id[dimension] != 0:
-
-            if feature.forward:
-                if which_voxels == "own":
-                    lower_skip = subdomain.pad[feature.info["argOrder"][0]][0]
-                elif which_voxels == "pad":
-                    lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
-            elif not feature.forward:
-                if which_voxels == "own":
-                    upper_skip = subdomain.pad[feature.info["argOrder"][0]][1]
-                elif which_voxels == "pad":
-                    upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
-
             boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
                 img=img,
-                dimension=feature.info["argOrder"][0],
+                dimension=feature.info.arg_order[0],
                 label=label,
                 forward=feature.forward,
-                lower_skip=lower_skip,
-                upper_skip=upper_skip,
-            ).astype(np.float32)
+                lower_skip=0,
+                upper_skip=0,
+            )
 
     return boundary_index
 
 
-def get_boundary_voxels(subdomain, img, neighbors_only=False):
+def get_nearest_boundary_index_extended(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    label: int,
+    dimension: None | int = None,
+    which_voxels: Literal["all", "own", "pad"] = "all",
+) -> dict[tuple[int, ...], NDArray[T]]:
+    """Get nearest boundary index with padding support."""
+    if dimension is not None and dimension not in {0, 1, 2}:
+        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
+
+    boundary_index: dict[tuple[int, ...], NDArray[T]] = {}
+
+    for feature_id, feature in subdomain.features.faces.items():
+        if dimension is None or feature_id[dimension] != 0:
+            lower_skip = 0
+            upper_skip = 0
+
+            arg_dim = feature.info.arg_order[0]
+
+            if feature.forward:
+                if which_voxels == "own":
+                    lower_skip = subdomain.pad[arg_dim][0]
+                elif which_voxels == "pad":
+                    lower_skip = 2 * subdomain.pad[arg_dim][0]
+            else:
+                if which_voxels == "own":
+                    upper_skip = subdomain.pad[arg_dim][1]
+                elif which_voxels == "pad":
+                    upper_skip = 2 * subdomain.pad[arg_dim][1]
+
+            boundary_index[feature_id] = _voxels.get_nearest_boundary_index_face(
+                img=img,
+                dimension=arg_dim,
+                label=label,
+                forward=feature.forward,
+                lower_skip=lower_skip,
+                upper_skip=upper_skip,
+            )
+
+    return boundary_index
+
+
+def get_boundary_voxels(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    neighbors_only: bool = False,
+) -> dict[tuple[int, ...], dict[str, NDArray[T]]]:
     """Return the values on the boundary features.
 
     The features are divided into:
@@ -125,31 +183,34 @@ def get_boundary_voxels(subdomain, img, neighbors_only=False):
         dict: Dictionary of boundary voxels.
 
     """
-    out_voxels = {}
+    out_voxels: dict[tuple[int, ...], dict[str, NDArray[T]]] = {}
 
-    boundary_types = ["own", "neighbor"]
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if neighbors_only and feature.neighbor_rank < -1:
-                continue
-            out_voxels[feature_id] = {}
-            for kind in boundary_types:
-                out_voxels[feature_id][kind] = img[
-                    feature.loop[kind][0][0] : feature.loop[kind][0][1],
-                    feature.loop[kind][1][0] : feature.loop[kind][1][1],
-                    feature.loop[kind][2][0] : feature.loop[kind][2][1],
-                ].flatten()
+    if neighbors_only:
+        types = ["neighbor"]
+    else:
+        types = ["own", "neighbor"]
+
+    for feature_id, feature in subdomain.features.all_features:
+        if neighbors_only and feature.neighbor_rank < -1:
+            continue
+        out_voxels[feature_id] = {}
+        for _type in types:
+            loop = getattr(feature, _type)
+            out_voxels[feature_id][_type] = img[
+                loop[0][0] : loop[0][1],
+                loop[1][0] : loop[1][1],
+                loop[2][0] : loop[2][1],
+            ].flatten()
 
     return out_voxels
 
 
-def get_id(x, total_voxels):
+def get_id(index: tuple[int, ...], total_voxels: tuple[int, ...]) -> np.uint64:
     """Get the global or local ID for a voxel.
 
     Args:
         x: 3D index of the voxel (x, y, z).
-        total_voxels: Size of the domain (number of voxels in each dimension).
+        total_voxels: Number of voxels in each dimension.
 
     Returns:
         int: Global or local ID of the voxel.
@@ -158,13 +219,11 @@ def get_id(x, total_voxels):
         Periodic boundary conditions are applied by using modulo arithmetic.
 
     """
-    id = _voxels.get_id(
-        np.array(x, dtype=np.int64), np.array(total_voxels, dtype=np.uint64)
-    )
+    id = _voxels.get_id(index, total_voxels)
     return id
 
 
-def gen_grid_to_label_map(grid, labels):
+def gen_img_to_label_map(img: NDArray[T], labels: NDArray[T]) -> NDArray[T]:
     """Generate a mapping from grid indices to labels.
 
     Args:
@@ -175,14 +234,12 @@ def gen_grid_to_label_map(grid, labels):
         Mapping array.
 
     """
-    assert grid.shape == labels.shape
+    assert img.shape == labels.shape
 
-    return _voxels.gen_grid_to_label_map(
-        grid.astype(np.uint8), labels.astype(np.uint64)
-    )
+    return _voxels.gen_img_to_label_map(img.astype(np.uint8), labels.astype(np.uint64))
 
 
-def count_label_voxels(grid, map):
+def count_label_voxels(img: NDArray[T], map: dict[int, int]) -> dict[int, int]:
     """Count the number of voxels for each label in the grid.
 
     Args:
@@ -193,76 +250,18 @@ def count_label_voxels(grid, map):
         None
 
     """
-    _map = _voxels.count_label_voxels(grid, map)
+    _map = _voxels.count_label_voxels(img, map)
 
-
-def boundary_voxels_pack(subdomain, boundary_voxels):
-    """Pack the data to send based on get_boundary_voxels.
-
-    Args:
-        subdomain: Subdomain object.
-        boundary_voxels: Dictionary of boundary voxels.
-
-    Returns:
-        tuple: (send_data, periodic_data)
-
-    """
-    send_data = {}
-    periodic_data = {}
-
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.neighbor_rank > -1 and feature.neighbor_rank != subdomain.rank:
-                send_data[feature_id] = {
-                    "rank": subdomain.rank,
-                    "own": boundary_voxels[feature_id]["own"],
-                    "neighbor": boundary_voxels[feature_id]["neighbor"],
-                }
-            if feature.neighbor_rank == subdomain.rank:
-                periodic_data[feature_id] = {
-                    "rank": subdomain.rank,
-                    "own": boundary_voxels[feature_id]["own"],
-                    "neighbor": boundary_voxels[feature_id]["neighbor"],
-                }
-
-    return send_data, periodic_data
-
-
-def boundary_voxels_unpack(subdomain, boundary_voxels, recv_data):
-    """Unpack the neighboring boundary neighbor data.
-
-    This also handles periodic boundary conditions.
-
-    The feature_id for the return value has been accounted for:
-        own_data[feature_id] = data_out[feature_id]
-
-    Args:
-        subdomain: Subdomain object.
-        boundary_voxels: Dictionary of boundary voxels.
-        recv_data: Received neighbor data.
-
-    Returns:
-        dict: Unpacked boundary voxel data.
-
-    """
-    data_out = {}
-
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.n_proc > -1 and feature.n_proc != subdomain.rank:
-                data_out[feature_id] = recv_data[feature_id]
-            elif feature.n_proc == subdomain.rank:
-                data_out[feature_id] = boundary_voxels[feature.opp_info]
-
-    return data_out
+    return _map
 
 
 def match_neighbor_boundary_voxels(
-    subdomain, boundary_voxels, recv_data, skip_zero=False
-):
-    """Match boundary voxels  with subdomain neighbor voxels and return unique matches.
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    boundary_voxels: dict[tuple[int, ...], dict[str, NDArray[T]]],
+    recv_data: dict[tuple[int, ...], dict[str, NDArray[T]]],
+    skip_zero: bool = False,
+) -> dict[tuple[int, int], dict[str, tuple[int, int]]]:
+    """Match boundary voxels with subdomain neighbor voxels and return unique matches.
 
     Args:
         subdomain: Subdomain object containing feature information.
@@ -276,43 +275,44 @@ def match_neighbor_boundary_voxels(
             neighbor: list[neighbor rank, neighbor voxel)]
 
     """
-    unique_matches = {}
+    unique_matches: dict[tuple[int, int], dict[str, tuple[int, int]]] = {}
 
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature_id in recv_data:
-                to_match = np.stack(
-                    [
-                        np.concatenate(
-                            (
-                                boundary_voxels[feature_id]["own"],
-                                boundary_voxels[feature_id]["neighbor"],
-                            )
-                        ),
-                        np.concatenate(
-                            (
-                                recv_data[feature_id]["neighbor"],
-                                recv_data[feature_id]["own"],
-                            )
-                        ),
-                    ],
-                    axis=1,
-                )
+    for feature_id, feature in subdomain.features.all_features:
+        if feature_id in recv_data:
+            to_match = np.stack(
+                [
+                    np.concatenate(
+                        (
+                            boundary_voxels[feature_id]["own"],
+                            boundary_voxels[feature_id]["neighbor"],
+                        )
+                    ),
+                    np.concatenate(
+                        (
+                            recv_data[feature_id]["neighbor"],
+                            recv_data[feature_id]["own"],
+                        )
+                    ),
+                ],
+                axis=1,
+            )
 
-                matches = _voxels.find_unique_pairs(to_match)
+            matches: NDArray[T] = _voxels.find_unique_pairs(to_match)
 
-                if skip_zero:
-                    matches = matches[~np.any(matches == 0, axis=1)]
+            if skip_zero:
+                matches = matches[~np.any(matches == 0, axis=1)]
 
-                unique_matches = _voxels.process_matches_by_feature(
-                    matches, unique_matches, subdomain.rank, feature.neighbor_rank
-                )
+            unique_matches = _voxels.process_matches_by_feature(
+                matches, unique_matches, subdomain.rank, feature.neighbor_rank
+            )
 
     return unique_matches
 
 
-def match_global_boundary_voxels(subdomain, matches, label_count):
+def match_global_boundary_voxels(
+    matches: dict[tuple[int, int], dict[str, tuple[int, int]]],
+    label_count: int,
+) -> tuple[dict[int, dict[int, int]], int]:
     """Generate a global label map for matched boundary voxels.
 
     Args:
@@ -325,20 +325,28 @@ def match_global_boundary_voxels(subdomain, matches, label_count):
 
     """
     ### Send number of labels on rank for re-labeling
-    matches["label_count"] = label_count
     all_matches = communication.all_gather(matches)
+    all_counts = communication.all_gather(label_count)
 
     ### Generate the local-global label map
     local_global_map, boundary_label_count = _voxels.merge_matched_voxels(all_matches)
 
     final_map, global_label_count = local_to_global_labeling(
-        all_matches, local_global_map, boundary_label_count, own=subdomain.rank
+        all_matches,
+        all_counts,
+        local_global_map,
+        boundary_label_count,
     )
 
     return final_map, global_label_count
 
 
-def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, own=None):
+def local_to_global_labeling(
+    all_matches: list[dict[int, dict[tuple[int, int], dict[str, tuple[int, int]]]]],
+    all_counts: list[int],
+    boundary_map: dict[tuple[int, int], dict[str, int]],
+    boundary_label_count: int,
+) -> tuple[dict[int, dict[int, int]], int]:
     """Generate the local to global label mapping for all ranks.
 
     Args:
@@ -351,10 +359,9 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
         tuple or dict: (final_map, max_label) or (final_map[own], max_label)
 
     """
-    local_counts = [matches["label_count"] for matches in all_matches]
     boundary_counts = [len(matches) for matches in all_matches]
 
-    num_ranks = len(local_counts)
+    num_ranks = len(all_counts)
 
     # Determine unique global labels relative so expect negative!
     local_starts = {}
@@ -364,7 +371,7 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
         else:
             local_starts[rank] = (
                 local_starts[rank - 1]
-                + local_counts[rank - 1]
+                + all_counts[rank - 1]
                 - boundary_counts[rank - 1]
                 + 1
             )
@@ -372,10 +379,10 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
     ### Generate the global id for non-boundary labels as well
     final_map = {}
     label_count = 0
-    for rank, match in enumerate(all_matches):
+    for rank, (match, label_count) in enumerate(zip(all_matches, all_counts)):
         final_map[rank] = {0: 0}
         count = 0
-        for n in range(1, match["label_count"] + 1):
+        for n in range(1, label_count + 1):
             if (rank, n) in boundary_map:
                 final_map[rank][n] = boundary_map[(rank, n)]["global_id"]
             else:
@@ -387,13 +394,12 @@ def local_to_global_labeling(all_matches, boundary_map, boundary_label_count, ow
     if max_label < 1:
         max_label = boundary_label_count
 
-    if own is not None and own in final_map:
-        return final_map[own], max_label
-    else:
-        return final_map, max_label
+    return final_map, max_label
 
 
-def gen_inlet_label_map(subdomain, label_grid):
+def gen_inlet_label_map(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, label_img: NDArray[T]
+) -> NDArray[T]:
     """Determine which face is on inlet.
 
     Currently restricted to a single face.
@@ -406,20 +412,22 @@ def gen_inlet_label_map(subdomain, label_grid):
         np.ndarray: Array of inlet labels.
 
     """
-    inlet_labels = np.empty(0)
-    for feature_id, feature in subdomain.features["faces"].items():
+    inlet_labels = np.empty(0, dtype=int)
+    for _, feature in subdomain.features.faces.items():
         if feature.inlet:
             inlet_labels = np.unique(
-                label_grid[
-                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
-                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
-                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                label_img[
+                    feature.own[0][0] : feature.own[0][1],
+                    feature.own[1][0] : feature.own[1][1],
+                    feature.own[2][0] : feature.own[2][1],
                 ]
             )
     return inlet_labels
 
 
-def gen_outlet_label_map(subdomain, label_grid):
+def gen_outlet_label_map(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, label_img: NDArray[T]
+) -> NDArray[T]:
     """Determine which face is on outlet.
 
     Currently restricted to a single face.
@@ -432,14 +440,14 @@ def gen_outlet_label_map(subdomain, label_grid):
         np.ndarray: Array of outlet labels.
 
     """
-    outlet_labels = np.empty(0)
-    for feature_id, feature in subdomain.features["faces"].items():
+    outlet_labels: NDArray[T] = np.empty(0, dtype=int)
+    for _, feature in subdomain.features.faces.items():
         if feature.outlet:
             outlet_labels = np.unique(
-                label_grid[
-                    feature.loop["own"][0][0] : feature.loop["own"][0][1],
-                    feature.loop["own"][1][0] : feature.loop["own"][1][1],
-                    feature.loop["own"][2][0] : feature.loop["own"][2][1],
+                label_img[
+                    feature.own[0][0] : feature.own[0][1],
+                    feature.own[1][0] : feature.own[1][1],
+                    feature.own[2][0] : feature.own[2][1],
                 ]
             )
 

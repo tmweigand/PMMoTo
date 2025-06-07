@@ -9,7 +9,11 @@ def generate_padded_subdomain(
 ) -> pmmoto.core.subdomain_padded.PaddedSubdomain:
     """Generate a padded subdomain"""
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-    boundary_types = ((0, 0), (1, 1), (2, 2))
+    boundary_types = (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
     inlet = ((True, False), (False, False), (False, False))
     outlet = ((False, True), (False, False), (False, False))
     voxels = (100, 100, 100)
@@ -50,11 +54,15 @@ def test_subdomain() -> None:
         (-9.0585841, -7.0081406),
     )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id == (0, 0, -1):
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((False, False), (False, False), (True, False))
+    )
+
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.INTERNAL),
+    )
 
     np.testing.assert_array_equal(
         sd.inlet, [[False, False], [False, False], [False, False]]
@@ -96,25 +104,23 @@ def test_subdomain_2() -> None:
         (-5.2506176, -3.0244218),
     )
 
-    global_features = {
-        (1, 0, 0): "end",
-        (0, 1, 0): "wall",
-        (0, 0, 1): "periodic",
-        (1, 0, 1): "end",
-        (1, 1, 0): "end",
-        (0, 1, 1): "wall",
-        (1, 1, 1): "end",
-    }
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((False, True), (False, True), (False, True))
+    )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id in global_features:
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.PERIODIC),
+    )
 
-    np.testing.assert_array_equal(sd.inlet, [0, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(
+        sd.inlet, ((False, False), (False, False), (False, False))
+    )
 
-    np.testing.assert_array_equal(sd.outlet, [0, 1, 0, 0, 0, 0])
+    np.testing.assert_array_equal(
+        sd.outlet, ((False, True), (False, False), (False, False))
+    )
 
     assert sd.start == (64, 64, 64)
 
@@ -135,7 +141,8 @@ def test_subdomain_3() -> None:
     assert sd.index == (0, 0, 0)
 
     np.testing.assert_array_equal(sd.pad, ((0, 1), (1, 1), (1, 1)))
-    sd_pad, extended_loop = sd.extend_padding(pad)
+    sd_pad, _ = sd.extend_padding(pad)
+
     np.testing.assert_array_equal(sd_pad, ((0, 1), (0, 1), (1, 1)))
 
     assert sd.voxels == (37, 35, 35)
@@ -146,31 +153,23 @@ def test_subdomain_3() -> None:
         (-9.0585841, -7.0081406),
     )
 
-    global_features = {
-        (-1, 0, 0): "end",
-        (0, -1, 0): "wall",
-        (0, 0, -1): "periodic",
-        (-1, 0, -1): "end",
-        (-1, -1, 0): "end",
-        (0, -1, -1): "wall",
-        (-1, -1, -1): "end",
-    }
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((True, False), (True, False), (True, False))
+    )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id in global_features:
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.INTERNAL),
+    )
 
-    # for feature_id, boundary_type in sd_boundary_types.items():
-    #     if feature_id in global_features:
-    #         assert boundary_type == global_features[feature_id]
-    #     else:
-    #         assert boundary_type == "internal"
+    np.testing.assert_array_equal(
+        sd.inlet, ((True, False), (False, False), (False, False))
+    )
 
-    np.testing.assert_array_equal(sd.inlet, [1, 0, 0, 0, 0, 0])
-
-    np.testing.assert_array_equal(sd.outlet, [0, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(
+        sd.outlet, ((False, False), (False, False), (False, False))
+    )
 
     assert sd.start == (-3, -1, -1)
 
@@ -183,7 +182,11 @@ def test_subdomain_3() -> None:
 
 def test_own_voxels() -> None:
     """Ensures that walls are correctly added to a porous media img"""
-    boundary_types = ((1, 1), (1, 1), (1, 1))
+    boundary_types = (
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+    )
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
         boundary_types=boundary_types,
@@ -191,18 +194,22 @@ def test_own_voxels() -> None:
     np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
 
     # # Boundary Conditions must be 0 for reservoir check
-    inlet = ((1, 0), (0, 0), (0, 0))
+    inlet = ((True, False), (False, False), (False, False))
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
-        boundary_types=((1, 1), (1, 1), (1, 1)),
+        boundary_types=boundary_types,
         inlet=inlet,
         reservoir_voxels=10,
     )
     np.testing.assert_array_equal(sd.get_own_voxels(), [1, 11, 1, 11, 1, 11])
 
     # Now test reservoir
-    inlet = ((1, 0), (0, 0), (0, 0))
-    boundary_types = ((0, 0), (0, 0), (0, 0))
+    inlet = ((True, False), (False, False), (False, False))
+    boundary_types = (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+    )
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
         boundary_types=boundary_types,

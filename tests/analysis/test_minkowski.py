@@ -15,7 +15,7 @@ def test_minkowski() -> None:
 
     file_in = "./tests/test_domains/single_sphere.in"
 
-    sd = pmmoto.initialize(voxels=voxels)
+    sd = pmmoto.initialize(voxels=voxels, verlet_domains=(1, 1, 1))
     sphere_data, domain_data = pmmoto.io.read_sphere_pack_xyzr_domain(file_in)
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, sphere_data, domain_data)
 

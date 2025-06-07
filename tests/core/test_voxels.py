@@ -6,20 +6,20 @@ from pmmoto.core import _voxels
 import pytest
 
 
-def test_voxls_get_id():
+def test_voxls_get_id() -> None:
     """Simple test to check voxel id mapping."""
-    x = [1, 2, 7]
-    v = [5, 6, 5]
+    x = (1, 2, 7)
+    v = (5, 6, 5)
     id = pmmoto.core.voxels.get_id(x, v)
     assert id == 42
 
-    x = [-1, -1, -1]
-    v = [10, 10, 10]
+    x = (-1, -1, -1)
+    v = (10, 10, 10)
     id = pmmoto.core.voxels.get_id(x, v)
     assert id == 999
 
 
-def test_1d_slice_extraction():
+def test_1d_slice_extraction() -> None:
     """Test for ensuring looping through 1d slice is working with c++ interface.
 
     For the 2 direction, check on the diagonal
@@ -164,7 +164,7 @@ def test_1d_slice_extraction():
     )
 
 
-def test_get_nearest_boundary_index_1d():
+def test_get_nearest_boundary_index_1d() -> None:
     """Test for ensuring get_nearest_boundary_index works in 1d.
 
     Same c++ function is called in 3d so simpler for testing.
@@ -181,7 +181,7 @@ def test_get_nearest_boundary_index_1d():
     assert index == 12
 
 
-def test_get_nearest_boundary_index_1d_pad():
+def test_get_nearest_boundary_index_1d_pad() -> None:
     """Adding ability to "de"-pad the image for the 1d case"""
     # Example data
     img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], dtype=np.uint8)
@@ -244,7 +244,7 @@ def test_get_nearest_boundary_index_1d_pad():
     assert index == 1
 
 
-def test_get_nearest_boundary_index():
+def test_get_nearest_boundary_index() -> None:
     """Test for ensuring get_nearest_boundary_index works. duh"""
     # Example data
     img = np.array(
@@ -314,7 +314,7 @@ def test_get_nearest_boundary_index():
 
 
 @pytest.mark.figures
-def test_get_nearest_boundary_index_figure(generate_padded_subdomain):
+def test_get_nearest_boundary_index_figure(generate_padded_subdomain) -> None:
     """Test for ensuring get_nearest_boundary_index works. duh"""
     rank = 0
     sd = generate_padded_subdomain(rank)

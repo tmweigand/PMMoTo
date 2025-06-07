@@ -5,11 +5,12 @@ facilitating parallel algorithms in PMMoTo.
 """
 
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 import numpy as np
 from numpy.typing import NDArray
-from ..core import subdomain
-from ..core import subdomain_features
+from .boundary_types import BoundaryType
+from . import subdomain
+from . import subdomain_features
 
 if TYPE_CHECKING:
     from .domain_decompose import DecomposedDomain
@@ -36,31 +37,25 @@ class PaddedSubdomain(subdomain.Subdomain):
             reservoir_voxels (int, optional): Reservoir voxels to pad at inlet/outlet.
 
         """
-        self.rank = rank
-        self.domain = decomposed_domain
-        self.index = self.get_index(self.rank, self.domain.subdomains)
+        self.rank: int = rank
+        self.domain: DecomposedDomain = decomposed_domain
+        self.index: tuple[int, ...] = self.get_index(self.rank, self.domain.subdomains)
         self.pad = self.get_padding(pad)
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
-
         self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
-        print(self.reservoir_pad)
-        self.own_voxels = self.get_voxels(
+        self.voxels: tuple[int, ...] = self.get_padded_voxels()
+        self.own_voxels: tuple[int, ...] = self.get_voxels(
             self.index, self.domain.voxels, self.domain.subdomains
         )
-        self.own_box = self.get_box(self.own_voxels)
-        self.voxels = self.get_padded_voxels()
         self.box = self.get_padded_box()
-        self.global_boundary = self.get_global_boundary()
+        self.own_box = self.get_box(self.own_voxels)
 
+        self.global_boundary = self.get_global_boundary()
+        self.boundary_types = self.get_boundary_types()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
-        self.global_boundary = self.get_global_boundary()
-        self.feature_boundary_types = self.get_boundary_types(
-            self.global_boundary, self.neighbor_ranks
-        )
-        self.reservoir_pad = self.get_reservoir_padding(reservoir_voxels)
 
-        self.start = self.get_start(
+        self.start = self.get_padded_start(
             self.index,
             self.domain.voxels,
             self.domain.subdomains,
@@ -74,7 +69,7 @@ class PaddedSubdomain(subdomain.Subdomain):
         )
 
     def get_padding(self, pad: tuple[int, ...]) -> tuple[tuple[int, int], ...]:
-        """Add pad to boundaries of subdomain.
+        """Compute the padding for each dimension of the subdomain.
 
         Padding is applied to all boundaries except 'end' and 'wall' boundary types,
         where pad is limited to 1. Padding must be equal on opposite features.
@@ -86,41 +81,41 @@ class PaddedSubdomain(subdomain.Subdomain):
             tuple[tuple[int, int], ...]: Padding for each dimension.
 
         """
-        dims = len(self.index)
-        _pad: list[list[int]] = [[0, 0] for _ in range(dims)]
+        _pad: list[tuple[int, int]] = []
 
-        for dim in range(dims):
-            ind = self.index[dim]
+        for dim, ind in enumerate(self.index):
             n_subdomains = self.domain.subdomains[dim]
             btypes = self.domain.boundary_types[dim]
 
             # Lower boundary
             if ind == 0:
-                if btypes[0] == 0:  # 'end'
-                    _pad[dim][0] = 0
-                elif btypes[0] == 1:  # 'wall'
-                    _pad[dim][0] = 1
+                if btypes[0] == BoundaryType.END:
+                    lower = 0
+                elif btypes[0] == BoundaryType.WALL:
+                    lower = 1
                 else:
-                    _pad[dim][0] = pad[dim]
+                    lower = pad[dim]
             else:
-                _pad[dim][0] = pad[dim]
+                lower = pad[dim]
 
             # Upper boundary
             if ind == n_subdomains - 1:
-                if btypes[1] == 0:  # 'end'
-                    _pad[dim][1] = 0
-                elif btypes[1] == 1:  # 'wall'
-                    _pad[dim][1] = 1
+                if btypes[1] == BoundaryType.END:
+                    upper = 0
+                elif btypes[1] == BoundaryType.WALL:
+                    upper = 1
                 else:
-                    _pad[dim][1] = pad[dim]
+                    upper = pad[dim]
             else:
-                _pad[dim][1] = pad[dim]
+                upper = pad[dim]
 
-        return tuple((int(p[0]), int(p[1])) for p in _pad)
+            _pad.append((lower, upper))
+
+        return tuple(_pad)
 
     def extend_padding(
         self, pad: tuple[int, ...]
-    ) -> tuple[tuple[tuple[int, int], ...], dict[tuple[int, int, int], Any]]:
+    ) -> tuple[tuple[tuple[int, int], ...], subdomain_features.SubdomainFeatures]:
         """Extend pad to boundaries of subdomain.
 
         Padding is applied to all boundaries except 'end' and 'wall' boundary types,
@@ -130,75 +125,50 @@ class PaddedSubdomain(subdomain.Subdomain):
             pad (tuple[int, ...]): Pad length for each dimension.
 
         Returns:
-            tuple: (pad, loop) pad is the new padding; loop is a dict of extended loops.
+            tuple: (pad, extended_features)
 
         """
-        _pad = [[0, 0], [0, 0], [0, 0]]
+        extend_pad: list[tuple[int, int]] = []
         for dim, ind in enumerate(self.index):
-            if ind == 0 and self.domain.boundary_types[dim][0] in {0, 1}:
-                _pad[dim][0] = 0
-            else:
-                _pad[dim][0] = pad[dim]
-            if ind == self.domain.subdomains[dim] - 1 and self.domain.boundary_types[
-                dim
-            ][1] in {0, 1}:
-                _pad[dim][1] = 0
-            else:
-                _pad[dim][1] = pad[dim]
+            n_subdomains = self.domain.subdomains[dim]
+            btypes = self.domain.boundary_types[dim]
 
-        total_pad = [(s[0] + p[0], s[1] + p[1]) for s, p in zip(self.pad, _pad)]
-        voxels = [v + p[0] + p[1] for v, p in zip(self.voxels, _pad)]
+            # Lower boundary
+            if ind == 0:
+                if btypes[0] == BoundaryType.END:
+                    lower = 0
+                elif btypes[0] == BoundaryType.WALL and self.pad[dim][0] == 0:
+                    lower = 1
+                elif btypes[0] == BoundaryType.WALL and self.pad[dim][0] == 1:
+                    lower = 0
+                else:
+                    lower = pad[dim]
+            else:
+                lower = pad[dim]
+
+            # Upper boundary
+            if ind == n_subdomains - 1:
+                if btypes[1] == BoundaryType.END:
+                    upper = 0
+                elif btypes[1] == BoundaryType.WALL and self.pad[dim][1] == 0:
+                    upper = 1
+                elif btypes[1] == BoundaryType.WALL and self.pad[dim][1] == 1:
+                    upper = 0
+                else:
+                    upper = pad[dim]
+            else:
+                upper = pad[dim]
+
+            extend_pad.append((lower, upper))
+
+        total_pad = [(s[0] + p[0], s[1] + p[1]) for s, p in zip(self.pad, extend_pad)]
+        voxels = [v + p[0] + p[1] for v, p in zip(self.voxels, extend_pad)]
 
         extended_features = subdomain_features.SubdomainFeatures(
-            self, voxels, tuple(total_pad)
+            self, tuple(voxels), tuple(total_pad)
         )
 
-        return _pad, extended_features
-
-    # def extend_padding(self, pad: tuple[int, ...]):
-    #     """Extend pad to boundaries of subdomain.
-
-    #     Padding is applied to all boundaries except 'end' and 'wall' boundary types,
-    #     where pad is limited to 1. Padding must be equal on opposite features.
-
-    #     Args:
-    #         pad (tuple[int, ...]): Pad length for each dimension.
-
-    #     Returns:
-    #         tuple: (pad, loop) pad is the new padding; loop is a dict of extended loops.
-
-    #     """
-    #     _pad = [[0, 0], [0, 0], [0, 0]]
-    #     for dim, ind in enumerate(self.index):
-    #         if ind == 0 and self.domain.boundary_types[dim][0] in {0, 1}:
-    #             _pad[dim][0] = 0
-    #         else:
-    #             _pad[dim][0] = pad[dim]
-    #         if ind == self.domain.subdomains[dim] - 1 and self.domain.boundary_types[
-    #             dim
-    #         ][1] in {0, 1}:
-    #             _pad[dim][1] = 0
-
-    #         else:
-    #             _pad[dim][1] = pad[dim]
-
-    #     total_pad = [(s[0] + p[0], s[1] + p[1]) for s, p in zip(self.pad, _pad)]
-    #     voxels = [v + p[0] + p[1] for v, p in zip(self.voxels, _pad)]
-    #     pad = tuple(tuple(sublist) for sublist in _pad)
-
-    #     # get loop for extended img
-    #     loop = {}
-    #     feature_types = ["faces", "edges", "corners"]
-    #     for feature_type in feature_types:
-    #         for feature_id, feature in self.features[feature_type].items():
-    #             if feature.neighbor_rank > -1:
-    #                 loop[feature_id] = subdomain_features.get_feature_voxels(
-    #                     feature_id=feature_id,
-    #                     voxels=voxels,
-    #                     pad=total_pad,
-    #                 )
-
-    #     return pad, loop
+        return tuple(extend_pad), extended_features
 
     def get_padded_voxels(self) -> tuple[int, ...]:
         """Calculate number of voxels in each subdomain.
@@ -214,7 +184,6 @@ class PaddedSubdomain(subdomain.Subdomain):
             self.index, self.domain.voxels, self.domain.subdomains
         )
 
-        print(_voxels, self.pad, self.reservoir_pad)
         for n, (pad, r_pad) in enumerate(zip(self.pad, self.reservoir_pad)):
             voxels[n] = _voxels[n] + pad[0] + pad[1] + r_pad[0] + r_pad[1]
 
@@ -270,17 +239,19 @@ class PaddedSubdomain(subdomain.Subdomain):
             before = reservoir_voxels if self.inlet[dim][0] else 0
             after = reservoir_voxels if self.inlet[dim][1] else 0
             pad.append((before, after))
-        return pad
+
+        return tuple(pad)
 
     @staticmethod
-    def get_start(
+    def get_padded_start(
         index: tuple[int, ...],
         domain_voxels: tuple[int, ...],
         subdomains: tuple[int, ...],
         pad: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
         reservoir_pad: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
     ) -> tuple[int, ...]:
-        """Determine the start of the subdomain. used for saving as vtk
+        """Determine the start of the subdomain. used for saving as vtk.
+
         Start is the minimum voxel ID
         Args:
             index (tuple[int, int, int]): subdomain index

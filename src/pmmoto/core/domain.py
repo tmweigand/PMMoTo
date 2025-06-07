@@ -7,17 +7,20 @@ from typing import Any
 import numpy as np
 
 
+from .boundary_types import BoundaryType
+
+
 class Domain:
     """Represent a physical simulation domain.
 
     Attributes:
         box (tuple[tuple[float, float], ...]): Physical bounds for each dimension.
-        boundary_types (tuple[tuple[int, int], ...]): Boundary types for each face.
-            0: No assumption made
-            1: Wall boundary condition
-            2: Periodic boundary condition (opposing face must also be 2)
-        inlet (tuple[tuple[int, int], ...]): Inlet flags (must be 0 boundary type).
-        outlet (tuple[tuple[int, int], ...]): Outlet flags (must be 0 boundary type).
+        boundary_types (tuple[tuple[BoundaryType, BoundaryType], ...]): Boundary types for each face.
+            END: No assumption made
+            WALL: Wall boundary condition
+            PERIODIC: Periodic boundary condition (opposing face must also be 2)
+        inlet (tuple[tuple[bool, bool], ...]): Inlet flags (must be 0 boundary type).
+        outlet (tuple[tuple[bool, bool], ...]): Outlet flags (must be 0 boundary type).
         dims (int): Number of spatial dimensions (default 3).
         volume (float): Volume of the domain.
         periodic (bool): True if any boundary is periodic.
@@ -28,10 +31,10 @@ class Domain:
     def __init__(
         self,
         box: tuple[tuple[float, float], ...],
-        boundary_types: tuple[tuple[int, int], ...] = (
-            (0, 0),
-            (0, 0),
-            (0, 0),
+        boundary_types: tuple[tuple[BoundaryType, BoundaryType], ...] = (
+            (BoundaryType.END, BoundaryType.END),
+            (BoundaryType.END, BoundaryType.END),
+            (BoundaryType.END, BoundaryType.END),
         ),
         inlet: tuple[tuple[bool, bool], ...] = (
             (False, False),
@@ -97,7 +100,7 @@ class Domain:
         periodic = False
         for d_bound in self.boundary_types:
             for n_bound in d_bound:
-                if n_bound == 2:
+                if n_bound == BoundaryType.PERIODIC:
                     periodic = True
         return periodic
 
