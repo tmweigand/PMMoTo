@@ -1,0 +1,237 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMMoTo documentation &mdash; PMMoTo 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+    <link rel="shortcut icon" href="_static/logo.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pmmoto" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PMMoTo documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pmmoto-documentation">
+<h1>PMMoTo documentation<a class="headerlink" href="#pmmoto-documentation" title="Link to this heading"></a></h1>
+<p>Add your content using <code class="docutils literal notranslate"><span class="pre">reStructuredText</span></code> syntax. See the
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html">reStructuredText</a>
+documentation for details.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pmmoto</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.html">pmmoto package</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="pmmoto">
+<h2>PMMoTo<a class="headerlink" href="#pmmoto" title="Link to this heading"></a></h2>
+<p><img alt="Tests" src="https://github.com/tmweigand/PMMoTo/actions/workflows/tests.yml/badge.svg" /></p>
+<p><img alt="logo-1-text" src="https://github.com/tmweigand/PMMoTo/assets/68024672/5f667c8f-5498-4597-9af0-76fd6a9bc59a" /></p>
+<hr class="docutils" />
+<p><strong>PMMoTo</strong> (Parallel Morphological Multiphase Toolkit) is an open-source, MPI-parallelized Python/C++ toolkit for simulating multiphase flow and morphological processes in complex porous media. PMMoTo provides efficient, scalable algorithms for generating, analyzing, and simulating pore-scale phenomena in 2D and 3D domains, with a focus on high-performance computing and extensibility.</p>
+<hr class="docutils" />
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Parallel domain decomposition</strong> using MPI for distributed-memory simulations</p></li>
+<li><p><strong>Morphological drainage and imbibition</strong> algorithms for capillary-dominated flow</p></li>
+<li><p><strong>Flexible porous media generation</strong>: random fields, sphere packs, atomistic models, and more</p></li>
+<li><p><strong>Multiphase simulation</strong>: support for multiple fluid phases and wettability</p></li>
+<li><p><strong>Distance transforms</strong>: exact Euclidean distance transforms with periodic and distributed support</p></li>
+<li><p><strong>Capillary pressure–saturation curve computation</strong> and other pore-scale analysis tools</p></li>
+<li><p><strong>Parallel VTK output</strong> for visualization in ParaView and other tools</p></li>
+<li><p><strong>Modular, extensible design</strong>: Python/C++ hybrid, easy to add new algorithms</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p><strong>Clone the repository:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/tmweigand/PMMoTo.git
+<span class="nb">cd</span><span class="w"> </span>PMMoTo
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install dependencies:</strong></p>
+<ul class="simple">
+<li><p>Python 3.8+</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mpi4py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">matplotlib</span></code></p></li>
+<li><p>(Optional) <code class="docutils literal notranslate"><span class="pre">pytest</span></code> for testing</p></li>
+</ul>
+<p>Install with pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</li>
+<li><p><strong>Build C/C++ extensions (required for performance):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>setup.py<span class="w"> </span>build_ext<span class="w"> </span>--inplace
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h3>
+<section id="example-morphological-drainage-in-an-inkbottle-geometry">
+<h4>Example: Morphological Drainage in an Inkbottle Geometry<a class="headerlink" href="#example-morphological-drainage-in-an-inkbottle-geometry" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">8</span><span class="w"> </span>python<span class="w"> </span>examples/drainage_inkbottle.py
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Output images and data are saved in <code class="docutils literal notranslate"><span class="pre">examples/</span></code> or <code class="docutils literal notranslate"><span class="pre">data_out/</span></code>.</p></li>
+<li><p>Results can be visualized with ParaView or other VTK-compatible tools.</p></li>
+</ul>
+</section>
+<section id="custom-porous-media">
+<h4>Custom Porous Media<a class="headerlink" href="#custom-porous-media" title="Link to this heading"></a></h4>
+<p>You can generate custom porous media using built-in generators (random, spheres, atoms) or your own. See <code class="docutils literal notranslate"><span class="pre">examples/drainage_inkbottle.py</span></code> and the <code class="docutils literal notranslate"><span class="pre">domain_generation</span></code> module for details.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="directory-structure">
+<h3>Directory Structure<a class="headerlink" href="#directory-structure" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">src</span><span class="o">/</span><span class="n">pmmoto</span><span class="o">/</span>
+    <span class="n">core</span><span class="o">/</span>               <span class="c1"># Core parallel and utility routines (domain, subdomain, communication, utils)</span>
+    <span class="n">domain_generation</span><span class="o">/</span>  <span class="c1"># Porous media and multiphase domain generation</span>
+    <span class="n">filters</span><span class="o">/</span>            <span class="c1"># Morphological and distance transform algorithms</span>
+    <span class="n">io</span><span class="o">/</span>                 <span class="c1"># Input/output, VTK export, data readers</span>
+    <span class="n">analysis</span><span class="o">/</span>           <span class="c1"># Analysis tools (Minkowski functionals, etc.)</span>
+    <span class="n">particles</span><span class="o">/</span>          <span class="c1"># Particle and atom data structures</span>
+    <span class="n">examples</span><span class="o">/</span>           <span class="c1"># Example scripts and workflows</span>
+    <span class="n">tests</span><span class="o">/</span>              <span class="c1"># Unit and integration tests</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h3>
+<p>Run the test suite (requires <code class="docutils literal notranslate"><span class="pre">pytest</span></code> and <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">8</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>API documentation:</strong> See docstrings in source files.</p></li>
+<li><p><strong>Examples:</strong> See the <code class="docutils literal notranslate"><span class="pre">examples/</span></code> directory for ready-to-run scripts.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="citing">
+<h3>Citing<a class="headerlink" href="#citing" title="Link to this heading"></a></h3>
+<p>If you use PMMoTo in your research, please cite the relevant publication (add citation here if available).</p>
+</section>
+<hr class="docutils" />
+<section id="license">
+<h3>License<a class="headerlink" href="#license" title="Link to this heading"></a></h3>
+<p>This project is licensed under the MIT License. See <a class="reference internal" href="#LICENSE"><span class="xref myst">LICENSE</span></a> for details.</p>
+</section>
+<hr class="docutils" />
+<section id="contact">
+<h3>Contact<a class="headerlink" href="#contact" title="Link to this heading"></a></h3>
+<p>For questions, issues, or contributions, please open an issue or pull request on <a class="reference external" href="https://github.com/tmweigand/PMMoTo">GitHub</a>.</p>
+<hr class="docutils" />
+<p><strong>PMMoTo</strong> — Parallel Morphological Multiphase Toolkit for Porous Media Simulation</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-right" title="pmmoto" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

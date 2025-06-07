@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto.core package &mdash; PMMoTo 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+    <link rel="shortcut icon" href="_static/logo.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pmmoto.domain_generation package" href="pmmoto.domain_generation.html" />
+    <link rel="prev" title="pmmoto.analysis package" href="pmmoto.analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pmmoto.html">pmmoto package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pmmoto.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pmmoto.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+          <li class="breadcrumb-item"><a href="pmmoto.html">pmmoto package</a></li>
+      <li class="breadcrumb-item active">pmmoto.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pmmoto.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pmmoto-core-package">
+<h1>pmmoto.core package<a class="headerlink" href="#pmmoto-core-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.core.boundary_types">
+<span id="pmmoto-core-boundary-types-module"></span><h2>pmmoto.core.boundary_types module<a class="headerlink" href="#module-pmmoto.core.boundary_types" title="Link to this heading"></a></h2>
+<p>boundary_types.py</p>
+<p>Possible boundary types for PMMoTo</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.boundary_types.boundary_order">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.boundary_types.</span></span><span class="sig-name descname"><span class="pre">boundary_order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boundaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundaryType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">BoundaryType</span></span></span><a class="headerlink" href="#pmmoto.core.boundary_types.boundary_order" title="Link to this definition"></a></dt>
+<dd><p>Prove the boundary type for joining boundaries.</p>
+<p>Fro edges and corners in 3D, this specifies the boundary type for the feature.
+#TODO  Get rid of this and allow edges and corners to carry all types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>boundaries</strong> (<em>list</em><em>[</em><em>BoundaryType</em><em>]</em>) – boundaries at given feature</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The one boundary type for the feature</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>BoundaryType</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="pmmoto-core-communication-module">
+<h2>pmmoto.core.communication module<a class="headerlink" href="#pmmoto-core-communication-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-domain-module">
+<h2>pmmoto.core.domain module<a class="headerlink" href="#pmmoto-core-domain-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-domain-decompose-module">
+<h2>pmmoto.core.domain_decompose module<a class="headerlink" href="#pmmoto-core-domain-decompose-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-domain-discretization-module">
+<h2>pmmoto.core.domain_discretization module<a class="headerlink" href="#pmmoto-core-domain-discretization-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-features-module">
+<h2>pmmoto.core.features module<a class="headerlink" href="#pmmoto-core-features-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.core.logging">
+<span id="pmmoto-core-logging-module"></span><h2>pmmoto.core.logging module<a class="headerlink" href="#module-pmmoto.core.logging" title="Link to this heading"></a></h2>
+<p>logging.py</p>
+<p>Setup of the logger</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.core.logging.MPIFormatter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pmmoto.core.logging.</span></span><span class="sig-name descname"><span class="pre">MPIFormatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.core.logging.MPIFormatter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Formatter</span></code></p>
+<p>Custom formatter that includes MPI rank</p>
+<p>Initialize the formatter with specified format strings.</p>
+<p>Initialize the formatter either with the specified format string, or a
+default as described above. Allow for specialized date formatting with
+the optional datefmt argument. If datefmt is omitted, you get an
+ISO8601-like (or RFC 3339-like) format.</p>
+<p>Use a style parameter of ‘%’, ‘{’ or ‘$’ to specify that you want to
+use one of %-formatting, <code class="xref py py-meth docutils literal notranslate"><span class="pre">str.format()</span></code> (<code class="docutils literal notranslate"><span class="pre">{}</span></code>) formatting or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">string.Template</span></code> formatting in your format string.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 3.2: </span>Added the <code class="docutils literal notranslate"><span class="pre">style</span></code> parameter.</p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.core.logging.MPIFormatter.format">
+<span class="sig-name descname"><span class="pre">format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LogRecord</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pmmoto.core.logging.MPIFormatter.format" title="Link to this definition"></a></dt>
+<dd><p>Add mpi information</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.logging.get_logger">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.logging.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="headerlink" href="#pmmoto.core.logging.get_logger" title="Link to this definition"></a></dt>
+<dd><p>Get or create the logger instance</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.logging.setup_logger">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.logging.</span></span><span class="sig-name descname"><span class="pre">setup_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pmmoto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'logs'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="headerlink" href="#pmmoto.core.logging.setup_logger" title="Link to this definition"></a></dt>
+<dd><p>Configure logging for both serial and parallel runs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Logger name (default: “pmmoto”)</p></li>
+<li><p><strong>log_dir</strong> – Directory to store log files (default: “logs”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured logger instance</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.core.orientation">
+<span id="pmmoto-core-orientation-module"></span><h2>pmmoto.core.orientation module<a class="headerlink" href="#module-pmmoto.core.orientation" title="Link to this heading"></a></h2>
+<p>orientation.py</p>
+<p>Defines orientation and feature indexing utilities for PMMoTo subdomains.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.orientation.get_boundary_id">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.orientation.</span></span><span class="sig-name descname"><span class="pre">get_boundary_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boundary_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#pmmoto.core.orientation.get_boundary_id" title="Link to this definition"></a></dt>
+<dd><p>Determine boundary ID from a boundary index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>boundary_index</strong> (<em>list</em><em>[</em><em>int</em><em>] or </em><em>tuple</em><em>[</em><em>int</em><em>]</em>) – Boundary index for [x, y, z],</p></li>
+<li><p><strong>-1</strong> (<em>values</em>)</p></li>
+<li><p><strong>0</strong></p></li>
+<li><p><strong>1.</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Encoded boundary ID.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="pmmoto-core-pmmoto-module">
+<h2>pmmoto.core.pmmoto module<a class="headerlink" href="#pmmoto-core-pmmoto-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-subdomain-module">
+<h2>pmmoto.core.subdomain module<a class="headerlink" href="#pmmoto-core-subdomain-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-subdomain-features-module">
+<h2>pmmoto.core.subdomain_features module<a class="headerlink" href="#pmmoto-core-subdomain-features-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-subdomain-padded-module">
+<h2>pmmoto.core.subdomain_padded module<a class="headerlink" href="#pmmoto-core-subdomain-padded-module" title="Link to this heading"></a></h2>
+</section>
+<section id="pmmoto-core-subdomain-verlet-module">
+<h2>pmmoto.core.subdomain_verlet module<a class="headerlink" href="#pmmoto-core-subdomain-verlet-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.core.utils">
+<span id="pmmoto-core-utils-module"></span><h2>pmmoto.core.utils module<a class="headerlink" href="#module-pmmoto.core.utils" title="Link to this heading"></a></h2>
+<p>Core utility functions for PMMoTo.</p>
+<p>This module provides utility functions for array manipulation, validation,
+MPI-aware operations, and subdomain/grid management.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.bin_image">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">bin_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Subdomain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.core.utils.bin_image" title="Link to this definition"></a></dt>
+<dd><p>Count the number of times each unique element occurs in the input array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Input array.</p></li>
+<li><p><strong>own</strong> (<em>bool</em>) – If True, use only owned voxels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping from element value to count.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.constant_pad_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">constant_pad_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.core.utils.constant_pad_img" title="Link to this definition"></a></dt>
+<dd><p>Pad a grid with a constant value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Input array.</p></li>
+<li><p><strong>pad</strong> (<em>list</em><em> or </em><em>tuple</em>) – Padding amounts for each dimension.</p></li>
+<li><p><strong>pad_value</strong> (<em>scalar</em>) – Value to use for padding.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The padded array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.determine_maximum">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">determine_maximum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.core.utils.determine_maximum" title="Link to this definition"></a></dt>
+<dd><p>Determine the global maximum of an input image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>img</strong> (<em>np.ndarray</em>) – Input array.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Global maximum value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>scalar</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.own_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">own_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Subdomain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own_voxels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.core.utils.own_img" title="Link to this definition"></a></dt>
+<dd><p>Return array with only nodes owned by the current process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object with get_own_voxels method.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Input array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of owned voxels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.phase_exists">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">phase_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#pmmoto.core.utils.phase_exists" title="Link to this definition"></a></dt>
+<dd><p>Determine if a phase exists in the grid (globally).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> (<em>np.ndarray</em>) – Input array.</p></li>
+<li><p><strong>phase</strong> (<em>int</em>) – Phase value to check.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if phase exists, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.core.utils.unpad">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.core.utils.</span></span><span class="sig-name descname"><span class="pre">unpad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.core.utils.unpad" title="Link to this definition"></a></dt>
+<dd><p>Remove padding from a NumPy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – The padded array.</p></li>
+<li><p><strong>pad</strong> (<em>list</em><em> or </em><em>tuple</em>) – Padding</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The unpadded array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="pmmoto-core-voxels-module">
+<h2>pmmoto.core.voxels module<a class="headerlink" href="#pmmoto-core-voxels-module" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmmoto.analysis.html" class="btn btn-neutral float-left" title="pmmoto.analysis package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmmoto.domain_generation.html" class="btn btn-neutral float-right" title="pmmoto.domain_generation package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
