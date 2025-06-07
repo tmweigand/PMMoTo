@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
+from .boundary_types import BoundaryType
 from .orientation import get_boundary_id
 from .orientation import FEATURE_MAP
 
@@ -26,7 +27,7 @@ class Feature(object):
         dim: int,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: str,
+        boundary_type: BoundaryType,
         global_boundary: bool | None = None,
     ):
         """Initialize a Feature.
@@ -35,6 +36,7 @@ class Feature(object):
             feature_id: Feature identifier (tuple).
             neighbor_rank: Neighboring process rank.
             boundary_type: Boundary type (e.g., "wall", "periodic").
+
             global_boundary: Whether this is a global boundary (bool).
 
         """
@@ -61,14 +63,14 @@ class Feature(object):
 
         return get_boundary_id(index)
 
-    def is_periodic(self, boundary_type: str) -> bool:
+    def is_periodic(self, boundary_type: BoundaryType) -> bool:
         """Determine if a feature is periodic
 
         Returns:
             bool: True if periodic
 
         """
-        return boundary_type == "periodic"
+        return boundary_type == BoundaryType.PERIODIC
 
     def get_voxels(
         self,
@@ -96,9 +98,9 @@ class Feature(object):
                     self.neighbor[i] = [p_before, length - p_after]
 
     def compute_lower_face(self, lower_pad: int) -> list[int]:
-        if lower_pad and self.boundary_type != "wall":
+        if lower_pad and self.boundary_type != BoundaryType.WALL:
             return [lower_pad, lower_pad * 2]
-        elif lower_pad and self.boundary_type == "wall":
+        elif lower_pad and self.boundary_type == BoundaryType.WALL:
             return [1, 2]
         else:
             return [0, 1]
@@ -108,15 +110,15 @@ class Feature(object):
         length: int,
         upper_pad: int,
     ) -> list[int]:
-        if upper_pad and self.boundary_type != "wall":
+        if upper_pad and self.boundary_type != BoundaryType.WALL:
             return [length - upper_pad * 2, length - upper_pad]
-        elif upper_pad and self.boundary_type == "wall":
+        elif upper_pad and self.boundary_type == BoundaryType.WALL:
             return [length - 2, length - 1]
         else:
             return [length - 1, length]
 
     def compute_lower_neighbor(self, lower_pad: int) -> list[int]:
-        if self.boundary_type == "wall":
+        if self.boundary_type == BoundaryType.WALL:
             return [0, 1]
         else:
             return [0, lower_pad]
@@ -126,7 +128,7 @@ class Feature(object):
         length: int,
         upper_pad: int,
     ) -> list[int]:
-        if self.boundary_type == "wall":
+        if self.boundary_type == BoundaryType.WALL:
             return [length - 1, length]
         else:
             return [length - upper_pad, length]
@@ -139,7 +141,7 @@ class Face(Feature):
         self,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: str,
+        boundary_type: BoundaryType,
         global_boundary: bool | None = None,
         inlet: bool | None = None,
         outlet: bool | None = None,
@@ -164,7 +166,6 @@ class Face(Feature):
             global_boundary,
         )
         self.info: FaceInfo = FEATURE_MAP.faces[feature_id]
-        self.opp_info: FaceInfo = FEATURE_MAP.faces[self.info.opp]
         self.global_boundary = global_boundary
         self.periodic = self.is_periodic(boundary_type)
         self.inlet = inlet
@@ -271,7 +272,7 @@ class Edge(Feature):
         self,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: str,
+        boundary_type: BoundaryType,
         global_boundary: bool | None = None,
     ):
         """Initialize an Edge feature.
@@ -288,7 +289,6 @@ class Edge(Feature):
             FEATURE_MAP.dim, feature_id, neighbor_rank, boundary_type, global_boundary
         )
         self.info: EdgeInfo = FEATURE_MAP.edges[feature_id]
-        self.opp_info: EdgeInfo = FEATURE_MAP.edges[self.info.opp]
         self.periodic = self.is_periodic(boundary_type)
         self.global_boundary = global_boundary
         self.periodic_correction = self.get_periodic_correction()
@@ -316,7 +316,7 @@ class Corner(Feature):
         self,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: str,
+        boundary_type: BoundaryType,
         global_boundary: bool | None = None,
     ):
         """Initialize a Corner feature.
@@ -332,7 +332,6 @@ class Corner(Feature):
             FEATURE_MAP.dim, feature_id, neighbor_rank, boundary_type, global_boundary
         )
         self.info: CornerInfo = FEATURE_MAP.corners[feature_id]
-        self.opp_info: CornerInfo = FEATURE_MAP.corners[self.info.opp]
         self.periodic = self.is_periodic(boundary_type)
 
         self.periodic_correction = self.get_periodic_correction()

@@ -1,4 +1,4 @@
-"""interface to _bins.pyc"""
+"""interface to _bins.pyx"""
 
 from typing import Any
 import numpy as np

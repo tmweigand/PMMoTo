@@ -13,7 +13,9 @@ from libcpp cimport bool
 from libcpp cimport tuple
 from libcpp.pair cimport pair
 from libcpp.unordered_map cimport unordered_map
-from numpy cimport npy_intp, uint64_t, int64_t, uint8_t
+from numpy cimport int8_t, int16_t, int32_t, int64_t
+from numpy cimport uint8_t, uint16_t, uint32_t, uint64_t
+from numpy cimport npy_intp
 
 
 __all__ = [
@@ -22,10 +24,28 @@ __all__ = [
     "get_nearest_boundary_index_face_2d",
     "determine_index_nearest_boundary_1d",
     "merge_matched_voxels",
-    "renumber_grid",
+    "renumber_img",
     "get_id",
-    "gen_grid_to_label_map"
+    "gen_img_to_label_map"
 ]
+
+ctypedef fused INT:
+    int8_t
+    int16_t
+    int32_t
+    int64_t
+
+ctypedef fused UINT:
+    uint8_t
+    uint16_t
+    uint32_t
+    uint64_t
+    unsigned long
+
+
+ctypedef fused INTS:
+    UINT
+    INT
 
 
 cdef struct match_test:
@@ -256,7 +276,6 @@ def get_nearest_boundary_index_face(
                 forward=forward
             )
 
-
     return index_array
 
 
@@ -325,8 +344,6 @@ def merge_matched_voxels(all_match_data):
     for matches_by_rank in all_match_data:
         
         for key, match in matches_by_rank.items():
-            if key == 'label_count':
-                continue
             match['visited'] = False
             matches[key] = match
             local_global_map[key] = {}
@@ -362,7 +379,7 @@ def merge_matched_voxels(all_match_data):
     return local_global_map, global_id
 
 
-cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
+cpdef uint64_t get_id(tuple[int,...] index, tuple[int,...] voxels):
     """
     Determine the ID for a voxel.
     Input:
@@ -375,9 +392,9 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
     cdef uint64_t index_0, index_1, index_2
 
     # Use modulo to handle periodic boundary conditions
-    index_0 = mod(x[0], voxels[0])
-    index_1 = mod(x[1], voxels[1])
-    index_2 = mod(x[2], voxels[2])
+    index_0 = mod(index[0], voxels[0])
+    index_1 = mod(index[1], voxels[1])
+    index_2 = mod(index[2], voxels[2])
 
     cdef uint64_t id = index_0 * voxels[1] * voxels[2] + index_1 * voxels[2] + index_2
 
@@ -385,7 +402,7 @@ cpdef uint64_t get_id(int64_t[:] x, uint64_t[:] voxels):
 
 
 def get_boundary_data(
-    np.uint64_t [:, :, :] grid,
+    np.uint64_t [:, :, :] img,
     int n_labels,
     dict loop_dict,
     tuple domain_voxels,
@@ -401,9 +418,9 @@ def get_boundary_data(
         Py_ssize_t i, j, k
         int label
         vector[bool] boundary
-        unordered_map[int, vector[Py_ssize_t]] b_nodes
+        unordered_map[int, vector[uint64_t]] b_nodes
 
-        int64_t[:] _index = np.zeros(3, dtype=np.int64)
+        uint64_t[:] _index = np.zeros(3, dtype=np.uint64)
         uint64_t[:] domain_nodes = np.array(domain_voxels, dtype = np.uint64)
     for _ in range(0, n_labels):
         boundary.push_back(False)
@@ -412,7 +429,7 @@ def get_boundary_data(
         for i in range(loop[0][0], loop[0][1]):
             for j in range(loop[1][0], loop[1][1]):
                 for k in range(loop[2][0], loop[2][1]):
-                    label = grid[i, j, k]
+                    label = img[i, j, k]
                     boundary[label] = True
                     _index[0] = i+index[0]
                     _index[1] = j+index[1]
@@ -429,9 +446,9 @@ def get_boundary_data(
     return output
 
 
-def gen_grid_to_label_map(
-    uint8_t [:, :, :] img,
-    uint64_t [:, :, :] labels
+def gen_img_to_label_map(
+    INTS [:, :, :] img,
+    INTS [:, :, :] labels
 ):
     """
     This function provides a mapping between two images. For our purposes,
@@ -440,8 +457,26 @@ def gen_grid_to_label_map(
     """
 
     cdef:
+        int i, j, k
+        unordered_map[INTS, INTS] img_to_label_map
+        int sx = img.shape[0]
+        int sy = img.shape[1]
+        int sz = img.shape[2]
+
+    for i in range(0, sx):
+        for j in range(0, sy):
+            for k in range(0, sz):
+                img_to_label_map[labels[i, j, k]] = img[i, j, k]
+
+    return img_to_label_map
+
+
+def renumber_img(INTS[:, :, :] img, unordered_map[INTS, INTS] map):
+    """
+    Renumber a img in-place based on map.
+    """
+    cdef:
         Py_ssize_t i, j, k
-        unordered_map[int, int] grid_to_label_map
         Py_ssize_t sx = img.shape[0]
         Py_ssize_t sy = img.shape[1]
         Py_ssize_t sz = img.shape[2]
@@ -449,44 +484,26 @@ def gen_grid_to_label_map(
     for i in range(0, sx):
         for j in range(0, sy):
             for k in range(0, sz):
-                grid_to_label_map[labels[i, j, k]] = img[i, j, k]
+                label = img[i, j, k]
+                img[i, j, k] = map[label]
 
-    return grid_to_label_map
+    return img
 
 
-def renumber_grid(uint64_t [:, :, :] grid, unordered_map[int, int] map):
+def count_label_voxels(INTS [:, :, :] img, unordered_map[int, int] map):
     """
-    Renumber a grid in-place based on map.
+    Count labels
     """
     cdef:
         Py_ssize_t i, j, k
-        Py_ssize_t sx = grid.shape[0]
-        Py_ssize_t sy = grid.shape[1]
-        Py_ssize_t sz = grid.shape[2]
+        Py_ssize_t sx = img.shape[0]
+        Py_ssize_t sy = img.shape[1]
+        Py_ssize_t sz = img.shape[2]
 
     for i in range(0, sx):
         for j in range(0, sy):
             for k in range(0, sz):
-                label = grid[i, j, k]
-                grid[i, j, k] = map[label]
-
-    return grid
-
-
-def count_label_voxels(uint64_t [:, :, :] grid, unordered_map[int, int] map):
-    """
-    Renumber a grid in-place based on map.
-    """
-    cdef:
-        Py_ssize_t i, j, k
-        Py_ssize_t sx = grid.shape[0]
-        Py_ssize_t sy = grid.shape[1]
-        Py_ssize_t sz = grid.shape[2]
-
-    for i in range(0, sx):
-        for j in range(0, sy):
-            for k in range(0, sz):
-                label = grid[i, j, k]
+                label = img[i, j, k]
                 map[label] += 1
 
     return map

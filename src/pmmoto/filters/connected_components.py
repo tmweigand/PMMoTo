@@ -4,9 +4,9 @@ Provides functions for labeling connected regions, mapping labels to phases,
 and extracting inlet/outlet-connected regions in distributed or periodic domains.
 """
 
-import numpy as np
-import cc3d
 from collections import defaultdict
+import cc3d
+import numpy as np
 from pmmoto.core import voxels
 from pmmoto.core import communication
 
@@ -93,7 +93,7 @@ def gen_img_to_label_map(img, labeled_img):
         dict: Mapping from label to phase.
 
     """
-    return voxels.gen_grid_to_label_map(
+    return voxels.gen_img_to_label_map(
         img,
         labeled_img,
     )

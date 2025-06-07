@@ -10,6 +10,7 @@ Exports:
 
 from .core.logging import get_logger
 from .core.pmmoto import initialize
+from .core.boundary_types import BoundaryType
 from . import core
 from . import analysis
 from . import domain_generation
@@ -23,6 +24,7 @@ logger = get_logger()
 __all__ = [
     "logger",
     "initialize",
+    "BoundaryType",
     "core",
     "analysis",
     "domain_generation",

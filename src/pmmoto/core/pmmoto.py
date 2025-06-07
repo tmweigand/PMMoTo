@@ -1,15 +1,20 @@
 """pmmoto.py"""
 
+from __future__ import annotations
+from typing import TypeVar
 import numpy as np
+from numpy.typing import NDArray
 
+from .boundary_types import BoundaryType
 from . import domain_decompose
 from . import domain
 from . import domain_discretization
-from . import subdomain
-from . import subdomain_padded
-from . import subdomain_verlet
+from .subdomain import Subdomain
+from .subdomain_padded import PaddedSubdomain
+from .subdomain_verlet import VerletSubdomain
 from . import utils
 
+T = TypeVar("T", bound=np.generic)
 
 __all__ = ["initialize", "deconstruct_grid"]
 
@@ -18,7 +23,11 @@ def initialize(
     voxels: tuple[int, ...],
     box: tuple[tuple[float, float], ...] = ((0, 1.0), (0, 1.0), (0, 1)),
     subdomains: tuple[int, ...] = (1, 1, 1),
-    boundary_types: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+    boundary_types: tuple[tuple[BoundaryType, BoundaryType], ...] = (
+        (BoundaryType.END, BoundaryType.END),
+        (BoundaryType.END, BoundaryType.END),
+        (BoundaryType.END, BoundaryType.END),
+    ),
     inlet: tuple[tuple[bool, bool], ...] = (
         (False, False),
         (False, False),
@@ -33,11 +42,7 @@ def initialize(
     rank: int = 0,
     pad: tuple[int, ...] = (1, 1, 1),
     verlet_domains: None | tuple[int, ...] = None,
-) -> (
-    subdomain.Subdomain
-    | subdomain_padded.PaddedSubdomain
-    | subdomain_verlet.VerletSubdomain
-):
+) -> Subdomain | PaddedSubdomain | VerletSubdomain:
     """Initialize PMMoTo domain and subdomain classes and check for valid inputs."""
     # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
 
@@ -58,18 +63,16 @@ def initialize(
     )
 
     if pad == (0, 0, 0) and verlet_domains is None:
-        _subdomain = subdomain.Subdomain(
-            rank=rank, decomposed_domain=pmmoto_decomposed_domain
-        )
+        _subdomain = Subdomain(rank=rank, decomposed_domain=pmmoto_decomposed_domain)
     elif verlet_domains is None:
-        _subdomain = subdomain_padded.PaddedSubdomain(
+        _subdomain = PaddedSubdomain(
             rank=rank,
             decomposed_domain=pmmoto_decomposed_domain,
             pad=pad,
             reservoir_voxels=reservoir_voxels,
         )
     elif verlet_domains is not None:
-        _subdomain = subdomain_verlet.VerletSubdomain.from_subdomain(
+        _subdomain = VerletSubdomain(
             rank=rank,
             decomposed_domain=pmmoto_decomposed_domain,
             pad=pad,
@@ -81,13 +84,15 @@ def initialize(
 
 
 def deconstruct_grid(
-    subdomain,
-    img,
-    subdomains,
-    rank=None,
-    pad=(1, 1, 1),
-    reservoir_voxels=0,
-):
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    subdomains: tuple[int, ...],
+    rank: None | int = None,
+    pad: tuple[int, ...] = (1, 1, 1),
+    reservoir_voxels: int = 0,
+) -> tuple[
+    PaddedSubdomain | dict[int, PaddedSubdomain], NDArray[T] | dict[int, NDArray[T]]
+]:
     """Deconstruct the grid from a single process to multiple subdomains and images
 
     The shape of the img must equal subdomain.domain.voxels!
@@ -108,37 +113,39 @@ def deconstruct_grid(
     )
 
     if rank is not None:
-        padded_subdomain = subdomain_padded.PaddedSubdomain(
+        subdomain_out_single = PaddedSubdomain(
             rank=rank,
             decomposed_domain=pmmoto_decomposed_domain,
             pad=pad,
             reservoir_voxels=reservoir_voxels,
         )
-        local_grid = utils.decompose_img(
+        local_img_single = utils.decompose_img(
             img=img,
-            start=padded_subdomain.start,
-            shape=padded_subdomain.voxels,
+            start=subdomain_out_single.start,
+            shape=subdomain_out_single.voxels,
         )
 
-        local_grid = padded_subdomain.set_wall_bcs(local_grid)
+        local_img_single = subdomain_out_single.set_wall_bcs(local_img_single)
+
+        return subdomain_out_single, local_img_single
 
     else:
-        padded_subdomain = {}
-        local_grid = {}
+        subdomain_out: dict[int, PaddedSubdomain] = {}
+        local_img: dict[int, NDArray[T]] = {}
         for n in range(0, num_procs):
-            padded_subdomain[n] = subdomain_padded.PaddedSubdomain(
+            subdomain_out[n] = PaddedSubdomain(
                 rank=n,
                 decomposed_domain=pmmoto_decomposed_domain,
                 pad=pad,
                 reservoir_voxels=reservoir_voxels,
             )
 
-            local_grid[n] = utils.decompose_img(
+            local_img[n] = utils.decompose_img(
                 img=img,
-                start=padded_subdomain[n].start,
-                shape=padded_subdomain[n].voxels,
+                start=subdomain_out[n].start,
+                shape=subdomain_out[n].voxels,
             )
 
-            local_grid[n] = padded_subdomain[n].set_wall_bcs(local_grid[n])
+            local_img[n] = subdomain_out[n].set_wall_bcs(local_img[n])
 
-    return padded_subdomain, local_grid
+        return subdomain_out, local_img

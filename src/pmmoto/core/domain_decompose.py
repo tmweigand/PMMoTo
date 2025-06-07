@@ -8,8 +8,9 @@ from typing import Any, TYPE_CHECKING
 from typing_extensions import Self
 import numpy as np
 from numpy.typing import NDArray
+from .boundary_types import BoundaryType
 from . import domain_discretization
-from . import orientation
+from .orientation import FEATURE_MAP
 
 if TYPE_CHECKING:
     from .domain_discretization import DiscretizedDomain
@@ -72,25 +73,26 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
         _map = -np.ones([sd + 2 for sd in self.subdomains], dtype=np.int64)
         _map[1:-1, 1:-1, 1:-1] = np.arange(self.num_subdomains).reshape(self.subdomains)
 
-        if self.boundary_types[0][0] == 1:
+        if self.boundary_types[0][0] == BoundaryType.WALL:
             _map[0, :, :] = -2
-        if self.boundary_types[0][1] == 1:
+        if self.boundary_types[0][1] == BoundaryType.WALL:
             _map[-1, :, :] = -2
-        if self.boundary_types[1][0] == 1:
+        if self.boundary_types[1][0] == BoundaryType.WALL:
             _map[:, 0, :] = -2
-        if self.boundary_types[1][1] == 1:
+        if self.boundary_types[1][1] == BoundaryType.WALL:
             _map[:, -1, :] = -2
-        if self.boundary_types[2][0] == 1:
+        if self.boundary_types[2][0] == BoundaryType.WALL:
             _map[:, :, 0] = -2
-        if self.boundary_types[2][1] == 1:
+        if self.boundary_types[2][1] == BoundaryType.WALL:
             _map[:, :, -1] = -2
-        if self.boundary_types[0][0] == 2:
+
+        if self.boundary_types[0][0] == BoundaryType.PERIODIC:
             _map[0, :, :] = _map[-2, :, :]
             _map[-1, :, :] = _map[1, :, :]
-        if self.boundary_types[1][0] == 2:
+        if self.boundary_types[1][0] == BoundaryType.PERIODIC:
             _map[:, 0, :] = _map[:, -2, :]
             _map[:, -1, :] = _map[:, 1, :]
-        if self.boundary_types[2][0] == 2:
+        if self.boundary_types[2][0] == BoundaryType.PERIODIC:
             _map[:, :, 0] = _map[:, :, -2]
             _map[:, :, -1] = _map[:, :, 1]
 
@@ -109,13 +111,10 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
         """
         neighbor_ranks: dict[tuple[int, ...], int] = {}
-        feature_types = ["faces", "edges", "corners"]
-        features = orientation.FaceEdgeCornerMap(dim=3).features
-        for feature_type in feature_types:
-            for feature_index in features[feature_type].keys():
-                neighbor_ranks[feature_index] = self._get_neighbor_ranks(
-                    sd_index, feature_index
-                )
+
+        feature_ids = FEATURE_MAP.collect_feature_ids()
+        for _id in feature_ids:
+            neighbor_ranks[_id] = self._get_neighbor_ranks(sd_index, _id)
         return neighbor_ranks
 
     def _get_neighbor_ranks(

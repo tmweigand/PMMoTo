@@ -7,9 +7,9 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, TypeVar
 import numpy as np
 from numpy.typing import NDArray
-from . import orientation
-from ..core import domain_discretization
-from ..core import subdomain_features
+from .boundary_types import BoundaryType
+from . import domain_discretization
+from . import subdomain_features
 
 if TYPE_CHECKING:
     from .domain_decompose import DecomposedDomain
@@ -40,10 +40,9 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         )
         self.box = self.get_box(self.voxels)
         self.global_boundary = self.get_global_boundary()
+        self.boundary_types = self.get_boundary_types()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
-        self.feature_boundary_types = self.get_boundary_types(
-            self.global_boundary, self.neighbor_ranks
-        )
+
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
         self.start = self.get_start(
@@ -51,7 +50,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         )
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
-        self.features = subdomain_features.SubdomainFeatures(self)
+        self.features = subdomain_features.SubdomainFeatures(self, self.voxels)
 
     @staticmethod
     def get_index(rank: int, subdomains: tuple[int, ...]) -> tuple[int, ...]:
@@ -131,86 +130,57 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(length)
 
-    def get_global_boundary(self) -> dict[tuple[int, ...], bool]:
-        """Determine if the features are on the domain boundary.
+    def get_global_boundary(self) -> tuple[tuple[bool, bool], ...]:
+        """Determine if the subdomain is on the domain boundary.
 
-        For a feature to be on a domain boundary, the subdomain index must contain
+        For a subdomain to be on a domain boundary, the subdomain index must contain
         either 0 or the number of subdomains.
 
         Returns:
-            dict: Mapping from feature to boolean indicating global boundary.
+            tuple[tuple[bool,bool],...]: Tuple of bools whether face is on boundary
 
         """
-        global_boundary = {}
-        features = orientation.get_features()
-        for feature in features:
-            boundary = True
-            for ind, f_id, subdomains in zip(
-                self.index, feature, self.domain.subdomains
-            ):
-                ### Conditions for a domain boundary feature
-                if (
-                    f_id == 0
-                    or ((ind == 0) and (f_id == -1))
-                    or ((ind == subdomains - 1) and (f_id == 1))
-                ):
-                    continue
-                else:
-                    boundary = False
-
-            if boundary:
-                global_boundary[feature] = True
+        global_boundary: list[tuple[bool, bool]] = []
+        for ind, subdomains in zip(self.index, self.domain.subdomains):
+            ### Conditions for a domain boundary feature
+            if ind == 0:
+                lower = True
             else:
-                global_boundary[feature] = False
+                lower = False
 
-        return global_boundary
+            if ind == subdomains - 1:
+                upper = True
+            else:
+                upper = False
 
-    def get_boundary_types(
-        self,
-        global_boundary: dict[tuple[int, ...], bool],
-        neighbor_ranks: dict[tuple[int, ...], int],
-    ) -> dict[tuple[int, ...], str]:
-        """Determine the boundary type for each feature in the computational domain.
+            global_boundary.append((lower, upper))
 
-        Args:
-            global_boundary (dict): Mapping features to boolean for global boundary.
-            neighbor_ranks (dict): Mapping features to neighbor process rank.
+        return tuple(global_boundary)
+
+    def get_boundary_types(self) -> tuple[tuple[BoundaryType, BoundaryType], ...]:
+        """Determine the boundary type for each subdomain.
 
         Returns:
-            dict: Mapping each feature to its boundary type
-                ("end", "wall", "periodic", "internal").
+            tuple[tuple[str,str],...]: Tuple specifying boundary type for each face
 
         """
-        boundary_type: dict[tuple[int, ...], str] = {}
-        features = orientation.get_features()
-        for feature in features:
-            if global_boundary.get(feature, False) or neighbor_ranks[feature] < 0:
-                _boundary_type = []
-                for ind, f_id, subdomains, boundary_types in zip(
-                    self.index,
-                    feature,
-                    self.domain.subdomains,
-                    self.domain.boundary_types,
-                ):
-                    if (ind == 0) and (f_id == -1):
-                        _boundary_type.append(boundary_types[0])
-                    elif (ind == subdomains - 1) and (f_id == 1):
-                        _boundary_type.append(boundary_types[1])
-
-                _boundary_type.sort()
-
-                if _boundary_type[0] == 0:
-                    boundary_type[feature] = "end"
-                elif _boundary_type[0] == 1:
-                    boundary_type[feature] = "wall"
-                elif _boundary_type[0] == 2:
-                    boundary_type[feature] = "periodic"
-                else:
-                    raise Exception
+        boundary_type: list[tuple[BoundaryType, BoundaryType]] = []
+        for ind, subdomain, b_types in zip(
+            self.index, self.domain.subdomains, self.domain.boundary_types
+        ):
+            if ind == 0:
+                lower = b_types[0]
             else:
-                boundary_type[feature] = "internal"
+                lower = BoundaryType.INTERNAL
 
-        return boundary_type
+            if ind == subdomain - 1:
+                upper = b_types[1]
+            else:
+                upper = BoundaryType.INTERNAL
+
+            boundary_type.append((lower, upper))
+
+        return tuple(boundary_type)
 
     def get_inlet(self) -> tuple[tuple[bool, bool], ...]:
         """Determine if the subdomain lies on the inlet boundaries.
@@ -230,13 +200,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             upper = False
 
             # Lower Domain face
-            if ind == 0 and self.domain.boundary_types[dim][0] == 0:
+            if ind == 0 and self.domain.boundary_types[dim][0] == BoundaryType.END:
                 lower = bool(self.domain.inlet[dim][0])
 
             # Upper Domain face
             if (
                 ind == self.domain.subdomains[dim] - 1
-                and self.domain.boundary_types[dim][1] == 0
+                and self.domain.boundary_types[dim][1] == BoundaryType.END
             ):
                 upper = bool(self.domain.inlet[dim][1])
 
@@ -262,13 +232,13 @@ class Subdomain(domain_discretization.DiscretizedDomain):
             upper = False
 
             # Lower face
-            if ind == 0 and self.domain.boundary_types[dim][0] == 0:
+            if ind == 0 and self.domain.boundary_types[dim][0] == BoundaryType.END:
                 lower = bool(self.domain.outlet[dim][0])
 
             # Upper face
             if (
                 ind == self.domain.subdomains[dim] - 1
-                and self.domain.boundary_types[dim][1] == 0
+                and self.domain.boundary_types[dim][1] == BoundaryType.END
             ):
                 upper = bool(self.domain.outlet[dim][1])
 
@@ -310,7 +280,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         """
         for feature in self.features.faces.values():
-            if feature.boundary_type == "wall":
+            if feature.boundary_type == BoundaryType.WALL:
                 img[feature.slice] = 0
 
         return img
@@ -395,8 +365,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         Returns: bool if and feature is periodic
         """
-        for feature in self.feature_boundary_types.values():
-            if feature == "periodic":
+        for b_type in self.boundary_types:
+            if b_type[0] == BoundaryType.PERIODIC or b_type[1] == BoundaryType.PERIODIC:
                 return True
 
         return False

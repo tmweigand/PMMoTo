@@ -1,11 +1,19 @@
 """communication.py"""
 
-from typing import TypeVar, List, Optional, Union
+from __future__ import annotations
+from typing import Any, TypeVar
 import numpy as np
+from numpy.typing import NDArray
 from mpi4py import MPI
-from . import utils
 from .logging import get_logger
 
+from . import utils
+from .subdomain import Subdomain
+from .subdomain_padded import PaddedSubdomain
+from .subdomain_verlet import VerletSubdomain
+from .subdomain_features import SubdomainFeatures
+
+T = TypeVar("T", bound=np.generic)
 
 __all__ = [
     "all_gather",
@@ -33,12 +41,10 @@ _OP_MAP: dict[str, MPI.Op] = {
     "maxloc": MPI.MAXLOC,
 }
 
-T = TypeVar("T")
-
 logger = get_logger()
 
 
-def all_gather(data: T) -> List[T]:
+def all_gather(data: Any) -> list[Any]:
     """Gather data from all processes and return the combined result.
 
     Args:
@@ -51,7 +57,7 @@ def all_gather(data: T) -> List[T]:
     return comm.allgather(data)
 
 
-def gather(data: T, root: int = 0) -> Optional[List[T]]:
+def gather(data: T, root: int = 0) -> list[T] | None:
     """Gather data from all processes to the root process.
 
     Args:
@@ -65,8 +71,8 @@ def gather(data: T, root: int = 0) -> Optional[List[T]]:
     return comm.gather(data, root=root)
 
 
-def all_reduce(data: T, op: Union[str, MPI.Op] = "sum") -> T:
-    """Reduce data from all processes using the given operation and distribute the result.
+def all_reduce(data: Any, op: str | MPI.Op = "sum") -> Any:
+    """Reduce data from all processes using given operation and distribute result.
 
     Args:
         data: Local data to reduce (e.g., int, float, NumPy array).
@@ -85,57 +91,74 @@ def all_reduce(data: T, op: Union[str, MPI.Op] = "sum") -> T:
         except KeyError:
             raise ValueError(f"Unsupported reduction operation string: {op!r}")
 
-    elif not isinstance(op, MPI.Op):
-        raise TypeError("Operation must be an MPI.Op or string alias")
-
-    return comm.allreduce(data, op=op)
+    result = comm.allreduce(data, op=op)
+    return result
 
 
-def update_buffer(subdomain, img, buffer=None):
-    """Update the buffer on subdomains and account for periodic boundary conditions.
+def update_buffer(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+) -> NDArray[T]:
+    """Update the buffer on subdomains based on their current feature info.
 
     Args:
-        subdomain (object): The subdomain object containing features and neighbor
-        information.
-        img (numpy.ndarray): The grid data to be updated.
-        buffer (list[int], optional): The pad to add to img in each dimension.
+        subdomain: The subdomain object.
+        img: The grid data to be updated.
 
     Returns:
-        numpy.ndarray or tuple: The updated grid with the buffer data,
-                                and pad if buffer is not None.
+        The updated grid.
 
     """
-    if buffer is not None:
-        # Ensure buffer does not span more than 1 subdomain
-        # If does, exit as horribly inefficient and a
-        # different subdomain topology is needed.
-        utils.check_subdomain_condition(
-            subdomain=subdomain,
-            condition_fn=lambda s, b: np.any(s.own_voxels < b),
-            args=(buffer,),
-            error_message=(
-                "The buffer (%s) exceeds at least one dimension of the subdomain (%s). "
-                "Simulation stopping."
-            ),
-            error_args=(buffer, subdomain.own_voxels),
-        )
-        pad, extended_loop = subdomain.extend_padding(buffer)
-        _img = utils.constant_pad_img(img.copy(), pad, 255)
-    else:
-        extended_loop = None
-        _img = img
-
-    send_data = buffer_pack(subdomain, _img, extended_loop)
+    send_data = buffer_pack(subdomain, img)
     recv_data = communicate_features(subdomain, send_data)
-    updated_img = buffer_unpack(subdomain, _img, recv_data, extended_loop)
-
-    if buffer is not None:
-        return updated_img, pad
-
+    updated_img = buffer_unpack(subdomain, img, recv_data)
     return updated_img
 
 
-def buffer_pack(subdomain, img, extended_loop=None):
+def update_extended_buffer(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    buffer: tuple[int, ...],
+) -> tuple[NDArray[T], tuple[tuple[int, int], ...]]:
+    """Update the buffer on subdomains with additional buffer padding.
+
+    Args:
+        subdomain: The subdomain object.
+        img: The grid data to be updated.
+        buffer: The pad to add to img in each dimension.
+
+    Returns:
+        A tuple of:
+            - The updated grid with the buffer data.
+            - The padding used.
+
+    """
+    utils.check_subdomain_condition(
+        subdomain=subdomain,
+        condition_fn=lambda s, b: np.any(s.own_voxels < b),
+        args=(buffer,),
+        error_message=(
+            "The buffer (%s) exceeds at least one dimension of the subdomain (%s). "
+            "Simulation stopping."
+        ),
+        error_args=(buffer, subdomain.own_voxels),
+    )
+
+    pad, extended_features = subdomain.extend_padding(buffer)
+    _img: NDArray[T] = utils.constant_pad_img(img.copy(), pad, pad_value=255)
+
+    send_data = buffer_pack(subdomain, _img, extended_features)
+    recv_data = communicate_features(subdomain, send_data)
+    updated_img = buffer_unpack(subdomain, _img, recv_data, extended_features)
+
+    return updated_img, pad
+
+
+def buffer_pack(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    extended_loop: None | SubdomainFeatures = None,
+) -> dict[tuple[int, ...], NDArray[T]]:
     """Pack the buffer data for communication.
 
     Args:
@@ -147,26 +170,29 @@ def buffer_pack(subdomain, img, extended_loop=None):
         dict: A dictionary containing the packed buffer data.
 
     """
-    buffer_data = {}
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature.neighbor_rank > -1:
-                if extended_loop is not None:
-                    loop = extended_loop[feature_id]
-                else:
-                    loop = feature.loop
+    buffer_data: dict[tuple[int, ...], NDArray[T]] = {}
+    for feature_id, feature in subdomain.features.all_features:
+        if feature.neighbor_rank > -1:
+            if extended_loop is not None:
+                own_voxels = extended_loop.get_feature_member(feature_id, "own")
+            else:
+                own_voxels = feature.own
 
-                buffer_data[feature_id] = img[
-                    loop["own"][0][0] : loop["own"][0][1],
-                    loop["own"][1][0] : loop["own"][1][1],
-                    loop["own"][2][0] : loop["own"][2][1],
-                ]
+            buffer_data[feature_id] = img[
+                own_voxels[0][0] : own_voxels[0][1],
+                own_voxels[1][0] : own_voxels[1][1],
+                own_voxels[2][0] : own_voxels[2][1],
+            ]
 
     return buffer_data
 
 
-def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
+def buffer_unpack(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    features_recv: dict[tuple[int, ...], Any],
+    extended_features: None | SubdomainFeatures = None,
+) -> NDArray[T]:
     """Update the padding of a subdomain with received buffer data.
 
     Args:
@@ -180,21 +206,18 @@ def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
 
     """
     buffered_img = img.copy()
+    for feature_id, feature in subdomain.features.all_features:
+        if feature_id in features_recv:
+            if extended_features is not None:
+                neighbor = extended_features.get_feature_member(feature_id, "neighbor")
+            else:
+                neighbor = feature.neighbor
 
-    feature_types = ["faces", "edges", "corners"]
-    for feature_type in feature_types:
-        for feature_id, feature in subdomain.features[feature_type].items():
-            if feature_id in features_recv:
-                if extended_loop is not None:
-                    loop = extended_loop[feature_id]
-                else:
-                    loop = feature.loop
-
-                buffered_img[
-                    loop["neighbor"][0][0] : loop["neighbor"][0][1],
-                    loop["neighbor"][1][0] : loop["neighbor"][1][1],
-                    loop["neighbor"][2][0] : loop["neighbor"][2][1],
-                ] = features_recv[feature_id]
+            buffered_img[
+                neighbor[0][0] : neighbor[0][1],
+                neighbor[1][0] : neighbor[1][1],
+                neighbor[2][0] : neighbor[2][1],
+            ] = features_recv[feature_id]
 
     buffered_img = subdomain.set_wall_bcs(buffered_img)
     assert not np.any(buffered_img == 255)
@@ -202,7 +225,10 @@ def buffer_unpack(subdomain, img, features_recv, extended_loop=None):
     return buffered_img
 
 
-def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
+def communicate_features(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    send_data: dict[tuple[int, ...], Any],
+) -> dict[tuple[int, ...], Any]:
     """Send data between processes for faces, edges, and corners.
 
     This also swaps the feature ids.
@@ -210,73 +236,55 @@ def communicate_features(subdomain, send_data, unpack=True, feature_types=None):
     Args:
         subdomain (object): Subdomain object containing rank and features information.
         send_data (dict): The data to be sent to neighboring processes.
-        unpack (bool, optional): If True, unpack the received data. Defaults to True.
-        feature_types (list, optional): List of feature types to communicate.
-                                        Defaults to ["faces", "edges", "corners"].
 
     Returns:
         dict: Received data from neighboring processes.
               If unpack is True, returns unpacked received data.
 
     """
-    recv_data = {}
-    data_per_process = {}
+    data_per_process: dict[int, dict[tuple[int, ...], Any]] = {}
+    for feature_id, feature in subdomain.features.all_features:
+        # Neighbor process
+        if (
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank != subdomain.rank
+            and feature_id in send_data
+        ):
+            if feature.neighbor_rank not in data_per_process:
+                data_per_process[feature.neighbor_rank] = {}
 
-    if feature_types is None:
-        feature_types = ["faces", "edges", "corners"]
+            data_per_process[feature.neighbor_rank][feature_id] = send_data[feature_id]
 
-    for feature_type in feature_types:
-        for feature_id in subdomain.features[feature_type]:
-            feature = subdomain.features[feature_type][feature_id]
-
-            # Neighbor process
-            if (
-                feature.neighbor_rank > -1
-                and feature.neighbor_rank != subdomain.rank
-                and feature_id in send_data
-            ):
-                if feature.neighbor_rank not in data_per_process:
-                    data_per_process[feature.neighbor_rank] = {}
-
-                data_per_process[feature.neighbor_rank][feature_id] = send_data[
-                    feature_id
-                ]
-
-    recv_data = send_recv(
+    recv_data_process = send_recv(
         subdomain.rank,
         data_per_process,
     )
 
-    if unpack:
-        _recv_data = {}
-        for feature_type in feature_types:
-            for feature_id in subdomain.features[feature_type]:
-                feature = subdomain.features[feature_type][feature_id]
-                if (
-                    feature.neighbor_rank > -1
-                    and feature.neighbor_rank != subdomain.rank
-                    and feature_id in send_data
-                ):
-                    # Swap the feature ids here
-                    _recv_data[feature_id] = recv_data[feature.neighbor_rank][
-                        feature.opp_info
-                    ]
+    recv_data: dict[tuple[int, ...], Any] = {}
+    for feature_id, feature in subdomain.features.all_features:
+        if (
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank != subdomain.rank
+            and feature_id in send_data
+        ):
+            # Swap the feature ids here
+            recv_data[feature_id] = recv_data_process[feature.neighbor_rank][
+                feature.info.opp
+            ]
 
-                # Periodic boundary conditions where process is own neighbor
-                elif (
-                    feature.neighbor_rank > -1
-                    and feature.neighbor_rank == subdomain.rank
-                    and feature.opp_info in send_data
-                ):
-                    # Swap the feature ids here
-                    _recv_data[feature_id] = send_data[feature.opp_info]
-
-        recv_data = _recv_data
+        # Periodic boundary conditions where process is own neighbor
+        elif (
+            feature.neighbor_rank > -1
+            and feature.neighbor_rank == subdomain.rank
+            and feature.info.opp in send_data
+        ):
+            # Swap the feature ids here
+            recv_data[feature_id] = send_data[feature.info.opp]
 
     return recv_data
 
 
-def send_recv(rank, data_per_process):
+def send_recv(rank: int, data_per_process: dict[int, Any]) -> dict[int, Any]:
     """Perform non-blocking sends and receives for inter-process communication.
 
     Uses a two-phase communication pattern to avoid deadlocks.
@@ -289,8 +297,8 @@ def send_recv(rank, data_per_process):
         dict: Data received from each process.
 
     """
-    send_requests = {}
-    receive_data = {}
+    send_requests: dict[int, Any] = {}
+    receive_data: dict[int, Any] = {}
 
     # First phase: Post all sends
     for n_proc in data_per_process:

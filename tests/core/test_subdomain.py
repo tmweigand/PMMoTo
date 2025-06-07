@@ -8,7 +8,11 @@ import pmmoto
 def setup_domain(rank: int) -> pmmoto.core.subdomain.Subdomain:
     """Set up domain"""
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-    boundary_types = ((0, 0), (1, 1), (2, 2))
+    boundary_types = (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
     inlet = ((True, False), (False, False), (False, False))
     outlet = ((False, True), (False, False), (False, False))
     voxels = (100, 100, 100)
@@ -39,11 +43,15 @@ def test_subdomain() -> None:
         ((84.59, 92.18), (3.249299999999991, 51.49859999999998), (-9.0, -7.0667247))
     )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id == (0, 0, -1):
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((False, False), (False, False), (True, False))
+    )
+
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.INTERNAL),
+    )
 
     np.testing.assert_array_equal(sd.inlet, ((0, 0), (0, 0), (0, 0)))
 
@@ -63,25 +71,23 @@ def test_subdomain_2() -> None:
 
     assert sd.box == ((92.18, 100.0), (51.4986, 101.21), (-5.1334494, -3.14159))
 
-    global_features = {
-        (1, 0, 0): "end",
-        (0, 1, 0): "wall",
-        (0, 0, 1): "periodic",
-        (1, 0, 1): "end",
-        (1, 1, 0): "end",
-        (0, 1, 1): "wall",
-        (1, 1, 1): "end",
-    }
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((False, True), (False, True), (False, True))
+    )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id in global_features:
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.INTERNAL, pmmoto.BoundaryType.PERIODIC),
+    )
 
-    np.testing.assert_array_equal(sd.inlet, ((0, 0), (0, 0), (0, 0)))
+    np.testing.assert_array_equal(
+        sd.inlet, ((False, False), (False, False), (False, False))
+    )
 
-    np.testing.assert_array_equal(sd.outlet, ((0, 1), (0, 0), (0, 0)))
+    np.testing.assert_array_equal(
+        sd.outlet, ((False, True), (False, False), (False, False))
+    )
 
     assert sd.start == (66, 66, 66)
 
@@ -97,27 +103,15 @@ def test_subdomain_3() -> None:
 
     assert sd.box == ((77.0, 84.59), (-45.0, 3.249299999999991), (-9.0, -7.0667247))
 
-    global_features = {
-        (-1, 0, 0): "end",
-        (0, -1, 0): "wall",
-        (0, 0, -1): "periodic",
-        (-1, 0, -1): "end",
-        (-1, -1, 0): "end",
-        (0, -1, -1): "wall",
-        (-1, -1, -1): "end",
-    }
+    np.testing.assert_array_equal(
+        sd.global_boundary, ((True, False), (True, False), (True, False))
+    )
 
-    for feature_id, is_global_boundary in sd.global_boundary.items():
-        if feature_id in global_features:
-            assert is_global_boundary
-        else:
-            assert not is_global_boundary
-
-    # for feature_id, boundary_type in sd.boundary_types.items():
-    #     if feature_id in global_features:
-    #         assert boundary_type == global_features[feature_id]
-    #     else:
-    #         assert boundary_type == "internal"
+    assert sd.boundary_types == (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.INTERNAL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.INTERNAL),
+    )
 
     np.testing.assert_array_equal(sd.inlet, ((1, 0), (0, 0), (0, 0)))
 
@@ -128,7 +122,15 @@ def test_subdomain_3() -> None:
 
 def test_walls() -> None:
     """Ensures that walls are correctly added to a porous media img"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        ),
+        pad=(0, 0, 0),
+    )
 
     img = np.ones(sd.voxels)
     img = sd.set_wall_bcs(img)
@@ -150,7 +152,7 @@ def test_walls() -> None:
 
 def test_get_img_index() -> None:
     """Ensure the correct index is provided given physical coordinates"""
-    sd = pmmoto.initialize((10, 10, 10))
+    sd = pmmoto.initialize((10, 10, 10), pad=(0, 0, 0))
 
     assert sd.get_img_index((0.5, 0.5, 0.5)) == (5, 5, 5)
     assert sd.get_img_index((0.49, 0.49, 0.49)) == (4, 4, 4)
