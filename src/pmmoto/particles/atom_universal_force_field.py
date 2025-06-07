@@ -1,13 +1,22 @@
+"""Universal force field atom radii data for PMMoTo.
+
+Provides a dictionary mapping element names or atomic numbers to
+(atomic_number, radius) pairs, where radius is sigma/2 in Angstroms.
+"""
+
+
 def atom_universal_force_field():
-    """
-    Universal force field data given as element name or atomic number
-    and yields atomic number and sigma (Angstroms). To use with pmmoto,
-    must divide by 2 so a radius.
+    """Return universal force field data for atom radii.
 
-    Data taken from:
-        https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms
+    Provides a dictionary mapping element names or atomic numbers to
+    (atomic_number, sigma/2) pairs, sigma is in Angstroms
+                             and divided by 2 to yield radius.
 
-    Will add more soon
+    Data source:
+    https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms
+
+    Returns:
+        dict: Mapping of element names or atomic numbers to (atomic_number, radius).
 
     """
     element_table = {}

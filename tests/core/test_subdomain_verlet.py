@@ -1,16 +1,13 @@
 """test_subdomain_verlet.py"""
 
-import pytest
 import numpy as np
 
 import pmmoto
 
 
 def test_verlet_subdomain():
+    """Test for subdomain
     """
-    Test for subdomain
-    """
-
     verlet_domains = (2, 2, 2)
     sd = pmmoto.initialize(voxels=(11, 11, 11), verlet_domains=verlet_domains)
 

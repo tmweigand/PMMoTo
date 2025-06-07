@@ -1,13 +1,16 @@
+"""Pytest fixtures for core PMMoTo tests.
+
+Provides subdomain and padded subdomain generators for use in core test cases.
+"""
+
 import pytest
-import pickle
-import numpy as np
 import pmmoto
 
 
 @pytest.fixture
 def generate_subdomain():
-    """
-    Generate a un-padded subdomain
+    """Generate a un-padded subdomain.
+
     This allows rank to be passed as an argument
     """
 
@@ -48,8 +51,8 @@ def generate_subdomain():
 
 @pytest.fixture
 def generate_single_subdomain():
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain.
+
     THis allows rank to be passed as an argument
     """
 
@@ -99,8 +102,8 @@ def generate_single_subdomain():
 
 @pytest.fixture
 def generate_padded_subdomain():
-    """
-    Generate a un-padded subdomain
+    """Generate a un-padded subdomain.
+
     This allows rank to be passed as an argument
     """
 
