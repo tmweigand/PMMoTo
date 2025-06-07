@@ -3,13 +3,20 @@
 Particle initialization and utility functions for PMMoTo.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 import numpy as np
-from typing import Dict, List, Optional
+from numpy.typing import NDArray
 
 from ._particles import _initialize_atoms
 from ._particles import _initialize_spheres
+from ._particles import PySphereList, AtomMap
 from .atom_universal_force_field import atom_universal_force_field
 
+if TYPE_CHECKING:
+    from ..core.subdomain import Subdomain
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
 
 __all__ = [
     "convert_atoms_elements_to_ids",
@@ -19,7 +26,7 @@ __all__ = [
 ]
 
 
-def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
+def convert_atoms_elements_to_ids(atom_elements: list[str]) -> NDArray[np.integer[Any]]:
     """Convert a list of atom names (C, H, N, O, etc.) to atomic IDs.
 
     Args:
@@ -40,7 +47,7 @@ def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
     return atom_ids
 
 
-def _load_uff_data(file_name=None):
+def _load_uff_data(file_name: None | str = None) -> dict[str | int, tuple[int, float]]:
     """Read universal force field file for atom radius lookup.
 
     Can query the dictionary based on:
@@ -74,8 +81,8 @@ def _load_uff_data(file_name=None):
 
 
 def uff_radius(
-    atom_names: Optional[List[str]] = None, atomic_numbers: Optional[List[int]] = None
-) -> Dict[int, float]:
+    atom_names: None | list[str] = None, atomic_numbers: None | list[int] = None
+) -> dict[int, float]:
     """Collect the radius by Atom Name or Atomic Number, but not both.
 
     Units of radii are Angstroms!
@@ -97,7 +104,7 @@ def uff_radius(
         )
 
     all_uff_radii = _load_uff_data()
-    radii = {}
+    radii: dict[int, float] = {}
 
     if atom_names is not None:
         for name in atom_names:
@@ -116,17 +123,17 @@ def uff_radius(
 
 
 def initialize_atoms(
-    subdomain,
-    atom_coordinates: np.ndarray,
-    atom_radii: Dict[int, float],
-    atom_ids: np.ndarray,
-    atom_masses: Optional[Dict[int, float]] = None,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    atom_coordinates: NDArray[np.floating[Any]],
+    atom_radii: NDArray[np.floating[Any]],
+    atom_ids: NDArray[np.integer[Any]],
+    atom_masses: None | NDArray[np.integer[Any]] = None,
     by_type: bool = False,
     add_periodic: bool = False,
     set_own: bool = True,
     trim_intersecting: bool = False,
     trim_within: bool = False,
-) -> object:
+) -> AtomMap:
     """Initialize a list of particles efficiently with memory management.
 
     Args:
@@ -173,14 +180,14 @@ def initialize_atoms(
 
 
 def initialize_spheres(
-    subdomain,
-    spheres,
-    radii=None,
-    add_periodic=False,
-    set_own=True,
-    trim_intersecting=False,
-    trim_within=False,
-):
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    spheres: NDArray[np.floating[Any]],
+    radii: None | NDArray[np.floating[Any]] = None,
+    add_periodic: bool = False,
+    set_own: bool = True,
+    trim_intersecting: bool = False,
+    trim_within: bool = False,
+) -> PySphereList:
     """Initialize a list of spheres.
 
     Particles that do not cross the subdomain boundary are deleted.

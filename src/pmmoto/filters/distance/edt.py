@@ -4,16 +4,28 @@ Exact Euclidean Distance Transform (EDT) functions for 2D and 3D images,
 with support for periodic boundaries and distributed subdomains.
 """
 
+from __future__ import annotations
+from typing import TypeVar, TYPE_CHECKING
 import numpy as np
+from numpy.typing import NDArray
 from pmmoto.core import _voxels
 from pmmoto.core import communication
 from . import _distance
 
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain import Subdomain
+    from pmmoto.core.subdomain_padded import PaddedSubdomain
+    from pmmoto.core.subdomain_verlet import VerletSubdomain
+
+T = TypeVar("T", bound=np.generic)
 
 __all__ = ["edt", "edt2d", "edt3d"]
 
 
-def edt(img, subdomain=None):
+def edt(
+    img: NDArray[T],
+    subdomain: None | Subdomain | PaddedSubdomain | VerletSubdomain = None,
+) -> NDArray[np.float32]:
     """Calculate the exact Euclidean transform of an image.
 
     Args:
