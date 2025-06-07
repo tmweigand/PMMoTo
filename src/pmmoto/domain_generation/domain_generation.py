@@ -4,7 +4,10 @@ Functions for generating random, smoothed, and structured porous media images,
 as well as initializing PorousMedia and Multiphase objects for PMMoTo.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import numpy as np
+from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from . import porousmedia
@@ -14,11 +17,16 @@ from ..particles import particles
 from ..core import communication
 from ..core import utils
 
+if TYPE_CHECKING:
+    from ..core.subdomain import Subdomain
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
+
 
 __all__ = [
-    "gen_random_binary_grid",
-    "gen_smoothed_random_binary_grid",
-    "gen_linear_img",
+    "gen_img_random_binary",
+    "gen_img_smoothed_random_binary",
+    "gen_img_linear",
     "gen_pm_spheres_domain",
     "gen_pm_atom_domain",
     "gen_pm_atom_file",
@@ -28,7 +36,9 @@ __all__ = [
 ]
 
 
-def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
+def gen_img_random_binary(
+    shape: tuple[int, ...], p_zero: float = 0.5, seed: None | int = None
+) -> NDArray[np.uint8]:
     """Generate a random binary grid with specified probability for zeros.
 
     Args:
@@ -49,7 +59,12 @@ def gen_random_binary_grid(shape, p_zero=0.5, seed=None):
     return rng.choice([0, 1], size=shape, p=[p_zero, 1 - p_zero]).astype(np.uint8)
 
 
-def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None):
+def gen_img_smoothed_random_binary(
+    shape: tuple[int, ...],
+    p_zero: float = 0.5,
+    smoothness: float = 1.0,
+    seed: None | int = None,
+) -> NDArray[np.uint8]:
     """Generate a smoothed random binary grid.
 
     Args:
@@ -84,7 +99,7 @@ def gen_smoothed_random_binary_grid(shape, p_zero=0.5, smoothness=1.0, seed=None
     return binary_grid
 
 
-def gen_linear_img(shape, dim):
+def gen_img_linear(shape: tuple[int, ...], dim: int) -> NDArray[np.float64]:
     """Generate an image that varies linearly from 0 to N-1 along a given dimension.
 
     Args:
@@ -106,7 +121,9 @@ def gen_linear_img(shape, dim):
     return linear_values * np.ones(shape)
 
 
-def gen_pm_spheres_domain(subdomain, spheres, kd=False):
+def gen_pm_spheres_domain(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, spheres, kd: bool = False
+) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from sphere data.
 
     Args:
@@ -129,7 +146,13 @@ def gen_pm_spheres_domain(subdomain, spheres, kd=False):
     return pm
 
 
-def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=False):
+def gen_pm_atom_domain(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    atom_locations,
+    atom_radii,
+    atom_types,
+    kd=False,
+):
     """Generate binary porous media domain from atom data.
 
     Args:
@@ -157,7 +180,12 @@ def gen_pm_atom_domain(subdomain, atom_locations, atom_radii, atom_types, kd=Fal
 
 
 def gen_pm_atom_file(
-    subdomain, lammps_file, atom_radii, type_map=None, add_periodic=False, kd=False
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    lammps_file,
+    atom_radii,
+    type_map=None,
+    add_periodic=False,
+    kd=False,
 ):
     """Generate binary porous media domain from a LAMMPS atom file.
 
@@ -193,7 +221,9 @@ def gen_pm_atom_file(
     return pm
 
 
-def gen_pm_inkbottle(subdomain, r_y=1.0, r_z=1.0):
+def gen_pm_inkbottle(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, r_y=1.0, r_z=1.0
+):
     """Generate an inkbottle-shaped porous media with reservoirs.
 
     Args:

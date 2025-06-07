@@ -63,7 +63,7 @@ def functionals(
         )
     else:
         own_voxels = subdomain.get_own_voxels()
-        for feature_id, feature in subdomain.features["faces"].items():
+        for feature_id, feature in subdomain.features.faces.items():
             if feature.boundary_type == "internal" and np.sum(feature_id) > 0:
                 own_voxels[feature.map_to_index()] += 1
 

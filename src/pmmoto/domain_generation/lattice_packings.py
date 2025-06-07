@@ -3,8 +3,16 @@
 Defines classes for generating common lattice packings (SC, BCC, FCC) for PMMoTo.
 """
 
-import numpy as np
+from __future__ import annotations
+from typing import TypeVar
 import math
+import numpy as np
+from numpy.typing import NDArray
+from ..core.subdomain import Subdomain
+from ..core.subdomain_padded import PaddedSubdomain
+from ..core.subdomain_verlet import VerletSubdomain
+
+T = TypeVar("T", bound=np.generic)
 
 
 class Lattice:
@@ -15,7 +23,11 @@ class Lattice:
 
     """
 
-    def __init__(self, subdomain, lattice_constant):
+    def __init__(
+        self,
+        subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+        lattice_constant: float,
+    ):
         """Initialize a Lattice.
 
         Args:
@@ -26,16 +38,16 @@ class Lattice:
         self.subdomain = subdomain
         self.lattice_constant = lattice_constant
 
-    def get_basis_vectors(self):
+    def get_basis_vectors(self) -> NDArray[T]:
         """Return the basis vectors for the lattice.
 
         Returns:
             np.ndarray: Array of basis vectors.
 
         """
-        return np.empty()
+        return np.array([])
 
-    def get_radius(self):
+    def get_radius(self) -> float:
         """Return the sphere radius for the lattice.
 
         Returns:
@@ -44,14 +56,14 @@ class Lattice:
         """
         return 0.0
 
-    def generate_lattice(self):
+    def generate_lattice(self) -> NDArray[T]:
         """Generate a lattice for a given unit cell size and lattice type.
 
         Returns:
             np.ndarray: Array of shape (N, 4) of lattice points and sphere radius.
 
         """
-        basis_vectors = self.get_basis_vectors()
+        basis_vectors: NDArray[T] = self.get_basis_vectors()
         radius = self.get_radius()
 
         # Compute unit cell size dynamically
@@ -73,22 +85,26 @@ class Lattice:
 class SimpleCubic(Lattice):
     """Simple Cubic (SC) lattice."""
 
-    def __init__(self, subdomain, lattice_constant):
+    def __init__(
+        self,
+        subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+        lattice_constant: float,
+    ):
         super().__init__(subdomain, lattice_constant)
 
-    def get_basis_vectors(self):
+    def get_basis_vectors(self) -> NDArray[T]:
         """Return basis vectors for SC lattice."""
         return np.array([[0, 0, 0]])
 
-    def get_coordination_number(self):
+    def get_coordination_number(self) -> float:
         """Return coordination number for SC lattice."""
         return 6
 
-    def get_packing_efficiency(self):
+    def get_packing_efficiency(self) -> float:
         """Return packing efficiency (percent) for SC lattice."""
         return 52  # percent
 
-    def get_radius(self):
+    def get_radius(self) -> float:
         """Return sphere radius for SC lattice."""
         return self.lattice_constant / 2.0
 
@@ -96,22 +112,26 @@ class SimpleCubic(Lattice):
 class BodyCenteredCubic(Lattice):
     """Body Centered Cubic (BCC) lattice."""
 
-    def __init__(self, subdomain, lattice_constant):
+    def __init__(
+        self,
+        subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+        lattice_constant: float,
+    ):
         super().__init__(subdomain, lattice_constant)
 
-    def get_basis_vectors(self):
+    def get_basis_vectors(self) -> NDArray[T]:
         """Return basis vectors for BCC lattice (corner and body center)."""
         return np.array([[0, 0, 0], [0.5, 0.5, 0.5]])
 
-    def get_coordination_number(self):
+    def get_coordination_number(self) -> float:
         """Return coordination number for BCC lattice."""
         return 8.0
 
-    def get_packing_efficiency(self):
+    def get_packing_efficiency(self) -> float:
         """Return packing efficiency (percent) for BCC lattice."""
         return 68.0  # percent
 
-    def get_radius(self):
+    def get_radius(self) -> float:
         """Return sphere radius for BCC lattice."""
         return self.lattice_constant * math.sqrt(3) / 4.0
 
@@ -119,10 +139,14 @@ class BodyCenteredCubic(Lattice):
 class FaceCenteredCubic(Lattice):
     """Face Centered Cubic (FCC) lattice."""
 
-    def __init__(self, subdomain, lattice_constant):
+    def __init__(
+        self,
+        subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+        lattice_constant: float,
+    ):
         super().__init__(subdomain, lattice_constant)
 
-    def get_basis_vectors(self):
+    def get_basis_vectors(self) -> NDArray[T]:
         """Return basis vectors for FCC lattice."""
         return np.array(
             [
@@ -133,66 +157,14 @@ class FaceCenteredCubic(Lattice):
             ]
         )
 
-    def get_coordination_number(self):
+    def get_coordination_number(self) -> float:
         """Return coordination number for FCC lattice."""
         return 12
 
-    def get_packing_efficiency(self):
+    def get_packing_efficiency(self) -> float:
         """Return packing efficiency (percent) for FCC lattice."""
         return 74  # percent
 
-    def get_radius(self):
+    def get_radius(self) -> float:
         """Return sphere radius for FCC lattice."""
         return self.lattice_constant * math.sqrt(2) / 4.0
-
-
-# class HexagonalClosePacked(Lattice):
-#     def __init__(self, subdomain, lattice_constant_a, lattice_constant_c):
-#         # HCP requires two constants a and c
-#         self.lattice_constant_a = lattice_constant_a
-#         self.lattice_constant_c = lattice_constant_c
-#         super().__init__(subdomain, lattice_constant_a)
-
-#     def get_basis_vectors(self):
-#         return np.array(
-#             [
-#                 [0, 0, 0],  # Atom at origin
-#                 [1 / 3, 2 / 3, 0],  # Atom in the second layer
-#                 [0.5, 0.5, 0.5],  # Atom in the next layer
-#             ]
-#         )
-
-#     def get_coordination_number(self):
-#         return 12
-
-#     def get_packing_efficiency(self):
-#         return 74  # percent
-
-#     def get_radius(self):
-#         # Radius for HCP (approximated based on a)
-#         return self.lattice_constant_a / 2
-
-
-# class DiamondCubic(Lattice):
-#     def __init__(self, subdomain, lattice_constant):
-#         super().__init__(subdomain, lattice_constant)
-
-#     def get_basis_vectors(self):
-#         return np.array(
-#             [
-#                 [0, 0, 0],  # Corner atom
-#                 [0.5, 0.5, 0],  # Atom at the face center
-#                 [0.25, 0.25, 0.25],  # Interpenetrating FCC lattice
-#                 [0.75, 0.75, 0.75],  # Another atom from the second FCC lattice
-#             ]
-#         )
-
-#     def get_coordination_number(self):
-#         return 4
-
-#     def get_packing_efficiency(self):
-#         return 34  # percent
-
-#     def get_radius(self):
-#         # Radius for Diamond
-#         return self.lattice_constant / 4

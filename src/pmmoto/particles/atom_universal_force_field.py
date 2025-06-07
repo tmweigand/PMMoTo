@@ -5,7 +5,7 @@ Provides a dictionary mapping element names or atomic numbers to
 """
 
 
-def atom_universal_force_field():
+def atom_universal_force_field() -> dict[str | int, tuple[int, float]]:
     """Return universal force field data for atom radii.
 
     Provides a dictionary mapping element names or atomic numbers to
@@ -19,7 +19,7 @@ def atom_universal_force_field():
         dict: Mapping of element names or atomic numbers to (atomic_number, radius).
 
     """
-    element_table = {}
+    element_table: dict[str | int, tuple[int, float]] = {}
 
     # Adding elements with (atomic_number, sigma (Angstroms)) pairs
     element_table["H"] = (1, 2.571 / 2)
