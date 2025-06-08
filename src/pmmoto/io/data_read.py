@@ -7,6 +7,7 @@ used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.
 import gzip
 import numpy as np
 from numpy.typing import NDArray
+from . import _data_read
 from . import io_utils
 from ..domain_generation import rdf
 from ..analysis import bins
@@ -70,12 +71,17 @@ def read_sphere_pack_xyzr_domain(
 
     domain_file.close()
 
-    domain_data = tuple(map(tuple, domain_data))
+    domain_box: tuple[tuple[float, float], ...] = tuple(map(tuple, domain_data))
 
-    return sphere_data, domain_data
+    return sphere_data, domain_box
 
 
-def py_read_lammps_atoms(input_file: str, include_mass: bool = False):
+def py_read_lammps_atoms(
+    input_file: str, include_mass: bool = False
+) -> (
+    tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double], NDArray[np.double]]
+    | tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double]]
+):
     """Read atom positions from a LAMMPS file.
 
     Args:
@@ -97,7 +103,7 @@ def py_read_lammps_atoms(input_file: str, include_mass: bool = False):
     else:
         domain_file = open(input_file, "r", encoding="utf-8")
 
-    charges = {}
+    charges: dict[int, list[float]] = {}
 
     lines = domain_file.readlines()
     domain_data = np.zeros([3, 2], dtype=np.double)
@@ -108,9 +114,9 @@ def py_read_lammps_atoms(input_file: str, include_mass: bool = False):
         elif n_line == 3:
             num_objects = int(line)
             atom_position = np.zeros([num_objects, 3], dtype=np.double)
-            atom_type = np.zeros(num_objects, dtype=int)
+            atom_type = np.zeros(num_objects, dtype=np.uint8)
             if include_mass:
-                masses = np.zeros(num_objects, dtype=float)
+                masses = np.zeros(num_objects, dtype=np.double)
         elif 5 <= n_line <= 7:
             domain_data[n_line - 5, 0] = float(line.split(" ")[0])
             domain_data[n_line - 5, 1] = float(line.split(" ")[1])
@@ -144,7 +150,7 @@ def py_read_lammps_atoms(input_file: str, include_mass: bool = False):
 
 def read_lammps_atoms(
     input_file: str, type_map: None | dict[tuple[int, float], int] = None
-) -> tuple[NDArray[np.double], NDArray[np.int64], NDArray[np.double], float]:
+) -> tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float]:
     """Read atom positions and types from a LAMMPS file using C++ backend.
 
     Args:
@@ -156,8 +162,6 @@ def read_lammps_atoms(
         tuple: (positions, types, domain, timestep)
 
     """
-    from . import _data_read
-
     positions, types, domain, timestep = _data_read.read_lammps_atoms(
         input_file, type_map
     )
@@ -194,7 +198,7 @@ def read_atom_map(input_file: str) -> dict[int, dict[str, str]]:
     return atom_data
 
 
-def read_rdf(input_folder):
+def read_rdf(input_folder: str) -> tuple[dict[int, dict[str, str]], dict[int, rdf.RDF]]:
     """Read a folder containing radial distribution function (RDF) data.
 
     Folder must contain:
