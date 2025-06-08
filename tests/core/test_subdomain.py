@@ -26,6 +26,7 @@ def setup_domain(rank: int) -> pmmoto.core.subdomain.Subdomain:
         subdomains=subdomains,
         rank=rank,
         pad=(0, 0, 0),
+        return_subdomain=True,
     )
     return sd
 

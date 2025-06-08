@@ -21,7 +21,6 @@ from .domain_generation import (
     gen_pm_atom_file,
     gen_pm_inkbottle,
     gen_mp_constant,
-    gen_mp_from_grid,
 )
 
 __all__ = [
@@ -39,5 +38,4 @@ __all__ = [
     "gen_pm_atom_file",
     "gen_pm_inkbottle",
     "gen_mp_constant",
-    "gen_mp_from_grid",
 ]

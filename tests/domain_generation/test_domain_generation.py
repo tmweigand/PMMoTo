@@ -80,7 +80,7 @@ def test_gen_random_binary_grid():
     """Test domain generation of a random binary grid"""
     voxels = (50, 50, 50)
 
-    img = pmmoto.domain_generation.domain_generation.gen_random_binary_grid(
+    img = pmmoto.domain_generation.domain_generation.gen_img_random_binary(
         voxels, p_zero=0.2, seed=1
     )
     pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
@@ -91,7 +91,7 @@ def test_gen_smoothed_random_binary_grid():
     """Test domain generation of a random binary grid"""
     voxels = (100, 100, 100)
 
-    img = pmmoto.domain_generation.domain_generation.gen_smoothed_random_binary_grid(
+    img = pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary(
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
 

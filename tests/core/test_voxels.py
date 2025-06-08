@@ -319,8 +319,7 @@ def test_get_nearest_boundary_index_figure(generate_padded_subdomain) -> None:
     rank = 0
     sd = generate_padded_subdomain(rank)
 
-    # img = pmmoto.domain_generation.gen_random_binary_grid(shape, 0.01)
-    img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(sd.voxels, 0.5, 5.0)
+    img = pmmoto.domain_generation.gen_img_smoothed_random_binary(sd.voxels, 0.5, 5.0)
 
     boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
         subdomain=sd, img=img, label=0, which_voxels="own"

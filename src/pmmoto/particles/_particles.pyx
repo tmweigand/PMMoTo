@@ -164,7 +164,7 @@ cdef class PyAtomList:
             self._atom_list = shared_ptr[AtomList]()
 
     @property
-    def radius(self):
+    def radius(self) -> float:
         return self._atom_list.get().radius
 
     def get_own_count(self, subdomain = None, global_size = False):

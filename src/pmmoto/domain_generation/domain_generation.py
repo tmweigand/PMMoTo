@@ -5,7 +5,7 @@ as well as initializing PorousMedia and Multiphase objects for PMMoTo.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, Any
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from ..core.subdomain_padded import PaddedSubdomain
     from ..core.subdomain_verlet import VerletSubdomain
 
+T = TypeVar("T", bound=np.generic)
 
 __all__ = [
     "gen_img_random_binary",
@@ -32,7 +33,6 @@ __all__ = [
     "gen_pm_atom_file",
     "gen_pm_inkbottle",
     "gen_mp_constant",
-    "gen_mp_from_grid",
 ]
 
 
@@ -122,7 +122,9 @@ def gen_img_linear(shape: tuple[int, ...], dim: int) -> NDArray[np.float64]:
 
 
 def gen_pm_spheres_domain(
-    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, spheres, kd: bool = False
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    spheres: NDArray[np.floating[Any]],
+    kd: bool = False,
 ) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from sphere data.
 
@@ -148,11 +150,11 @@ def gen_pm_spheres_domain(
 
 def gen_pm_atom_domain(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
-    atom_locations,
-    atom_radii,
-    atom_types,
-    kd=False,
-):
+    atom_locations: NDArray[np.floating[Any]],
+    atom_radii: NDArray[np.floating[Any]],
+    atom_types: NDArray[np.integer[Any]],
+    kd: bool = False,
+) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from atom data.
 
     Args:
@@ -181,12 +183,12 @@ def gen_pm_atom_domain(
 
 def gen_pm_atom_file(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
-    lammps_file,
-    atom_radii,
-    type_map=None,
-    add_periodic=False,
-    kd=False,
-):
+    lammps_file: str,
+    atom_radii: NDArray[np.floating[Any]],
+    type_map: None | dict[tuple[int, float], int] = None,
+    add_periodic: bool = False,
+    kd: bool = False,
+) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from a LAMMPS atom file.
 
     Args:
@@ -222,8 +224,10 @@ def gen_pm_atom_file(
 
 
 def gen_pm_inkbottle(
-    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, r_y=1.0, r_z=1.0
-):
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    r_y: float = 1.0,
+    r_z: float = 1.0,
+) -> porousmedia.PorousMedia:
     """Generate an inkbottle-shaped porous media with reservoirs.
 
     Args:
@@ -243,12 +247,15 @@ def gen_pm_inkbottle(
     if subdomain.domain.num_subdomains > 1:
         pm.img = communication.update_buffer(subdomain, pm.img)
 
-    pm.img = subdomain.update_reservoir(pm.img, 1)
+    if isinstance(subdomain, PaddedSubdomain | VerletSubdomain):
+        pm.img = subdomain.update_reservoir(pm.img, np.uint8(1))
 
     return pm
 
 
-def gen_mp_constant(porous_media, fluid_phase=1):
+def gen_mp_constant(
+    porous_media: porousmedia.PorousMedia, fluid_phase: int = 1
+) -> multiphase.Multiphase[np.uint8]:
     """Set the pore space to a specific fluid phase.
 
     Args:
@@ -261,21 +268,5 @@ def gen_mp_constant(porous_media, fluid_phase=1):
     """
     img = np.where(porous_media.img == 1, fluid_phase, 0).astype(np.uint8)
     mp = multiphase.Multiphase(porous_media, img, 2)
-
-    return mp
-
-
-def gen_mp_from_grid(mp, grid):
-    """Set the multiphase pore space according to an input grid.
-
-    Args:
-        mp: Multiphase object.
-        grid (np.ndarray): Grid to assign.
-
-    Returns:
-        Multiphase: Updated multiphase object.
-
-    """
-    mp.mp_grid = grid
 
     return mp

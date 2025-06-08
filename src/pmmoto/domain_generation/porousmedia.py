@@ -24,7 +24,9 @@ class PorousMedia:
     """Porous media class for storing image data and computing properties."""
 
     def __init__(
-        self, subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, img: NDArray[T]
+        self,
+        subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+        img: NDArray[np.uint8],
     ):
         """Initialize a PorousMedia object.
 
@@ -84,7 +86,7 @@ class PorousMedia:
 
 
 def gen_pm(
-    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, img: NDArray[T]
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain, img: NDArray[np.uint8]
 ) -> PorousMedia:
     """Initialize the PorousMedia class and set inlet/outlet/wall boundary conditions.
 

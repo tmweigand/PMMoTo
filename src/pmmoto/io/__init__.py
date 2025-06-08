@@ -8,7 +8,6 @@ from . import data_read, output
 # Re-export selected functions from data_read
 from .data_read import (
     read_sphere_pack_xyzr_domain,
-    read_r_lookup_file,
     py_read_lammps_atoms,
     read_lammps_atoms,
     read_atom_map,
@@ -28,7 +27,6 @@ from .output import (
 __all__ = [
     "data_read",
     "read_sphere_pack_xyzr_domain",
-    "read_r_lookup_file",
     "py_read_lammps_atoms",
     "read_lammps_atoms",
     "read_atom_map",

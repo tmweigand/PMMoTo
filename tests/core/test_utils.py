@@ -66,7 +66,7 @@ def test_pad() -> None:
     """Test of padding and un-padding an array"""
     voxels = (25, 25, 25)
 
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels)
 
     pad = ((3, 3), (3, 3), (3, 3))
     pad_img = pmmoto.core.utils.constant_pad_img(img, pad, 8)
@@ -97,7 +97,7 @@ def test_bin_image() -> None:
     """Test for counting occurrences of a value"""
     N = 10
     sd = pmmoto.initialize((N, N, N))
-    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+    img = pmmoto.domain_generation.gen_img_linear(sd.voxels, 0)
 
     counts = pmmoto.core.utils.bin_image(sd, img)
 
@@ -123,7 +123,7 @@ def test_bin_image_parallel() -> None:
 
     N = 10
     sd = pmmoto.initialize((N, N, N), subdomains=(2, 2, 2), rank=rank)
-    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+    img = pmmoto.domain_generation.gen_img_linear(sd.voxels, 0)
 
     counts = pmmoto.core.utils.bin_image(sd, img, own=True)
 

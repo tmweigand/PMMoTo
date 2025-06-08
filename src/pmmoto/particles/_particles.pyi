@@ -10,7 +10,13 @@ from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 
+class PyAtomList:
+    @property
+    def radius(self) -> float: ...
+    def build_KDtree(self) -> None: ...
+
 class AtomMap:
+    atom_map: dict[int, PyAtomList]
     def return_np_array(self, return_own: bool, return_label: bool) -> NDArray[T]: ...
     def size(
         self, subdomain: None | Subdomain | PaddedSubdomain | VerletSubdomain
@@ -32,7 +38,7 @@ class AtomMap:
     def trim_within(
         self, subdomain: Subdomain | PaddedSubdomain | VerletSubdomain
     ) -> None: ...
-    def return_list(self, label: int) -> list[int]: ...
+    def return_list(self, label: int) -> PyAtomList: ...
 
 class PySphereList:
     def set_own(
