@@ -2,14 +2,18 @@
 
 import os
 from ..core import utils
+from ..core.logging import get_logger
+
+logger = get_logger()
 
 
 def check_file(file_name: str) -> None:
     """Check file name"""
-    if os.path.isfile(file_name):
-        return True
-    else:
-        print(f"Warning. {file_name} Does Not Exist")
+    if not os.path.isfile(file_name):
+        logger.error(
+            "%s does not exist!",
+            file_name,
+        )
         utils.raise_error()
 
 

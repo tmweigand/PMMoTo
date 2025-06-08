@@ -110,7 +110,7 @@ def imageToVTK(
     cellData=None,
     pointData=None,
     comments=None,
-):
+) -> None:
     """Exports data values as a rectangular image.
 
     Parameters
@@ -348,7 +348,7 @@ def gridToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
 
 
 # ==============================================================================
-def pointsToVTK(path, x, y, z, data=None, comments=None):
+def pointsToVTK(path, x, y, z, data=None, comments=None) -> None:
     """Export points and associated data as an unstructured grid.
 
     Parameters
@@ -891,7 +891,7 @@ def writeParallelVTKGrid(
     lower_extent=(0, 0, 0),
     cellData=None,
     pointData=None,
-):
+) -> None:
     """Writes a parallel vtk file from grid-like data:
     VTKStructuredGrid or VTKRectilinearGrid
 
