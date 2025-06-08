@@ -6,14 +6,13 @@ used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.
 
 import gzip
 import numpy as np
-
+from numpy.typing import NDArray
 from . import io_utils
 from ..domain_generation import rdf
 from ..analysis import bins
 
 __all__ = [
     "read_sphere_pack_xyzr_domain",
-    "read_r_lookup_file",
     "py_read_lammps_atoms",
     "read_lammps_atoms",
     "read_atom_map",
@@ -22,7 +21,9 @@ __all__ = [
 ]
 
 
-def read_sphere_pack_xyzr_domain(input_file):
+def read_sphere_pack_xyzr_domain(
+    input_file: str,
+) -> tuple[NDArray[np.double], tuple[tuple[float, float], ...]]:
     """Read a sphere pack file with x, y, z, radius and domain bounding box.
 
     Input File Format:
@@ -74,37 +75,7 @@ def read_sphere_pack_xyzr_domain(input_file):
     return sphere_data, domain_data
 
 
-def read_r_lookup_file(input_file, power=1):
-    """Read the radius lookup file for LAMMPS simulations (sigma values).
-
-    File Format:
-        Atom_ID epsilon sigma
-
-    Args:
-        input_file (str): Path to the lookup file.
-        power (float, optional): Multiplier for sigma values.
-
-    Returns:
-        dict: Mapping from atom ID to sigma value.
-
-    """
-    io_utils.check_file(input_file)
-
-    r_lookup_file = open(input_file, "r", encoding="utf-8")
-
-    sigma = {}  # Lennard-Jones
-    lookup_lines = r_lookup_file.readlines()
-
-    for n_line, line in enumerate(lookup_lines):
-        sigma_i = float(line.split(" ")[2])
-        sigma[n_line + 1] = power * sigma_i
-
-    r_lookup_file.close()
-
-    return sigma
-
-
-def py_read_lammps_atoms(input_file, include_mass=False):
+def py_read_lammps_atoms(input_file: str, include_mass: bool = False):
     """Read atom positions from a LAMMPS file.
 
     Args:
@@ -171,7 +142,9 @@ def py_read_lammps_atoms(input_file, include_mass=False):
         return atom_position, atom_type, domain_data
 
 
-def read_lammps_atoms(input_file, type_map=None):
+def read_lammps_atoms(
+    input_file: str, type_map: None | dict[tuple[int, float], int] = None
+) -> tuple[NDArray[np.double], NDArray[np.int64], NDArray[np.double], float]:
     """Read atom positions and types from a LAMMPS file using C++ backend.
 
     Args:
@@ -192,7 +165,7 @@ def read_lammps_atoms(input_file, type_map=None):
     return positions, types, domain, timestep
 
 
-def read_atom_map(input_file):
+def read_atom_map(input_file: str) -> dict[int, dict[str, str]]:
     """Read the atom mapping file.
 
     File Format:
@@ -265,7 +238,9 @@ def read_rdf(input_folder):
     return atom_map, rdf_out
 
 
-def read_binned_distances_rdf(input_folder):
+def read_binned_distances_rdf(
+    input_folder: str,
+) -> tuple[dict[int, dict[str, str]], dict[int, rdf.RDF]]:
     """Read a folder containing binned RDF data.
 
     Folder must contain:

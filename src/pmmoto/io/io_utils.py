@@ -27,17 +27,17 @@ def check_file_path(file_name: str) -> None:
         os.makedirs(file_name)
 
 
-def check_num_files(num_files, size):
+def check_num_files(num_files: int, size: int) -> None:
     """Check makesure num_files is equal to mpi.size"""
     if num_files != size:
         print(f"Error: Number of Procs {(size)} Must Be Same As When Written")
         utils.raise_error()
 
 
-def check_folder(folder_name):
+def check_folder(folder_name: str) -> None:
     """Check to make sure folder exists"""
     if os.path.isdir(folder_name):
-        return True
+        pass
     else:
         print(f"Warning. {folder_name} Does Not Exist")
         utils.raise_error()

@@ -41,7 +41,8 @@ def initialize(
     reservoir_voxels: int = 0,
     rank: int = 0,
     pad: tuple[int, ...] = (1, 1, 1),
-    verlet_domains: None | tuple[int, ...] = None,
+    verlet_domains: tuple[int, ...] = (1, 1, 1),
+    return_subdomain: bool = False,
 ) -> Subdomain | PaddedSubdomain | VerletSubdomain:
     """Initialize PMMoTo domain and subdomain classes and check for valid inputs."""
     # utils.check_inputs(mpi_size, subdomain_map, voxels, boundaries, inlet, outlet)
@@ -62,16 +63,16 @@ def initialize(
         )
     )
 
-    if pad == (0, 0, 0) and verlet_domains is None:
+    if return_subdomain:
         _subdomain = Subdomain(rank=rank, decomposed_domain=pmmoto_decomposed_domain)
-    elif verlet_domains is None:
+    elif verlet_domains == (0, 0, 0):
         _subdomain = PaddedSubdomain(
             rank=rank,
             decomposed_domain=pmmoto_decomposed_domain,
             pad=pad,
             reservoir_voxels=reservoir_voxels,
         )
-    elif verlet_domains is not None:
+    else:
         _subdomain = VerletSubdomain(
             rank=rank,
             decomposed_domain=pmmoto_decomposed_domain,
