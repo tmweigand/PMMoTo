@@ -31,7 +31,7 @@ jobs:
       - name: Run coverage
         run: tox -e coverage
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: html-coverage
           path: htmlcov/
