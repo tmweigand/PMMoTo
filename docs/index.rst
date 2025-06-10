@@ -3,19 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-PMMoTo documentation
+Porous Media Morphology and Topology Toolkit
 ====================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials.
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   modules
-
-.. include:: ../README.md
-   :parser: myst_parser.sphinx_
+   installation
+   usage
+   api_reference
+   contributing
+   changelog

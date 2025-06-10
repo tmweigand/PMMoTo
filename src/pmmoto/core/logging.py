@@ -9,6 +9,8 @@ import logging
 from datetime import datetime
 from mpi4py import MPI
 
+USE_LOGGING = False
+
 
 class MPIFormatter(logging.Formatter):
     """Custom formatter that includes MPI rank"""

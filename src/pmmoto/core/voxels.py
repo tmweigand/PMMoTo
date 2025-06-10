@@ -9,12 +9,13 @@ import numpy as np
 from numpy.typing import NDArray
 from . import _voxels
 from . import communication
-from .logging import get_logger
+from .logging import get_logger, USE_LOGGING
 from .subdomain import Subdomain
 from .subdomain_padded import PaddedSubdomain
 from .subdomain_verlet import VerletSubdomain
 
-logger = get_logger()
+if USE_LOGGING:
+    logger = get_logger()
 
 T = TypeVar("T", bound=np.generic)
 INT = TypeVar("INT", np.integer[Any], np.unsignedinteger[Any])
@@ -72,8 +73,7 @@ def get_nearest_boundary_index(
     """Determine the nearest boundary index to a given label
 
     If which_voxels == "all", always use base version.
-    If which_voxels == "own" or "pad", use extended version
-        (only if subdomain supports padding).
+    If which_voxels is "own"/ "pad", use extended version.
     """
     if dimension is not None and dimension not in {0, 1, 2}:
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")

@@ -10,7 +10,7 @@ import sys
 import numpy as np
 from numpy.typing import NDArray
 from mpi4py import MPI
-from .logging import get_logger
+from .logging import get_logger, USE_LOGGING
 from . import communication
 
 if TYPE_CHECKING:
@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=np.generic)
 
 comm = MPI.COMM_WORLD
-logger = get_logger()
+if USE_LOGGING:
+    logger = get_logger()
 
 
 __all__ = [
