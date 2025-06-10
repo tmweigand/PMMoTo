@@ -9,6 +9,14 @@ pmmoto.core package
 Submodules
 ----------
 
+pmmoto.core.boundary\_types module
+----------------------------------
+
+.. automodule:: pmmoto.core.boundary_types
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 pmmoto.core.communication module
 --------------------------------
 
@@ -37,6 +45,14 @@ pmmoto.core.domain\_discretization module
 -----------------------------------------
 
 .. automodule:: pmmoto.core.domain_discretization
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pmmoto.core.features module
+---------------------------
+
+.. automodule:: pmmoto.core.features
    :members:
    :show-inheritance:
    :undoc-members:
