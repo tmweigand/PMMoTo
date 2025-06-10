@@ -11,6 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest]
         python-version: ["3.10", "3.11", "3.12"]
+        mpi: [mpich, openmpi]
 
     steps:
       - uses: actions/checkout@v2
@@ -33,9 +34,17 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
             sudo apt update
-            sudo apt install -y libmpich-dev zlib1g-dev
+            if [ "${{ matrix.mpi }}" = "mpich" ]; then
+              sudo apt install -y libmpich-dev zlib1g-dev
+            elif [ "${{ matrix.mpi }}" = "openmpi" ]; then
+              sudo apt install -y libopenmpi-dev zlib1g-dev
+            fi
           elif [ "$RUNNER_OS" = "macOS" ]; then
-            brew install mpich zlib
+            if [ "${{ matrix.mpi }}" = "mpich" ]; then
+              brew install mpich zlib
+            elif [ "${{ matrix.mpi }}" = "openmpi" ]; then
+              brew install open-mpi zlib
+            fi
           fi
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions
