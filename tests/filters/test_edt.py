@@ -7,18 +7,18 @@ import pytest
 import pmmoto
 
 
-def test_edt_2d():
+def test_edt_2d() -> None:
     """Test the Euclidean transform code for a single process and non-periodic domain"""
     voxels = (10, 50)
     prob_zero = 0.1
     seed = 1
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     out = pmmoto.filters.distance.edt(img)
     true = distance_transform_edt(img)
     np.testing.assert_array_almost_equal(out, true)
 
 
-def test_edt_3d():
+def test_edt_3d() -> None:
     """Test the Euclidean transform code for a single process and non-periodic domain"""
     img = np.ones([4, 4, 4], dtype=np.uint8)
     img[3, 3, 3] = 0
@@ -28,7 +28,7 @@ def test_edt_3d():
     np.testing.assert_array_almost_equal(out, true)
 
 
-def test_initial_parabolic_envelope():
+def test_initial_parabolic_envelope() -> None:
     """Test the initial distance sweep with full array"""
     img = np.array([1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1], dtype=np.uint8)
 
@@ -42,7 +42,7 @@ def test_initial_parabolic_envelope():
     )
 
 
-def test_initial_parabolic_envelope_correctors():
+def test_initial_parabolic_envelope_correctors() -> None:
     """Test the initial distance sweep with correctors"""
     img = np.array([1, 1, 0, 1, 1, 1, 1, 1, 1], dtype=np.uint8)
 
@@ -61,13 +61,13 @@ def test_initial_parabolic_envelope_correctors():
     )
 
 
-def test_periodic_2d():
+def test_periodic_2d() -> None:
     """Tests for periodic domains"""
     voxels = (60, 60)
     prob_zero = 0.1
     seed = 4
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
-    img = pmmoto.domain_generation.gen_smoothed_random_binary_grid(
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_smoothed_random_binary(
         voxels, prob_zero, smoothness=1, seed=seed
     ).astype(np.uint8)
 
@@ -88,13 +88,13 @@ def test_periodic_2d():
     )
 
 
-def test_periodic_2d_2():
+def test_periodic_2d_2() -> None:
     """Tests for periodic domains"""
     ## Generate and test 2d periodic domain in 1-dimension
     voxels = (6, 6)
     prob_zero = 0.1
     seed = 5
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     periodic_img = np.tile(img, (3, 3))
 
     np.testing.assert_array_equal(
@@ -116,12 +116,12 @@ def test_periodic_2d_2():
     )
 
 
-def test_periodic_2d_3():
+def test_periodic_2d_3() -> None:
     """Tests for periodic domains"""
     voxels = (500, 500)
     prob_zero = 0.2
     seed = 286565
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     periodic_img = np.tile(img, (3, 3))
 
     np.testing.assert_array_equal(
@@ -143,7 +143,7 @@ def test_periodic_2d_3():
     )
 
 
-def test_boundary_hull_1d():
+def test_boundary_hull_1d() -> None:
     """_summary_"""
     img = np.array(
         [4, np.inf, 0, np.inf, np.inf, np.inf, 4, 6, 16],
@@ -218,12 +218,12 @@ def test_boundary_hull_1d():
     assert hull[2]["range"] == 0.0
 
 
-def test_periodic_3d():
+def test_periodic_3d() -> None:
     """Tests for periodic domains"""
     voxels = (100, 100, 100)
     prob_zero = 0.1
     seed = 1
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     periodic_img = np.tile(img, (3, 3, 3))
 
     np.testing.assert_array_equal(
@@ -273,14 +273,21 @@ def test_periodic_3d():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_pmmoto_3d_parallel():
+def test_pmmoto_3d_parallel() -> None:
     """Tests EDT with pmmoto"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     periodic = True
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
     img = np.ones(sd.domain.voxels, dtype=np.uint8)
-    img = pmmoto.domain_generation.gen_random_binary_grid(
+    img = pmmoto.domain_generation.gen_img_random_binary(
         sd.domain.voxels,
         p_zero=0.05,
         seed=122,
@@ -300,7 +307,7 @@ def test_pmmoto_3d_parallel():
         resolution=sd.domain.resolution,
     )
 
-    ## Create padded subdomain
+    ## Create padded subdomain of entire img for each processor
     img = pmmoto.core.utils.constant_pad_img(img, sd.pad, -1)
     pmmoto.core.communication.update_buffer(sd, img)
     assert np.min(img) > -1
@@ -316,12 +323,12 @@ def test_pmmoto_3d_parallel():
     )
 
 
-def test_periodic_3d_2():
+def test_periodic_3d_2() -> None:
     """Tests for periodic domains"""
     voxels = (50, 50, 50)  # img = np.ones(voxels, dtype=np.uint8)
     prob_zero = 0.2
     seed = 1246
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     periodic_img = np.tile(img, (3, 3, 3))
 
     np.testing.assert_array_equal(
@@ -361,7 +368,7 @@ def test_edt_single_non_periodic():
     voxels = (10, 10, 10)
     prob_zero = 0.1
     seed = 1
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
 
     sd = pmmoto.initialize(voxels=voxels)
     edt = pmmoto.filters.distance.edt(img, sd)

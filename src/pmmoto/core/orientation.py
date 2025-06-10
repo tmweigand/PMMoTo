@@ -88,7 +88,7 @@ class FaceEdgeCornerMap:
         ]
 
     def _generate_faces(self) -> dict[tuple[int, ...], FaceInfo]:
-        """Generate face map including opposite direction, argument order, and orientation.
+        """Generate face map: opposite direction, argument order, orientation.
 
         Returns:
             A dictionary mapping face direction tuples to FaceInfo objects.

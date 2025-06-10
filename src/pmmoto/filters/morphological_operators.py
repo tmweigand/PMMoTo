@@ -4,13 +4,21 @@ Morphological operations for binary images, including dilation, erosion,
 opening, and closing, with support for parallel subdomains and FFT-based methods.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
+
 import math
 import numpy as np
+from numpy.typing import NDArray
 from scipy.signal import fftconvolve
+from ..core.boundary_types import BoundaryType
 from ..core import communication
 from ..core import utils
 from . import distance
 
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain_padded import PaddedSubdomain
+    from pmmoto.core.subdomain_verlet import VerletSubdomain
 
 __all__ = [
     "gen_struct_ratio",
@@ -24,7 +32,7 @@ __all__ = [
 ]
 
 
-def gen_struct_ratio(resolution, radius):
+def gen_struct_ratio(resolution: tuple[float, ...], radius: float) -> tuple[int, ...]:
     """Generate the structuring element dimensions for halo communication.
 
     Args:
@@ -50,10 +58,14 @@ def gen_struct_ratio(resolution, radius):
         [math.ceil(radius / res) for res in resolution],
         dtype=np.int64,
     )
-    return struct_ratio
+
+    struct_ratio_tuple: tuple[int, ...] = tuple(struct_ratio.tolist())
+    return struct_ratio_tuple
 
 
-def gen_struct_element(resolution, radius):
+def gen_struct_element(
+    resolution: tuple[float, ...], radius: float
+) -> tuple[tuple[int, ...], NDArray[np.uint8]]:
     """Generate the structuring element for FFT morphology approach.
 
     Args:
@@ -88,7 +100,12 @@ def gen_struct_element(resolution, radius):
     return struct_ratio, struct_element
 
 
-def addition(subdomain, img, radius, fft=False):
+def addition(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Perform a morphological dilation on a binary domain.
 
     Args:
@@ -105,7 +122,7 @@ def addition(subdomain, img, radius, fft=False):
         subdomain.domain.resolution, radius
     )
 
-    halo_img, halo = communication.update_buffer(
+    halo_img, halo = communication.update_extended_buffer(
         subdomain=subdomain,
         img=img,
         buffer=struct_ratio,
@@ -132,7 +149,12 @@ def addition(subdomain, img, radius, fft=False):
     return grid_out
 
 
-def dilate(subdomain, img, radius, fft=False):
+def dilate(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Morphological dilation (addition).
 
     Args:
@@ -150,7 +172,12 @@ def dilate(subdomain, img, radius, fft=False):
     return img_out
 
 
-def subtraction(subdomain, img, radius, fft=False):
+def subtraction(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Perform a morphological subtraction (erosion) on a binary domain.
 
     Args:
@@ -167,7 +194,7 @@ def subtraction(subdomain, img, radius, fft=False):
         subdomain.domain.resolution, radius
     )
 
-    halo_img, halo = communication.update_buffer(
+    halo_img, halo = communication.update_extended_buffer(
         subdomain=subdomain,
         img=img,
         buffer=struct_ratio,
@@ -176,33 +203,41 @@ def subtraction(subdomain, img, radius, fft=False):
     if fft:
         ### Boundary condition fix for subtraction
         _pad = 1
-        if "end" in subdomain.boundary_types.values():
+        if subdomain.check_boundary_type(BoundaryType.END):
             _pad = np.max(struct_ratio)
-        _grid = np.pad(
+        _img = np.pad(
             array=halo_img, pad_width=_pad, mode="constant", constant_values=1
         )
-        _grid = fftconvolve(_grid, struct_element, mode="same") > (
+        _img = fftconvolve(_img, struct_element, mode="same") > (
             struct_element.sum() - 0.1
         )
-        _grid_out = utils.unpad(_grid, _pad * np.ones_like(halo)).astype(np.uint8)
+        pad_tuple = tuple(
+            tuple(row) for row in (_pad * np.ones_like(halo))
+        )  # Pads everything regardless of bcs
+        _img_out = utils.unpad(_img, pad_tuple).astype(np.uint8)
     else:
-        _grid_distance = distance.edt3d(
+        _img_distance = distance.edt3d(
             halo_img, resolution=subdomain.domain.resolution, squared=True
         )
-        _grid_out = np.where((_grid_distance <= radius * radius), 0, 1).astype(np.uint8)
+        _img_out = np.where((_img_distance <= radius * radius), 0, 1).astype(np.uint8)
 
-    grid_out = utils.unpad(_grid_out, halo)
-    grid_out = subdomain.set_wall_bcs(grid_out)
+    img_out = utils.unpad(_img_out, halo)
+    img_out = subdomain.set_wall_bcs(img_out)
 
-    return grid_out
+    return img_out
 
 
-def erode(subdomain, grid, radius, fft=False):
+def erode(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Morphological erosion (subtraction).
 
     Args:
         subdomain: Subdomain object.
-        grid (np.ndarray): Binary image.
+        img (np.ndarray): Binary image.
         radius (float): Erosion radius.
         fft (bool, optional): Use FFT-based method if True.
 
@@ -210,17 +245,22 @@ def erode(subdomain, grid, radius, fft=False):
         np.ndarray: Eroded binary image.
 
     """
-    grid_out = subtraction(subdomain, grid, radius, fft)
+    img_out = subtraction(subdomain, img, radius, fft)
 
-    return grid_out
+    return img_out
 
 
-def opening(subdomain, grid, radius, fft=False):
+def opening(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Morphological opening (erosion followed by dilation).
 
     Args:
         subdomain: Subdomain object.
-        grid (np.ndarray): Binary image.
+        img (np.ndarray): Binary image.
         radius (float): Structuring element radius.
         fft (bool, optional): Use FFT-based method if True.
 
@@ -228,17 +268,22 @@ def opening(subdomain, grid, radius, fft=False):
         np.ndarray: Opened binary image.
 
     """
-    _erode = subtraction(subdomain, grid, radius, fft)
+    _erode = subtraction(subdomain, img, radius, fft)
     open_map = addition(subdomain, _erode, radius, fft)
     return open_map
 
 
-def closing(subdomain, grid, radius, fft=False):
+def closing(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
     """Morphological closing (dilation followed by erosion).
 
     Args:
         subdomain: Subdomain object.
-        grid (np.ndarray): Binary image.
+        img (np.ndarray): Binary image.
         radius (float): Structuring element radius.
         fft (bool, optional): Use FFT-based method if True.
 
@@ -246,12 +291,15 @@ def closing(subdomain, grid, radius, fft=False):
         np.ndarray: Closed binary image.
 
     """
-    _dilate = addition(subdomain, grid, radius, fft)
+    _dilate = addition(subdomain, img, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
     return closing_map
 
 
-def check_radii(subdomain, radii):
+def check_radii(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    radii: list[float] | NDArray[np.floating[Any]],
+) -> None:
     """Validate that each radius in the list does not exceed the subdomain size.
 
     Args:

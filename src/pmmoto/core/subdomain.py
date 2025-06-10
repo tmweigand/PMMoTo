@@ -256,8 +256,8 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         Args:
             index (tuple[int, int, int]): Subdomain index.
-            domain_voxels (tuple[float, float, float]): Number of voxels in each dimension.
-            subdomains (tuple[int, int, int]): Number of subdomains in each dimension.
+            domain_voxels (tuple[float, float, float]): Number of voxels per dimension
+            subdomains (tuple[int, int, int]): Number of subdomains per dimension.
 
         Returns:
             tuple[int, int, int]: Start voxel indices - minimum voxel ID.
@@ -370,3 +370,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
                 return True
 
         return False
+
+    def check_boundary_type(self, type: BoundaryType) -> bool:
+        """Determine if boundary type on subdomain."""
+        return any(type in inner for inner in self.boundary_types)

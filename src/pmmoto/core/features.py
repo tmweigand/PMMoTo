@@ -33,6 +33,7 @@ class Feature(object):
         """Initialize a Feature.
 
         Args:
+            dim: dimension
             feature_id: Feature identifier (tuple).
             neighbor_rank: Neighboring process rank.
             boundary_type: Boundary type (e.g., "wall", "periodic").
@@ -98,6 +99,7 @@ class Feature(object):
                     self.neighbor[i] = [p_before, length - p_after]
 
     def compute_lower_face(self, lower_pad: int) -> list[int]:
+        """Determine lower face voxels"""
         if lower_pad and self.boundary_type != BoundaryType.WALL:
             return [lower_pad, lower_pad * 2]
         elif lower_pad and self.boundary_type == BoundaryType.WALL:
@@ -110,6 +112,7 @@ class Feature(object):
         length: int,
         upper_pad: int,
     ) -> list[int]:
+        """Determine upper face voxels"""
         if upper_pad and self.boundary_type != BoundaryType.WALL:
             return [length - upper_pad * 2, length - upper_pad]
         elif upper_pad and self.boundary_type == BoundaryType.WALL:
@@ -118,6 +121,7 @@ class Feature(object):
             return [length - 1, length]
 
     def compute_lower_neighbor(self, lower_pad: int) -> list[int]:
+        """Determine lower neighbor face voxels"""
         if self.boundary_type == BoundaryType.WALL:
             return [0, 1]
         else:
@@ -128,6 +132,7 @@ class Feature(object):
         length: int,
         upper_pad: int,
     ) -> list[int]:
+        """Determine upper neighbor face voxels"""
         if self.boundary_type == BoundaryType.WALL:
             return [length - 1, length]
         else:

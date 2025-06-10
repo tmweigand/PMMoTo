@@ -5,7 +5,7 @@ with support for periodic boundaries and distributed subdomains.
 """
 
 from __future__ import annotations
-from typing import TypeVar, TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING, Literal
 import numpy as np
 from numpy.typing import NDArray
 from pmmoto.core import _voxels
@@ -13,9 +13,9 @@ from pmmoto.core import communication
 from . import _distance
 
 if TYPE_CHECKING:
-    from pmmoto.core.subdomain import Subdomain
     from pmmoto.core.subdomain_padded import PaddedSubdomain
     from pmmoto.core.subdomain_verlet import VerletSubdomain
+    from ._distance import Hull
 
 T = TypeVar("T", bound=np.generic)
 
@@ -23,8 +23,8 @@ __all__ = ["edt", "edt2d", "edt3d"]
 
 
 def edt(
-    img: NDArray[T],
-    subdomain: None | Subdomain | PaddedSubdomain | VerletSubdomain = None,
+    img: NDArray[np.uint8],
+    subdomain: None | PaddedSubdomain | VerletSubdomain = None,
 ) -> NDArray[np.float32]:
     """Calculate the exact Euclidean transform of an image.
 
@@ -53,7 +53,9 @@ def edt(
     return img_out
 
 
-def corrected_edt(img, subdomain):
+def corrected_edt(
+    img: NDArray[np.uint8], subdomain: PaddedSubdomain | VerletSubdomain
+) -> NDArray[np.float32]:
     """Perform an EDT with correctors for periodic boundaries and distributed memory.
 
     Args:
@@ -99,7 +101,11 @@ def corrected_edt(img, subdomain):
     return np.asarray(np.sqrt(img_out))
 
 
-def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
+def edt2d(
+    img: NDArray[np.uint8],
+    periodic: tuple[bool, bool] = (False, False),
+    resolution: tuple[float, float] = (1.0, 1.0),
+) -> NDArray[np.float32]:
     """Perform an exact Euclidean transform on a 2D image.
 
     Args:
@@ -200,8 +206,11 @@ def edt2d(img, periodic=[False, False], resolution=(1.0, 1.0)):
 
 
 def edt3d(
-    img, periodic=[False, False, False], resolution=(1.0, 1.0, 1.0), squared=False
-):
+    img: NDArray[np.uint8],
+    periodic: tuple[bool, ...] = (False, False, False),
+    resolution: tuple[float, ...] = (1.0, 1.0, 1.0),
+    squared: bool = False,
+) -> NDArray[np.float32]:
     """Perform an exact Euclidean transform on a 3D image.
 
     Args:
@@ -247,7 +256,7 @@ def edt3d(
                 forward=True,
                 lower_skip=0,
                 upper_skip=0,
-            )
+            ).astype(np.int64)
 
             upper_vertex = _voxels.get_nearest_boundary_index_face(
                 img=img,
@@ -256,7 +265,7 @@ def edt3d(
                 forward=False,
                 lower_skip=0,
                 upper_skip=0,
-            )
+            ).astype(np.int64)
 
             _lower = _distance.get_boundary_hull(
                 img=img_out,
@@ -295,13 +304,13 @@ def edt3d(
 
 
 def get_nearest_boundary_distance(
-    subdomain,
-    img,
-    label,
-    dimension,
-    which_voxels="all",
-    distance_to="all",
-):
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    label: int,
+    dimension: int,
+    which_voxels: Literal["own", "pad", "all"] = "all",
+    distance_to: Literal["own", "pad", "neighbor", "all"] = "all",
+) -> dict[tuple[int, ...], NDArray[np.float32]]:
     """Determine the distance to the nearest subdomain boundary face for label.
 
     Args:
@@ -317,49 +326,46 @@ def get_nearest_boundary_distance(
         dict: Dictionary of distances for each face.
 
     """
-    if dimension is not None and dimension not in {0, 1, 2}:
-        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
-
     lower_skip = 0
     upper_skip = 0
 
     lower_distance = 0
     upper_distance = 0
 
-    boundary_distance = {}
+    boundary_distance: dict[tuple[int, ...], NDArray[np.float32]] = {}
 
-    for feature_id, feature in subdomain.features["faces"].items():
-        if dimension is None or feature_id[dimension] != 0:
+    for feature_id, feature in subdomain.features.faces.items():
+        if feature_id[dimension] != 0:
 
             if feature.forward:
                 if which_voxels == "own":
-                    lower_skip = subdomain.pad[feature.info["argOrder"][0]][0]
+                    lower_skip = subdomain.pad[feature.info.arg_order[0]][0]
                 elif which_voxels == "pad":
-                    lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+                    lower_skip = 2 * subdomain.pad[feature.info.arg_order[0]][0]
 
                 if distance_to == "own":
-                    lower_distance = subdomain.pad[feature.info["argOrder"][0]][0]
+                    lower_distance = subdomain.pad[feature.info.arg_order[0]][0]
                 elif distance_to == "pad":
-                    lower_distance = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+                    lower_distance = 2 * subdomain.pad[feature.info.arg_order[0]][0]
                 elif distance_to == "neighbor":
                     lower_distance = -1
 
             elif not feature.forward:
                 if which_voxels == "own":
-                    upper_skip = subdomain.pad[feature.info["argOrder"][0]][1]
+                    upper_skip = subdomain.pad[feature.info.arg_order[0]][1]
                 elif which_voxels == "pad":
-                    upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+                    upper_skip = 2 * subdomain.pad[feature.info.arg_order[0]][1]
 
                 if distance_to == "own":
-                    upper_distance = subdomain.pad[feature.info["argOrder"][0]][1]
+                    upper_distance = subdomain.pad[feature.info.arg_order[0]][1]
                 elif distance_to == "pad":
-                    upper_distance = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+                    upper_distance = 2 * subdomain.pad[feature.info.arg_order[0]][1]
                 elif distance_to == "neighbor":
                     upper_distance = -1
 
             boundary_distance[feature_id] = _voxels.get_nearest_boundary_index_face(
                 img=img,
-                dimension=feature.info["argOrder"][0],
+                dimension=feature.info.arg_order[0],
                 label=label,
                 forward=feature.forward,
                 lower_skip=lower_skip,
@@ -376,7 +382,7 @@ def get_nearest_boundary_distance(
             else:
                 boundary_distance[feature_id] = np.where(
                     boundary_distance[feature_id] != -1,
-                    img.shape[feature.info["argOrder"][0]]
+                    img.shape[feature.info.arg_order[0]]
                     - boundary_distance[feature_id]
                     - upper_distance
                     - 1,
@@ -386,7 +392,12 @@ def get_nearest_boundary_distance(
     return boundary_distance
 
 
-def get_initial_correctors(subdomain, img, dimension=None):
+def get_initial_correctors(
+    subdomain: PaddedSubdomain | VerletSubdomain, img: NDArray[np.uint8], dimension: int
+) -> tuple[
+    None | NDArray[np.float32],
+    None | NDArray[np.float32],
+]:
     """Get the initial correctors for a subdomain and image.
 
     The correctors are defined as the absolute distance to the nearest solid
@@ -401,9 +412,6 @@ def get_initial_correctors(subdomain, img, dimension=None):
         tuple: (lower_correctors, upper_correctors)
 
     """
-    if dimension is not None and dimension not in {0, 1, 2}:
-        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
-
     boundary_distances = get_nearest_boundary_distance(
         subdomain=subdomain,
         img=img,
@@ -414,7 +422,7 @@ def get_initial_correctors(subdomain, img, dimension=None):
     )
 
     recv_data = communication.communicate_features(
-        subdomain=subdomain, send_data=boundary_distances, feature_types=["faces"]
+        subdomain=subdomain, send_data=boundary_distances
     )
 
     lower_dim_key = None
@@ -439,7 +447,16 @@ def get_initial_correctors(subdomain, img, dimension=None):
     return lower_correctors, upper_correctors
 
 
-def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
+def get_boundary_hull(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.float32],
+    og_img: NDArray[np.uint8],
+    dimension: int,
+    num_hull: int = 4,
+) -> tuple[
+    None | list[list[Hull]],
+    None | list[list[Hull]],
+]:
     """Get the boundary hull for a subdomain and image.
 
     Always pad the domain by 1 to allow for exact update of img and account for
@@ -461,23 +478,18 @@ def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
 
     boundary_hull = {}
 
-    lower_dim_key = [0, 0, 0]
-    lower_dim_key[dimension] = -1
-    lower_dim_key = tuple(lower_dim_key)
+    lower_dim_key = tuple(-1 if i == dimension else 0 for i in range(3))
+    upper_dim_key = tuple(1 if i == dimension else 0 for i in range(3))
 
-    upper_dim_key = [0, 0, 0]
-    upper_dim_key[dimension] = 1
-    upper_dim_key = tuple(upper_dim_key)
-
-    for feature_id, feature in subdomain.features["faces"].items():
+    for feature_id, feature in subdomain.features.faces.items():
         if feature_id[dimension] != 0:
 
             if feature.forward:
-                lower_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][0]
+                lower_skip = 2 * subdomain.pad[feature.info.arg_order[0]][0]
                 upper_skip = 0
             else:
                 lower_skip = 0
-                upper_skip = 2 * subdomain.pad[feature.info["argOrder"][0]][1]
+                upper_skip = 2 * subdomain.pad[feature.info.arg_order[0]][1]
 
             nearest_zero = _voxels.get_nearest_boundary_index_face(
                 img=og_img,
@@ -486,12 +498,12 @@ def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
                 forward=feature.forward,
                 lower_skip=lower_skip,
                 upper_skip=upper_skip,
-            )
+            ).astype(np.int64)
 
             boundary_hull[feature_id] = _distance.get_boundary_hull(
                 img=img,
                 bound=nearest_zero,
-                dimension=feature.info["argOrder"][0],
+                dimension=feature.info.arg_order[0],
                 resolution=subdomain.domain.resolution[dimension],
                 num_hull=num_hull,
                 forward=feature.forward,
@@ -500,7 +512,7 @@ def get_boundary_hull(subdomain, img, og_img, dimension, num_hull=4):
             )
 
     recv_data = communication.communicate_features(
-        subdomain=subdomain, send_data=boundary_hull, feature_types=["faces"]
+        subdomain=subdomain, send_data=boundary_hull
     )
 
     if lower_dim_key in recv_data.keys():

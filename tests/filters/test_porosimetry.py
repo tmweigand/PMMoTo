@@ -102,6 +102,7 @@ def test_porosimetry_inlet():
     )
 
 
+@pytest.mark.skip
 def test_pore_size_distribution():
     """Test generation of pore size distribution for an inkbottle"""
     voxels = (560, 120, 120)

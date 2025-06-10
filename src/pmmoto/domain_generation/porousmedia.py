@@ -5,17 +5,15 @@ including porosity and distance transform calculations.
 """
 
 from __future__ import annotations
-from typing import TypeVar, TYPE_CHECKING
+from typing import TypeVar
 import numpy as np
 from numpy.typing import NDArray
 from ..core import communication
 from ..core import utils
 from ..filters import distance
-
-if TYPE_CHECKING:
-    from ..core.subdomain import Subdomain
-    from ..core.subdomain_padded import PaddedSubdomain
-    from ..core.subdomain_verlet import VerletSubdomain
+from ..core.subdomain import Subdomain
+from ..core.subdomain_padded import PaddedSubdomain
+from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 
@@ -82,6 +80,7 @@ class PorousMedia:
 
     def set_distance(self) -> None:
         """Calculate and set the Euclidean distance transform."""
+        assert isinstance(self.subdomain, (PaddedSubdomain, VerletSubdomain))
         self._distance = distance.edt(img=self.img, subdomain=self.subdomain)
 
 
