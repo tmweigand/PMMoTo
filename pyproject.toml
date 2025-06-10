@@ -1,6 +1,6 @@
 [project]
 name = "pmmoto"
-version = "0.1.0"
+version = "0.1.2"
 description = "Porous Media Topology and Morphology Toolkit"
 
 authors = [
@@ -41,7 +41,7 @@ dev = [
     "pytest_benchmark>=5.1.0",
     "ruff>=0.11.5",
     "interrogate>=1.5.0",
-    "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master",
+    # "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master",
     "typing_extensions>=4.6"
 ]
 docs = [

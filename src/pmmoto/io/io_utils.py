@@ -2,9 +2,10 @@
 
 import os
 from ..core import utils
-from ..core.logging import get_logger
+from ..core.logging import get_logger, USE_LOGGING
 
-logger = get_logger()
+if USE_LOGGING:
+    logger = get_logger()
 
 
 def check_file(file_name: str) -> None:

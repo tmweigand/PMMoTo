@@ -5,7 +5,7 @@ from typing import Any, TypeVar
 import numpy as np
 from numpy.typing import NDArray
 from mpi4py import MPI
-from .logging import get_logger
+from .logging import get_logger, USE_LOGGING
 
 from . import utils
 from .subdomain import Subdomain
@@ -41,7 +41,8 @@ _OP_MAP: dict[str, MPI.Op] = {
     "maxloc": MPI.MAXLOC,
 }
 
-logger = get_logger()
+if USE_LOGGING:
+    logger = get_logger()
 
 
 def all_gather(data: Any) -> list[Any]:
