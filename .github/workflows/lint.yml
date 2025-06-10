@@ -18,6 +18,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install MPI
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt update
+            sudo apt install -y libmpich-dev zlib1g-dev
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install mpich zlib
+          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
