@@ -1,4 +1,6 @@
 [run]
+source = pmmoto
 omit =
     src/pmmoto/io/evtk/*
-    tests/
+    tests/*
+    .tox/*
