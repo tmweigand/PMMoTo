@@ -4,11 +4,19 @@ Provides functions for labeling connected regions, mapping labels to phases,
 and extracting inlet/outlet-connected regions in distributed or periodic domains.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, DefaultDict
 from collections import defaultdict
 import cc3d
 import numpy as np
+from numpy.typing import NDArray
 from pmmoto.core import voxels
 from pmmoto.core import communication
+
+if TYPE_CHECKING:
+    from ..core.subdomain import Subdomain
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
 
 __all__ = [
     "connect_components",
@@ -18,7 +26,10 @@ __all__ = [
 ]
 
 
-def connect_components(img, subdomain, return_label_count=True):
+def connect_components(
+    img: NDArray[np.uint8],
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+) -> tuple[NDArray[np.uint64], int]:
     """Label connected components (sets) for all phases in img.
 
     Note:
@@ -27,13 +38,14 @@ def connect_components(img, subdomain, return_label_count=True):
     Args:
         img (np.ndarray): Input binary image.
         subdomain: Subdomain object.
-        return_label_count (bool, optional): If True, return (label_img, label_count).
 
     Returns:
         tuple or np.ndarray: (label_img, label_count) or label_img.
 
     """
     # max_label = label_count
+    label_img: NDArray[np.uint64]
+    label_count: int
     label_img, label_count = cc3d.connected_components(
         img, return_N=True, out_dtype=np.uint64
     )
@@ -43,13 +55,14 @@ def connect_components(img, subdomain, return_label_count=True):
             subdomain, label_img, label_count
         )
 
-    if return_label_count:
-        return label_img, label_count
-    else:
-        return label_img
+    return label_img, label_count
 
 
-def connect_subdomain_boundaries(subdomain, label_grid, label_count):
+def connect_subdomain_boundaries(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    label_grid: NDArray[np.uint64],
+    label_count: int,
+) -> tuple[NDArray[np.uint64], int]:
     """Connect labels across subdomain boundaries for distributed/periodic domains.
 
     Args:
@@ -74,15 +87,19 @@ def connect_subdomain_boundaries(subdomain, label_grid, label_count):
     )
 
     local_global_map, global_label_count = voxels.match_global_boundary_voxels(
-        subdomain, matches, label_count
+        matches, label_count
     )
-
-    label_grid = voxels.renumber_image(label_grid, local_global_map)
+    mapping = {
+        np.uint64(k): np.uint64(v) for k, v in local_global_map[subdomain.rank].items()
+    }
+    label_grid = voxels.renumber_image(label_grid, mapping)
 
     return label_grid, global_label_count
 
 
-def gen_img_to_label_map(img, labeled_img):
+def gen_img_to_label_map(
+    img: NDArray[np.uint8], labeled_img: NDArray[np.uint64]
+) -> dict[np.uint64, np.uint64]:
     """Generate a mapping from label to phase for all labels.
 
     Args:
@@ -99,7 +116,7 @@ def gen_img_to_label_map(img, labeled_img):
     )
 
 
-def phase_count(phase_map):
+def phase_count(phase_map: dict[int, int]) -> dict[int, int]:
     """Count the number of labels for each phase.
 
     Args:
@@ -109,7 +126,7 @@ def phase_count(phase_map):
         dict: Mapping from phase to count.
 
     """
-    phase_count = {}
+    phase_count: dict[int, int] = {}
     for label in phase_map:
         phase = phase_map[label]
         if phase in phase_count:
@@ -120,7 +137,10 @@ def phase_count(phase_map):
     return phase_count
 
 
-def inlet_outlet_labels(subdomain, labeled_img):
+def inlet_outlet_labels(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    labeled_img: NDArray[np.uint64],
+) -> dict[np.uint64, dict[str, bool]]:
     """Collect the labels that are on the inlet and outlet.
 
     Args:
@@ -134,21 +154,28 @@ def inlet_outlet_labels(subdomain, labeled_img):
     sd_inlet = voxels.gen_inlet_label_map(subdomain, labeled_img)
     sd_outlet = voxels.gen_outlet_label_map(subdomain, labeled_img)
 
-    inlet_outlet = communication.all_gather({"inlet": sd_inlet, "outlet": sd_outlet})
+    inlet_outlet_ranks = communication.all_gather(
+        {"inlet": sd_inlet, "outlet": sd_outlet}
+    )
 
-    connected = defaultdict(lambda: {"inlet": False, "outlet": False})
-    for rank_data in inlet_outlet:
-        for label in rank_data["inlet"]:
+    connected: DefaultDict[np.uint64, dict[str, bool]] = defaultdict(
+        lambda: {"inlet": False, "outlet": False}
+    )
+    for io_rank in inlet_outlet_ranks:
+        for label in io_rank["inlet"]:
             if label > 0:
                 connected[label]["inlet"] = True
-        for label in rank_data["outlet"]:
+        for label in io_rank["outlet"]:
             if label > 0:
                 connected[label]["outlet"] = True
 
     return connected
 
 
-def inlet_outlet_connections(subdomain, labeled_img):
+def inlet_outlet_connections(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    labeled_img: NDArray[np.uint64],
+) -> list[np.uint64]:
     """Determine the labels that are connected to both the inlet and outlet.
 
     Args:
@@ -168,7 +195,11 @@ def inlet_outlet_connections(subdomain, labeled_img):
     return connections
 
 
-def inlet_connected_img(subdomain, img, phase=None):
+def inlet_connected_img(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    phase: None | int = None,
+) -> NDArray[np.uint8]:
     """Return an image where all voxels are connected to the inlet.
 
     If phase is specified, all other phases are set to zero, leaving only connected
@@ -184,7 +215,7 @@ def inlet_connected_img(subdomain, img, phase=None):
 
     """
     # Generate labels for each phase
-    labeled_img = connect_components(img, subdomain, return_label_count=False)
+    labeled_img, _ = connect_components(img, subdomain)
 
     # Collect the inlet and outlet labels
     inlet_labels = inlet_outlet_labels(subdomain, labeled_img)
@@ -197,11 +228,11 @@ def inlet_connected_img(subdomain, img, phase=None):
     if phase is None:
         for label in inlet_phase_map.keys():
             if inlet_labels[label]["inlet"] is False:
-                inlet_phase_map[label] = 0
+                inlet_phase_map[label] = np.uint64(0)
     else:
         for label, _phase in inlet_phase_map.items():
             if _phase != phase or inlet_labels[label]["inlet"] is False:
-                inlet_phase_map[label] = 0
+                inlet_phase_map[label] = np.uint64(0)
 
     # Renumber the label map with the outlet_phase_map
     inlet_img = voxels.renumber_image(labeled_img, inlet_phase_map)
@@ -209,7 +240,11 @@ def inlet_connected_img(subdomain, img, phase=None):
     return inlet_img
 
 
-def outlet_connected_img(subdomain, img, phase=None):
+def outlet_connected_img(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    phase: None | int = None,
+) -> NDArray[np.uint8]:
     """Return an image where all voxels are connected to the outlet.
 
     If phase is specified, all other phases are set to zero, leaving only connected
@@ -225,7 +260,7 @@ def outlet_connected_img(subdomain, img, phase=None):
 
     """
     # Generate labels for each phase
-    labeled_img = connect_components(img, subdomain, return_label_count=False)
+    labeled_img, _ = connect_components(img, subdomain)
 
     # Collect the inlet and outlet labels
     outlet_labels = inlet_outlet_labels(subdomain, labeled_img)
@@ -238,11 +273,11 @@ def outlet_connected_img(subdomain, img, phase=None):
     if phase is None:
         for label in outlet_phase_map.keys():
             if outlet_labels[label]["outlet"] is False:
-                outlet_phase_map[label] = 0
+                outlet_phase_map[label] = np.uint64(0)
     else:
         for label, _phase in outlet_phase_map.items():
             if _phase != phase or outlet_labels[label]["outlet"] is False:
-                outlet_phase_map[label] = 0
+                outlet_phase_map[label] = np.uint64(0)
 
     # Renumber the label map with the outlet_phase_map
     outlet_img = voxels.renumber_image(labeled_img, outlet_phase_map)

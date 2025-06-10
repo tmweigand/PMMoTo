@@ -202,7 +202,7 @@ class SubdomainFeatures:
         return per_corrections
 
     def get_feature_member(self, feature_id: tuple[int, ...], member_name: str) -> Any:
-        """Get the value of a member from the Face, Edge, or Corner with the given feature_id.
+        """Get the value of a member from the Face, Edge, or Corner with feature_id.
 
         Args:
             feature_id (tuple[int, ...]): The feature ID.
@@ -230,5 +230,6 @@ class SubdomainFeatures:
             return getattr(feature_obj, member_name)
         except AttributeError:
             raise AttributeError(
-                f"Feature {feature_id} ({type(feature_obj).__name__}) has no member '{member_name}'."
+                f"Feature {feature_id} ({type(feature_obj).__name__})"
+                "has no member '{member_name}'."
             )

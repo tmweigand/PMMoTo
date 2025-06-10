@@ -15,7 +15,8 @@ class Domain:
 
     Attributes:
         box (tuple[tuple[float, float], ...]): Physical bounds for each dimension.
-        boundary_types (tuple[tuple[BoundaryType, BoundaryType], ...]): Boundary types for each face.
+        boundary_types (tuple[tuple[BoundaryType, BoundaryType], ...]):
+            Boundary types for each face.
             END: No assumption made
             WALL: Wall boundary condition
             PERIODIC: Periodic boundary condition (opposing face must also be 2)

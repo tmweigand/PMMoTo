@@ -5,7 +5,7 @@ as well as initializing PorousMedia and Multiphase objects for PMMoTo.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, TypeVar, Any
+from typing import TypeVar, Any
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter
@@ -16,11 +16,9 @@ from ..io import data_read
 from ..particles import particles
 from ..core import communication
 from ..core import utils
-
-if TYPE_CHECKING:
-    from ..core.subdomain import Subdomain
-    from ..core.subdomain_padded import PaddedSubdomain
-    from ..core.subdomain_verlet import VerletSubdomain
+from ..core.subdomain import Subdomain
+from ..core.subdomain_padded import PaddedSubdomain
+from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 

@@ -47,6 +47,10 @@ ctypedef fused INTS:
     UINT
     INT
 
+ctypedef fused INTS2:
+    UINT
+    INT
+
 
 cdef struct match_test:
     npy_intp local_id
@@ -349,7 +353,7 @@ def merge_matched_voxels(all_match_data):
             local_global_map[key] = {}
 
     # Merge connected sets
-    global_id = 1
+    global_id = 1 # Zero are ignored in connected components
     for key, match in matches.items(): # key is (rank,local label)
         if match["visited"]:
             continue
@@ -448,7 +452,7 @@ def get_boundary_data(
 
 def gen_img_to_label_map(
     INTS [:, :, :] img,
-    INTS [:, :, :] labels
+    INTS2 [:, :, :] labels
 ):
     """
     This function provides a mapping between two images. For our purposes,
@@ -458,7 +462,7 @@ def gen_img_to_label_map(
 
     cdef:
         int i, j, k
-        unordered_map[INTS, INTS] img_to_label_map
+        unordered_map[INTS2, INTS] img_to_label_map
         int sx = img.shape[0]
         int sy = img.shape[1]
         int sz = img.shape[2]
@@ -471,7 +475,7 @@ def gen_img_to_label_map(
     return img_to_label_map
 
 
-def renumber_img(INTS[:, :, :] img, unordered_map[INTS, INTS] map):
+def renumber_img(INTS[:, :, :] img, dict map):
     """
     Renumber a img in-place based on map.
     """

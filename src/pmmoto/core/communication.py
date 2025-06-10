@@ -199,7 +199,7 @@ def buffer_unpack(
         subdomain (object): The subdomain object containing features.
         img (numpy.ndarray): The grid data to be updated.
         features_recv (dict): Received buffer data from neighbors.
-        extended_loop (dict, optional): Extended loop indices for padding.
+        extended_features (dict, optional): Extended SubdomainFeatures object.
 
     Returns:
         numpy.ndarray: The updated grid with buffer data applied.

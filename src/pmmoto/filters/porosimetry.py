@@ -3,14 +3,22 @@
 Functions for pore size analysis and morphological porosimetry in PMMoTo.
 """
 
-from typing import Literal, Dict
+from __future__ import annotations
+from typing import Literal, Any, TYPE_CHECKING
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from ..core import utils
 from ..io import io_utils
 from . import morphological_operators
 from . import distance
 from . import connected_components
+
+if TYPE_CHECKING:
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
+    from ..domain_generation.porousmedia import PorousMedia
+    from ..domain_generation.multiphase import Multiphase
 
 __all__ = [
     "get_sizes",
@@ -20,7 +28,12 @@ __all__ = [
 ]
 
 
-def get_sizes(min_value, max_value, num_values, spacing="linear"):
+def get_sizes(
+    min_value: float,
+    max_value: float,
+    num_values: int,
+    spacing: Literal["linear", "log"] = "linear",
+) -> NDArray[np.floating[Any]]:
     """Generate a list of pore sizes based on input parameters.
 
     Args:
@@ -67,13 +80,13 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
 
 
 def porosimetry(
-    subdomain,
-    porous_media,
-    radius,
-    inlet=False,
-    multiphase=None,
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    porous_media: PorousMedia,
+    radius: float | list[float],
+    inlet: bool = False,
+    multiphase: None | Multiphase[np.uint8] = None,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
-):
+) -> NDArray[np.uint8]:
     """Perform morphological porosimetry (erosion/dilation) on a porous medium.
 
     Args:
@@ -107,8 +120,8 @@ def porosimetry(
             subdomain=subdomain, img=porous_media.img, radius=erosion_radius, fft=True
         )
     elif mode in {"distance", "hybrid"}:
-        edt = porous_media.distance
-        img_results = edt >= erosion_radius
+        edt: NDArray[np.float32] = porous_media.distance
+        img_results = (edt >= erosion_radius).astype(np.uint8)
 
     # Check inlet
     if inlet:
@@ -140,23 +153,23 @@ def porosimetry(
             edt_inverse = distance.edt(
                 img=np.logical_not(img_results), subdomain=subdomain
             )
-            img_results = edt_inverse < dilation_radius
+            img_results = (edt_inverse < dilation_radius).astype(np.uint8)
 
         elif mode == "hybrid":
             img_results = morphological_operators.addition(
                 subdomain=subdomain, img=img_results, radius=dilation_radius, fft=False
             )
 
-    return img_results.astype(np.double)
+    return img_results.astype(np.uint8)
 
 
 def pore_size_distribution(
-    subdomain,
-    porous_media,
-    radii=None,
-    inlet=False,
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    porous_media: PorousMedia,
+    radii: None | list[float] | NDArray[np.floating[Any]] = None,
+    inlet: bool = False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
-):
+) -> NDArray[np.double]:
     """Generate image where values are the radius of the largest sphere centered there.
 
     Args:
@@ -207,9 +220,9 @@ def pore_size_distribution(
 
 def plot_pore_size_distribution(
     file_name: str,
-    pore_size_counts: Dict[float, float],
+    pore_size_counts: dict[float, float],
     plot_type: Literal["cdf", "pdf"] = "pdf",
-):
+) -> None:
     """Plot and save the pore size distribution as a PNG.
 
     Args:

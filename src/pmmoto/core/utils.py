@@ -101,7 +101,8 @@ def own_img(
 
     Args:
         subdomain: Subdomain object with get_own_voxels method.
-        img (np.ndarray): Input array.
+        img (np.ndarray): Input image.
+        own_voxels: NDArray of size 2*dims with bounds of image to extract
 
     Returns:
         np.ndarray: Array of owned voxels.
@@ -121,7 +122,7 @@ def phase_exists(img: NDArray[T], phase: int | float) -> bool:
     """Determine if a phase exists in the grid (globally).
 
     Args:
-        grid (np.ndarray): Input array.
+        img (np.ndarray): Input array.
         phase (int): Phase value to check.
 
     Returns:

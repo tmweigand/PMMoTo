@@ -4,17 +4,21 @@ Core voxel operations for PMMoTo.
 """
 
 from __future__ import annotations
-from typing import TypeVar, Literal
+from typing import TypeVar, Literal, Any
 import numpy as np
 from numpy.typing import NDArray
 from . import _voxels
 from . import communication
+from .logging import get_logger
 from .subdomain import Subdomain
 from .subdomain_padded import PaddedSubdomain
 from .subdomain_verlet import VerletSubdomain
 
+logger = get_logger()
 
 T = TypeVar("T", bound=np.generic)
+INT = TypeVar("INT", np.integer[Any], np.unsignedinteger[Any])
+INT2 = TypeVar("INT2", np.integer[Any], np.unsignedinteger[Any])
 
 __all__ = [
     "renumber_image",
@@ -30,7 +34,7 @@ __all__ = [
 ]
 
 
-def renumber_image(img: NDArray[T], conversion_map: dict[T, T]) -> NDArray[T]:
+def renumber_image(img: NDArray[INT2], conversion_map: dict[INT2, INT]) -> NDArray[INT]:
     """Renumber an image using a provided mapping.
 
     Args:
@@ -53,7 +57,7 @@ def renumber_image(img: NDArray[T], conversion_map: dict[T, T]) -> NDArray[T]:
         # Output: [[101, 102], [102, 101]]
 
     """
-    _img: NDArray[T] = _voxels.renumber_img(img, conversion_map)
+    _img: NDArray[INT] = _voxels.renumber_img(img, conversion_map)
 
     return np.ascontiguousarray(_img)
 
@@ -84,8 +88,8 @@ def get_nearest_boundary_index(
     else:
         if not isinstance(subdomain, (PaddedSubdomain, VerletSubdomain)):
             raise TypeError(
-                f"which_voxels={which_voxels!r} requires a PaddedSubdomain or VerletSubdomain, "
-                f"but got {type(subdomain).__name__}."
+                f"which_voxels={which_voxels!r} requires a PaddedSubdomain or "
+                f"VerletSubdomain, but got {type(subdomain).__name__}."
             )
 
         return get_nearest_boundary_index_extended(
@@ -165,9 +169,9 @@ def get_nearest_boundary_index_extended(
 
 def get_boundary_voxels(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
-    img: NDArray[T],
+    img: NDArray[INT],
     neighbors_only: bool = False,
-) -> dict[tuple[int, ...], dict[str, NDArray[T]]]:
+) -> dict[tuple[int, ...], dict[str, NDArray[INT]]]:
     """Return the values on the boundary features.
 
     The features are divided into:
@@ -183,13 +187,9 @@ def get_boundary_voxels(
         dict: Dictionary of boundary voxels.
 
     """
-    out_voxels: dict[tuple[int, ...], dict[str, NDArray[T]]] = {}
+    out_voxels: dict[tuple[int, ...], dict[str, NDArray[INT]]] = {}
 
-    if neighbors_only:
-        types = ["neighbor"]
-    else:
-        types = ["own", "neighbor"]
-
+    types = ["own", "neighbor"]
     for feature_id, feature in subdomain.features.all_features:
         if neighbors_only and feature.neighbor_rank < -1:
             continue
@@ -209,7 +209,7 @@ def get_id(index: tuple[int, ...], total_voxels: tuple[int, ...]) -> np.uint64:
     """Get the global or local ID for a voxel.
 
     Args:
-        x: 3D index of the voxel (x, y, z).
+        index: 3D index of the voxel (x, y, z).
         total_voxels: Number of voxels in each dimension.
 
     Returns:
@@ -223,11 +223,11 @@ def get_id(index: tuple[int, ...], total_voxels: tuple[int, ...]) -> np.uint64:
     return id
 
 
-def gen_img_to_label_map(img: NDArray[T], labels: NDArray[T]) -> NDArray[T]:
+def gen_img_to_label_map(img: NDArray[INT], labels: NDArray[INT2]) -> dict[INT2, INT]:
     """Generate a mapping from grid indices to labels.
 
     Args:
-        grid: Grid array.
+        img: Grid array.
         labels: Label array.
 
     Returns:
@@ -236,14 +236,14 @@ def gen_img_to_label_map(img: NDArray[T], labels: NDArray[T]) -> NDArray[T]:
     """
     assert img.shape == labels.shape
 
-    return _voxels.gen_img_to_label_map(img.astype(np.uint8), labels.astype(np.uint64))
+    return _voxels.gen_img_to_label_map(img, labels)
 
 
 def count_label_voxels(img: NDArray[T], map: dict[int, int]) -> dict[int, int]:
     """Count the number of voxels for each label in the grid.
 
     Args:
-        grid: Grid array.
+        img: Grid array.
         map: Mapping array.
 
     Returns:
@@ -257,10 +257,10 @@ def count_label_voxels(img: NDArray[T], map: dict[int, int]) -> dict[int, int]:
 
 def match_neighbor_boundary_voxels(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
-    boundary_voxels: dict[tuple[int, ...], dict[str, NDArray[T]]],
-    recv_data: dict[tuple[int, ...], dict[str, NDArray[T]]],
+    boundary_voxels: dict[tuple[int, ...], dict[str, NDArray[INT]]],
+    recv_data: dict[tuple[int, ...], dict[str, NDArray[INT]]],
     skip_zero: bool = False,
-) -> dict[tuple[int, int], dict[str, tuple[int, int]]]:
+) -> dict[tuple[int, INT], dict[str, tuple[int, INT]]]:
     """Match boundary voxels with subdomain neighbor voxels and return unique matches.
 
     Args:
@@ -275,7 +275,7 @@ def match_neighbor_boundary_voxels(
             neighbor: list[neighbor rank, neighbor voxel)]
 
     """
-    unique_matches: dict[tuple[int, int], dict[str, tuple[int, int]]] = {}
+    unique_matches: dict[tuple[int, INT], dict[str, tuple[int, INT]]] = {}
 
     for feature_id, feature in subdomain.features.all_features:
         if feature_id in recv_data:
@@ -297,7 +297,7 @@ def match_neighbor_boundary_voxels(
                 axis=1,
             )
 
-            matches: NDArray[T] = _voxels.find_unique_pairs(to_match)
+            matches: NDArray[INT] = _voxels.find_unique_pairs(to_match)
 
             if skip_zero:
                 matches = matches[~np.any(matches == 0, axis=1)]
@@ -310,9 +310,9 @@ def match_neighbor_boundary_voxels(
 
 
 def match_global_boundary_voxels(
-    matches: dict[tuple[int, int], dict[str, tuple[int, int]]],
+    matches: dict[tuple[int, INT], dict[str, tuple[int, INT]]],
     label_count: int,
-) -> tuple[dict[int, dict[int, int]], int]:
+) -> tuple[dict[int, dict[int, INT]], int]:
     """Generate a global label map for matched boundary voxels.
 
     Args:
@@ -329,6 +329,8 @@ def match_global_boundary_voxels(
     all_counts = communication.all_gather(label_count)
 
     ### Generate the local-global label map
+    # boundary_label_count is the global id + 1 from the merged labels.
+    # Local labels (i.e. not on subdomain boundaries) to start counting from here.
     local_global_map, boundary_label_count = _voxels.merge_matched_voxels(all_matches)
 
     final_map, global_label_count = local_to_global_labeling(
@@ -342,15 +344,16 @@ def match_global_boundary_voxels(
 
 
 def local_to_global_labeling(
-    all_matches: list[dict[int, dict[tuple[int, int], dict[str, tuple[int, int]]]]],
+    all_matches: list[dict[int, dict[tuple[int, INT], dict[str, tuple[int, INT]]]]],
     all_counts: list[int],
-    boundary_map: dict[tuple[int, int], dict[str, int]],
+    boundary_map: dict[tuple[int, INT], dict[str, INT]],
     boundary_label_count: int,
-) -> tuple[dict[int, dict[int, int]], int]:
+) -> tuple[dict[int, dict[int, INT]], int]:
     """Generate the local to global label mapping for all ranks.
 
     Args:
         all_matches: List of matches from all ranks.
+        all_counts: List of label counts from all subdomains
         boundary_map: Mapping of boundary labels.
         boundary_label_count: Number of boundary labels.
         own (int, optional): If set, return only for this rank.
@@ -373,20 +376,19 @@ def local_to_global_labeling(
                 local_starts[rank - 1]
                 + all_counts[rank - 1]
                 - boundary_counts[rank - 1]
-                + 1
             )
 
     ### Generate the global id for non-boundary labels as well
-    final_map = {}
-    label_count = 0
-    for rank, (match, label_count) in enumerate(zip(all_matches, all_counts)):
-        final_map[rank] = {0: 0}
+    final_map: dict[int, dict[int, INT]] = {}
+    for rank, (match, _label_count) in enumerate(zip(all_matches, all_counts)):
+        final_map[rank] = {0: np.uint64(0)}
         count = 0
-        for n in range(1, label_count + 1):
-            if (rank, n) in boundary_map:
-                final_map[rank][n] = boundary_map[(rank, n)]["global_id"]
+        for n in range(1, _label_count + 1):
+            n64 = np.uint64(n)
+            if (rank, n64) in boundary_map:
+                final_map[rank][n] = boundary_map[(rank, n64)]["global_id"]
             else:
-                final_map[rank][n] = local_starts[rank] + count
+                final_map[rank][n] = np.uint64(local_starts[rank] + count)
                 count += 1
         label_count = count
 
@@ -406,7 +408,7 @@ def gen_inlet_label_map(
 
     Args:
         subdomain: Subdomain object.
-        label_grid: Label array.
+        label_img: Labeled image.
 
     Returns:
         np.ndarray: Array of inlet labels.
@@ -434,7 +436,7 @@ def gen_outlet_label_map(
 
     Args:
         subdomain: Subdomain object.
-        label_grid: Label array.
+        label_img: Labeled image.
 
     Returns:
         np.ndarray: Array of outlet labels.

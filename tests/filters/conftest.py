@@ -8,7 +8,7 @@ import pmmoto
 
 
 @pytest.fixture
-def generate_subdomain():
+def generate_subdomain() -> pmmoto.core.subdomain_padded.PaddedSubdomain:
     """Generate a padded subdomain.
 
     This allows rank to be passed as an argument
@@ -19,11 +19,19 @@ def generate_subdomain():
         if specified_types is not None:
             boundary_types = specified_types
         elif periodic:
-            boundary_types = ((2, 2), (2, 2), (2, 2))
+            boundary_types = (
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            )
         else:
-            boundary_types = ((0, 0), (0, 0), (0, 0))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
+            boundary_types = (
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            )
+        inlet = ((True, False), (False, False), (False, False))
+        outlet = ((False, True), (False, False), (False, False))
         voxels = (100, 100, 100)
         subdomains = (1, 1, 1)
         pad = (1, 1, 1)
@@ -58,7 +66,7 @@ def generate_subdomain():
 
 
 @pytest.fixture
-def generate_simple_subdomain():
+def generate_simple_subdomain() -> pmmoto.core.subdomain_padded.PaddedSubdomain:
     """Generate a padded subdomain.
 
     This allows rank to be passed as an argument
@@ -75,11 +83,19 @@ def generate_simple_subdomain():
         if specified_types is not None:
             boundary_types = specified_types
         elif periodic:
-            boundary_types = ((2, 2), (2, 2), (2, 2))
+            boundary_types = (
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            )
         else:
-            boundary_types = ((0, 0), (0, 0), (0, 0))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
+            boundary_types = (
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            )
+        inlet = ((True, False), (False, False), (False, False))
+        outlet = ((False, True), (False, False), (False, False))
         voxels = voxels_in
         subdomains = (1, 1, 1)
         pad = (1, 1, 1)

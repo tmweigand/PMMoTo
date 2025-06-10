@@ -43,7 +43,8 @@ class DecomposedDomain(domain_discretization.DiscretizedDomain):
 
         Args:
             discretized_domain (DiscretizedDomain): The discretized domain object.
-            subdomains (tuple[int, int, int] Number of subdomains in each dimension.
+            subdomains: Number of subdomains in each spatial dimension.
+
 
         Returns:
             DecomposedDomain: New decomposed domain instance.

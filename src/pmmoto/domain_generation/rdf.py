@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound=np.generic)
 
-__all__ = ["generate_rdf", "bin_distances"]
+__all__ = ["bin_distances"]
 
 
 class RDF:
@@ -183,7 +183,7 @@ class BoundedRDF(RDF):
         """Find the smallest r from the data so all g(r) values are non-zero after r.
 
         Args:
-            rdf (np.ndarray): Array of RDF values.
+            rdf_value: rdf value
 
         Returns:
             int: Index of maximum radius.

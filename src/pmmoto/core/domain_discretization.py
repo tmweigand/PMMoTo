@@ -75,8 +75,7 @@ class DiscretizedDomain(pmmoto_domain.Domain):
         """Determine the physical locations of voxel centroids.
 
         Args:
-            box (tuple[tuple[float, float], tuple[float, float],tuple[float, float]]
-                Physical bounds for each dimension.
+            box (tuple[tuple[float, float], ...]): Physical bounds for each dimension.
             voxels (tuple[int,int, int]): Number of voxels in each dimension.
             resolution (tuple[float, float, float]): Voxel size in each dimension.
 
