@@ -8,6 +8,7 @@ pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master
 ruff>=0.3.0
 black>=24.3.0
 mypy>=1.0
+typing_extensions>=4.6
 
 # Docstring and code documentation
 interrogate>=1.5.0

@@ -41,7 +41,8 @@ dev = [
     "pytest_benchmark>=5.1.0",
     "ruff>=0.11.5",
     "interrogate>=1.5.0",
-    "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master"
+    "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master",
+    "typing_extensions>=4.6"
 ]
 docs = [
     "sphinx>=7.0",
