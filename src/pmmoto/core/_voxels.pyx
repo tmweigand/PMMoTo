@@ -475,7 +475,7 @@ def gen_img_to_label_map(
     return img_to_label_map
 
 
-def renumber_img(INTS[:, :, :] img, dict map):
+def renumber_img(INTS[:, :, :] img, unordered_map[INTS, INTS] map):
     """
     Renumber a img in-place based on map.
     """
