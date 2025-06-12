@@ -67,7 +67,12 @@ jobs:
           find /usr -name 'libmpi.so*'
           ldd $(which python) | grep mpi || echo "MPI not linked to Python"
 
+      - name: Confirm mpi4py linkage
+        run: |
+          python -c "from mpi4py import MPI; print(MPI.Get_library_version())"
+
       - name: Run tests with tox
         run: |
-          export LD_LIBRARY_PATH=$(mpicc --showme:libdirs | tr ':' '\n' | paste -sd: -):$LD_LIBRARY_PATH
+          export MPILIBS=$(mpicc --showme:libdirs 2>/dev/null || echo "")
+          export LD_LIBRARY_PATH=${MPILIBS}:${LD_LIBRARY_PATH}
           tox
