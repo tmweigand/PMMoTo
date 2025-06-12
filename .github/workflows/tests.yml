@@ -59,5 +59,15 @@ jobs:
           export CC=mpicc
           pip install --no-cache-dir --force-reinstall mpi4py
 
+      - name: Verify OpenMPI library availability
+        if: matrix.mpi == 'openmpi' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          echo "Checking OpenMPI shared libraries"
+          mpicc --showme:libdirs
+          find /usr -name 'libmpi.so*'
+          ldd $(which python) | grep mpi || echo "MPI not linked to Python"
+
       - name: Run tests with tox
-        run: tox
+        run: |
+          export LD_LIBRARY_PATH=$(mpicc --showme:libdirs | tr ':' '\n' | paste -sd: -):$LD_LIBRARY_PATH
+          tox
