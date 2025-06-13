@@ -141,8 +141,9 @@ def inlet_outlet_labels(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     labeled_img: NDArray[np.uint64],
 ) -> dict[np.uint64, dict[str, bool]]:
-    """Collect the labels that are on the inlet and outlet.
+    """Collect the labels that are on the inlet and/or on the outlet.
 
+    Note: inlet_outlet_connections is the function to collect both inlet AND outlet
     Args:
         subdomain: Subdomain object.
         labeled_img (np.ndarray): Labeled image.

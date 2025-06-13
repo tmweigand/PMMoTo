@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from mpi4py import MPI
 
-USE_LOGGING = False
+USE_LOGGING = True
 
 
 class MPIFormatter(logging.Formatter):
