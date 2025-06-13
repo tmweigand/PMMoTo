@@ -82,7 +82,7 @@ def test_update_buffer() -> None:
 
 
 @pytest.mark.mpi(min_size=8)
-def test_communicate_features():
+def test_communicate_features() -> None:
     """Ensure that features are being communicated to neighbor processes"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -114,7 +114,7 @@ def test_communicate_features():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_update_buffer_with_buffer():
+def test_update_buffer_with_buffer() -> None:
     """Ensure that features are being communicated to neighbor processes"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -142,6 +142,53 @@ def test_update_buffer_with_buffer():
         img=img,
         buffer=buffer,
     )
+
+    pmmoto.io.output.save_img_data_parallel(
+        "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
+    )
+
+    pmmoto.io.output.save_extended_img_data_parallel(
+        "data_out/test_comm_buffer_extended", sd, update_img, halo
+    )
+
+
+@pytest.mark.mpi(min_size=8)
+def test_update_buffer_with_buffer() -> None:
+    """Ensure that features are being communicated to neighbor processes"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    box = (
+        (0.0, 176),
+        (0.0, 176),
+        (-100, 100),
+    )
+
+    sd = pmmoto.initialize(
+        box=box,
+        subdomains=(2, 2, 2),
+        voxels=(100, 100, 100),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        ),
+        rank=rank,
+        pad=(1, 1, 1),
+    )
+
+    img = (rank + 1) * np.ones(sd.voxels)
+    img = sd.set_wall_bcs(img)
+
+    buffer = (10, 10, 9)
+
+    update_img, halo = pmmoto.core.communication.update_extended_buffer(
+        subdomain=sd,
+        img=img,
+        buffer=buffer,
+    )
+
+    print(rank, halo, np.max(update_img))
 
     pmmoto.io.output.save_img_data_parallel(
         "data_out/test_comm_buffer", sd, img, additional_img={"og": img}

@@ -3,18 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Porous Media Morphology and Topology Toolkit
+.. image:: _static/logo-1-text.png
+   :alt: PMMoTo Logo
+   :align: center
+   :width: 750px
+
+PMMoTo
 ====================
 
-The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials.
-
+The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials. The code quantifies porous structures with a focus on distributed memory systems and MPI. It includes connected components analysis, morphological operations (e.g., addition and subtraction), and Euclidean distance transforms. Output images are intended for visualization in ParaView. PMMoTo also provides critical preprocessing and analysis tools for molecular dynamics simulations of porous materials, enabling the generation of structure-informed initial conditions and transport pathways for studies of confined fluid behavior.w.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    installation
-   usage
-   api_reference
-   contributing
-   changelog
+   examples
+   modules
