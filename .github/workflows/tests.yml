@@ -57,7 +57,7 @@ jobs:
         run: |
           pip uninstall -y mpi4py || true
           export CC=mpicc
-          pip install --no-cache-dir --force-reinstall mpi4py
+          pip install --no-cache-dir --force-reinstall --no-binary=mpi4py mpi4py
 
       - name: Verify OpenMPI library availability
         if: ${{ matrix.mpi == 'openmpi' && matrix.os == 'ubuntu-latest'}}
@@ -70,6 +70,9 @@ jobs:
       - name: Confirm mpi4py linkage
         run: |
           python -c "from mpi4py import MPI; print(MPI.Get_library_version())"
+
+      - name: Remove tox environments
+        run: rm -rf .tox
 
       - name: Run tests with tox
         run: |
