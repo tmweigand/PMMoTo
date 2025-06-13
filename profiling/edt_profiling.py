@@ -1,16 +1,21 @@
+"""Profiling script for Euclidean Distance Transform (EDT) in PMMoTo.
+
+Profiles periodic and non-periodic 3D EDT implementations.
+"""
+
 import profiling_utils
 import pmmoto
 
 
 @profiling_utils.profile("profiling/edt_periodic.prof")
 def test_edt_periodic_profile():
-    """
-    Profiling for edt.
+    """Profile EDT with periodic boundaries.
+
     To run:
         python profiling/edt_profiling.py
+
     Note: Cannot be used on python 12!!!!
     """
-
     voxels = (600, 600, 600)
     prob_zero = 0.5
     seed = 1
@@ -20,13 +25,13 @@ def test_edt_periodic_profile():
 
 @profiling_utils.profile("profiling/edt_non_periodic.prof")
 def test_edt_profile():
-    """
-    Profiling for edt.
+    """Profile EDT with non-periodic boundaries.
+
     To run:
         python profiling/edt_profiling.py
+
     Note: Cannot be used on python 12!!!!
     """
-
     voxels = (600, 600, 600)
     prob_zero = 0.5
     seed = 1

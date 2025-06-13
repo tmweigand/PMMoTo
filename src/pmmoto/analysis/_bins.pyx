@@ -25,6 +25,7 @@ def _count_locations(coordinates, dimension, num_bins, bin_width, min_bin_value)
 
     _bins = vector[uint64_t](num_bins, 0)
     _coordinates = coordinates
+    
     count_locations(
         _coordinates,
         dimension,

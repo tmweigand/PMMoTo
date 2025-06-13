@@ -1,102 +1,87 @@
-"""stats.py"""
+"""Statistical analysis utilities for PMMoTo.
 
+Provides functions to compute global minimum and maximum values across subdomains.
+"""
+
+from __future__ import annotations
 import numpy as np
-from mpi4py import MPI
+from numpy.typing import NDArray
+from typing import Any, TYPE_CHECKING
 from pmmoto.core import utils
+from pmmoto.core import communication
 
-comm = MPI.COMM_WORLD
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain import Subdomain
 
-__all__ = ["get_minimum", "get_maximum", "get_volume_fraction", "get_saturation"]
+
+__all__ = ["get_minimum", "get_maximum"]
 
 
-def get_minimum(subdomain, data):
+def get_minimum(
+    subdomain: Subdomain,
+    img: NDArray[np.floating[Any] | np.integer[Any]],
+    own: bool = True,
+) -> Any:
+    """Compute the global minimum value from a distributed image array.
+
+    Depending on the `own` flag, the function either restricts the computation
+    to the local portion of the image owned by the subdomain or uses the full image.
+    If the domain is distributed across multiple subdomains, a parallel reduction is
+    performed to obtain the global minimum.
+
+    Args:
+        subdomain (Subdomain): The subdomain defining ownership within the domain.
+        img (NDArray): The full image array containing data across all subdomains.
+        own (bool, optional): If True, compute the minimum over the owned portion
+            of the image only; otherwise, use the full image. Defaults to True.
+
+    Returns:
+        Any: The global minimum value of the image, reduced across all processes
+        if the domain is distributed.
+
     """
-    Determine the global minimum of the data
-    """
-    if subdomain.size > 1:
-        own_data = utils.own_grid(data, subdomain.index_own_nodes)
-        local_min = np.min(own_data)
-        global_min = comm.allreduce(local_min, op=MPI.MIN)
-        return global_min
+    if own:
+        own_img = utils.own_img(subdomain, img)
+        _min = np.min(own_img)
     else:
-        return np.min(data)
+        _min = np.min(img)
+
+    if subdomain.domain.num_subdomains > 1:
+        _min = communication.all_reduce(_min, op="min")
+
+    return _min
 
 
-def get_maximum(subdomain, data):
+def get_maximum(
+    subdomain: Subdomain,
+    img: NDArray[np.floating[Any] | np.integer[Any]],
+    own: bool = True,
+) -> Any:
+    """Compute the global maximum value from a distributed image array.
+
+    Depending on the `own` flag, the function either restricts the computation
+    to the local portion of the image owned by the subdomain or uses the full image.
+    If the domain is distributed across multiple subdomains, a parallel reduction is
+    performed to obtain the global maximum.
+
+    Args:
+        subdomain (Subdomain): The subdomain defining ownership within the domain.
+        img (NDArray): The full image array containing data across all subdomains.
+        own (bool, optional): If True, compute the maximum over the owned portion
+            of the image only; otherwise, use the full image. Defaults to True.
+
+    Returns:
+        Any: The global maximum value of the image, reduced across all processes
+        if the domain is distributed.
+
     """
-    Determine the global maximum of the data
-    """
-    if subdomain.size > 1:
-        own_data = utils.own_grid(data, subdomain.index_own_nodes)
-        local_max = np.max(own_data)
-        global_max = comm.allreduce(local_max, op=MPI.MAX)
-        return global_max
+    if own:
+        own_img = utils.own_img(subdomain, img)
+        _max = np.max(own_img)
     else:
-        return np.max(data)
+        _max = np.max(img)
 
+    if subdomain.domain.num_subdomains > 1:
+        _max = communication.all_reduce(_max, op="max")
 
-def get_volume_fraction(subdomain, data, phase):
-    """
-    Calculate the volume fraction of a given phase
-    """
-    own_grid = utils.own_grid(data, subdomain.index_own_nodes)
-    local_phase_nodes = np.count_nonzero(own_grid == phase)
-    global_phase_nodes = comm.allreduce(local_phase_nodes, op=MPI.SUM)
-    volume_fraction = global_phase_nodes / np.prod(subdomain.domain_voxels)
-    return volume_fraction
-
-
-def get_saturation(subdomain, data, phase, porousmedia=None):
-    """
-    Calculate the saturation of a given phase
-    """
-
-    volume_fraction = get_volume_fraction(subdomain, data, phase)
-
-    if porousmedia is not None:
-        if porousmedia.porosity is None:
-            porousmedia.get_porosity()
-        porosity = porousmedia.porosity
-    else:
-        porosity = 1.0 - get_volume_fraction(subdomain, data, 0)
-
-    return volume_fraction / porosity
-
-
-# def genStats(subdomain,data):
-#     """
-#     Get Information (non-zero min/max) of distance tranform
-#     """
-#     own_data = utils.own_grid(data,subdomain.index_own_nodes)
-#     vals,counts  = np.unique(own_data,return_counts=True)
-
-#     EDTData = [subdomain.ID,vals,counts]
-#     EDTData = comm.gather(EDTData, root=0)
-#     if subdomain.ID == 0:
-#         bins = np.empty([])
-#         for d in EDTData:
-#             if d[0] == 0:
-#                 bins = d[1]
-#             else:
-#                 bins = np.append(bins,d[1],axis=0)
-#             bins = np.unique(bins)
-
-#         counts = np.zeros_like(bins,dtype=np.int64)
-#         for d in EDTData:
-#             for n in range(0,d[1].size):
-#                 ind = np.where(bins==d[1][n])[0][0]
-#                 counts[ind] = counts[ind] + d[2][n]
-
-#         stats = np.stack((bins,counts), axis = 1)
-#         data_min = bins[1]
-#         data_max = bins[-1]
-#         distData = [data_min,data_max]
-#         print("Minimum distance:",data_min,"Maximum distance:",data_max)
-#     else:
-#         distData = None
-#     distData = comm.bcast(distData, root=0)
-#     data_min = distData[0]
-#     data_max = distData[1]
-
-
-# def generate_histogram():
+    return _max

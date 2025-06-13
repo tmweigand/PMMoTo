@@ -6,8 +6,8 @@ import pmmoto
 
 
 def test_pm_sphere():
-    """
-    Test domain generation of a sphere pack.
+    """Test domain generation of a sphere pack.
+
     Sphere data is [x_i, y_i, z_i, r_i]
     where x,y,z is the center of the sphere and r is the radius
     """
@@ -19,8 +19,8 @@ def test_pm_sphere():
 
 
 def test_pm_sphere_verlet():
-    """
-    Test domain generation of a sphere pack using Velet domains for speed-up.
+    """Test domain generation of a sphere pack using Velet domains for speed-up.
+
     Sphere data is [x_i, y_i, z_i, r_i]
     where x,y,z is the center of the sphere and r is the radius
     """
@@ -32,8 +32,8 @@ def test_pm_sphere_verlet():
 
 
 def test_pm_atom():
-    """
-    Test domain generation of a atomistic domain
+    """Test domain generation of a atomistic domain.
+
     Atom locations is a NumPy array with centroid of each atom.
     Atom Types is a list of the type of each atom corresponding to the locations.
     Atom Cutoff is map that contains the cutoff distance for each atom type.
@@ -53,8 +53,8 @@ def test_pm_atom():
 
 
 def test_pm_atom_verlet():
-    """
-    Test domain generation of a atomistic domain
+    """Test domain generation of a atomistic domain.
+
     Atom locations is a NumPy array with centroid of each atom.
     Atom Types is a list of the type of each atom corresponding to the locations.
     Atom Cutoff is map that contains the cutoff distance for each atom type.
@@ -77,12 +77,10 @@ def test_pm_atom_verlet():
 
 @pytest.mark.figures
 def test_gen_random_binary_grid():
-    """
-    Test domain generation of a random binary grid
-    """
+    """Test domain generation of a random binary grid"""
     voxels = (50, 50, 50)
 
-    img = pmmoto.domain_generation.domain_generation.gen_random_binary_grid(
+    img = pmmoto.domain_generation.domain_generation.gen_img_random_binary(
         voxels, p_zero=0.2, seed=1
     )
     pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
@@ -90,12 +88,10 @@ def test_gen_random_binary_grid():
 
 @pytest.mark.figures
 def test_gen_smoothed_random_binary_grid():
-    """
-    Test domain generation of a random binary grid
-    """
+    """Test domain generation of a random binary grid"""
     voxels = (100, 100, 100)
 
-    img = pmmoto.domain_generation.domain_generation.gen_smoothed_random_binary_grid(
+    img = pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary(
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
 

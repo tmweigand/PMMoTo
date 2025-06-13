@@ -1,26 +1,34 @@
-import logging
+"""logging.py
+
+Setup of the logger
+"""
+
 import os
+from typing import Any
+import logging
 from datetime import datetime
 from mpi4py import MPI
+
+USE_LOGGING = True
 
 
 class MPIFormatter(logging.Formatter):
     """Custom formatter that includes MPI rank"""
 
-    def __init__(self, *args, **kwargs):
-        self.rank = MPI.COMM_WORLD.Get_rank()
-        self.size = MPI.COMM_WORLD.Get_size()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.rank: int = MPI.COMM_WORLD.Get_rank()
+        self.size: int = MPI.COMM_WORLD.Get_size()
         super().__init__(*args, **kwargs)
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
+        """Add mpi information"""
         record.rank = self.rank
         record.size = self.size
         return super().format(record)
 
 
-def setup_logger(name="pmmoto", log_dir="logs"):
-    """
-    Configure logging for both serial and parallel runs
+def setup_logger(name: str = "pmmoto", log_dir: str = "logs") -> logging.Logger:
+    """Configure logging for both serial and parallel runs
 
     Args:
         name: Logger name (default: "pmmoto")
@@ -28,6 +36,7 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     Returns:
         logging.Logger: Configured logger instance
+
     """
     # Disable the root logger to prevent duplicate messages
     logging.getLogger().handlers.clear()
@@ -43,10 +52,9 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 
     # Get MPI rank
     rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
 
     # Create handlers
-    formatter = MPIFormatter(
+    formatter: logging.Formatter = MPIFormatter(
         fmt="%(asctime)s [Rank %(rank)d/%(size)d] %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -75,7 +83,7 @@ def setup_logger(name="pmmoto", log_dir="logs"):
 _logger = None
 
 
-def get_logger():
+def get_logger() -> logging.Logger:
     """Get or create the logger instance"""
     global _logger
     if _logger is None:

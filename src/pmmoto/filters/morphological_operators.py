@@ -1,12 +1,24 @@
-"""morphological_operators.py"""
+"""morphological_operators.py
+
+Morphological operations for binary images, including dilation, erosion,
+opening, and closing, with support for parallel subdomains and FFT-based methods.
+"""
+
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
 import math
 import numpy as np
+from numpy.typing import NDArray
 from scipy.signal import fftconvolve
+from ..core.boundary_types import BoundaryType
 from ..core import communication
 from ..core import utils
 from . import distance
 
+if TYPE_CHECKING:
+    from pmmoto.core.subdomain_padded import PaddedSubdomain
+    from pmmoto.core.subdomain_verlet import VerletSubdomain
 
 __all__ = [
     "gen_struct_ratio",
@@ -20,12 +32,20 @@ __all__ = [
 ]
 
 
-def gen_struct_ratio(resolution, radius):
-    """
-    Generate the structuring element dimensions for halo communication
-    https://www.iwaenc.org/proceedings/1997/nsip97/pdf/scan/ns970226.pdf
-    """
+def gen_struct_ratio(resolution: tuple[float, ...], radius: float) -> tuple[int, ...]:
+    """Generate the structuring element dimensions for halo communication.
 
+    Args:
+        resolution (list or tuple): Resolution in each dimension (2D or 3D).
+        radius (float): Radius of the structuring element.
+
+    Returns:
+        np.ndarray: Array of structuring ratios for each dimension.
+
+    Raises:
+        ValueError: If resolution is not length 2 or 3, or radius is too small.
+
+    """
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list of length 2 or 3")
 
@@ -38,23 +58,29 @@ def gen_struct_ratio(resolution, radius):
         [math.ceil(radius / res) for res in resolution],
         dtype=np.int64,
     )
-    return struct_ratio
+
+    struct_ratio_tuple: tuple[int, ...] = tuple(struct_ratio.tolist())
+    return struct_ratio_tuple
 
 
-def gen_struct_element(resolution, radius):
-    """
-    Generate the structuring element for FFT morphology approach.
+def gen_struct_element(
+    resolution: tuple[float, ...], radius: float
+) -> tuple[tuple[int, ...], NDArray[np.uint8]]:
+    """Generate the structuring element for FFT morphology approach.
 
-    Parameters:
-        resolution (list or tuple): Resolution in each dimension (2D: [x, y], 3D: [x, y, z]).
+    Args:
+        resolution (list or tuple): Resolution in each dimension (2D or 3D).
         radius (float): Radius of the structuring element.
 
     Returns:
-        tuple: (struct_ratio, struct_element), where:
+        tuple: (struct_ratio, struct_element)
             - struct_ratio: Array of structuring ratios.
             - struct_element: 2D or 3D array representing the structuring element.
-    """
 
+    Raises:
+        ValueError: If resolution is not isotropic or not length 2/3.
+
+    """
     if len(resolution) not in {2, 3}:
         raise ValueError("Resolution must be a list or tuple of length 2 or 3.")
 
@@ -74,15 +100,29 @@ def gen_struct_element(resolution, radius):
     return struct_ratio, struct_element
 
 
-def addition(subdomain, img, radius, fft=False):
-    """
-    Perform a morphological dilation on a binary domain
+def addition(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Perform a morphological dilation on a binary domain.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Dilation radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Dilated binary image.
+
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
     )
 
-    halo_img, halo = communication.update_buffer(
+    halo_img, halo = communication.update_extended_buffer(
         subdomain=subdomain,
         img=img,
         buffer=struct_ratio,
@@ -92,7 +132,8 @@ def addition(subdomain, img, radius, fft=False):
         _grid = fftconvolve(halo_img, struct_element, mode="same") > 0.1
         _grid_out = _grid.astype(np.uint8)
     else:
-        # Calls "local" distance transform since halo_img is padded with the maximum distance allowed
+        # Calls "local" distance transform
+        # since halo_img is padded with the maximum distance allowed
         _grid_distance = distance.edt3d(
             np.logical_not(halo_img),
             resolution=subdomain.domain.resolution,
@@ -108,24 +149,52 @@ def addition(subdomain, img, radius, fft=False):
     return grid_out
 
 
-def dilate(subdomain, img, radius, fft=False):
-    """
-    Wrapper to morph_add
+def dilate(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Morphological dilation (addition).
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Dilation radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Dilated binary image.
+
     """
     img_out = addition(subdomain, img, radius, fft)
 
     return img_out
 
 
-def subtraction(subdomain, img, radius, fft=False):
-    """
-    Perform a morpological subtraction
+def subtraction(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Perform a morphological subtraction (erosion) on a binary domain.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Erosion radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Eroded binary image.
+
     """
     struct_ratio, struct_element = gen_struct_element(
         subdomain.domain.resolution, radius
     )
 
-    halo_img, halo = communication.update_buffer(
+    halo_img, halo = communication.update_extended_buffer(
         subdomain=subdomain,
         img=img,
         buffer=struct_ratio,
@@ -134,66 +203,117 @@ def subtraction(subdomain, img, radius, fft=False):
     if fft:
         ### Boundary condition fix for subtraction
         _pad = 1
-        if "end" in subdomain.boundary_types.values():
+        if subdomain.check_boundary_type(BoundaryType.END):
             _pad = np.max(struct_ratio)
-        _grid = np.pad(
+        _img = np.pad(
             array=halo_img, pad_width=_pad, mode="constant", constant_values=1
         )
-        _grid = fftconvolve(_grid, struct_element, mode="same") > (
+        _img = fftconvolve(_img, struct_element, mode="same") > (
             struct_element.sum() - 0.1
         )
-        _grid_out = utils.unpad(_grid, _pad * np.ones_like(halo)).astype(np.uint8)
+        pad_tuple = tuple(
+            tuple(row) for row in (_pad * np.ones_like(halo))
+        )  # Pads everything regardless of bcs
+        _img_out = utils.unpad(_img, pad_tuple).astype(np.uint8)
     else:
-        _grid_distance = distance.edt3d(
+        _img_distance = distance.edt3d(
             halo_img, resolution=subdomain.domain.resolution, squared=True
         )
-        _grid_out = np.where((_grid_distance <= radius * radius), 0, 1).astype(np.uint8)
+        _img_out = np.where((_img_distance <= radius * radius), 0, 1).astype(np.uint8)
 
-    grid_out = utils.unpad(_grid_out, halo)
-    grid_out = subdomain.set_wall_bcs(grid_out)
+    img_out = utils.unpad(_img_out, halo)
+    img_out = subdomain.set_wall_bcs(img_out)
 
-    return grid_out
+    return img_out
 
 
-def erode(subdomain, grid, radius, fft=False):
+def erode(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Morphological erosion (subtraction).
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Erosion radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Eroded binary image.
+
     """
-    Wrapper to morph_subtract
-    """
-    grid_out = subtraction(subdomain, grid, radius, fft)
+    img_out = subtraction(subdomain, img, radius, fft)
 
-    return grid_out
+    return img_out
 
 
-def opening(subdomain, grid, radius, fft=False):
+def opening(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Morphological opening (erosion followed by dilation).
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Structuring element radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Opened binary image.
+
     """
-    Morphological opening
-    """
-    _erode = subtraction(subdomain, grid, radius, fft)
+    _erode = subtraction(subdomain, img, radius, fft)
     open_map = addition(subdomain, _erode, radius, fft)
     return open_map
 
 
-def closing(subdomain, grid, radius, fft=False):
+def closing(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    radius: float,
+    fft: bool = False,
+) -> NDArray[np.uint8]:
+    """Morphological closing (dilation followed by erosion).
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Binary image.
+        radius (float): Structuring element radius.
+        fft (bool, optional): Use FFT-based method if True.
+
+    Returns:
+        np.ndarray: Closed binary image.
+
     """
-    Morphological opening
-    """
-    _dilate = addition(subdomain, grid, radius, fft)
+    _dilate = addition(subdomain, img, radius, fft)
     closing_map = subtraction(subdomain, _dilate, radius, fft)
     return closing_map
 
 
-def check_radii(subdomain, radii):
-    """
-    Validates that each radius in the list does not exceed the subdomain size.
+def check_radii(
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    radii: list[float] | NDArray[np.floating[Any]],
+) -> None:
+    """Validate that each radius in the list does not exceed the subdomain size.
 
     Args:
         subdomain: Object with `own_voxels` and `rank` attributes.
         radii: Iterable of buffer radii to check against the subdomain.
-    """
 
+    Raises:
+        ValueError: If any radius exceeds the subdomain size.
+
+    """
     error_message = (
-        "The specified radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
-        "To resolve this, use a different subdomain topology—for example, change the configuration of subdomains from (%s).\n"
+        "The radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
+        "To resolve this, use a different subdomain topology"
+        "for example, change the configuration of subdomains from (%s).\n"
         "Simulation stopping.\n"
     )
 

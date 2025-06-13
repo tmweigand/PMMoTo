@@ -1,3 +1,5 @@
+"""Benchmark tests for PMMoTo morphological operators."""
+
 from pmmoto import domain_generation
 from pmmoto import filters
 from pmmoto import initialize
@@ -5,8 +7,11 @@ import pytest
 
 
 def setup():
-    """
-    Setup for for benchmarking morphological operators
+    """Set up benchmarking data for morphological operators.
+
+    Returns:
+        tuple: (subdomain, binary image)
+
     """
     voxels = (600, 600, 600)
     prob_zero = 0.3
@@ -17,12 +22,17 @@ def setup():
 
 
 @pytest.mark.benchmark
-def test_morp_addition_fft_small_r(benchmark):
-    """ """
+def test_morph_addition_fft_small_r(benchmark):
+    """Benchmark morphological addition (FFT method, small radius).
+
+    Args:
+        benchmark: pytest-benchmark fixture.
+
+    """
     radius = 0.004
     fft = True
     sd, img = setup()
-    morp_addition_fft = benchmark(
+    _ = benchmark(
         filters.morphological_operators.addition,
         subdomain=sd,
         img=img,
@@ -32,12 +42,17 @@ def test_morp_addition_fft_small_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_fft_large_r(benchmark):
-    """ """
+def test_morph_addition_fft_large_r(benchmark):
+    """Benchmark morphological addition (FFT method, large radius).
+
+    Args:
+        benchmark: pytest-benchmark fixture.
+
+    """
     radius = 0.1
     fft = True
     sd, img = setup()
-    morp_addition_fft = benchmark(
+    _ = benchmark(
         filters.morphological_operators.addition,
         subdomain=sd,
         img=img,
@@ -47,12 +62,17 @@ def test_morp_addition_fft_large_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_edt_small_r(benchmark):
-    """ """
+def test_morph_addition_edt_small_r(benchmark):
+    """Benchmark morphological addition (EDT method, small radius).
+
+    Args:
+        benchmark: pytest-benchmark fixture.
+
+    """
     radius = 0.004
     fft = False
     sd, img = setup()
-    morp_addition_edt = benchmark(
+    _ = benchmark(
         filters.morphological_operators.addition,
         subdomain=sd,
         img=img,
@@ -62,12 +82,17 @@ def test_morp_addition_edt_small_r(benchmark):
 
 
 @pytest.mark.benchmark
-def test_morp_addition_edt_large_r(benchmark):
-    """ """
+def test_morph_addition_edt_large_r(benchmark):
+    """Benchmark morphological addition (EDT method, large radius).
+
+    Args:
+        benchmark: pytest-benchmark fixture.
+
+    """
     radius = 0.1
     fft = False
     sd, img = setup()
-    morp_addition_edt = benchmark(
+    _ = benchmark(
         filters.morphological_operators.addition,
         subdomain=sd,
         img=img,

@@ -56,13 +56,13 @@ VtkUnstructuredGrid = VtkFileType("UnstructuredGrid", ".vtu")
 
 
 class VtkParallelFileType:
-    """
-    A wrapper class for parallel vtk file types.
+    """A wrapper class for parallel vtk file types.
 
     Parameters
     ----------
     vtkftype : VtkFileType
         Vtk file type
+
     """
 
     def __init__(self, vtkftype):
@@ -183,8 +183,10 @@ class VtkGroup:
     def __init__(self, filepath):
         """Creates a VtkGroup file that is stored in filepath.
 
-        PARAMETERS:
+        Parameters
+        ----------
             filepath: filename without extension.
+
         """
         self.xml = XmlWriter(filepath + ".pvd")
         self.xml.openElement("VTKFile")
@@ -203,13 +205,15 @@ class VtkGroup:
     def addFile(self, filepath, sim_time, group="", part="0"):
         """Adds file to this VTK group.
 
-        PARAMETERS:
+        Parameters
+        ----------
             filepath: full path to VTK file.
             sim_time: simulated time.
             group: This attribute is not required; it is only for informational purposes.
             part: It is an integer value greater than or equal to 0.
 
         See: http://www.paraview.org/Wiki/ParaView/Data_formats#PVD_File_Format for details.
+
         """
         # TODO: Check what the other attributes are for.
         filename = os.path.relpath(filepath, start=self.root)
@@ -224,11 +228,11 @@ class VtkGroup:
 class VtkFile:
 
     def __init__(self, filepath, ftype, largeFile=False):
-        """
-        PARAMETERS:
-            filepath: filename without extension.
-            ftype: file type, e.g. VtkImageData, etc.
-            largeFile: If size of the stored data cannot be represented by a UInt32.
+        """PARAMETERS
+        filepath: filename without extension.
+        ftype: file type, e.g. VtkImageData, etc.
+        largeFile: If size of the stored data cannot be represented by a UInt32.
+
         """
         self.ftype = ftype
         self.filename = filepath + ftype.ext
@@ -277,7 +281,8 @@ class VtkFile:
     ):
         """Open piece section.
 
-        PARAMETERS:
+        Parameters
+        ----------
             Next two parameters must be given together.
             start: array or list with start indexes in each direction.
             end:   array or list with end indexes in each direction.
@@ -293,8 +298,10 @@ class VtkFile:
             nstrips: number of strips.
             npolys: number of .
 
-        RETURNS:
+        Returns
+        -------
             this VtkFile to allow chained calls.
+
         """
         # TODO: Check what are the requirements for each type of grid.
 
@@ -343,7 +350,8 @@ class VtkFile:
     ):
         """Open data section.
 
-        PARAMETERS:
+        Parameters
+        ----------
             nodeType: Point or Cell.
             scalars: default data array name for scalar data.
             vectors: default data array name for vector data.
@@ -351,8 +359,10 @@ class VtkFile:
             tensors: default data array name for tensors data.
             tcoords: dafault data array name for tcoords data.
 
-        RETURNS:
+        Returns
+        -------
             this VtkFile to allow chained calls.
+
         """
         self.xml.openElement(nodeType + "Data")
         if scalars:
@@ -371,25 +381,31 @@ class VtkFile:
     def closeData(self, nodeType):
         """Close data section.
 
-        PARAMETERS:
+        Parameters
+        ----------
             nodeType: Point or Cell.
 
-        RETURNS:
+        Returns
+        -------
             this VtkFile to allow chained calls.
+
         """
         self.xml.closeElement(nodeType + "Data")
 
     def openGrid(self, start=None, end=None, origin=None, spacing=None):
         """Open grid section.
 
-        PARAMETERS:
+        Parameters
+        ----------
             start: array or list of start indexes. Required for Structured, Rectilinear and ImageData grids.
             end: array or list of end indexes. Required for Structured, Rectilinear and ImageData grids.
             origin: 3D array or list with grid origin. Only required for ImageData grids.
             spacing: 3D array or list with grid spacing. Only required for ImageData grids.
 
-        RETURNS:
+        Returns
+        -------
             this VtkFile to allow chained calls.
+
         """
         gType = self.ftype.name
         self.xml.openElement(gType)
@@ -414,26 +430,30 @@ class VtkFile:
     def closeGrid(self):
         """Closes grid element.
 
-        RETURNS:
+        Returns:
             this VtkFile to allow chained calls.
+
         """
         self.xml.closeElement(self.ftype.name)
 
     def addHeader(self, name, dtype, nelem, ncomp):
         """Adds data array description to xml header section.
 
-        PARAMETERS:
+        Parameters
+        ----------
             name: data array name.
             dtype: string describing type of the data.
                    Format is the same as used by numpy, e.g. 'float64'.
             nelem: number of elements in the array.
             ncomp: number of components, 1 (=scalar) and 3 (=vector).
 
-        RETURNS:
+        Returns
+        -------
             This VtkFile to allow chained calls.
 
         NOTE: This is a low level function. Use addData if you want
               to add a numpy array.
+
         """
         dtype = np_to_vtk[dtype]
 
@@ -457,11 +477,13 @@ class VtkFile:
     def addData(self, name, data):
         """Adds array description to xml header section.
 
-        PARAMETERS:
+        Parameters
+        ----------
            name: data array name.
            data: one numpy array or a tuple with 3 numpy arrays. If a tuple, the individual
                  arrays must represent the components of a vector field.
                  All arrays must be one dimensional or three-dimensional.
+
         """
         if type(data).__name__ == "tuple":  # vector data
             assert len(data) == 3
@@ -479,15 +501,17 @@ class VtkFile:
         """This function only writes the size of the data block that will be appended.
         The data itself must be written immediately after calling this function.
 
-        PARAMETERS:
+        Parameters
+        ----------
             dtype: string with data type representation (same as numpy). For example, 'float64'
             nelem: number of elements.
             ncomp: number of components, 1 (=scalar) or 3 (=vector).
+
         """
         self.openAppendedData()
         dsize = np_to_vtk[dtype].size
         block_size = dsize * ncomp * nelem
-        if self.largeFile == False:
+        if not self.largeFile:
             writeBlockSize(self.xml.stream, block_size)
         else:
             writeBlockSize64Bit(self.xml.stream, block_size)
@@ -496,16 +520,19 @@ class VtkFile:
         """Append data to binary section.
         This function writes the header section and the data to the binary file.
 
-        PARAMETERS:
+        Parameters
+        ----------
             data: one numpy array or a tuple with 3 numpy arrays. If a tuple, the individual
                   arrays must represent the components of a vector field.
                   All arrays must be one dimensional or three-dimensional.
                   The order of the arrays must coincide with the numbering scheme of the grid.
 
-        RETURNS:
+        Returns
+        -------
             This VtkFile to allow chained calls
 
         TODO: Extend this function to accept contiguous C order arrays.
+
         """
         self.openAppendedData()
 
@@ -577,14 +604,14 @@ class VtkFile:
 #        VtkParallelFile class
 # ================================
 class VtkParallelFile:
-    """
-    Class for a VTK parallel file.
+    """Class for a VTK parallel file.
 
     Parameters
     ----------
     filepath : str
         filename without extension
     ftype : VtkParallelFileType
+
     """
 
     def __init__(self, filepath, ftype):
@@ -609,8 +636,8 @@ class VtkParallelFile:
         end=None,
         source=None,
     ):
-        """
-        Add piece section with extent and source.
+        """Add piece section with extent and source.
+
         Parameters
         ----------
         start : array-like, optional
@@ -621,10 +648,12 @@ class VtkParallelFile:
             Must be given with start.
         source : str
             Source of this piece
+
         Returns
         -------
         VtkParallelFile
             This VtkFile to allow chained calls.
+
         """
         # Check Source
         assert source is not None
@@ -647,8 +676,8 @@ class VtkParallelFile:
         tensors=None,
         tcoords=None,
     ):
-        """
-        Open data section.
+        """Open data section.
+
         Parameters
         ----------
         nodeType : str
@@ -663,10 +692,12 @@ class VtkParallelFile:
             default data array name for tensors data.
         tcoords : str, optional
             default data array name for tcoords data.
+
         Returns
         -------
         VtkFile
             This VtkFile to allow chained calls.
+
         """
         self.xml.openElement(nodeType + "Data")
         if scalars:
@@ -683,22 +714,23 @@ class VtkParallelFile:
         return self
 
     def closeData(self, nodeType):
-        """
-        Close data section.
+        """Close data section.
+
         Parameters
         ----------
         nodeType : str
             "Point", "Cell" or "Field".
+
         Returns
         -------
         VtkFile
             This VtkFile to allow chained calls.
+
         """
         self.xml.closeElement(nodeType + "Data")
 
     def openGrid(self, start=None, end=None, origin=None, spacing=None, ghostlevel=0):
-        """
-        Open grid section.
+        """Open grid section.
 
         Parameters
         ----------
@@ -721,10 +753,12 @@ class VtkParallelFile:
         ghostlevel : int
             Number of ghost-levels by which
             the extents in the individual pieces overlap.
+
         Returns
         -------
         VtkFile
             This VtkFile to allow chained calls.
+
         """
         gType = self.ftype.name
         self.xml.openElement(gType)
@@ -750,18 +784,19 @@ class VtkParallelFile:
         return self
 
     def closeGrid(self):
-        """
-        Close grid element.
+        """Close grid element.
+
         Returns
         -------
         VtkFile
             This VtkFile to allow chained calls.
+
         """
         self.xml.closeElement(self.ftype.name)
 
     def addHeader(self, name, dtype, ncomp):
-        """
-        Add data array description to xml header section.
+        """Add data array description to xml header section.
+
         Parameters
         ----------
         name : str
@@ -770,16 +805,17 @@ class VtkParallelFile:
             data type.
         ncomp : int
             number of components, 1 (=scalar) and 3 (=vector).
+
         Returns
         -------
-
         VtkFile
             This VtkFile to allow chained calls.
+
         Notes
         -----
-
         This is a low level function.
         Use addData if you want to add a numpy array.
+
         """
         dtype = np_to_vtk[dtype.name]
 
@@ -792,8 +828,7 @@ class VtkParallelFile:
         self.xml.closeElement()
 
     def openElement(self, tagName):
-        """
-        Open an element.
+        """Open an element.
         Useful to add elements such as: Coordinates, Points, Verts, etc.
         """
         self.xml.openElement(tagName)

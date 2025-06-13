@@ -1,11 +1,13 @@
 [project]
 name = "pmmoto"
-version = "0.1.0"
+version = "0.1.2"
 description = "Porous Media Topology and Morphology Toolkit"
 
 authors = [
     {name = "Timothy M. Weigand", email = "timothy.weigand@unc.edu"},
 ]
+
+license = { text = "MIT" }
 
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -16,8 +18,7 @@ dependencies = [
     "numpy<2.0",
     "cython==3.0",
     "mpi4py>=4.0.0",
-    "edt>=2.3.1",
-    "scipy>=1.9.3",
+    "scipy>=1.11",
     "connected_components_3d>=3.12.4",
     "matplotlib>=3.0"
 ]
@@ -35,7 +36,37 @@ include = ["pmmoto*"]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
-    "mypy>=1.0",
+    "mypy>=1.15",
     "tox>=3.24",
-    "pytest_benchmark>=5.1.0"
+    "pytest_benchmark>=5.1.0",
+    "ruff>=0.11.5",
+    "interrogate>=1.5.0",
+    # "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master",
+    "typing_extensions>=4.6"
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx_rtd_theme",
+    "myst-parser"
+]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+exclude = [
+    "src/pmmoto/io/evtk",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "D"]  # E = pycodestyle, F = pyflakes, D = pydocstyle
+ignore = ["D107", "D203", "D213", "D400", "D415", "D200"]
+
+[tool.interrogate]
+fail-under = 90
+ignore-init-method = true
+ignore-module = true
+

@@ -1,12 +1,26 @@
+"""Output utilities for saving PMMoTo simulation data.
+
+This module provides functions to save particle and image data in VTK formats,
+supporting both serial and parallel output.
+"""
+
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING, TypeVar
 import numpy as np
+from numpy.typing import NDArray
 from mpi4py import MPI
 import xml.etree.ElementTree as ET
-
 
 from ..core import subdomain_padded
 from . import io_utils
 from . import evtk
 
+if TYPE_CHECKING:
+    from ..core.subdomain import Subdomain
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
+
+T = TypeVar("T", bound=np.generic)
 
 comm = MPI.COMM_WORLD
 
@@ -19,9 +33,20 @@ __all__ = [
 ]
 
 
-def save_particle_data(file_name: str, subdomain, particles, **kwargs):
-    """
-    Save particle data as VTK PolyData
+def save_particle_data(
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    particles: NDArray[np.floating[Any]],
+    **kwargs: Any,
+) -> None:
+    """Save particle data as VTK PolyData.
+
+    Args:
+        file_name (str): Output file base name.
+        subdomain: Subdomain object with rank attribute.
+        particles (np.ndarray): Particle data array.
+        **kwargs: Additional keyword arguments.
+
     """
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
@@ -57,12 +82,16 @@ def save_particle_data(file_name: str, subdomain, particles, **kwargs):
         create_pvtu_file(file_name, subdomain)
 
 
-def create_pvtu_file(file_name: str, subdomain):
+def create_pvtu_file(
+    file_name: str, subdomain: Subdomain | PaddedSubdomain | VerletSubdomain
+) -> None:
+    """Create a .pvtu file that groups all .vtu files.
+
+    Args:
+        file_name (str): Output file base name.
+        subdomain: Subdomain object.
+
     """
-    Create a .pvtu file that groups all .vtu files.
-    """
-    comm = MPI.COMM_WORLD
-    num_procs = comm.Get_size()
     base_name = file_name.split("/")[-1]
     pvtu_file = f"{file_name}/{base_name}.pvtu"
 
@@ -101,25 +130,26 @@ def create_pvtu_file(file_name: str, subdomain):
         format="appended",  # MATCH format
     )
 
-    # Add references to individual .vtu files
-    for rank in range(num_procs):
-        piece = ET.SubElement(collection, "Piece", Source=f"{base_name}Proc.{rank}.vtu")
-
     # Write the .pvtu file
     tree = ET.ElementTree(root)
     tree.write(pvtu_file, encoding="utf-8", xml_declaration=True)
 
 
-def save_img_data_serial(file_name: str, subdomains: dict, img: dict, **kwargs):
-    """
-    This functions saves a decomposed image that is one a single process
-    """
-    if type(subdomains) is not dict:
-        subdomains = {0: subdomains}
+def save_img_data_serial(
+    file_name: str,
+    subdomains: dict[int, Subdomain | PaddedSubdomain | VerletSubdomain],
+    img: dict[int, NDArray[T]],
+    **kwargs: Any,
+) -> None:
+    """Save a decomposed image that is on a single process.
 
-    if type(img) is not dict:
-        img = {0: img}
+    Args:
+        file_name (str): Output file base name.
+        subdomains (dict): Dictionary of subdomain objects.
+        img (dict): Dictionary of image arrays.
+        **kwargs: Additional keyword arguments.
 
+    """
     io_utils.check_file_path(file_name)
 
     for local_subdomain, local_img in zip(subdomains.values(), img.values()):
@@ -128,15 +158,21 @@ def save_img_data_serial(file_name: str, subdomains: dict, img: dict, **kwargs):
     write_parallel_VTK_img(file_name, subdomains[0], img[0], **kwargs)
 
 
-def save_img_data_parallel(file_name, subdomain, img, additional_img=None):
-    """_summary_
+def save_img_data_parallel(
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    additional_img: None | dict[str, NDArray[T]] = None,
+) -> None:
+    """Save image data in parallel, one file per process.
 
     Args:
-        file_name (_type_): _description_
-        subdomain (_type_): _description_
-        img (_type_): _description_
-    """
+        file_name (str): Output file base name.
+        subdomain: Subdomain object with rank attribute.
+        img (np.ndarray): Image array.
+        additional_img (dict, optional): Additional images to save.
 
+    """
     if subdomain.rank == 0:
         io_utils.check_file_path(file_name)
     comm.barrier()
@@ -147,11 +183,21 @@ def save_img_data_parallel(file_name, subdomain, img, additional_img=None):
         write_parallel_VTK_img(file_name, subdomain, img, additional_img)
 
 
-def save_img(file_name, img, resolution=None, **kwargs):
-    """
-    Save an image as is.
-    """
+def save_img(
+    file_name: str,
+    img: NDArray[T],
+    resolution: None | tuple[int, ...] = None,
+    **kwargs: Any,
+) -> None:
+    """Save an image as a VTK file.
 
+    Args:
+        file_name (str): Output file base name.
+        img (np.ndarray): Image array.
+        resolution (tuple, optional): Voxel spacing.
+        **kwargs: Additional keyword arguments.
+
+    """
     io_utils.check_file_path(file_name)
 
     if resolution is None:
@@ -172,15 +218,26 @@ def save_img(file_name, img, resolution=None, **kwargs):
 
 
 def save_extended_img_data_parallel(
-    file_name, subdomain, img, extension=((0, 0), (0, 0), (0, 0)), additional_img=None
-):
-    """
-    Save an image where img.shape > subdomain.voxels
-    """
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    extension: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+    additional_img: None | dict[str, NDArray[T]] = None,
+) -> None:
+    """Save an image where img.shape > subdomain.voxels.
 
+    Args:
+        file_name (str): Output file base name.
+        subdomain: Subdomain object.
+        img (np.ndarray): Image array.
+        extension (tuple, optional): Extension for each dimension.
+        additional_img (dict, optional): Additional images to save.
+
+    """
     if img.shape == subdomain.voxels:
         raise ValueError(
-            f"Invalid img size! img has same shape as subdomain.voxels {img.shape}. Use save_img_data_proc"
+            f"Invalid img size! img has same shape as subdomain.voxels {img.shape}."
+            "Use save_img_data_proc"
         )
 
     if subdomain.rank == 0:
@@ -192,24 +249,25 @@ def save_extended_img_data_parallel(
         write_parallel_VTK_img(file_name, subdomain, img, additional_img, extension)
 
 
-def save_img_data_proc(file_name, subdomain, img, additional_img=None):
-    """_summary_
+def save_img_data_proc(
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    additional_img: None | dict[str, NDArray[T]] = None,
+) -> None:
+    """Save image data for a single process/subdomain.
 
     Args:
-        file_name (_type_): _description_
-        subdomain (_type_): _description_
-        img (_type_): _description_
-
-
-        additional_img is a dictionary like
-            additional_img[name] = another_img
-        extend only needed if another_img.shape != img.shape
+        file_name (str): Output file base name.
+        subdomain: Subdomain object.
+        img (np.ndarray): Image array.
+        additional_img (dict, optional): Additional images to save.
 
     """
-
     if img.shape != subdomain.voxels:
         raise ValueError(
-            f"Invalid img size! img has shape {img.shape} but your subdomain only has {subdomain.voxels} voxels "
+            f"Invalid img size! img has shape {img.shape}."
+            f"This subdomain only has {subdomain.voxels} voxels "
         )
 
     io_utils.check_file_path(file_name)
@@ -236,7 +294,8 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
 
             if value.shape != img.shape:
                 raise ValueError(
-                    f"Invalid img size! {key} has shape {value.shape}. Required shape is {img.shape} "
+                    f"Invalid img size! {key} has shape {value.shape}. "
+                    f"Required shape is {img.shape} "
                 )
 
             point_data[key] = value
@@ -252,14 +311,25 @@ def save_img_data_proc(file_name, subdomain, img, additional_img=None):
     )
 
 
-def save_extended_img_data_proc(file_name, subdomain, img, extension):
-    """_summary_"""
+def save_extended_img_data_proc(
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    extension: tuple[tuple[int, int], ...],
+) -> None:
+    """Save extended image data for a single process/subdomain.
 
+    Args:
+        file_name (str): Output file base name.
+        subdomain: Subdomain object.
+        img (np.ndarray): Image array.
+        extension (tuple): Extension for each dimension.
+
+    """
     io_utils.check_file_path(file_name)
     file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
 
     point_data = {"img": img}
-    point_data_info = {"img": (img.dtype, 1)}
 
     origin = (0, 0, 0)
     # origin = (-extension[0][0], -extension[1][0], -extension[2][0])
@@ -280,10 +350,21 @@ def save_extended_img_data_proc(file_name, subdomain, img, extension):
 
 
 def write_parallel_VTK_img(
-    file_name, subdomain, img, additional_img=None, extension=((0, 0), (0, 0), (0, 0))
-):
-    """
-    Wrapper to evtk.writeParallelVTKGrid
+    file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    additional_img: None | dict[str, NDArray[T]] = None,
+    extension: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+) -> None:
+    """Write a parallel VTK image using evtk.writeParallelVTKGrid.
+
+    Args:
+        file_name (str): Output file base name.
+        subdomain: Subdomain object.
+        img (np.ndarray): Image array.
+        additional_img (dict, optional): Additional images to save.
+        extension (tuple, optional): Extension for each dimension.
+
     """
     local_file_proc = (
         file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."
@@ -309,11 +390,25 @@ def write_parallel_VTK_img(
         name[n] = name[n] + str(n) + ".vti"
         _index = _sd.get_index(rank=n, subdomains=subdomain.domain.subdomains)
         # starts[n] = _sd.get_start()
-        starts[n] = [s - e[0] for s, e in zip(_sd.get_start(), extension)]
+        starts[n] = [
+            s - e[0]
+            for s, e in zip(
+                _sd.get_start(
+                    index=_index,
+                    domain_voxels=subdomain.domain.voxels,
+                    subdomains=subdomain.domain.subdomains,
+                ),
+                extension,
+            )
+        ]
         ends[n] = [
             s + v + e[1]
             for s, v, e in zip(
-                _sd.get_start(),
+                _sd.get_start(
+                    index=_index,
+                    domain_voxels=subdomain.domain.voxels,
+                    subdomains=subdomain.domain.subdomains,
+                ),
                 _sd.get_voxels(
                     index=_index,
                     domain_voxels=subdomain.domain.voxels,

@@ -132,7 +132,7 @@ class AtomMap():
         for label in self.labels:
             self.atom_map[label].trim_within(subdomain)   
 
-    def return_list(self,label):
+    def return_list(self,label) -> PyAtomList:
         """
         Return the AtomList of the label
         """
@@ -239,6 +239,13 @@ cdef class PyAtomList:
         _subdomain_box = create_box(subdomain.own_box)
 
         self._atom_list.get().trim_atoms_within(_subdomain_box)  
+
+    def return_coordinates(self):
+        """
+        Return the coordinates of atoms
+        """
+        cdef vector[vector[double]] coords = self._atom_list.get().get_coordinates()
+        return(np.asarray(coords))
 
 
 cdef class PySphereList:

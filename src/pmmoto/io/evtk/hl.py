@@ -75,7 +75,8 @@ def _appendDataToFile(vtkFile, cellData, pointData):
 
 def __convertListToArray(list1d):
     """If data is a list and no a Numpy array, then it convert it
-    to an array, otherwise return the same array"""
+    to an array, otherwise return the same array
+    """
     if (list1d is not None) and (not type(list1d).__name__ == "ndarray"):
         assert isinstance(list1d, (list, tuple))
         return np.array(list1d)
@@ -86,7 +87,8 @@ def __convertListToArray(list1d):
 def __convertDictListToArrays(data):
     """If data in dictironary are lists and no a Numpy array,
     then it creates a new dictionary and convert the list to arrays,
-    otherwise return the same dictionary"""
+    otherwise return the same dictionary
+    """
     if data is not None:
         dict = {}
         for k, list1d in data.items():
@@ -108,10 +110,11 @@ def imageToVTK(
     cellData=None,
     pointData=None,
     comments=None,
-):
+) -> None:
     """Exports data values as a rectangular image.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         origin: grid origin (default = (0,0,0))
         spacing: grid spacing (default = (1,1,1))
@@ -130,6 +133,7 @@ def imageToVTK(
         Full path to saved file.
 
     NOTE: At least, cellData or pointData must be present to infer the dimensions of the image.
+
     """
     assert cellData != None or pointData != None
 
@@ -162,10 +166,10 @@ def imageToVTK(
 
 # ==============================================================================
 def rectilinearToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
-    """
-    Writes data values as a rectilinear or rectangular grid.
+    """Writes data values as a rectilinear or rectangular grid.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: coordinates of the nodes of the grid as 1D arrays.
                  The grid should be Cartesian, i.e. faces in all cells are orthogonal.
@@ -181,7 +185,8 @@ def rectilinearToVTK(path, x, y, z, cellData=None, pointData=None, comments=None
                    must contain only scalar data.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -216,10 +221,10 @@ def rectilinearToVTK(path, x, y, z, cellData=None, pointData=None, comments=None
 
 
 def structuredToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
-    """
-    Writes data values as a rectilinear or rectangular grid.
+    """Writes data values as a rectilinear or rectangular grid.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: coordinates of the nodes of the grid as 3D arrays.
                  The grid should be structured, i.e. all cells should have the same number of neighbors.
@@ -235,7 +240,8 @@ def structuredToVTK(path, x, y, z, cellData=None, pointData=None, comments=None)
                    must contain only scalar data.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -266,10 +272,10 @@ def structuredToVTK(path, x, y, z, cellData=None, pointData=None, comments=None)
 
 
 def gridToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
-    """
-    Writes data values as a rectilinear or rectangular grid.
+    """Writes data values as a rectilinear or rectangular grid.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: coordinates of the nodes of the grid. They can be 1D or 3D depending if
                  the grid should be saved as a rectilinear or logically structured grid, respectively.
@@ -288,7 +294,8 @@ def gridToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
                    must contain only scalar data.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -341,11 +348,11 @@ def gridToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
 
 
 # ==============================================================================
-def pointsToVTK(path, x, y, z, data=None, comments=None):
-    """
-    Export points and associated data as an unstructured grid.
+def pointsToVTK(path, x, y, z, data=None, comments=None) -> None:
+    """Export points and associated data as an unstructured grid.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: 1D list-type object (list, tuple or numpy) with coordinates of the points.
         data: dictionary with variables associated to each point.
@@ -353,7 +360,8 @@ def pointsToVTK(path, x, y, z, data=None, comments=None):
               All 1D list-type object (list, tuple or numpy) must have the same number of elements.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -406,14 +414,14 @@ def pointsToVTK(path, x, y, z, data=None, comments=None):
 
 # ==============================================================================
 def pointsToVTKAsTIN(path, x, y, z, data=None, comments=None, ndim=2):
-    """
-    Export points and associated data as a triangula irregular grid.
+    """Export points and associated data as a triangula irregular grid.
     It builds a triangular grid that has the input points as nodes
     using the Delaunay triangulation function in Scipy, which requires
     a convex set of points (check the documentation for further details
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html).
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: 1D list-type object (list, tuple or numpy) with coordinates of the points.
         data: dictionary with variables associated to each point.
@@ -424,10 +432,12 @@ def pointsToVTKAsTIN(path, x, y, z, data=None, comments=None, ndim=2):
               If ndim = 2, then only coordinates x and y are passed.
               If ndim = 3, then x, y and z coordinates are passed.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     REQUIRES: Scipy > 1.2.
+
     """
     # TODO: Check if it makes and it would be possible to add cellData.
     try:
@@ -490,10 +500,10 @@ def pointsToVTKAsTIN(path, x, y, z, data=None, comments=None, ndim=2):
 
 # ==============================================================================
 def linesToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
-    """
-    Export line segments that joint 2 points and associated data.
+    """Export line segments that joint 2 points and associated data.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: 1D list-type object (list, tuple or numpy) with coordinates of the vertex of the lines. It is assumed that each line.
                  is defined by two points, then the lenght of the arrays should be equal to 2 * number of lines.
@@ -505,7 +515,8 @@ def linesToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
               All 1D list-type object (list, tuple or numpy) must have the same number of elements.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -566,10 +577,10 @@ def linesToVTK(path, x, y, z, cellData=None, pointData=None, comments=None):
 def polyLinesToVTK(
     path, x, y, z, pointsPerLine, cellData=None, pointData=None, comments=None
 ):
-    """
-    Export line segments that joint 2 points and associated data.
+    """Export line segments that joint 2 points and associated data.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: 1D list-type object (list, tuple or numpy) arrays with coordinates of the vertices of the lines. It is assumed that each line.
                  has diffent number of points.
@@ -585,7 +596,8 @@ def polyLinesToVTK(
                    1D list-type object (list, tuple or numpy) must have the same number of elements.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -655,10 +667,10 @@ def unstructuredGridToVTK(
     pointData=None,
     comments=None,
 ):
-    """
-    Export unstructured grid and associated data.
+    """Export unstructured grid and associated data.
 
-    PARAMETERS:
+    Parameters
+    ----------
         path: name of the file without extension where data should be saved.
         x, y, z: 1D list-type object (list, tuple or numpy) with coordinates of the vertices of cells. It is assumed that each element
                  has diffent number of vertices.
@@ -678,7 +690,8 @@ def unstructuredGridToVTK(
                    All 1D list-type object (list, tuple or numpy) must have the same number of elements.
         comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
         Full path to saved file.
 
     """
@@ -738,10 +751,10 @@ def cylinderToVTK(
     pointData=None,
     comments=None,
 ):
-    """
-      Export cylinder as VTK unstructured grid.
+    """Export cylinder as VTK unstructured grid.
 
-    PARAMETERS:
+    Parameters
+    ----------
       path: path to file without extension.
       x0, yo: center of cylinder.
       z0, z1: lower and top elevation of the cylinder.
@@ -755,11 +768,13 @@ def cylinderToVTK(
                 Arrays should have number of elements equal to npoints = npilars * (nlayers + 1).
       comments: list of comment strings, which will be added to the header section of the file.
 
-    RETURNS:
+    Returns
+    -------
           Full path to saved file.
 
       NOTE: This function only export vertical shapes for now. However, it should be easy to
             rotate the cylinder to represent other orientations.
+
     """
     import math as m
 
@@ -791,7 +806,7 @@ def cylinderToVTK(
     # Define connectivity
     conn = np.zeros(4 * ncells, dtype=np.int64)
     ii = 0
-    for l in range(nlayers):
+    for layer in range(nlayers):
         for p in range(npilars):
             p0 = p
             if p + 1 == npilars:
@@ -799,8 +814,8 @@ def cylinderToVTK(
             else:
                 p1 = p + 1  # circular loop
 
-            n0 = p0 + l * npilars
-            n1 = p1 + l * npilars
+            n0 = p0 + layer * npilars
+            n1 = p1 + layer * npilars
             n2 = n0 + npilars
             n3 = n1 + npilars
 
@@ -876,9 +891,8 @@ def writeParallelVTKGrid(
     lower_extent=(0, 0, 0),
     cellData=None,
     pointData=None,
-):
-    """
-    Writes a parallel vtk file from grid-like data:
+) -> None:
+    """Writes a parallel vtk file from grid-like data:
     VTKStructuredGrid or VTKRectilinearGrid
 
     Parameters
@@ -907,6 +921,7 @@ def writeParallelVTKGrid(
         containing cell centered data.
         Keys shoud be the names of the arrays.
         Values are (dtype, number of components)
+
     """
     # Check that every source as a start and an end
     assert len(starts) == len(ends) == len(sources)
@@ -979,8 +994,7 @@ def writeParallelPoints(
     cellData=None,
     pointData=None,
 ):
-    """
-    Writes a parallel vtk file from grid-like data:
+    """Writes a parallel vtk file from grid-like data:
     VTKStructuredGrid or VTKRectilinearGrid
 
     Parameters
@@ -1009,6 +1023,7 @@ def writeParallelPoints(
         containing cell centered data.
         Keys shoud be the names of the arrays.
         Values are (dtype, number of components)
+
     """
     # Check that every source as a start and an end
     assert len(starts) == len(ends) == len(sources)
