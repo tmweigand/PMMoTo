@@ -1,8 +1,10 @@
-"""drainage_inkbottle.py"""
+"""Example: Morphological drainage simulation in an inkbottle geometry using PMMoTo.
+
+Run with:
+    mpirun -np 8 python examples/drainage_inkbottle.py
+"""
 
 from mpi4py import MPI
-import numpy as np
-import matplotlib.pyplot as plt
 import pmmoto
 
 comm = MPI.COMM_WORLD
@@ -54,23 +56,21 @@ capillary_pressure = [
 ]
 
 
-def drain_ink_bottle():
-    """
-    This is an example that simulates morphological drainage of an inkbottle.
+def drain_ink_bottle() -> None:
+    """Simulate morphological drainage of an inkbottle.
 
     To run this file:
         mpirun -np 8 python examples/drainage_inkbottle.py
 
     """
-
-    voxels = (560, 120, 120)
+    voxels = (1120, 240, 240)
     reservoir_voxels = 40
-    subdomains = (8, 1, 1)
+    subdomains = (1, 1, 1)
 
     box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
 
-    inlet = ((0, 1), (0, 0), (0, 0))
-    outlet = ((1, 0), (0, 0), (0, 0))
+    inlet = ((False, True), (False, False), (False, False))
+    outlet = ((True, False), (False, False), (False, False))
 
     sd = pmmoto.initialize(
         voxels,
@@ -82,42 +82,68 @@ def drain_ink_bottle():
         reservoir_voxels=reservoir_voxels,
     )
 
-    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
+    # Scaling parameters for inkbottle
+    # Set to 1 for traditional inkbottle
+    r_y = 0.5
+    r_z = 2
+
+    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd, r_y, r_z)
     mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
 
     w_saturation_standard = pmmoto.filters.equilibrium_distribution.drainage(
-        mp, capillary_pressure, gamma=1, method="standard", save=True
+        mp, 1.7127, gamma=1, method="standard", save=True
     )
 
     # Reset to fully wetted domain
     mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
 
     w_saturation_contact_angle = pmmoto.filters.equilibrium_distribution.drainage(
-        mp, capillary_pressure, gamma=1, contact_angle=20, method="contact_angle"
+        mp, 1.7127, gamma=1, contact_angle=20, method="contact_angle"
     )
 
-    # Save final state of multiphase image
-    pmmoto.io.output.save_img_data_parallel(
-        file_name="examples/drainage_inkbottle_img",
-        subdomain=sd,
-        img=pm.img,
-        additional_img={"mp_img": mp.img},
-    )
+    # # Reset to fully wetted domain
+    # mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
 
-    if rank == 0:
-        plt.plot(
-            w_saturation_standard, capillary_pressure, ".", label="Standard Method"
-        )
-        plt.plot(
-            w_saturation_contact_angle,
-            capillary_pressure,
-            ".",
-            label="Contact Angle Method",
-        )
-        plt.xlabel("Wetting Phase Saturation")
-        plt.ylabel("Capillary Pressure")
-        plt.savefig("examples/drainage_inkpottle.pdf")
-        plt.close()
+    # # Bad method!
+    # w_saturation_extended_contact_angle = (
+    #     pmmoto.filters.equilibrium_distribution.drainage(
+    #         mp,
+    #         capillary_pressure,
+    #         gamma=1,
+    #         contact_angle=20,
+    #         method="extended_contact_angle",
+    #     )
+    # )
+
+    # # Save final state of multiphase image
+    # pmmoto.io.output.save_img_data_parallel(
+    #     file_name="examples/drainage_inkbottle_img",
+    #     subdomain=sd,
+    #     img=pm.img,
+    #     additional_img={"mp_img": mp.img},
+    # )
+
+    # if rank == 0:
+    #     plt.plot(
+    #         w_saturation_standard, capillary_pressure, ".", label="Standard Method"
+    #     )
+    #     plt.plot(
+    #         w_saturation_contact_angle,
+    #         capillary_pressure,
+    #         ".",
+    #         label="Contact Angle Method",
+    #     )
+    #     plt.plot(
+    #         w_saturation_extended_contact_angle,
+    #         capillary_pressure,
+    #         ".",
+    #         label="Extended Contact Angle Method",
+    #     )
+    #     plt.xlabel("Wetting Phase Saturation")
+    #     plt.ylabel("Capillary Pressure")
+    #     plt.legend()
+    #     plt.savefig("examples/drainage_inkbottle.pdf")
+    #     plt.close()
 
 
 if __name__ == "__main__":

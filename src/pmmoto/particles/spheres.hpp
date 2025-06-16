@@ -2,12 +2,13 @@
 #define SPHERES_H
 
 #include "particle_list.hpp"
+#include "shape.hpp"
 
 /**
  * @class Sphere
  * @brief Represents a sphere with position and radius.
  */
-class Sphere : public Particle
+class Sphere : public Particle, public Shape
 {
 public:
     double radius;
@@ -37,11 +38,12 @@ public:
      * @param s_r Squared radius of the sphere.
      * @return 1 if the point is inside the sphere, 0 otherwise.
      */
-    inline uint8_t in_sphere(const std::vector<double>& point) noexcept
+    inline uint8_t
+    contains(const std::vector<double>& voxel) const noexcept override
     {
-        double dx = coordinates[0] - point[0];
-        double dy = coordinates[1] - point[1];
-        double dz = coordinates[2] - point[2];
+        double dx = coordinates[0] - voxel[0];
+        double dy = coordinates[1] - voxel[1];
+        double dz = coordinates[2] - voxel[2];
         return (dx * dx + dy * dy + dz * dz) <= radius_squared ? 1 : 0;
     };
 
@@ -94,7 +96,7 @@ public:
  * @class SphereList
  * @brief Contains a list of the spheres and tools to operate on those spheres
  */
-class SphereList
+class SphereList : public ShapeList
 {
 protected:
     std::vector<Sphere> spheres;
@@ -126,6 +128,11 @@ public:
         {
             spheres.push_back(Sphere(particles[i].coordinates, radius));
         }
+    }
+
+    std::shared_ptr<Shape> get(size_t index) const override
+    {
+        return std::make_shared<Sphere>(spheres[index]);
     }
 
     /**
@@ -265,7 +272,7 @@ public:
      * @param subdomain Dimensions of the subdomain via Box
      * @return Vector of indices of intersecting spheres
      */
-    std::vector<size_t> find_intersecting_sphere_indices(const Box& box) const
+    std::vector<size_t> find_intersecting_indices(const Box& box) const override
     {
         std::vector<size_t> indices;
 

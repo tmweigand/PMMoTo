@@ -26,19 +26,14 @@ int c_functionals_2d(unsigned short* image, int dim0, int dim1, double res0, dou
 
 int c_functionals_3d(unsigned short* image, int dim0, int dim1, int dim2, double res0, double res1, double res2, long int* h, double* volume, double* surface, double* curvature, double* euler6, double* euler26) {
     double norm;
-    //long int* h;
 
     norm = (double) dim0 * dim1 * dim2 * res0 * res1 * res2;
-	
-    //h = quant_3d(image, dim0, dim1, dim2);
 
     *volume    = norm * volu_dens_3d(h);
     *surface   = norm * surf_dens_3d(h, res0, res1, res2);
     *curvature = norm * curv_dens_3d(h, res0, res1, res2);
     *euler6    = norm * eul6_dens_3d(h, res0, res1, res2);
     *euler26   = norm * eu26_dens_3d(h, res0, res1, res2);
-
-    //free(h);
 
     return 0;
 }

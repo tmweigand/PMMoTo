@@ -11,6 +11,7 @@ from libcpp.memory cimport shared_ptr
 
 from ..particles.particle_list cimport Box
 from ..particles.spheres cimport SphereList
+from ..particles.shape cimport ShapeList
 
 cdef extern from "domain_generation.hpp":
 	cdef struct Grid:
@@ -31,7 +32,7 @@ cdef extern from "domain_generation.hpp":
 		uint8_t *img,
 		Grid grid,
 		Verlet verlet,
-		shared_ptr[SphereList] spherelist
+		shared_ptr[ShapeList] spherelist
 	)
 
 	cdef void gen_sphere_img_kd_method(

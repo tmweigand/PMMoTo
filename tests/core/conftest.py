@@ -1,22 +1,29 @@
+"""Pytest fixtures for core PMMoTo tests.
+
+Provides subdomain and padded subdomain generators for use in core test cases.
+"""
+
 import pytest
-import pickle
-import numpy as np
 import pmmoto
 
 
 @pytest.fixture
 def generate_subdomain():
-    """
-    Generate a un-padded subdomain
+    """Generate a un-padded subdomain.
+
     This allows rank to be passed as an argument
     """
 
     def _create_subdomain(rank):
 
         box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-        boundary_types = ((0, 0), (1, 1), (2, 2))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
+        boundary_types = (
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        )
+        inlet = ((True, False), (False, False), (False, False))
+        outlet = ((False, True), (False, False), (False, False))
         voxels = (100, 100, 100)
         subdomains = (3, 3, 3)
 
@@ -48,8 +55,8 @@ def generate_subdomain():
 
 @pytest.fixture
 def generate_single_subdomain():
-    """
-    Generate a padded subdomain
+    """Generate a padded subdomain.
+
     THis allows rank to be passed as an argument
     """
 
@@ -57,13 +64,21 @@ def generate_single_subdomain():
         rank, box=((0, 1.0), (0, 1.0), (0, 1.0)), periodic=True, specified_types=None
     ):
         if periodic:
-            boundary_types = ((2, 2), (2, 2), (2, 2))
+            boundary_types = (
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+                (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            )
         elif specified_types is not None:
             boundary_types = specified_types
         else:
-            boundary_types = ((0, 0), (0, 0), (0, 0))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
+            boundary_types = (
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+                (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            )
+        inlet = ((True, False), (False, False), (False, False))
+        outlet = ((False, True), (False, False), (False, False))
         voxels = (100, 100, 100)
         subdomains = (1, 1, 1)
         pad = (1, 1, 1)
@@ -99,17 +114,21 @@ def generate_single_subdomain():
 
 @pytest.fixture
 def generate_padded_subdomain():
-    """
-    Generate a un-padded subdomain
+    """Generate a un-padded subdomain.
+
     This allows rank to be passed as an argument
     """
 
     def _create_subdomain(rank):
 
         box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-        boundary_types = ((0, 0), (1, 1), (2, 2))
-        inlet = ((1, 0), (0, 0), (0, 0))
-        outlet = ((0, 1), (0, 0), (0, 0))
+        boundary_types = (
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        )
+        inlet = ((True, False), (False, False), (False, False))
+        outlet = ((False, True), (False, False), (False, False))
         voxels = (100, 100, 100)
         subdomains = (3, 3, 3)
         pad = (1, 1, 1)

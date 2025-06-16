@@ -15,11 +15,12 @@ from libcpp.memory cimport shared_ptr
 from libcpp.unordered_map cimport unordered_map
 
 from .spheres cimport SphereList
+from .cylinders cimport CylinderList
 from .particle_list cimport Box
 from .atoms cimport AtomList,atom_id_to_values,group_atoms_by_type
 from ..core import communication
 
-__all__ = ["_initialize_atoms","_initialize_spheres"]
+__all__ = ["_initialize_atoms","_initialize_spheres","_initialize_cylinders"]
 
 
 def create_box(bounds):
@@ -132,7 +133,7 @@ class AtomMap():
         for label in self.labels:
             self.atom_map[label].trim_within(subdomain)   
 
-    def return_list(self,label):
+    def return_list(self,label) -> PyAtomList:
         """
         Return the AtomList of the label
         """
@@ -240,6 +241,13 @@ cdef class PyAtomList:
 
         self._atom_list.get().trim_atoms_within(_subdomain_box)  
 
+    def return_coordinates(self):
+        """
+        Return the coordinates of atoms
+        """
+        cdef vector[vector[double]] coords = self._atom_list.get().get_coordinates()
+        return(np.asarray(coords))
+
 
 cdef class PySphereList:
 
@@ -334,6 +342,23 @@ cdef class PySphereList:
         self._sphere_list.get().trim_spheres_within(_subdomain_box)  
 
 
+cdef class PyCylinderList:
+
+    def __cinit__(self, vector[vector[double]] points_1, vector[vector[double]] points_2, vector[double] radii):
+        """
+        Initialize a PyCylinderList
+        """
+        if points_1.size() == 0:
+            raise ValueError("Cannot initialize PyCylinderList with empty points")
+        try:
+            self._cylinder_list = shared_ptr[CylinderList](new CylinderList(points_1,points_2, radii))
+            if not self._cylinder_list:
+                raise RuntimeError("Failed to initialize CylinderList")
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to create CylinderList: {str(e)}")
+
+
 def _initialize_atoms(atom_coordinates, atom_radii, atom_ids, atom_masses = None, by_type = False):
     """
     Initialize a list of atoms. 
@@ -396,3 +421,15 @@ def _initialize_spheres(spheres, radii, masses = None):
         return PySphereList(spheres,radii,masses)
     else:
         return PySphereList(spheres,radii)
+
+
+
+def _initialize_cylinders(cylinders):
+    """
+    Initialize a list of cylinders.
+    """
+    print(cylinders)
+    points_1 = cylinders[:,0:3]
+    points_2 = cylinders[:,3:6]
+    radii = cylinders[:,6]
+    return PyCylinderList(points_1,points_2,radii)

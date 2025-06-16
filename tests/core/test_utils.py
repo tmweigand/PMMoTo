@@ -6,7 +6,7 @@ import pytest
 from mpi4py import MPI
 
 
-def test_decompose_img():
+def test_decompose_img() -> None:
     """Ensure expected behavior of decompose_img"""
     n = 5
     img = np.arange(n * n * n).reshape(n, n, n)
@@ -41,7 +41,7 @@ def test_decompose_img():
     )
 
 
-def test_decompose_img_2():
+def test_decompose_img_2() -> None:
     """Ensure expected behavior of decompose_img"""
     n = 10
     linear_values = np.linspace(0, n - 1, n, endpoint=True)
@@ -62,13 +62,11 @@ def test_decompose_img_2():
     np.testing.assert_array_equal(result, expected_result)
 
 
-def test_pad():
-    """
-    Test of padding and un-padding an array
-    """
+def test_pad() -> None:
+    """Test of padding and un-padding an array"""
     voxels = (25, 25, 25)
 
-    img = pmmoto.domain_generation.gen_random_binary_grid(voxels)
+    img = pmmoto.domain_generation.gen_img_random_binary(voxels)
 
     pad = ((3, 3), (3, 3), (3, 3))
     pad_img = pmmoto.core.utils.constant_pad_img(img, pad, 8)
@@ -82,10 +80,8 @@ def test_pad():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_determine_max():
-    """
-    Test to ensure we can find the global maximum
-    """
+def test_determine_max() -> None:
+    """Test to ensure we can find the global maximum"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -97,13 +93,11 @@ def test_determine_max():
     assert global_max == 7
 
 
-def test_bin_image():
-    """
-    Test for counting occurrences of a value
-    """
+def test_bin_image() -> None:
+    """Test for counting occurrences of a value"""
     N = 10
     sd = pmmoto.initialize((N, N, N))
-    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+    img = pmmoto.domain_generation.gen_img_linear(sd.voxels, 0)
 
     counts = pmmoto.core.utils.bin_image(sd, img)
 
@@ -122,17 +116,14 @@ def test_bin_image():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_bin_image_parallel():
-    """
-    Test for counting occurrences of a value
-    """
-
+def test_bin_image_parallel() -> None:
+    """Test for counting occurrences of a value"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
     N = 10
     sd = pmmoto.initialize((N, N, N), subdomains=(2, 2, 2), rank=rank)
-    img = pmmoto.domain_generation.gen_linear_img(sd.voxels, 0)
+    img = pmmoto.domain_generation.gen_img_linear(sd.voxels, 0)
 
     counts = pmmoto.core.utils.bin_image(sd, img, own=True)
 
@@ -150,10 +141,8 @@ def test_bin_image_parallel():
     }  # Counting buffer as well - so double counting
 
 
-def test_check_img_for_solid():
-    """
-    Ensure solid-0 exists on image
-    """
+def test_check_img_for_solid() -> None:
+    """Ensure solid-0 exists on image"""
     sd = pmmoto.initialize((10, 10, 10))
     img = np.zeros(sd.voxels)
 
@@ -161,10 +150,8 @@ def test_check_img_for_solid():
 
 
 @pytest.mark.xfail
-def test_check_img_for_solid_fail():
-    """
-    Ensure solid-0 exists on image
-    """
+def test_check_img_for_solid_fail() -> None:
+    """Ensure solid-0 exists on image"""
     sd = pmmoto.initialize((10, 10, 10))
     img = np.ones(sd.voxels)
 

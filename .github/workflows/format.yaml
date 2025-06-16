@@ -1,0 +1,32 @@
+name: Format Check
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  black:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-latest]
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt update
+            sudo apt install -y libmpich-dev zlib1g-dev
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install mpich zlib
+          fi
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+      - name: Run black
+        run: tox -e black

@@ -1,3 +1,9 @@
+"""Setup script for PMMoTo.
+
+Builds Cython/C++ extensions and installs the PMMoTo package.
+"""
+
+import sys
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 import Cython.Compiler.Options
@@ -5,13 +11,11 @@ import numpy
 
 Cython.Compiler.Options.annotate = True
 
-import subprocess
-import sys
 
 # try:
 #     subprocess.run(["mpirun", "--version"], check=True, stdout=subprocess.PIPE)
 # except FileNotFoundError:
-#     sys.stderr.write("Error: MPI is not installed. Please install OpenMPI or MPICH.\n")
+#     sys.stderr.write("Error: MPI is not installed. Install OpenMPI or MPICH.\n")
 #     sys.exit(1)
 
 
