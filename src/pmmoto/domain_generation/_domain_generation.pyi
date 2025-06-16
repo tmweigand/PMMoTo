@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..particles._particles import PySphereList
+from ..particles._particles import PyCylinderList
 from ..particles._particles import AtomMap
 from ..core.subdomain import Subdomain
 from ..core.subdomain_padded import PaddedSubdomain
@@ -14,7 +15,7 @@ T = TypeVar("T", bound=np.generic)
 
 def gen_pm_sphere(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
-    spheres: PySphereList,
+    spheres: PySphereList | PyCylinderList,
     kd: bool,
 ) -> NDArray[np.uint8]: ...
 def gen_pm_atom(

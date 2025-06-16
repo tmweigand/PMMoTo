@@ -5,7 +5,7 @@ import numpy as np
 import pmmoto
 
 
-def test_pm_sphere():
+def test_pm_sphere() -> None:
     """Test domain generation of a sphere pack.
 
     Sphere data is [x_i, y_i, z_i, r_i]
@@ -18,7 +18,7 @@ def test_pm_sphere():
     assert np.sum(pm.img) == 944
 
 
-def test_pm_sphere_verlet():
+def test_pm_sphere_verlet() -> None:
     """Test domain generation of a sphere pack using Velet domains for speed-up.
 
     Sphere data is [x_i, y_i, z_i, r_i]
@@ -31,7 +31,7 @@ def test_pm_sphere_verlet():
     assert np.sum(pm.img) == 944
 
 
-def test_pm_atom():
+def test_pm_atom() -> None:
     """Test domain generation of a atomistic domain.
 
     Atom locations is a NumPy array with centroid of each atom.
@@ -52,7 +52,7 @@ def test_pm_atom():
     assert np.sum(pm.img) == 944
 
 
-def test_pm_atom_verlet():
+def test_pm_atom_verlet() -> None:
     """Test domain generation of a atomistic domain.
 
     Atom locations is a NumPy array with centroid of each atom.
@@ -76,7 +76,7 @@ def test_pm_atom_verlet():
 
 
 @pytest.mark.figures
-def test_gen_random_binary_grid():
+def test_gen_random_binary_grid() -> None:
     """Test domain generation of a random binary grid"""
     voxels = (50, 50, 50)
 
@@ -87,7 +87,7 @@ def test_gen_random_binary_grid():
 
 
 @pytest.mark.figures
-def test_gen_smoothed_random_binary_grid():
+def test_gen_smoothed_random_binary_grid() -> None:
     """Test domain generation of a random binary grid"""
     voxels = (100, 100, 100)
 
@@ -96,3 +96,20 @@ def test_gen_smoothed_random_binary_grid():
     )
 
     pmmoto.io.output.save_img("data_out/test_smoothed_random_binary_grid", img)
+
+
+def test_gen_cylinders() -> None:
+    """Tests for cylinder pack"""
+    sd = pmmoto.initialize(voxels=(100, 100, 100))
+    cylinder = np.array(
+        [
+            [0.5, 0.5, -0.05, 0.5, 0.5, 1.05, 0.15],
+            [0.25, 0.25, 0.55, 0.75, 0.75, 0.85, 0.15],
+        ]
+    )
+
+    pm = pmmoto.domain_generation.gen_pm_cylinders(sd, cylinder)
+
+    pmmoto.io.output.save_img("data_out/cylinders", pm.img, sd.domain.resolution)
+
+    # assert np.sum(pm.img) == 944

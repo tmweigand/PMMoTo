@@ -58,6 +58,17 @@ class Domain:
 
         """
         # TODO: ADD input check
+
+        # Runtime type assertions for boundary_types
+        assert isinstance(boundary_types, tuple), "boundary_types must be a tuple"
+        for bt in boundary_types:
+            assert (
+                isinstance(bt, tuple) and len(bt) == 2
+            ), "Each item must be a tuple of length 2"
+            assert all(
+                isinstance(b, BoundaryType) for b in bt
+            ), "Each element must be a BoundaryType"
+
         self.box = box
         self.boundary_types = boundary_types
         self.inlet = inlet

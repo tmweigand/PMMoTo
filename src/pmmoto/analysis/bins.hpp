@@ -16,7 +16,7 @@ count_locations(const std::vector<std::vector<double> >& coordinates,
         int bin_index =
             std::floor((coords[dimension] - min_bin_value) / bin_width);
 
-        if (bin_index >= 0 && bin_index < bins.size())
+        if (bin_index >= 0 && bin_index < static_cast<int>(bins.size()))
         {
             bins[bin_index]++;
         }
@@ -39,7 +39,7 @@ sum_masses(const std::vector<std::vector<double> >& coordinates,
         int bin_index =
             std::floor((coords[dimension] - min_bin_value) / bin_width);
 
-        if (bin_index >= 0 && bin_index < bins.size())
+        if (bin_index >= 0 && bin_index < static_cast<int>(bins.size()))
         {
             bins[bin_index] = bins[bin_index] + mass;
         }

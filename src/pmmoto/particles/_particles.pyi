@@ -55,6 +55,8 @@ class PySphereList:
         self, subdomain: Subdomain | PaddedSubdomain | VerletSubdomain
     ) -> None: ...
 
+class PyCylinderList: ...
+
 def _initialize_atoms(
     atom_coordinates: NDArray[np.floating[Any]],
     atom_radii: NDArray[np.floating[Any]],
@@ -67,3 +69,6 @@ def _initialize_spheres(
     radii: NDArray[np.floating[Any]],
     masses: None | NDArray[np.integer[Any]] = None,
 ) -> PySphereList: ...
+def _initialize_cylinders(
+    cyylinders: NDArray[np.floating[Any]],
+) -> PyCylinderList: ...

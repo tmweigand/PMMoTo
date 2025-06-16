@@ -10,8 +10,10 @@ import numpy as np
 cimport numpy as cnp
 from numpy cimport uint8_t
 from libc.math cimport sin, cos
+from libcpp.memory cimport shared_ptr
 cnp.import_array()
 
+from ..particles.shape cimport ShapeList
 from ..particles._particles cimport PySphereList
 from ..particles._particles import create_box
 from ._domain_generation cimport Grid, Verlet
@@ -20,18 +22,18 @@ from ._domain_generation cimport gen_sphere_img_kd_method
 
 
 __all__ = [
-    "gen_pm_sphere",
+    "gen_pm_shape",
     "gen_pm_atom",
     "gen_inkbottle",
 ]
 
-def gen_pm_sphere(subdomain, spheres, kd: bool = False) -> np.ndarray:
+def gen_pm_shape(subdomain, shapes, kd: bool = False) -> np.ndarray:
     """
     Determine if voxel centroids are located inside spheres.
 
     Args:
         subdomain: Subdomain object containing voxel and Verlet information.
-        spheres: SphereList or PySphereList object.
+        shapes: ShapeList or PySphereList object.
         kd (bool): Whether to use KD-tree for sphere lookup.
 
     Returns:
@@ -41,6 +43,7 @@ def gen_pm_sphere(subdomain, spheres, kd: bool = False) -> np.ndarray:
         cnp.uint8_t[:, :, :] _img
         Grid grid_c
         Verlet verlet_c
+        shared_ptr[ShapeList] shape_ptr
 
     # Initialize binary image
     img = np.ones(subdomain.voxels, dtype=np.uint8)
@@ -68,14 +71,15 @@ def gen_pm_sphere(subdomain, spheres, kd: bool = False) -> np.ndarray:
             <uint8_t*>&_img[0, 0, 0],
             grid_c,
             verlet_c,
-            (<PySphereList>spheres)._sphere_list,
+            (<PySphereList>shapes)._sphere_list,
         )
     else:
+        shape_ptr = (<PySphereList>shapes)._sphere_list
         gen_sphere_img_brute_force(
             <uint8_t*>&_img[0, 0, 0],
             grid_c,
             verlet_c,
-            (<PySphereList>spheres)._sphere_list
+            shape_ptr
         )
 
     return np.ascontiguousarray(img)
