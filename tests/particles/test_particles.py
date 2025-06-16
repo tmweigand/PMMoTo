@@ -19,7 +19,11 @@ def test_particles():
 
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
-        boundary_types=((2, 2), (2, 2), (2, 2)),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
         box=box,
         rank=rank,
         subdomains=subdomains,
@@ -37,7 +41,14 @@ def test_particles():
 
 def test_gen_periodic_spheres():
     """Test the addition of periodic spheres"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     spheres = np.array([[0.5, 0.5, 0.5, 0.25]])
@@ -99,7 +110,14 @@ def test_trim_particles():
 
 def test_group_atoms():
     """Test the creation of atom lists"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -126,7 +144,14 @@ def test_group_atoms():
 
 def test_spheres():
     """Test the creation of sphere lists"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     sphere = np.array([[0.19, 0.1, 0.5, 0.2]])
@@ -139,7 +164,14 @@ def test_spheres():
 
 def test_cleanup():
     """Test deletion of particle lists"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -175,7 +207,14 @@ def test_uff_radius():
 
 def test_atoms_with_masses():
     """Test deletion of particle lists"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -200,7 +239,14 @@ def test_atoms_with_masses():
 
 def test_count_own():
     """Test deletion of particle lists"""
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(

@@ -27,6 +27,7 @@ __all__ = [
     "gen_img_smoothed_random_binary",
     "gen_img_linear",
     "gen_pm_spheres_domain",
+    "gen_pm_cylinders",
     "gen_pm_atom_domain",
     "gen_pm_atom_file",
     "gen_pm_inkbottle",
@@ -138,6 +139,33 @@ def gen_pm_spheres_domain(
     _spheres = particles.initialize_spheres(subdomain, spheres)
 
     img = _domain_generation.gen_pm_sphere(subdomain, _spheres, kd)
+    pm = porousmedia.gen_pm(subdomain, img)
+    pm.img = communication.update_buffer(subdomain, pm.img)
+    pm.img = subdomain.set_wall_bcs(pm.img)
+    utils.check_img_for_solid(subdomain, pm.img)
+
+    return pm
+
+
+def gen_pm_cylinders(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    cylinders: NDArray[np.floating[Any]],
+    kd: bool = False,
+) -> porousmedia.PorousMedia:
+    """Generate binary porous media domain from cylinder data.
+
+    Args:
+        subdomain: Subdomain object.
+        cylinders: Cylinder data array.
+        kd (bool, optional): Use KD-tree for efficiency.
+
+    Returns:
+        PorousMedia: Initialized porous media object.
+
+    """
+    _cylinders = particles.initialize_cylinders(subdomain, cylinders)
+
+    img = _domain_generation.gen_pm_sphere(subdomain, _cylinders, kd)
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)

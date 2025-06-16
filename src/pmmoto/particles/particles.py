@@ -10,7 +10,8 @@ from numpy.typing import NDArray
 
 from ._particles import _initialize_atoms
 from ._particles import _initialize_spheres
-from ._particles import PySphereList, AtomMap
+from ._particles import _initialize_cylinders
+from ._particles import PySphereList, AtomMap, PyCylinderList
 from .atom_universal_force_field import atom_universal_force_field
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ __all__ = [
     "uff_radius",
     "initialize_atoms",
     "initialize_spheres",
+    "initialize_cylinders",
 ]
 
 
@@ -226,5 +228,24 @@ def initialize_spheres(
 
     if set_own:
         particles.set_own(subdomain)
+
+    return particles
+
+
+def initialize_cylinders(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    cylinders: NDArray[np.floating[Any]],
+) -> PyCylinderList:
+    """Initialize a list of cylindersd
+
+    Args:
+        subdomain (Subdomain | PaddedSubdomain | VerletSubdomain): pmmoto subdomain
+        cylinders (NDArray[np.floating[Any]]): aray of cylinder data
+
+    Returns:
+        PyCylinderList: _description_
+
+    """
+    particles = _initialize_cylinders(cylinders)
 
     return particles

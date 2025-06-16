@@ -41,7 +41,11 @@ def test_minkowski_functionals() -> None:
     rank = comm.Get_rank()
     voxels = (100, 100, 100)
     subdomains = (2, 2, 2)
-    boundary_value = [0, 1, 2]
+    boundary_value = [
+        pmmoto.BoundaryType.END,
+        pmmoto.BoundaryType.WALL,
+        pmmoto.BoundaryType.PERIODIC,
+    ]
 
     for b_value in boundary_value:
         boundary_types = ((b_value, b_value), (b_value, b_value), (b_value, b_value))

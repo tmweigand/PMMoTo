@@ -57,9 +57,9 @@ def test_update_buffer() -> None:
     voxels = (3, 3, 3)
     box = ((0, 1), (0, 1), (0, 1))
     boundary_types = (
-        ("periodic", "periodic"),
-        ("periodic", "periodic"),
-        ("periodic", "periodic"),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
     )
 
     sd = pmmoto.initialize(

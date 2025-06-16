@@ -46,7 +46,11 @@ def test_modes():
     sd = pmmoto.initialize(
         rank=0,
         box=domain_data,
-        boundary_types=((0, 0), (0, 0), (0, 0)),
+        boundary_types=(
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+            (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        ),
         voxels=(100, 100, 100),
     )
 
