@@ -94,7 +94,7 @@ def gen_pm_atom(subdomain, atoms, kd: bool = False) -> np.ndarray:
     Returns:
         np.ndarray: 3D binary image indicating voxel inclusion in atoms.
     """
-    return gen_pm_sphere(subdomain, atoms)
+    return gen_pm_shape(subdomain, atoms)
 
 
 def gen_inkbottle(double[:] x, double[:] y, double[:] z, double r_y = 1.0, double r_z = 1.0):

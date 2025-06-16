@@ -138,7 +138,7 @@ def gen_pm_spheres_domain(
     """
     _spheres = particles.initialize_spheres(subdomain, spheres)
 
-    img = _domain_generation.gen_pm_sphere(subdomain, _spheres, kd)
+    img = _domain_generation.gen_pm_shape(subdomain, _spheres, kd)
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
@@ -165,7 +165,7 @@ def gen_pm_cylinders(
     """
     _cylinders = particles.initialize_cylinders(subdomain, cylinders)
 
-    img = _domain_generation.gen_pm_sphere(subdomain, _cylinders, kd)
+    img = _domain_generation.gen_pm_shape(subdomain, _cylinders, kd)
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)

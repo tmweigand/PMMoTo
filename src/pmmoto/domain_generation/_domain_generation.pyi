@@ -13,7 +13,7 @@ from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 
-def gen_pm_sphere(
+def gen_pm_shape(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     spheres: PySphereList | PyCylinderList,
     kd: bool,
