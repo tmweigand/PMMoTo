@@ -46,9 +46,10 @@ def connect_components(
     # max_label = label_count
     label_img: NDArray[np.uint64]
     label_count: int
-    label_img, label_count = cc3d.connected_components(
+    label_img_, label_count = cc3d.connected_components(
         img, return_N=True, out_dtype=np.uint64
     )
+    label_img = label_img_.astype(np.uint64, copy=False)
 
     if subdomain.domain.periodic or subdomain.domain.num_subdomains > 1:
         label_img, label_count = connect_subdomain_boundaries(
