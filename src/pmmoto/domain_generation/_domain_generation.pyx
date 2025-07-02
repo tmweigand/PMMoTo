@@ -10,11 +10,11 @@ import numpy as np
 cimport numpy as cnp
 from numpy cimport uint8_t
 from libc.math cimport sin, cos
-from libcpp.memory cimport shared_ptr
 cnp.import_array()
 
-from ..particles.shape cimport ShapeList
+
 from ..particles._particles cimport PySphereList
+from ..particles._particles cimport PyCylinderList
 from ..particles._particles import create_box
 from ._domain_generation cimport Grid, Verlet
 from ._domain_generation cimport gen_sphere_img_brute_force
@@ -43,7 +43,6 @@ def gen_pm_shape(subdomain, shapes, kd: bool = False) -> np.ndarray:
         cnp.uint8_t[:, :, :] _img
         Grid grid_c
         Verlet verlet_c
-        shared_ptr[ShapeList] shape_ptr
 
     # Initialize binary image
     img = np.ones(subdomain.voxels, dtype=np.uint8)
@@ -66,21 +65,29 @@ def gen_pm_shape(subdomain, shapes, kd: bool = False) -> np.ndarray:
     verlet_c.box = {n: create_box(subdomain.verlet_box[n]) for n in range(subdomain.num_verlet)}
 
     # Generate sphere image using KD-tree or brute force
-    if kd:
-        gen_sphere_img_kd_method(
-            <uint8_t*>&_img[0, 0, 0],
-            grid_c,
-            verlet_c,
-            (<PySphereList>shapes)._sphere_list,
-        )
-    else:
-        shape_ptr = (<PySphereList>shapes)._sphere_list
+    if isinstance(shapes, PySphereList):
+        if kd:
+            gen_sphere_img_kd_method(
+                <uint8_t*>&_img[0, 0, 0],
+                grid_c,
+                verlet_c,
+                (<PySphereList>shapes)._sphere_list,
+            )
+        else:
+            gen_sphere_img_brute_force(
+                <uint8_t*>&_img[0, 0, 0],
+                grid_c,
+                verlet_c,
+                (<PySphereList>shapes)._sphere_list
+            )
+    elif isinstance(shapes, PyCylinderList):
         gen_sphere_img_brute_force(
             <uint8_t*>&_img[0, 0, 0],
             grid_c,
             verlet_c,
-            shape_ptr
+            (<PyCylinderList>shapes)._cylinder_list
         )
+
 
     return np.ascontiguousarray(img)
 

@@ -108,5 +108,15 @@ public:
         }
         return indices;
     }
+
+    // Add operator[] to access individual spheres
+    Cylinder& operator[](size_t index)
+    {
+        if (index >= cylinders.size())
+        {
+            throw std::out_of_range("Cylinder index out of range");
+        }
+        return cylinders[index];
+    }
 };
 #endif
