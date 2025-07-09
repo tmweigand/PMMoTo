@@ -6,24 +6,19 @@
 
 ---
 
-**PMMoTo** (Parallel Morphological Multiphase Toolkit) is an open-source, MPI-parallelized Python/C++ toolkit for simulating multiphase flow and morphological processes in complex porous media. PMMoTo provides efficient, scalable algorithms for generating, analyzing, and simulating pore-scale phenomena in 2D and 3D domains, with a focus on high-performance computing and extensibility.
+The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials. The code quantifies porous structures with a focus on distributed memory systems and MPI. It includes connected components analysis, morphological operations (e.g., addition and subtraction), and Euclidean distance transforms. Output images are intended for visualization in ParaView. PMMoTo also provides processing and analysis tools for molecular dynamics simulations of porous materials.
 
 ---
 
-## Features
+## Website
 
-- **Parallel domain decomposition** using MPI for distributed-memory simulations
-- **Morphological drainage and imbibition** algorithms for capillary-dominated flow
-- **Flexible porous media generation**: random fields, sphere packs, atomistic models, and more
-- **Multiphase simulation**: support for multiple fluid phases and wettability
-- **Distance transforms**: exact Euclidean distance transforms with periodic and distributed support
-- **Capillary pressure–saturation curve computation** and other pore-scale analysis tools
-- **Parallel VTK output** for visualization in ParaView and other tools
-- **Modular, extensible design**: Python/C++ hybrid, easy to add new algorithms
-
----
+https://tmweigand.github.io/PMMoTo/index.html
 
 ## Installation
+
+**PMMoTo requires an MPI installation** (see https://tmweigand.github.io/PMMoTo/user_guide/installation.html)
+
+### Standard
 
 1. **Clone the repository:**
 
@@ -32,80 +27,31 @@
    cd PMMoTo
    ```
 
-2. **Install dependencies:**
+2. **Install the package:**
 
-   - Python 3.8+
-   - `numpy`
-   - `mpi4py`
-   - `matplotlib`
-   - (Optional) `pytest` for testing
-
-   Install with pip:
-
-   ```bash
-   pip install -r requirements.txt
+   ```
+   pip install .
    ```
 
-3. **Build C/C++ extensions (required for performance):**
+### Development
+
+1. **Clone the repository:**
+
    ```bash
-   python setup.py build_ext --inplace
+   git clone https://github.com/tmweigand/PMMoTo.git
+   cd PMMoTo
    ```
 
----
-
-## Usage
-
-### Example: Morphological Drainage in an Inkbottle Geometry
-
-```bash
-mpirun -np 8 python examples/drainage_inkbottle.py
-```
-
-- Output images and data are saved in `examples/` or `data_out/`.
-- Results can be visualized with ParaView or other VTK-compatible tools.
-
-### Custom Porous Media
-
-You can generate custom porous media using built-in generators (random, spheres, atoms) or your own. See `examples/drainage_inkbottle.py` and the `domain_generation` module for details.
-
----
-
-## Directory Structure
-
-```
-src/pmmoto/
-    core/               # Core parallel and utility routines (domain, subdomain, communication, utils)
-    domain_generation/  # Porous media and multiphase domain generation
-    filters/            # Morphological and distance transform algorithms
-    io/                 # Input/output, VTK export, data readers
-    analysis/           # Analysis tools (Minkowski functionals, etc.)
-    particles/          # Particle and atom data structures
-    examples/           # Example scripts and workflows
-    tests/              # Unit and integration tests
-```
-
----
-
-## Testing
-
-Run the test suite (requires `pytest` and `mpi4py`):
-
-```bash
-mpirun -np 8 python -m pytest tests/
-```
-
----
-
-## Documentation
-
-- **API documentation:** See docstrings in source files.
-- **Examples:** See the `examples/` directory for ready-to-run scripts.
+2. Install in editable mode with dev dependencies:
+   ```bash
+   pip install -e .[dev]
+   ```
 
 ---
 
 ## Citing
 
-If you use PMMoTo in your research, please cite the relevant publication (add citation here if available).
+If you use PMMoTo in your research, please cite the relevant publication (too come).
 
 ---
 
@@ -118,7 +64,3 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## Contact
 
 For questions, issues, or contributions, please open an issue or pull request on [GitHub](https://github.com/tmweigand/PMMoTo).
-
----
-
-**PMMoTo** — Parallel Morphological Multiphase Toolkit for Porous Media Simulation
