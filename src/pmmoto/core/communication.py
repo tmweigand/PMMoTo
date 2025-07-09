@@ -1,6 +1,5 @@
 """communication.py"""
 
-
 from __future__ import annotations
 from typing import Any, TypeVar
 
@@ -147,7 +146,6 @@ def update_extended_buffer(
         ),
         error_args=(buffer, subdomain.own_voxels),
     )
-
 
     pad, extended_features = subdomain.extend_padding(buffer)
     _img: NDArray[T] = utils.constant_pad_img(img.copy(), pad, pad_value=255)

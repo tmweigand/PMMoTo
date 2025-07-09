@@ -222,7 +222,6 @@ def check_subdomain_condition(
 ) -> bool:
     """Check a generic condition on the subdomain using provided arguments.
 
-
     If an error is detected on any rank, all ranks are terminated.
 
     Args:
