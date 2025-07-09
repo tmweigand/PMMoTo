@@ -2,7 +2,7 @@
 name = "pmmoto"
 version = "0.1.2"
 description = "Porous Media Topology and Morphology Toolkit"
-license = "MIT"
+license = { text = "MIT" }
 
 authors = [
     {name = "Timothy M. Weigand", email = "timothy.weigand@unc.edu"},

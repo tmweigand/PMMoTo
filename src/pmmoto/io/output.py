@@ -146,7 +146,7 @@ def save_img(
 
     Args:
         file_name (str): Output file base name.
-        subdomains (dict): Dictionary of subdomain objects.
+        subdomain (dict): Dictionary of subdomain objects.
         img (dict): Dictionary of image arrays.
         **kwargs: Additional keyword arguments.
 
@@ -220,9 +220,9 @@ def _save_img(
 
     Args:
         file_name (str): Output file base name.
+        subdomain: Subdomain object with rank attribute.
         img (np.ndarray): Image array.
-        resolution (tuple, optional): Voxel spacing.
-        **kwargs: Additional keyword arguments.
+        additional_img: (dict[str, NDArray[T]], optional): {Name: img}.
 
     """
     io_utils.check_file_path(file_name, create_folder=False)

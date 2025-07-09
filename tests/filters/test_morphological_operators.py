@@ -136,14 +136,14 @@ def morphological_operator(
             scipy_morph_result,
         )
 
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img_base,
         subdomains=subdomains,
         rank=rank,
     )
 
-    sd_local, local_morph_result = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_morph_result = pmmoto.domain_generation.deconstruct_img(
         sd,
         morph_result,
         subdomains=subdomains,

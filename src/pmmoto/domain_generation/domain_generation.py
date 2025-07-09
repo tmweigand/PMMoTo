@@ -134,6 +134,7 @@ def gen_pm_spheres_domain(
         subdomain: Subdomain object.
         spheres: Sphere data array.
         kd (bool, optional): Use KD-tree for efficiency.
+        invert: (bool, optional): Treat spheres as pores
 
     Returns:
         PorousMedia: Initialized porous media object.

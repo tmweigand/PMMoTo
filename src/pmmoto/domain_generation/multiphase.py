@@ -9,12 +9,12 @@ import numpy as np
 from numpy.typing import NDArray
 from ..core import communication
 from ..core import utils
+from ..core.subdomain_padded import PaddedSubdomain
+from ..core.subdomain_verlet import VerletSubdomain
 from .porousmedia import PorousMedia
 
 if TYPE_CHECKING:
     from ..core.subdomain import Subdomain
-    from ..core.subdomain_padded import PaddedSubdomain
-    from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 
@@ -47,7 +47,10 @@ class Multiphase(Generic[T]):
             img (np.ndarray): New multiphase image.
 
         """
-        img = self.subdomain.update_reservoir(img, 1)
+        if isinstance(self.subdomain, (PaddedSubdomain, VerletSubdomain)):
+            img = self.subdomain.update_reservoir(img, img.dtype.type(1))
+        else:
+            raise TypeError("subdomain does not support update_reservoir")
         self.img = img
 
     def get_volume_fraction(self, phase: int, img: None | NDArray[T] = None) -> float:

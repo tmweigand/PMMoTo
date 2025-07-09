@@ -24,13 +24,13 @@ def test_connect_components(
     img[:, 5, :] = 0
     img[:, :, 5] = 0
 
-    if rank == 0:
-        pmmoto.io.output.save_img(
-            "data_out/cc_domain", img, resolution=sd.domain.resolution
-        )
+    # if rank == 0:
+    #     pmmoto.io.output.save_img(
+    #         "data_out/cc_domain", img, resolution=sd.domain.resolution
+    #     )
 
     subdomains = (2, 2, 2)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img,
         subdomains=subdomains,
@@ -41,9 +41,9 @@ def test_connect_components(
         local_img, sd_local
     )
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_cc", sd_local, local_img, additional_img={"cc": cc}
-    )
+    # pmmoto.io.output.save_img(
+    #     "data_out/test_cc", sd_local, local_img, additional_img={"cc": cc}
+    # )
 
     connected_labels = pmmoto.filters.connected_components.inlet_outlet_labels(
         sd_local, cc
@@ -68,7 +68,7 @@ def test_connect_components_periodic(
     img[:, :, 5] = 0
 
     subdomains = (2, 2, 2)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img,
         subdomains=subdomains,
@@ -102,7 +102,7 @@ def test_connect_components_bcs_0(
     img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
 
     subdomains = (1, 1, 1)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img,
         subdomains=subdomains,
@@ -132,7 +132,7 @@ def test_connect_components_bcs_1(
     img = img + 1
 
     subdomains = (1, 1, 1)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img,
         subdomains=subdomains,
@@ -182,7 +182,7 @@ def test_connect_components_partial_periodic(
         img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
 
         subdomains = (1, 1, 1)
-        sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+        sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
             sd,
             img,
             subdomains=subdomains,
@@ -242,7 +242,7 @@ def test_connect_components_partial_periodic_parallel(
         img = np.arange(np.prod(sd.domain.voxels)).reshape(sd.domain.voxels)
 
         subdomains = (2, 2, 2)
-        sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+        sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
             sd,
             img,
             subdomains=subdomains,

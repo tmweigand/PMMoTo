@@ -113,3 +113,26 @@ def test_gen_cylinders() -> None:
     # pmmoto.io.output.save_img("data_out/cylinders", pm.img, sd.domain.resolution)
 
     # assert np.sum(pm.img) == 944
+
+
+@pytest.mark.mpi(min_size=8)
+def test_deconstruct_img():
+    """Ensure expected behavior of deconstruct_grid"""
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
+    sd = pmmoto.initialize(voxels=(100, 100, 100), boundary_types=boundary_types)
+
+    n = sd.domain.voxels[0]
+    linear_values = np.linspace(0, n - 1, n, endpoint=True)
+    img = np.ones(sd.domain.voxels) * linear_values
+
+    subdomains, local_img = pmmoto.domain_generation.deconstruct_img(
+        sd, img, subdomains=(2, 2, 2)
+    )
+
+    subdomains, local_img = pmmoto.domain_generation.deconstruct_img(
+        sd, img, subdomains=(2, 2, 2), rank=2
+    )

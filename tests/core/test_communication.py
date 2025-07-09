@@ -143,13 +143,13 @@ def test_update_buffer_with_buffer() -> None:
         buffer=buffer,
     )
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
-    )
+    # pmmoto.io.output.save_img(
+    #     "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
+    # )
 
-    pmmoto.io.output.save_extended_img_data_parallel(
-        "data_out/test_comm_buffer_extended", sd, update_img, halo
-    )
+    # pmmoto.io.output.save_extended_img_data_parallel(
+    #     "data_out/test_comm_buffer_extended", sd, update_img, halo
+    # )
 
 
 @pytest.mark.mpi(min_size=8)
@@ -188,12 +188,12 @@ def test_update_buffer_with_buffer() -> None:
         buffer=buffer,
     )
 
-    print(rank, halo, np.max(update_img))
+    # print(rank, halo, np.max(update_img))
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
-    )
+    # pmmoto.io.output.save_img(
+    #     "data_out/test_comm_buffer", sd, img, additional_img={"og": img}
+    # )
 
-    pmmoto.io.output.save_extended_img_data_parallel(
-        "data_out/test_comm_buffer_extended", sd, update_img, halo
-    )
+    # pmmoto.io.output.save_extended_img_data_parallel(
+    #     "data_out/test_comm_buffer_extended", sd, update_img, halo
+    # )

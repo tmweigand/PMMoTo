@@ -281,7 +281,7 @@ def test_pmmoto_3d_parallel() -> None:
     )
 
     subdomains = (2, 2, 2)
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img,
         subdomains=subdomains,
@@ -299,7 +299,7 @@ def test_pmmoto_3d_parallel() -> None:
     pmmoto.core.communication.update_buffer(sd, img)
     assert np.min(img) > -1
 
-    _, local_edt_img = pmmoto.core.pmmoto.deconstruct_grid(
+    _, local_edt_img = pmmoto.domain_generation.deconstruct_img(
         sd, pmmoto_old_edt, subdomains=subdomains, rank=rank
     )
 

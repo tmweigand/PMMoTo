@@ -54,7 +54,9 @@ def test_linear_1d_parallel_8() -> None:
     subdomains = (2, 2, 2)
     sd = pmmoto.initialize((10, 10, 10), subdomains=subdomains, rank=comm.Get_rank())
     global_img = pmmoto.domain_generation.gen_img_linear(sd.domain.voxels, 0)
-    sd, img = pmmoto.core.pmmoto.deconstruct_grid(sd, global_img, subdomains, sd.rank)
+    sd, img = pmmoto.domain_generation.deconstruct_img(
+        sd, global_img, subdomains, sd.rank
+    )
 
     average_1d = pmmoto.analysis.average.average_image_along_axis(sd, img, 0)
     np.testing.assert_array_equal(average_1d, 4.5 * np.ones([10, 10]))
@@ -81,7 +83,9 @@ def test_linear_2d_parallel_8() -> None:
     subdomains = (2, 2, 2)
     sd = pmmoto.initialize((10, 10, 10), subdomains=subdomains, rank=rank)
     global_img = pmmoto.domain_generation.gen_img_linear(sd.domain.voxels, 0)
-    sd, img = pmmoto.core.pmmoto.deconstruct_grid(sd, global_img, subdomains, sd.rank)
+    sd, img = pmmoto.domain_generation.deconstruct_img(
+        sd, global_img, subdomains, sd.rank
+    )
 
     average_2d = pmmoto.analysis.average.average_image_along_axis(sd, img, (1, 2))
     np.testing.assert_array_equal(average_2d, np.arange(10))
