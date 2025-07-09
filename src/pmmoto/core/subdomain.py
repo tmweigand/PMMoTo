@@ -123,6 +123,7 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         Returns:
             tuple[float, ...]: Length in each dimension.
 
+
         """
         length = np.zeros([self.domain.dims], dtype=np.float64)
         for n in range(0, self.domain.dims):

@@ -1,7 +1,9 @@
 """communication.py"""
 
+
 from __future__ import annotations
 from typing import Any, TypeVar
+
 import numpy as np
 from numpy.typing import NDArray
 from mpi4py import MPI
@@ -25,6 +27,7 @@ __all__ = [
 
 
 comm = MPI.COMM_WORLD
+logger = get_logger()
 
 _OP_MAP: dict[str, MPI.Op] = {
     "sum": MPI.SUM,
@@ -144,6 +147,7 @@ def update_extended_buffer(
         ),
         error_args=(buffer, subdomain.own_voxels),
     )
+
 
     pad, extended_features = subdomain.extend_padding(buffer)
     _img: NDArray[T] = utils.constant_pad_img(img.copy(), pad, pad_value=255)

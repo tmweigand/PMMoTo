@@ -314,6 +314,7 @@ def check_radii(
         "The radius (%.2f) exceeds at least one dimension of the subdomain (%s).\n"
         "To resolve this, use a different subdomain topology"
         "for example, change the configuration of subdomains from (%s).\n"
+
         "Simulation stopping.\n"
     )
 
