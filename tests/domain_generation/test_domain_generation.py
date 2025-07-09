@@ -83,7 +83,7 @@ def test_gen_random_binary_grid() -> None:
     img = pmmoto.domain_generation.domain_generation.gen_img_random_binary(
         voxels, p_zero=0.2, seed=1
     )
-    pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
+    # pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
 
 
 @pytest.mark.figures
@@ -95,7 +95,7 @@ def test_gen_smoothed_random_binary_grid() -> None:
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
 
-    pmmoto.io.output.save_img("data_out/test_smoothed_random_binary_grid", img)
+    # pmmoto.io.output.save_img("data_out/test_smoothed_random_binary_grid", img)
 
 
 def test_gen_cylinders() -> None:
@@ -110,6 +110,6 @@ def test_gen_cylinders() -> None:
 
     pm = pmmoto.domain_generation.gen_pm_cylinders(sd, cylinder)
 
-    pmmoto.io.output.save_img("data_out/cylinders", pm.img, sd.domain.resolution)
+    # pmmoto.io.output.save_img("data_out/cylinders", pm.img, sd.domain.resolution)
 
     # assert np.sum(pm.img) == 944

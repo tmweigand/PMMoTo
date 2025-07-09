@@ -23,6 +23,9 @@ __all__ = [
     "gen_img_to_label_map",
     "phase_count",
     "inlet_connected_img",
+    "outlet_connected_img",
+    "inlet_outlet_connected_img",
+    "isolated_img",
 ]
 
 
@@ -197,6 +200,57 @@ def inlet_outlet_connections(
     return connections
 
 
+def inlet_outlet_connected_img(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    phase: None | int = None,
+) -> NDArray[np.uint8]:
+    """Return an image where all voxels are connected to the inlet and outlet.
+
+    If phase is specified, all other phases are set to zero, leaving only connected
+    voxels of the specified phase.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Input image.
+        phase (optional): Phase to filter for.
+
+    Returns:
+        np.ndarray: Image with inlet and outlet connected voxels.
+
+    """
+    # Generate labels for each phase
+    labeled_img, _ = connect_components(img, subdomain)
+
+    # Collect the inlet and outlet labels
+    inlet_outlet_label = inlet_outlet_labels(subdomain, labeled_img)
+
+    # Collect the img-phase to label mapping
+    inlet_outlet_phase_map = gen_img_to_label_map(img, labeled_img)
+
+    # Modify inlet_outlet_phase_map where the phase is set to zero
+    # if not connected to the inlet and outlet
+    if phase is None:
+        for label in inlet_outlet_phase_map.keys():
+            if (
+                not inlet_outlet_label[label]["inlet"]
+                or not inlet_outlet_label[label]["outlet"]
+            ):
+                inlet_outlet_phase_map[label] = np.uint64(0)
+    else:
+        for label, _phase in inlet_outlet_phase_map.items():
+            if _phase != phase or (
+                not inlet_outlet_label[label]["inlet"]
+                or not inlet_outlet_label[label]["outlet"]
+            ):
+                inlet_outlet_phase_map[label] = np.uint64(0)
+
+    # Renumber the label map with the outlet_phase_map
+    inlet_outlet_img = voxels.renumber_image(labeled_img, inlet_outlet_phase_map)
+
+    return inlet_outlet_img
+
+
 def inlet_connected_img(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     img: NDArray[np.uint8],
@@ -285,3 +339,54 @@ def outlet_connected_img(
     outlet_img = voxels.renumber_image(labeled_img, outlet_phase_map)
 
     return outlet_img
+
+
+def isolated_img(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[np.uint8],
+    phase: None | int = None,
+) -> NDArray[np.uint8]:
+    """Return an image where all voxels are NOT connected to the inlet and outlet.
+
+    If phase is specified, all other phases are set to zero, leaving only NOT connected
+    voxels of the specified phase.
+
+    Args:
+        subdomain: Subdomain object.
+        img (np.ndarray): Input image.
+        phase (optional): Phase to filter for.
+
+    Returns:
+        np.ndarray: Image with isolated voxels.
+
+    """
+    # Generate labels for each phase
+    labeled_img, _ = connect_components(img, subdomain)
+
+    # Collect the inlet and outlet labels
+    inlet_outlet_label = inlet_outlet_labels(subdomain, labeled_img)
+
+    # Collect the img-phase to label mapping
+    inlet_outlet_phase_map = gen_img_to_label_map(img, labeled_img)
+
+    # Modify inlet_outlet_phase_map where the phase is set to zero
+    # if not connected to the inlet and outlet
+    if phase is None:
+        for label in inlet_outlet_phase_map.keys():
+            if (
+                inlet_outlet_label[label]["inlet"]
+                or inlet_outlet_label[label]["outlet"]
+            ):
+                inlet_outlet_phase_map[label] = np.uint64(0)
+    else:
+        for label, _phase in inlet_outlet_phase_map.items():
+            if _phase != phase or (
+                inlet_outlet_label[label]["inlet"]
+                or inlet_outlet_label[label]["outlet"]
+            ):
+                inlet_outlet_phase_map[label] = np.uint64(0)
+
+    # Renumber the label map with the outlet_phase_map
+    isolated_img = voxels.renumber_image(labeled_img, inlet_outlet_phase_map)
+
+    return isolated_img

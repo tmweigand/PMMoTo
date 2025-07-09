@@ -59,17 +59,6 @@ def test_modes():
     dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "distance")
     hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "hybrid")
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_modes",
-        sd,
-        pm.img,
-        additional_img={
-            "morph": morph,
-            "dt_mode": dt_mode,
-            "hybrid": hybrid,
-        },
-    )
-
     np.testing.assert_array_almost_equal(morph, dt_mode)
     np.testing.assert_array_almost_equal(morph, hybrid)
 
@@ -93,16 +82,6 @@ def test_porosimetry_inlet():
 
     morph_inlet = pmmoto.filters.porosimetry.porosimetry(
         subdomain=sd, porous_media=pm, radius=radius, mode="morph", inlet=True
-    )
-
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/test_morph_inlet",
-        sd,
-        img,
-        additional_img={
-            "morph_no_inlet": morph_no_inlet,
-            "morph_inlet": morph_inlet,
-        },
     )
 
 

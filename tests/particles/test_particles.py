@@ -31,7 +31,7 @@ def test_particles():
 
     spheres = pmmoto.particles.initialize_spheres(sd, spheres)
 
-    pmmoto.io.output.save_img_data_parallel(
+    pmmoto.io.output.save_img(
         "data_out/test_particles_subdomain", sd, np.zeros(sd.voxels)
     )
     pmmoto.io.output.save_particle_data(

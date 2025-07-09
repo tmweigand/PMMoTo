@@ -27,6 +27,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
     "sphinx.ext.githubpages",
+    "sphinxcontrib.bibtex",
     "myst_parser",
 ]
 
@@ -35,6 +36,11 @@ autodoc_mock_imports = [
 ]
 
 autoclass_content = "both"
+
+highlight_language = "python3"
+pygments_style = "solarized-light"
+
+bibtex_bibfiles = ["references.bib"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

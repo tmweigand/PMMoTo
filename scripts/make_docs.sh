@@ -10,4 +10,4 @@ rm -rf docs/pmmoto.*.rst docs/modules.rst
 sphinx-apidoc -o docs/ src/pmmoto --force --module-first
 
 # Build HTML documentation
-make -C docs html
+make -C docs clean html

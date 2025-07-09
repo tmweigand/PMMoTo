@@ -16,6 +16,7 @@ from ..io import data_read
 from ..particles import particles
 from ..core import communication
 from ..core import utils
+from ..core import domain_decompose
 from ..core.subdomain import Subdomain
 from ..core.subdomain_padded import PaddedSubdomain
 from ..core.subdomain_verlet import VerletSubdomain
@@ -32,6 +33,7 @@ __all__ = [
     "gen_pm_atom_file",
     "gen_pm_inkbottle",
     "gen_mp_constant",
+    "deconstruct_img",
 ]
 
 
@@ -124,6 +126,7 @@ def gen_pm_spheres_domain(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     spheres: NDArray[np.floating[Any]],
     kd: bool = False,
+    invert: bool = False,
 ) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from sphere data.
 
@@ -141,6 +144,10 @@ def gen_pm_spheres_domain(
     img = _domain_generation.gen_pm_shape(subdomain, _spheres, kd)
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
+
+    if invert:
+        pm.img = np.logical_not(pm.img).astype(np.uint8)
+
     pm.img = subdomain.set_wall_bcs(pm.img)
     utils.check_img_for_solid(subdomain, pm.img)
 
@@ -296,3 +303,71 @@ def gen_mp_constant(
     mp = multiphase.Multiphase(porous_media, img, 2)
 
     return mp
+
+
+def deconstruct_img(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    img: NDArray[T],
+    subdomains: tuple[int, ...],
+    rank: None | int = None,
+    pad: tuple[int, ...] = (1, 1, 1),
+    reservoir_voxels: int = 0,
+) -> tuple[
+    PaddedSubdomain | dict[int, PaddedSubdomain], NDArray[T] | dict[int, NDArray[T]]
+]:
+    """Deconstruct  and image from a single process to multiple subdomains and images
+
+    The shape of the img must equal subdomain.domain.voxels!
+    """
+    num_procs = np.prod(subdomains)
+    _domain = subdomain.domain
+
+    if img.shape != _domain.voxels:
+        raise ValueError(
+            f"Error: img dimensions are incorrect. They must be {_domain.voxels}."
+        )
+
+    pmmoto_decomposed_domain = (
+        domain_decompose.DecomposedDomain.from_discretized_domain(
+            discretized_domain=_domain,
+            subdomains=subdomains,
+        )
+    )
+
+    if rank is not None:
+        subdomain_out_single = PaddedSubdomain(
+            rank=rank,
+            decomposed_domain=pmmoto_decomposed_domain,
+            pad=pad,
+            reservoir_voxels=reservoir_voxels,
+        )
+        local_img_single = utils.decompose_img(
+            img=img,
+            start=subdomain_out_single.start,
+            shape=subdomain_out_single.voxels,
+        )
+
+        local_img_single = subdomain_out_single.set_wall_bcs(local_img_single)
+
+        return subdomain_out_single, local_img_single
+
+    else:
+        subdomain_out: dict[int, PaddedSubdomain] = {}
+        local_img: dict[int, NDArray[T]] = {}
+        for n in range(0, num_procs):
+            subdomain_out[n] = PaddedSubdomain(
+                rank=n,
+                decomposed_domain=pmmoto_decomposed_domain,
+                pad=pad,
+                reservoir_voxels=reservoir_voxels,
+            )
+
+            local_img[n] = utils.decompose_img(
+                img=img,
+                start=subdomain_out[n].start,
+                shape=subdomain_out[n].voxels,
+            )
+
+            local_img[n] = subdomain_out[n].set_wall_bcs(local_img[n])
+
+        return subdomain_out, local_img

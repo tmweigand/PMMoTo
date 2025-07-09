@@ -47,6 +47,7 @@ class Multiphase(Generic[T]):
             img (np.ndarray): New multiphase image.
 
         """
+        img = self.subdomain.update_reservoir(img, 1)
         self.img = img
 
     def get_volume_fraction(self, phase: int, img: None | NDArray[T] = None) -> float:

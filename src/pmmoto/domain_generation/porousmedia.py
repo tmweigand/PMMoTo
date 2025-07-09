@@ -37,6 +37,7 @@ class PorousMedia:
         self.img = img
         self._porosity: None | float = None
         self._distance: None | NDArray[np.float32] = None
+        self._max_distance: None | float = None
 
     @property
     def porosity(self) -> float:
@@ -78,10 +79,26 @@ class PorousMedia:
 
         return self._distance
 
+    @property
+    def max_distance(self) -> float:
+        """Get the maximum distance from the distance transform.
+
+        Returns:
+            float: Maximum distance value.
+
+        """
+        if self._max_distance is None:
+            self._max_distance = utils.determine_maximum(self.distance)
+        assert self._max_distance is not None
+
+        return self._max_distance
+
     def set_distance(self) -> None:
         """Calculate and set the Euclidean distance transform."""
         assert isinstance(self.subdomain, (PaddedSubdomain, VerletSubdomain))
-        self._distance = distance.edt(img=self.img, subdomain=self.subdomain)
+        _distance = distance.edt(img=self.img, subdomain=self.subdomain)
+        _distance = communication.update_buffer(self.subdomain, _distance)
+        self._distance = _distance
 
 
 def gen_pm(

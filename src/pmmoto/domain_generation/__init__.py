@@ -22,6 +22,7 @@ from .domain_generation import (
     gen_pm_atom_file,
     gen_pm_inkbottle,
     gen_mp_constant,
+    deconstruct_img,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "gen_pm_atom_file",
     "gen_pm_inkbottle",
     "gen_mp_constant",
+    "deconstruct_img",
 ]

@@ -5,20 +5,18 @@ supporting both serial and parallel output.
 """
 
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import Any, TypeVar
 import numpy as np
 from numpy.typing import NDArray
 from mpi4py import MPI
 import xml.etree.ElementTree as ET
 
-from ..core import subdomain_padded
+from ..core.subdomain import Subdomain
+from ..core.subdomain_padded import PaddedSubdomain
+from ..core.subdomain_verlet import VerletSubdomain
 from . import io_utils
 from . import evtk
 
-if TYPE_CHECKING:
-    from ..core.subdomain import Subdomain
-    from ..core.subdomain_padded import PaddedSubdomain
-    from ..core.subdomain_verlet import VerletSubdomain
 
 T = TypeVar("T", bound=np.generic)
 
@@ -26,10 +24,8 @@ comm = MPI.COMM_WORLD
 
 __all__ = [
     "save_particle_data",
-    "save_img_data_serial",
-    "save_img_data_parallel",
-    "save_extended_img_data_parallel",
     "save_img",
+    "save_extended_img_data_parallel",
 ]
 
 
@@ -135,7 +131,38 @@ def create_pvtu_file(
     tree.write(pvtu_file, encoding="utf-8", xml_declaration=True)
 
 
-def save_img_data_serial(
+def save_img(
+    file_name: str,
+    subdomain: (
+        dict[int, Subdomain | PaddedSubdomain | VerletSubdomain]
+        | Subdomain
+        | PaddedSubdomain
+        | VerletSubdomain
+    ),
+    img: dict[int, NDArray[T]] | NDArray[T],
+    **kwargs: Any,
+) -> None:
+    """Save image(s).
+
+    Args:
+        file_name (str): Output file base name.
+        subdomains (dict): Dictionary of subdomain objects.
+        img (dict): Dictionary of image arrays.
+        **kwargs: Additional keyword arguments.
+
+    """
+    # Mainly for debugging but when decomposing multiple subdomains
+    # when size != num_subdomains
+    if isinstance(subdomain, dict) and isinstance(img, dict):
+        _save_img_multiple_serial(file_name, subdomain, img, **kwargs)
+    elif not isinstance(subdomain, dict) and not isinstance(img, dict):
+        if subdomain.domain.num_subdomains > 1:
+            _save_img_parallel(file_name, subdomain, img, **kwargs)
+        else:
+            _save_img(file_name, subdomain, img, **kwargs)
+
+
+def _save_img_multiple_serial(
     file_name: str,
     subdomains: dict[int, Subdomain | PaddedSubdomain | VerletSubdomain],
     img: dict[int, NDArray[T]],
@@ -150,15 +177,15 @@ def save_img_data_serial(
         **kwargs: Additional keyword arguments.
 
     """
-    io_utils.check_file_path(file_name)
+    io_utils.check_file_path(file_name, extra_info="_proc")
 
     for local_subdomain, local_img in zip(subdomains.values(), img.values()):
-        save_img_data_proc(file_name, local_subdomain, local_img, **kwargs)
+        _save_img_proc(file_name, local_subdomain, local_img, **kwargs)
 
     write_parallel_VTK_img(file_name, subdomains[0], img[0], **kwargs)
 
 
-def save_img_data_parallel(
+def _save_img_parallel(
     file_name: str,
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     img: NDArray[T],
@@ -174,20 +201,20 @@ def save_img_data_parallel(
 
     """
     if subdomain.rank == 0:
-        io_utils.check_file_path(file_name)
+        io_utils.check_file_path(file_name, extra_info="_proc")
     comm.barrier()
 
-    save_img_data_proc(file_name, subdomain, img, additional_img)
+    _save_img_proc(file_name, subdomain, img, additional_img)
 
     if subdomain.rank == 0:
         write_parallel_VTK_img(file_name, subdomain, img, additional_img)
 
 
-def save_img(
+def _save_img(
     file_name: str,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     img: NDArray[T],
-    resolution: None | tuple[int, ...] = None,
-    **kwargs: Any,
+    additional_img: None | dict[str, NDArray[T]] = None,
 ) -> None:
     """Save an image as a VTK file.
 
@@ -198,22 +225,41 @@ def save_img(
         **kwargs: Additional keyword arguments.
 
     """
-    io_utils.check_file_path(file_name)
+    io_utils.check_file_path(file_name, create_folder=False)
 
-    if resolution is None:
-        resolution = (1, 1, 1)
+    _data = {"img": img}
+    _data_info = {"img": (img.dtype, 1)}
 
-    data = {"img": img}
-    for key, value in kwargs.items():
-        data[key] = value
+    origin = [
+        subdomain.domain.box[0][0],
+        subdomain.domain.box[1][0],
+        subdomain.domain.box[2][0],
+    ]
+
+    # grab additional images
+    if additional_img is not None:
+        for key, value in additional_img.items():
+
+            if not isinstance(value, np.ndarray):
+                raise TypeError(
+                    f"Expected numpy array for {key}, but got {type(value)}"
+                )
+
+            if value.shape != img.shape:
+                raise ValueError(
+                    f"Invalid img size! {key} has shape {value.shape}. "
+                    f"Required shape is {img.shape} "
+                )
+            _data[key] = value
+            _data_info[key] = (value.dtype, 1)
 
     evtk.imageToVTK(
         path=file_name,
-        origin=(0, 0, 0),
-        start=(0, 0, 0),
-        end=img.shape,
-        spacing=resolution,
-        cellData=data,
+        spacing=subdomain.domain.resolution,
+        cellData=_data,
+        origin=origin,
+        start=subdomain.start,
+        end=[sum(s) for s in zip(subdomain.start, subdomain.voxels)],
     )
 
 
@@ -249,7 +295,7 @@ def save_extended_img_data_parallel(
         write_parallel_VTK_img(file_name, subdomain, img, additional_img, extension)
 
 
-def save_img_data_proc(
+def _save_img_proc(
     file_name: str,
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     img: NDArray[T],
@@ -270,45 +316,12 @@ def save_img_data_proc(
             f"This subdomain only has {subdomain.voxels} voxels "
         )
 
+    file_name += "_proc"
+
     io_utils.check_file_path(file_name)
-    file_proc = (
-        file_name + "/" + file_name.split("/")[-1] + "Proc." + str(subdomain.rank)
-    )
+    file_proc = file_name + "/" + file_name.split("/")[-1] + "_" + str(subdomain.rank)
 
-    point_data = {"img": img}
-    point_data_info = {"img": (img.dtype, 1)}
-    origin = [
-        subdomain.domain.box[0][0],
-        subdomain.domain.box[1][0],
-        subdomain.domain.box[2][0],
-    ]
-
-    # grab additional images
-    if additional_img is not None:
-        for key, value in additional_img.items():
-
-            if not isinstance(value, np.ndarray):
-                raise TypeError(
-                    f"Expected numpy array for {key}, but got {type(value)}"
-                )
-
-            if value.shape != img.shape:
-                raise ValueError(
-                    f"Invalid img size! {key} has shape {value.shape}. "
-                    f"Required shape is {img.shape} "
-                )
-
-            point_data[key] = value
-            point_data_info[key] = (value.dtype, 1)
-
-    evtk.imageToVTK(
-        path=file_proc,
-        spacing=subdomain.domain.resolution,
-        cellData=point_data,
-        origin=origin,
-        start=subdomain.start,
-        end=[sum(s) for s in zip(subdomain.start, subdomain.voxels)],
-    )
+    _save_img(file_proc, subdomain, img, additional_img)
 
 
 def save_extended_img_data_proc(
@@ -327,7 +340,7 @@ def save_extended_img_data_proc(
 
     """
     io_utils.check_file_path(file_name)
-    file_proc = file_name + "/" + file_name.split("/")[-1] + "Proc."
+    file_proc = file_name + "/" + file_name.split("/")[-1] + "_proc_"
 
     point_data = {"img": img}
 
@@ -367,7 +380,7 @@ def write_parallel_VTK_img(
 
     """
     local_file_proc = (
-        file_name.split("/")[-1] + "/" + file_name.split("/")[-1] + "Proc."
+        file_name.split("/")[-1] + "_proc/" + file_name.split("/")[-1] + "_proc_"
     )
 
     data_info = {"img": (img.dtype, 1)}
@@ -386,7 +399,7 @@ def write_parallel_VTK_img(
     ]
 
     for n in range(0, subdomain.domain.num_subdomains):
-        _sd = subdomain_padded.PaddedSubdomain(n, subdomain.domain)
+        _sd = PaddedSubdomain(n, subdomain.domain)
         name[n] = name[n] + str(n) + ".vti"
         _index = _sd.get_index(rank=n, subdomains=subdomain.domain.subdomains)
         # starts[n] = _sd.get_start()

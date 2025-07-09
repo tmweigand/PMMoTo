@@ -5,14 +5,14 @@ Implements drainage simulation methods for various capillary pressure models.
 """
 
 from __future__ import annotations
-from typing import Literal, TYPE_CHECKING, Callable
+from typing import Literal, TYPE_CHECKING, Callable, Any
 import numpy as np
 from numpy.typing import NDArray
 import logging
 
 from .porosimetry import porosimetry
 from . import connected_components
-from ..io.output import save_img_data_parallel
+from ..io.output import save_img
 from ..core.subdomain_padded import PaddedSubdomain
 from ..core.subdomain_verlet import VerletSubdomain
 
@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 def drainage(
     multiphase: Multiphase[np.uint8],
-    capillary_pressures: int | float | list[float],
+    capillary_pressures: int | float | list[float] | NDArray[np.floating[Any]],
     gamma: float = 1,
     contact_angle: float = 0,
     method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
@@ -114,7 +114,7 @@ def drainage(
                     ".", "_"
                 )
             )
-            save_img_data_parallel(
+            save_img(
                 file_out,
                 multiphase.subdomain,
                 mp_img,
@@ -159,8 +159,13 @@ def _standard_method(
     # Compute morphological changes based on capillary pressure
     radius = multiphase.get_probe_radius(capillary_pressure, gamma)
 
-    # Check if radius is larger than resolution
-    if radius < min(multiphase.subdomain.domain.resolution):
+    # Check if radius is larger than resolution:
+    #       min(multiphase.subdomain.domain.resolution)
+    # or if the radius is < maximum distance
+    if (
+        radius < min(multiphase.subdomain.domain.resolution)
+        or radius > multiphase.porous_media.max_distance
+    ):
         morph = np.zeros_like(multiphase.pm_img, dtype=np.uint8)
     else:
         assert isinstance(multiphase.subdomain, (PaddedSubdomain, VerletSubdomain))
@@ -202,8 +207,13 @@ def _contact_angle_method(
     # Compute morphological changes based on capillary pressure
     radius = multiphase.get_probe_radius(capillary_pressure, gamma, contact_angle)
 
-    # Check if radius is larger than resolution
-    if radius < min(multiphase.subdomain.domain.resolution):
+    # Check if radius is larger than resolution:
+    #       min(multiphase.subdomain.domain.resolution)
+    # or if the radius is < maximum distance
+    if (
+        radius < min(multiphase.subdomain.domain.resolution)
+        or radius > multiphase.porous_media.max_distance
+    ):
         morph = np.zeros_like(multiphase.pm_img)
     else:
         assert isinstance(multiphase.subdomain, (PaddedSubdomain, VerletSubdomain))
@@ -255,8 +265,13 @@ def _extended_contact_angle_method(
 
     radius = [erosion_radius, dilation_radius]
 
-    # Check if radius is larger than resolution
-    if min(radius) < min(multiphase.subdomain.domain.resolution):
+    # Check if radius is larger than resolution:
+    #       min(multiphase.subdomain.domain.resolution)
+    # or if the radius is < maximum distance
+    if (
+        min(radius) < min(multiphase.subdomain.domain.resolution)
+        or max(radius) > multiphase.porous_media.max_distance
+    ):
         morph = np.zeros_like(multiphase.pm_img)
     else:
         assert isinstance(multiphase.subdomain, (PaddedSubdomain, VerletSubdomain))

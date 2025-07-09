@@ -18,10 +18,8 @@ from .data_read import (
 # Re-export selected functions from output
 from .output import (
     save_particle_data,
-    save_img_data_serial,
-    save_img_data_parallel,
-    save_extended_img_data_parallel,
     save_img,
+    save_extended_img_data_parallel,
 )
 
 __all__ = [
