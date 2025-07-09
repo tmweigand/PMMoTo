@@ -1,13 +1,27 @@
-"""porosimetry.py"""
+"""porosimetry.py
 
-from typing import Literal, Dict
+Functions for pore size analysis and morphological porosimetry in PMMoTo.
+"""
+
+from __future__ import annotations
+from typing import Literal, Any, TYPE_CHECKING
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
+import logging
 from ..core import utils
 from ..io import io_utils
 from . import morphological_operators
-from . import distance
 from . import connected_components
+
+
+if TYPE_CHECKING:
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
+    from ..domain_generation.porousmedia import PorousMedia
+    from ..domain_generation.multiphase import Multiphase
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 __all__ = [
     "get_sizes",
@@ -17,9 +31,26 @@ __all__ = [
 ]
 
 
-def get_sizes(min_value, max_value, num_values, spacing="linear"):
-    """
-    Give list of pore sizes based on inputs provided
+def get_sizes(
+    min_value: float,
+    max_value: float,
+    num_values: int,
+    spacing: Literal["linear", "log"] = "linear",
+) -> NDArray[np.floating[Any]]:
+    """Generate a list of pore sizes based on input parameters.
+
+    Args:
+        min_value (float): Minimum pore size.
+        max_value (float): Maximum pore size.
+        num_values (int): Number of values to generate.
+        spacing (str, optional): "linear" or "log" spacing. Defaults to "linear".
+
+    Returns:
+        np.ndarray: Array of pore sizes in non-increasing order.
+
+    Raises:
+        ValueError: If input parameters are invalid.
+
     """
     if min_value >= max_value:
         raise ValueError(
@@ -37,7 +68,7 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
     elif spacing == "log":
         if min_value < 1:
             raise ValueError(
-                f"Error: min_value {min_value} must be greater than or equal to 1 for log spacing"
+                f"Error: min_value {min_value} must be greater than or equal to 1"
             )
 
         # convert min/max to log10 exponents
@@ -52,22 +83,27 @@ def get_sizes(min_value, max_value, num_values, spacing="linear"):
 
 
 def porosimetry(
-    subdomain,
-    porous_media,
-    radius,
-    inlet=False,
-    multiphase=None,
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    porous_media: PorousMedia,
+    radius: float | list[float],
+    inlet: bool = False,
+    multiphase: None | Multiphase[np.uint8] = None,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
-):
-    """
-    Perform a morphological erosion followed by a morphological dilation.
-    If inlet, the foreground voxels must be connected to the inlet.
+) -> NDArray[np.uint8]:
+    """Perform morphological porosimetry (erosion/dilation) on a porous medium.
 
-    Additionally, allow for different radii to specified for the erosion and dilation.
-    To do this, provide a list where the first entry is the erosion radius and the
-    second entry is the dilation radius.
-    """
+    Args:
+        subdomain: Subdomain object.
+        porous_media: Porous media object with .img and .distance attributes.
+        radius (float or list): Erosion/dilation radius or [erosion, dilation].
+        inlet (bool, optional): If True, require connectivity to inlet.
+        multiphase (optional): Optional multiphase constraint.
+        mode (str, optional): "hybrid", "distance", or "morph".
 
+    Returns:
+        np.ndarray: Resulting binary image after porosimetry.
+
+    """
     if isinstance(radius, (int, float)):
         erosion_radius = radius
         dilation_radius = radius
@@ -87,8 +123,9 @@ def porosimetry(
             subdomain=subdomain, img=porous_media.img, radius=erosion_radius, fft=True
         )
     elif mode in {"distance", "hybrid"}:
-        edt = porous_media.distance
-        img_results = edt >= erosion_radius
+        img_results = morphological_operators.subtraction(
+            subdomain=subdomain, img=porous_media.img, radius=erosion_radius, fft=False
+        )
 
     # Check inlet
     if inlet:
@@ -111,35 +148,41 @@ def porosimetry(
                 (img_results != 1) | (n_connected != 1), 0, img_results
             )
 
-        if mode == "morph":
+        if mode in {"morph", "hybrid"}:
             img_results = morphological_operators.addition(
                 subdomain=subdomain, img=img_results, radius=dilation_radius, fft=True
             )
 
         elif mode == "distance":
-            edt_inverse = distance.edt(
-                img=np.logical_not(img_results), subdomain=subdomain
-            )
-            img_results = edt_inverse < dilation_radius
-
-        elif mode == "hybrid":
             img_results = morphological_operators.addition(
                 subdomain=subdomain, img=img_results, radius=dilation_radius, fft=False
             )
 
-    return img_results.astype(np.double)
+    return img_results.astype(np.uint8)
 
 
 def pore_size_distribution(
-    subdomain,
-    porous_media,
-    radii=None,
-    inlet=False,
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    porous_media: PorousMedia,
+    radii: None | list[float] | NDArray[np.floating[Any]] = None,
+    num_radii: int = 25,
+    inlet: bool = False,
     mode: Literal["hybrid", "distance", "morph"] = "hybrid",
-):
-    """
-    Generates a img where values are equal to the radius of the largest sphere that can be centered at given voxel.
-    Calls porosimetry function with single size and returns img_results.
+) -> NDArray[np.double]:
+    """Generate image where values are the radius of the largest sphere centered there.
+
+    Args:
+        subdomain: Subdomain object.
+        porous_media: Porous media object with .img and .distance attributes.
+        radii (list or np.ndarray, optional): List of radii to use.
+                                              If None, computed from the distance.
+        num_radii: If no radii are provided, the number to select based on distance.
+        inlet (bool, optional): If True, require connectivity to inlet.
+        mode (str, optional): "hybrid", "distance", or "morph".
+
+    Returns:
+        np.ndarray: Image with pore size values.
+
     """
     if radii is not None:
         if isinstance(radii, (int, float)):
@@ -151,14 +194,20 @@ def pore_size_distribution(
     else:
         edt = porous_media.distance
         global_max_edt = utils.determine_maximum(edt)
+        rel_eps = 1e-6 * porous_media.max_distance
+        global_max_edt = global_max_edt - rel_eps
         radii = get_sizes(
-            np.min(subdomain.domain.resolution), global_max_edt, 50, "linear"
+            np.min(subdomain.domain.resolution), global_max_edt, num_radii, "linear"
         )
 
     morphological_operators.check_radii(subdomain, radii)
 
     img_results = np.zeros_like(porous_media.img, dtype=np.double)
-    for radius in radii:
+    for n, radius in enumerate(radii):
+        if subdomain.rank == 0:
+            logging.info(
+                "Processing radius %i of %i with value: %f", n + 1, len(radii), radius
+            )
         img_temp = porosimetry(
             subdomain=subdomain,
             porous_media=porous_media,
@@ -177,40 +226,59 @@ def pore_size_distribution(
 
 def plot_pore_size_distribution(
     file_name: str,
-    pore_size_counts: Dict[float, float],
+    subdomain: PaddedSubdomain | VerletSubdomain,
+    pore_size_image: NDArray[np.double],
     plot_type: Literal["cdf", "pdf"] = "pdf",
-):
+) -> None:
+    """Plot and save the pore size distribution as a PNG.
+
+    Args:
+        file_name: Output file base name.
+        subdomain: Subdomain object.
+        pore_size_image: Output from pore_size_distribution
+        plot_type: cdf for cumulative or pdf for probability density.
+
+    Returns:
+        Optional: The matplotlib figure object if return_fig is True, otherwise None.
+
     """
-    Plots pore size distribution.
-    plot_type: (string) choose between cumulative distribution function, or probability density function
-    """
-    io_utils.check_file_path(file_name)
-    out_file = file_name + "pore_size_distribution.png"
+    pore_size_counts = utils.bin_image(subdomain, pore_size_image)
 
-    radii = np.array(list(pore_size_counts.keys()))
-    counts = np.array(list(pore_size_counts.values()))
-    total_counts = np.sum(counts)
+    if subdomain.rank == 0:
+        print(pore_size_counts)
+        io_utils.check_file_path(file_name)
+        out_file = file_name + "_pore_size_distribution.png"
 
-    plt.figure(figsize=(8, 6))
-    plt.title("Pore Size Distribution")
-    plt.xlabel("Pore Size Radius")
+        pore_size_counts = dict(sorted(pore_size_counts.items()))
+        pore_size_counts = {r: c for r, c in pore_size_counts.items() if r != 0}
+        radii = np.array(list(pore_size_counts.keys()))
+        counts = np.array(list(pore_size_counts.values()))
+        total_counts = np.sum(counts)
 
-    if plot_type == "cdf":
-        # Cumulatively sum pore_size_counts for pore_size_cdf
-        pore_size_cdf = np.cumsum(counts / total_counts)
-        reversed_radii = radii[::-1]
-        plt.plot(
-            reversed_radii,
-            pore_size_cdf,
-            linestyle="-",
-            linewidth=2,
-            color="darkorchid",
-        )
-        plt.ylabel("Cumulative Distribution Function")
-        plt.savefig(out_file)
-    else:
-        plt.plot(
-            radii, counts / total_counts, linestyle="-", linewidth=2, color="royalblue"
-        )
-        plt.ylabel("Probability Density Function")
-        plt.savefig(out_file)
+        plt.figure(figsize=(8, 6))
+        plt.title("Pore Size Distribution")
+        plt.xlabel("Pore Size Radius")
+
+        if plot_type == "cdf":
+
+            pore_size_cdf = np.cumsum(counts / total_counts)
+            reversed_radii = radii[::-1]
+            plt.plot(
+                reversed_radii,
+                pore_size_cdf,
+                linestyle="-",
+                linewidth=2,
+                color="darkorchid",
+            )
+            plt.ylabel("Cumulative Distribution Function")
+            plt.savefig(out_file)
+        else:
+            plt.plot(
+                radii,
+                counts / total_counts,
+                linestyle="-",
+                linewidth=2,
+                color="royalblue",
+            )
+            plt.ylabel("Probability Density Function")
+            plt.savefig(out_file)

@@ -1,22 +1,37 @@
-"""subdomains.py"""
+"""subdomains.py
 
+Defines the Subdomain class for domain decomposition and parallelization in PMMoTo.
+"""
+
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING, TypeVar
 import numpy as np
+from numpy.typing import NDArray
+from .boundary_types import BoundaryType
+from . import domain_discretization
+from . import subdomain_features
 
-from . import orientation
-from ..core import domain_discretization
-from ..core import subdomain_features
+if TYPE_CHECKING:
+    from .domain_decompose import DecomposedDomain
+
+T = TypeVar("T", bound=np.generic)
 
 
 class Subdomain(domain_discretization.DiscretizedDomain):
-    """
-    Parallelization is via decomposition of domain into subdomains
-    """
+    """Decompose the domain into subdomains for parallelization."""
 
     def __init__(
         self,
         rank: int,
-        decomposed_domain,
+        decomposed_domain: DecomposedDomain,
     ):
+        """Initialize a Subdomain.
+
+        Args:
+            rank (int): Rank of the subdomain.
+            decomposed_domain: Decomposed domain object.
+
+        """
         self.rank = rank
         self.domain = decomposed_domain
         self.index = self.get_index(self.rank, self.domain.subdomains)
@@ -25,38 +40,50 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         )
         self.box = self.get_box(self.voxels)
         self.global_boundary = self.get_global_boundary()
+        self.boundary_types = self.get_boundary_types()
         self.neighbor_ranks = self.domain.get_neighbor_ranks(self.index)
-        self.boundary_types = self.get_boundary_types(
-            self.global_boundary, self.neighbor_ranks
-        )
+
         self.inlet = self.get_inlet()
         self.outlet = self.get_outlet()
-        self.start = self.get_start()
+        self.start = self.get_start(
+            self.index, self.domain.voxels, self.domain.subdomains
+        )
         self.periodic = self.periodic_check()
         self.coords = self.get_coords(self.box, self.voxels, self.domain.resolution)
-        self.features = subdomain_features.collect_features(
-            self.neighbor_ranks,
-            self.global_boundary,
-            self.boundary_types,
-            self.voxels,
-            self.inlet,
-            self.outlet,
-        )
+        self.features = subdomain_features.SubdomainFeatures(self, self.voxels)
 
     @staticmethod
-    def get_index(rank, subdomains) -> tuple[np.intp, ...]:
+    def get_index(rank: int, subdomains: tuple[int, ...]) -> tuple[int, ...]:
+        """Determine the index of the subdomain in the decomposition.
+
+        Args:
+            rank (int): The rank of the subdomain.
+            subdomains (tuple[int, int, int]): Number of subdomains in each dimension.
+
+        Returns:
+            tuple[int, int, int]: Index of the subdomain in the decomposition grid.
+
         """
-        Determine the index of the subdomain
-        """
-        return np.unravel_index(rank, subdomains)
+        return tuple(int(i) for i in np.unravel_index(rank, subdomains))
 
     @staticmethod
-    def get_voxels(index, domain_voxels, subdomains) -> tuple[int, ...]:
+    def get_voxels(
+        index: tuple[int, ...],
+        domain_voxels: tuple[int, ...],
+        subdomains: tuple[int, ...],
+    ) -> tuple[int, ...]:
+        """Calculate number of voxels in each subdomain.
+
+        Args:
+            index (tuple): Index of the subdomain.
+            domain_voxels (tuple): Number of voxels in the full domain.
+            subdomains (tuple): Number of subdomains in each dimension.
+
+        Returns:
+            tuple[int, int, int] Number of voxels in each dimension for this subdomain.
+
         """
-        Calculate number of voxels in each subdomain.
-        This can be very bad when voxels ~= ranks or something like that
-        """
-        voxels = [0, 0, 0]
+        voxels = [0 for _ in range(len(index))]
         for dim, ind in enumerate(index):
             sd_voxels, rem_sd_voxels = divmod(domain_voxels[dim], subdomains[dim])
             if ind == subdomains[dim] - 1:
@@ -66,11 +93,18 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(voxels)
 
-    def get_box(self, voxels):
-        """
-        Determine the bounding box for each subdomain.
-        Note: subdomains are divided such that voxel spacing
-        is constant
+    def get_box(self, voxels: tuple[int, ...]) -> tuple[tuple[float, float], ...]:
+        """Determine the bounding box for each subdomain.
+
+        Note:
+            Subdomains are divided such that voxel spacing is constant.
+
+        Args:
+            voxels (tuple): Number of voxels in each dimension.
+
+        Returns:
+            tuple: Bounding box for each dimension.
+
         """
         box = []
         for dim, ind in enumerate(self.index):
@@ -84,8 +118,12 @@ class Subdomain(domain_discretization.DiscretizedDomain):
         return tuple(box)
 
     def get_length(self) -> tuple[float, ...]:
-        """
-        Calculate the length of the domain
+        """Calculate the length of the subdomain in each dimension.
+
+        Returns:
+            tuple[float, ...]: Length in each dimension.
+
+
         """
         length = np.zeros([self.domain.dims], dtype=np.float64)
         for n in range(0, self.domain.dims):
@@ -93,199 +131,213 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(length)
 
-    def get_global_boundary(self):
-        """
-        Determine if the features are on the domain boundary.
-        For a feature to be on a domain boundary, the following must be true:
+    def get_global_boundary(self) -> tuple[tuple[bool, bool], ...]:
+        """Determine if the subdomain is on the domain boundary.
 
-            subdomain index must contain either 0 or number of subdomains
-
-        """
-
-        global_boundary = {}
-        features = orientation.get_features()
-        for feature in features:
-            boundary = True
-            for ind, f_id, subdomains in zip(
-                self.index, feature, self.domain.subdomains
-            ):
-                ### Conditions for a domain boundary feature
-                if (
-                    f_id == 0
-                    or ((ind == 0) and (f_id == -1))
-                    or ((ind == subdomains - 1) and (f_id == 1))
-                ):
-                    continue
-                else:
-                    boundary = False
-
-            if boundary:
-                global_boundary[feature] = True
-            else:
-                global_boundary[feature] = False
-
-        return global_boundary
-
-    def get_boundary_types(self, global_boundary, neighbor_ranks):
-        """
-        Determines the boundary type for each feature in the computational domain.
-
-        Args:
-            global_boundary (dict): A dictionary mapping features to boolean values indicating
-                                    whether they belong to the global boundary.
-            neighbor_ranks (dict): A dictionary mapping features to the neighbor process rank.
+        For a subdomain to be on a domain boundary, the subdomain index must contain
+        either 0 or the number of subdomains.
 
         Returns:
-            dict: A dictionary mapping each feature to its corresponding boundary type.
-                Possible values: "end", "wall", "periodic", or "internal".
+            tuple[tuple[bool,bool],...]: Tuple of bools whether face is on boundary
 
-        Raises:
-            Exception: If an unexpected boundary type is encountered.
         """
-
-        boundary_type = {}
-        features = orientation.get_features()
-        for feature in features:
-            if global_boundary.get(feature, False) or neighbor_ranks[feature] < 0:
-                _boundary_type = []
-                for ind, f_id, subdomains, boundary_types in zip(
-                    self.index,
-                    feature,
-                    self.domain.subdomains,
-                    self.domain.boundary_types,
-                ):
-                    if (ind == 0) and (f_id == -1):
-                        _boundary_type.append(boundary_types[0])
-                    elif (ind == subdomains - 1) and (f_id == 1):
-                        _boundary_type.append(boundary_types[1])
-
-                _boundary_type.sort()
-
-                if _boundary_type[0] == 0:
-                    boundary_type[feature] = "end"
-                elif _boundary_type[0] == 1:
-                    boundary_type[feature] = "wall"
-                elif _boundary_type[0] == 2:
-                    boundary_type[feature] = "periodic"
-                else:
-                    raise Exception
+        global_boundary: list[tuple[bool, bool]] = []
+        for ind, subdomains in zip(self.index, self.domain.subdomains):
+            ### Conditions for a domain boundary feature
+            if ind == 0:
+                lower = True
             else:
-                boundary_type[feature] = "internal"
+                lower = False
 
-        return boundary_type
+            if ind == subdomains - 1:
+                upper = True
+            else:
+                upper = False
 
-    def get_inlet(self):
+            global_boundary.append((lower, upper))
+
+        return tuple(global_boundary)
+
+    def get_boundary_types(self) -> tuple[tuple[BoundaryType, BoundaryType], ...]:
+        """Determine the boundary type for each subdomain.
+
+        Returns:
+            tuple[tuple[str,str],...]: Tuple specifying boundary type for each face
+
         """
-        Determine if subdomain is on inlet.
-        Inlet requires the global boundary to be of type 0
-        Also change orientation of how inlet is stored here
+        boundary_type: list[tuple[BoundaryType, BoundaryType]] = []
+        for ind, subdomain, b_types in zip(
+            self.index, self.domain.subdomains, self.domain.boundary_types
+        ):
+            if ind == 0:
+                lower = b_types[0]
+            else:
+                lower = BoundaryType.INTERNAL
+
+            if ind == subdomain - 1:
+                upper = b_types[1]
+            else:
+                upper = BoundaryType.INTERNAL
+
+            boundary_type.append((lower, upper))
+
+        return tuple(boundary_type)
+
+    def get_inlet(self) -> tuple[tuple[bool, bool], ...]:
+        """Determine if the subdomain lies on the inlet boundaries.
+
+        A subdomain is on an inlet if:
+        - It is at the edge of the global domain (index is 0 or max in a dimension).
+        - The corresponding global boundary type is `0` (denoting an inlet).
+
+        Returns:
+            tuple[tuple[bool, bool], ...]: bool if subdomain face is on inlet.
+
         """
-        dims = len(self.index)
-        inlet = np.zeros([dims * 2], dtype=np.uint8)
+        inlet: list[tuple[bool, bool]] = []
+
         for dim, ind in enumerate(self.index):
-            if ind == 0 and self.domain.boundary_types[dim][0] == 0:
-                inlet[dim * 2] = self.domain.inlet[dim][0]
+            lower = False
+            upper = False
+
+            # Lower Domain face
+            if ind == 0 and self.domain.boundary_types[dim][0] == BoundaryType.END:
+                lower = bool(self.domain.inlet[dim][0])
+
+            # Upper Domain face
             if (
                 ind == self.domain.subdomains[dim] - 1
-                and self.domain.boundary_types[dim][1] == 0
+                and self.domain.boundary_types[dim][1] == BoundaryType.END
             ):
-                inlet[dim * 2 + 1] = self.domain.inlet[dim][1]
+                upper = bool(self.domain.inlet[dim][1])
 
-        return inlet
+            inlet.append((lower, upper))
 
-    def get_outlet(self):
-        """
-        Determine if subdomain is on outlet
-        Also change orientation of how outlet is stored here
-        """
-        dims = len(self.index)
-        outlet = np.zeros([dims * 2], dtype=np.uint8)
-        for dim, ind in enumerate(self.index):
-            if ind == 0:
-                outlet[dim * 2] = self.domain.outlet[dim][0]
-            if ind == self.domain.subdomains[dim] - 1:
-                outlet[dim * 2 + 1] = self.domain.outlet[dim][1]
+        return tuple(inlet)
 
-        return outlet
+    def get_outlet(self) -> tuple[tuple[bool, bool], ...]:
+        """Determine if the subdomain lies on the inlet boundaries.
 
-    def get_start(self) -> tuple[int, ...]:
-        """
-        Determine the start of the subdomain. used for saving as vtk
-        Start is the minimum voxel ID
-        Args:
-            sd_index (tuple[int, int, int]): subdomain index
+        A subdomain is on an outlet if:
+        - It is at the edge of the global domain (index is 0 or max in a dimension).
+        - The corresponding global boundary type is `0` (denoting an outlet).
 
         Returns:
-            tuple[int,...]: start
-        """
-        _start = [0, 0, 0]
-
-        for dim, _index in enumerate(self.index):
-            sd_voxels, _ = divmod(self.domain.voxels[dim], self.domain.subdomains[dim])
-            _start[dim] = sd_voxels * _index
-
-        return tuple(_start)
-
-    def set_wall_bcs(self, img):
-        """
-        If wall boundary conditions are specified, force solid on external boundaries.
+            tuple[tuple[bool, bool], ...]: bool if subdomain face is on outlet.
 
         """
-        feature_types = ["faces"]
-        for feature_type in feature_types:
-            for feature_id, feature in self.features[feature_type].items():
-                if feature.boundary_type == "wall":
-                    img[feature.slice] = 0
+        outlet: list[tuple[bool, bool]] = []
+
+        for dim, ind in enumerate(self.index):
+            lower = False
+            upper = False
+
+            # Lower face
+            if ind == 0 and self.domain.boundary_types[dim][0] == BoundaryType.END:
+                lower = bool(self.domain.outlet[dim][0])
+
+            # Upper face
+            if (
+                ind == self.domain.subdomains[dim] - 1
+                and self.domain.boundary_types[dim][1] == BoundaryType.END
+            ):
+                upper = bool(self.domain.outlet[dim][1])
+
+            outlet.append((lower, upper))
+
+        return tuple(outlet)
+
+    @staticmethod
+    def get_start(
+        index: tuple[int, ...],
+        domain_voxels: tuple[float, ...],
+        subdomains: tuple[int, ...],
+    ) -> tuple[int, ...]:
+        """Determine the start of the subdomain.
+
+        Args:
+            index (tuple[int, int, int]): Subdomain index.
+            domain_voxels (tuple[float, float, float]): Number of voxels per dimension
+            subdomains (tuple[int, int, int]): Number of subdomains per dimension.
+
+        Returns:
+            tuple[int, int, int]: Start voxel indices - minimum voxel ID.
+
+        """
+        start_0 = int(domain_voxels[0] // subdomains[0]) * index[0]
+        start_1 = int(domain_voxels[1] // subdomains[1]) * index[1]
+        start_2 = int(domain_voxels[2] // subdomains[2]) * index[2]
+
+        return (start_0, start_1, start_2)
+
+    def set_wall_bcs(self, img: NDArray[T]) -> NDArray[T]:
+        """Force solid on external boundaries if wall boundary conditions are specified.
+
+        Args:
+            img (np.ndarray): Image array to update.
+
+        Returns:
+            np.ndarray: Updated image array with wall boundaries set to solid.
+
+        """
+        for feature in self.features.faces.values():
+            if feature.boundary_type == BoundaryType.WALL:
+                img[feature.slice] = 0
 
         return img
 
-    def get_centroid(self):
+    def get_centroid(self) -> NDArray[np.float64]:
+        """Determine the centroid of a subdomain.
+
+        Returns:
+            np.ndarray: Centroid coordinates.
+
         """
-        Determine the centroid of a subdomain
-        """
-        centroid = np.zeros(3, dtype=np.double)
+        centroid = np.zeros(3, dtype=np.float64)
         for dim, side in enumerate(self.box):
             centroid[dim] = side[0] + 0.5 * (side[1] - side[0])
 
         return centroid
 
-    def get_radius(self):
+    def get_radius(self) -> Any:
+        """Determine the radius of a subdomain.
+
+        Returns:
+            float: Radius of the subdomain.
+
         """
-        Determine the centroid of a subdomain
-        """
-        diameter = 0
-        for dim, side in enumerate(self.box):
+        diameter = 0.0
+        for side in self.box:
             length = side[1] - side[0]
             diameter += length * length
 
         return np.sqrt(diameter) / 2
 
     def get_origin(self) -> tuple[float, ...]:
-        """
-        Determine the domain origin from box
+        """Determine the domain origin from box.
 
         Returns:
-            tuple[float,...]: Domain origin
+            tuple[float, ...]: Domain origin.
+
         """
-        origin = [0, 0, 0]
+        origin = [0.0 for _ in self.box]
         for n, box_dim in enumerate(self.box):
             origin[n] = box_dim[0]
 
         return tuple(origin)
 
-    def get_img_index(
-        self, coordinates: tuple[float, float, float]
-    ) -> tuple[int, int, int]:
-        """
-        Given coordinates, return the corresponding index in the img array.
+    def get_img_index(self, coordinates: tuple[float, ...]) -> tuple[int, ...] | None:
+        """Given coordinates, return the corresponding index in the img array.
 
         Args:
             coordinates (tuple[float, float, float]): The (x, y, z) coordinates.
 
         Returns:
-            tuple[int, int, int]: The (i, j, k) index in the img array.
+            tuple[int, int, int] or None: The (i, j, k) index in the img array,
+            or None if out of bounds.
+
         """
-        indices = [0, 0, 0]
+        indices = [0] * len(coordinates)
         for dim, coord in enumerate(coordinates):
             # Calculate the index based on the coordinate, origin, and resolution
             indices[dim] = int((coord - self.box[dim][0]) / self.domain.resolution[dim])
@@ -295,3 +347,31 @@ class Subdomain(domain_discretization.DiscretizedDomain):
                 return None
 
         return tuple(indices)
+
+    def get_own_voxels(self) -> NDArray[np.integer[Any]]:
+        """Determine the index for the voxels owned by this subdomain.
+
+        Returns:
+            np.ndarray: Array of indices for owned voxels.
+
+        """
+        own_voxels = np.zeros([6], dtype=np.int64)
+        for dim, voxels in enumerate(self.voxels):
+            own_voxels[dim * 2 + 1] = voxels
+
+        return own_voxels
+
+    def periodic_check(self) -> bool:
+        """Determine if subdomain is periodic
+
+        Returns: bool if and feature is periodic
+        """
+        for b_type in self.boundary_types:
+            if b_type[0] == BoundaryType.PERIODIC or b_type[1] == BoundaryType.PERIODIC:
+                return True
+
+        return False
+
+    def check_boundary_type(self, type: BoundaryType) -> bool:
+        """Determine if boundary type on subdomain."""
+        return any(type in inner for inner in self.boundary_types)

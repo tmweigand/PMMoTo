@@ -26,6 +26,8 @@ cdef extern from "atoms.hpp":
 			bool return_label
 		)
 
+		vector[vector[double]] get_coordinates()
+
 		size_t get_atom_count()
 
 		size_t size()

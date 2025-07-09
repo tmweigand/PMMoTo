@@ -5,10 +5,15 @@ import pmmoto
 
 
 def test_volume_fraction():
-    """
-    Ensures correct calculation of volume fraction
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((1, 1), (1, 1), (1, 1)))
+    """Ensures correct calculation of volume fraction"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+            (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        ),
+    )
     img = np.zeros(sd.voxels)
     img[3:6, 3:6, 3:6] = 1
     pm = pmmoto.domain_generation.porousmedia.gen_pm(sd, img)
@@ -29,10 +34,7 @@ def test_volume_fraction():
 
 
 def test_get_radii():
-    """
-    Test if capillary pressures are converting to radii correctly
-    """
-
+    """Test if capillary pressures are converting to radii correctly"""
     p_c = 1
     gamma = 1
     radius = pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius(p_c, gamma)
@@ -50,10 +52,7 @@ def test_get_radii():
 
 
 def test_radius_with_contact_angle():
-    """
-    Test if capillary pressures are converting to radii correctly when contact angle is specified
-    """
-
+    """Test if capillary pressures are converting to radii with contact angle"""
     p_c = 1
     gamma = 1
     contact_angle = 20

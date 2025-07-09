@@ -3,14 +3,11 @@
 import numpy as np
 import pmmoto
 from mpi4py import MPI
-import matplotlib.pyplot as plt
 import pytest
 
 
-def test_bin_centers():
-    """
-    Dummy check for bins
-    """
+def test_bin_centers() -> None:
+    """Dummy check for bins"""
     start = 0
     end = 1
     num_bins = 1
@@ -34,11 +31,8 @@ def test_bin_centers():
     np.testing.assert_array_equal(bin.centers, np.array([-0.5, 0.5]))
 
 
-def test_bin():
-    """
-    Test bins
-    """
-
+def test_bin() -> None:
+    """Test bins"""
     start = 0
     end = 3
     num_bins = 25
@@ -57,11 +51,8 @@ def test_bin():
     np.testing.assert_array_equal(bin.values, ones)
 
 
-def test_bins():
-    """
-    Test bins
-    """
-
+def test_bins() -> None:
+    """Test bins"""
     start = [0, 1]
     end = [3, 2.8]
     num_bins = [25, 50]
@@ -76,10 +67,7 @@ def test_bins():
 
 
 def test_count_locations():
-    """
-    Test binning coordinates
-    """
-
+    """Test binning coordinates"""
     start = 0
     end = 3
     num_bins = 25
@@ -113,11 +101,8 @@ def test_count_locations():
     assert np.sum(bin.values) == 2
 
 
-def test_count_membrane():
-    """
-    Test if membrane atoms are being counted.
-    """
-
+def test_count_membrane() -> None:
+    """Test if membrane atoms are being counted."""
     membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
     positions, types, domain = pmmoto.io.data_read.py_read_lammps_atoms(membrane_file)
 
@@ -135,10 +120,8 @@ def test_count_membrane():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_count_membrane_parallel():
-    """
-    Test if membrane atoms are being counted correctly in parallel
-    """
+def test_count_membrane_parallel() -> None:
+    """Test if membrane atoms are being counted correctly in parallel"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -181,17 +164,14 @@ def test_count_membrane_parallel():
     coords = membrane.return_coordinates()
 
     pmmoto.analysis.bins.count_locations(
-        coordinates=coords, dimension=dimension, bin=bin, subdomain=sd
+        coordinates=coords, dimension=dimension, bin=bin
     )
 
     assert np.sum(bin.values) == positions.shape[0]
 
 
-def test_sum_masses():
-    """
-    Tests summing masses of atoms based on location.
-    """
-
+def test_sum_masses() -> None:
+    """Tests summing masses of atoms based on location."""
     start = 0
     end = 3
     num_bins = 25
@@ -202,7 +182,7 @@ def test_sum_masses():
 
     masses = np.array([3, 12.5, 256])
 
-    mass_counts = pmmoto.analysis.bins.sum_masses(
+    _ = pmmoto.analysis.bins.sum_masses(
         coordinates=coordinates, dimension=0, bin=bin, masses=masses
     )
 
@@ -231,11 +211,8 @@ def test_sum_masses():
     )
 
 
-def test_sum_membrane_mass():
-    """
-    Test membrane mass counting.
-    """
-
+def test_sum_membrane_mass() -> None:
+    """Test membrane mass counting."""
     membrane_file = "tests/test_data/LAMMPS/membranedata.gz"
     positions, types, masses, domain = pmmoto.io.data_read.py_read_lammps_atoms(
         membrane_file, include_mass=True
@@ -255,16 +232,13 @@ def test_sum_membrane_mass():
     area = (domain[0, 1] - domain[0, 0]) * (domain[1, 1] - domain[1, 0])
 
     bin.calculate_volume(area=area)
-    mass_density = bin.values / bin.volume
 
     np.testing.assert_approx_equal(np.sum(bin.values), np.sum(masses))
 
 
 @pytest.mark.mpi(min_size=8)
-def test_sum_membrane_mass_parallel():
-    """
-    Test membrane mass counting.
-    """
+def test_sum_membrane_mass_parallel() -> None:
+    """Test membrane mass counting."""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -325,7 +299,7 @@ def test_sum_membrane_mass_parallel():
     masses = membrane.return_masses()
 
     pmmoto.analysis.bins.sum_masses(
-        coordinates=coords, dimension=2, bin=bin, masses=masses, subdomain=sd
+        coordinates=coords, dimension=2, bin=bin, masses=masses
     )
 
     np.testing.assert_approx_equal(np.sum(bin.values), all_masses)

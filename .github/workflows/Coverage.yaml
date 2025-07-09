@@ -1,0 +1,37 @@
+name: Coverage
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  coverage:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-latest]
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt update
+            sudo apt install -y libmpich-dev zlib1g-dev
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install mpich zlib
+          fi
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+      - name: Run coverage
+        run: tox -e coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-coverage
+          path: htmlcov/

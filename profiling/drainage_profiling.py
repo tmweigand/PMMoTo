@@ -1,12 +1,15 @@
+"""Profiling script for drainage simulation in PMMoTo.
+
+Profiles drainage calculation in an inkbottle geometry.
+"""
+
 import pmmoto
 
 import profiling_utils
 
 
 def initialize_ink_bottle():
-    """
-    initialize ink bottle
-    """
+    """Initialize ink bottle."""
     # voxels = (560, 120, 120)  ##res = 40
     # reservoir_voxels = 40
 
@@ -34,8 +37,8 @@ def initialize_ink_bottle():
 
 @profiling_utils.profile("profiling/drainage.prof")
 def test_drainage():
-    """
-    Profiling for connected components.
+    """Profiling for connected components.
+
     To run:
         python profiling/drainage_profiling.py
     Note: Cannot be used on python 12!!!!

@@ -15,3 +15,12 @@ dist/
 data_out/
 env/*
 .tox/
+
+
+# Sphinx build
+docs/_build/
+docs/.doctrees/
+docs/_static/*.js
+docs/_static/*.css
+*.pyc
+__pycache__/

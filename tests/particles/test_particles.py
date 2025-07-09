@@ -3,13 +3,10 @@
 import numpy as np
 from mpi4py import MPI
 import pmmoto
-import gc
 
 
 def test_particles():
-    """
-    Test for generating a radial distribution function form atom data
-    """
+    """Test for generating a radial distribution function form atom data"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -22,7 +19,11 @@ def test_particles():
 
     sd = pmmoto.initialize(
         voxels=(10, 10, 10),
-        boundary_types=((2, 2), (2, 2), (2, 2)),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
         box=box,
         rank=rank,
         subdomains=subdomains,
@@ -30,7 +31,7 @@ def test_particles():
 
     spheres = pmmoto.particles.initialize_spheres(sd, spheres)
 
-    pmmoto.io.output.save_img_data_parallel(
+    pmmoto.io.output.save_img(
         "data_out/test_particles_subdomain", sd, np.zeros(sd.voxels)
     )
     pmmoto.io.output.save_particle_data(
@@ -39,11 +40,15 @@ def test_particles():
 
 
 def test_gen_periodic_spheres():
-    """
-    Test the addition of periodic spheres
-    """
-
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test the addition of periodic spheres"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     spheres = np.array([[0.5, 0.5, 0.5, 0.25]])
@@ -79,10 +84,7 @@ def test_gen_periodic_spheres():
 
 
 def test_trim_particles():
-    """
-    Test the addition of periodic spheres
-    """
-
+    """Test the addition of periodic spheres"""
     sd = pmmoto.initialize(voxels=(10, 10, 10))
 
     spheres = np.array([[0.5, 0.5, 0.5, 0.25], [1.1, 0.5, 0.5, 0.09]])
@@ -107,10 +109,15 @@ def test_trim_particles():
 
 
 def test_group_atoms():
-    """
-    Test the creation of atom lists
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test the creation of atom lists"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -136,10 +143,15 @@ def test_group_atoms():
 
 
 def test_spheres():
-    """
-    Test the creation of sphere lists
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test the creation of sphere lists"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     sphere = np.array([[0.19, 0.1, 0.5, 0.2]])
@@ -151,10 +163,15 @@ def test_spheres():
 
 
 def test_cleanup():
-    """
-    Test deletion of particle lists
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test deletion of particle lists"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -170,16 +187,13 @@ def test_cleanup():
 
     atom_radii = {_id: 0.1 for _id in atom_ids}
 
-    atoms = pmmoto.particles.initialize_atoms(
+    _ = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, by_type=False
     )
 
 
 def test_uff_radius():
-    """
-    Test for the universal force field lookup to convert atoms to radii.
-    """
-
+    """Test for the universal force field lookup to convert atoms to radii."""
     atom_names = ["C", "H", "N", "O"]
     radii_names = pmmoto.particles.uff_radius(atom_names=atom_names)
 
@@ -192,10 +206,15 @@ def test_uff_radius():
 
 
 def test_atoms_with_masses():
-    """
-    Test deletion of particle lists
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test deletion of particle lists"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(
@@ -213,16 +232,21 @@ def test_atoms_with_masses():
 
     atom_masses = {_id: 0.3 for _id in atom_ids}
 
-    atoms = pmmoto.particles.initialize_atoms(
+    _ = pmmoto.particles.initialize_atoms(
         sd, atom_coordinates, atom_radii, atom_ids, atom_masses, by_type=False
     )
 
 
 def test_count_own():
-    """
-    Test deletion of particle lists
-    """
-    sd = pmmoto.initialize(voxels=(10, 10, 10), boundary_types=((2, 2), (2, 2), (2, 2)))
+    """Test deletion of particle lists"""
+    sd = pmmoto.initialize(
+        voxels=(10, 10, 10),
+        boundary_types=(
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+            (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        ),
+    )
 
     # No periodic spheres
     atom_coordinates = np.array(

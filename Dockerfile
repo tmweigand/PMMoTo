@@ -7,6 +7,7 @@ RUN apt-get -q update \
     hwloc libevent-dev \
     libudev-dev libnuma-dev libpciaccess-dev \
     openssh-client \
+    git \
     && pip3 install --upgrade pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

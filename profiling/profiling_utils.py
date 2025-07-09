@@ -1,10 +1,15 @@
+"""Profiling utilities for PMMoTo.
+
+Provides a decorator to profile functions using cProfile.
+"""
+
 import cProfile
 from functools import wraps
 
 
 def profile(filename=None):
-    """
-    A decorator to profile a function using cProfile.
+    """Profile a function using cProfile.
+
     Saves the profile results to a file if a filename is provided.
     """
 

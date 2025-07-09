@@ -71,6 +71,7 @@
       "regex": "cpp",
       "set": "cpp",
       "stack": "cpp"
-    }
+    },
+    "cSpell.words": ["functionals", "Minkowski"]
   }
 }

@@ -1,24 +1,42 @@
-"""particles.py"""
+"""particles.py
 
+Particle initialization and utility functions for PMMoTo.
+"""
+
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 import numpy as np
-from typing import Dict, List, Optional
+from numpy.typing import NDArray
 
 from ._particles import _initialize_atoms
 from ._particles import _initialize_spheres
+from ._particles import _initialize_cylinders
+from ._particles import PySphereList, AtomMap, PyCylinderList
 from .atom_universal_force_field import atom_universal_force_field
 
+if TYPE_CHECKING:
+    from ..core.subdomain import Subdomain
+    from ..core.subdomain_padded import PaddedSubdomain
+    from ..core.subdomain_verlet import VerletSubdomain
 
 __all__ = [
     "convert_atoms_elements_to_ids",
     "uff_radius",
     "initialize_atoms",
     "initialize_spheres",
+    "initialize_cylinders",
 ]
 
 
-def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
-    """
-    Convert a list of atom names (C,H,N,O) to id
+def convert_atoms_elements_to_ids(atom_elements: list[str]) -> NDArray[np.integer[Any]]:
+    """Convert a list of atom names (C, H, N, O, etc.) to atomic IDs.
+
+    Args:
+        atom_elements (List[str]): List of atom element names.
+
+    Returns:
+        np.ndarray: Array of atomic numbers.
+
     """
     element_table = atom_universal_force_field()
 
@@ -31,12 +49,19 @@ def convert_atoms_elements_to_ids(atom_elements: List[str]) -> np.ndarray:
     return atom_ids
 
 
-def _load_uff_data(file_name=None):
-    """
-    Read universal force field file for atom radius lookup
+def _load_uff_data(file_name: None | str = None) -> dict[str | int, tuple[int, float]]:
+    """Read universal force field file for atom radius lookup.
+
     Can query the dictionary based on:
-        Atom Name
-        Atomic Number (i.e. 1 = H, 6 = C)
+        - Atom Name
+        - Atomic Number (i.e. 1 = H, 6 = C)
+
+    Args:
+        file_name (str, optional): Path to UFF data file.
+
+    Returns:
+        dict: Mapping of atom names/numbers to (atomic_number, radius).
+
     """
     if file_name is None:
         element_table = atom_universal_force_field()
@@ -58,10 +83,9 @@ def _load_uff_data(file_name=None):
 
 
 def uff_radius(
-    atom_names: Optional[List[str]] = None, atomic_numbers: Optional[List[int]] = None
-) -> Dict[int, float]:
-    """
-    Collect the radius by Atom Name or Atomic Number, but not both.
+    atom_names: None | list[str] = None, atomic_numbers: None | list[int] = None
+) -> dict[int, float]:
+    """Collect the radius by Atom Name or Atomic Number, but not both.
 
     Units of radii are Angstroms!
 
@@ -71,15 +95,18 @@ def uff_radius(
 
     Returns:
         Dict[int, float]: Dictionary mapping atomic numbers to their radii.
-    """
 
+    Raises:
+        ValueError: If both or neither atom_names and atomic_numbers are provided.
+
+    """
     if (atom_names is None) == (atomic_numbers is None):
         raise ValueError(
             "Provide either 'atom_names' or 'atomic_numbers', but not both."
         )
 
     all_uff_radii = _load_uff_data()
-    radii = {}
+    radii: dict[int, float] = {}
 
     if atom_names is not None:
         for name in atom_names:
@@ -98,35 +125,35 @@ def uff_radius(
 
 
 def initialize_atoms(
-    subdomain,
-    atom_coordinates: np.ndarray,
-    atom_radii: Dict[int, float],
-    atom_ids: np.ndarray,
-    atom_masses: Optional[Dict[int, float]] = None,
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    atom_coordinates: NDArray[np.floating[Any]],
+    atom_radii: NDArray[np.floating[Any]],
+    atom_ids: NDArray[np.integer[Any]],
+    atom_masses: None | NDArray[np.integer[Any]] = None,
     by_type: bool = False,
     add_periodic: bool = False,
     set_own: bool = True,
     trim_intersecting: bool = False,
     trim_within: bool = False,
-) -> "AtomMap":
-    """
-    Initialize a list of particles efficiently with memory management.
+) -> AtomMap:
+    """Initialize a list of particles efficiently with memory management.
 
     Args:
-        subdomain: Domain subdivision object
-        atom_coordinates: Array of shape (n_atoms, 3) with xyz coordinates
-        atom_radii: Dictionary mapping atom types to radii or array of radii
-        atoms_ids: Array of atom type IDs
-        by_type: Whether to organize atoms by type
-        add_periodic: Add periodic images at boundaries
-        set_own: Mark particles owned by this subdomain
-        trim_intersecting: Remove particles intersecting boundary
-        trim_within: Remove particles fully within boundary
+        subdomain: Domain subdivision object.
+        atom_coordinates (np.ndarray): Array of shape (n_atoms, 3) with xyz coordinates.
+        atom_radii (dict or np.ndarray): Dictionary of atom types to radii or array.
+        atom_ids (np.ndarray): Array of atom type IDs.
+        atom_masses (dict, optional): Dictionary of atom masses.
+        by_type (bool, optional): Whether to organize atoms by type.
+        add_periodic (bool, optional): Add periodic images at boundaries.
+        set_own (bool, optional): Mark particles owned by this subdomain.
+        trim_intersecting (bool, optional): Remove particles intersecting boundary.
+        trim_within (bool, optional): Remove particles fully within boundary.
 
     Returns:
-        AtomMap: Python Class that wraps atoms. See _particles.pyx
-    """
+        object: Python Class that wraps atoms. See _particles.pyx.
 
+    """
     if not atom_coordinates.flags["C_CONTIGUOUS"]:
         atom_coordinates = np.ascontiguousarray(atom_coordinates)
 
@@ -155,21 +182,33 @@ def initialize_atoms(
 
 
 def initialize_spheres(
-    subdomain,
-    spheres,
-    radii=None,
-    add_periodic=False,
-    set_own=True,
-    trim_intersecting=False,
-    trim_within=False,
-):
-    """
-    Initialize a list of spheres.
-    Particles that do not cross the subdomain boundary are deleted
-    If add_periodic: particles that cross the domain boundary will be add.
-    If set_own: particles owned by a subdomain will be identified
-    """
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    spheres: NDArray[np.floating[Any]],
+    radii: None | NDArray[np.floating[Any]] = None,
+    add_periodic: bool = False,
+    set_own: bool = True,
+    trim_intersecting: bool = False,
+    trim_within: bool = False,
+) -> PySphereList:
+    """Initialize a list of spheres.
 
+    Particles that do not cross the subdomain boundary are deleted.
+    If add_periodic: particles that cross the domain boundary will be added.
+    If set_own: particles owned by a subdomain will be identified.
+
+    Args:
+        subdomain: Domain subdivision object.
+        spheres (np.ndarray): Array of sphere positions and radii.
+        radii (np.ndarray, optional): Array of radii if not included in spheres.
+        add_periodic (bool, optional): Add periodic images at boundaries.
+        set_own (bool, optional): Mark particles owned by this subdomain.
+        trim_intersecting (bool, optional): Remove particles intersecting boundary.
+        trim_within (bool, optional): Remove particles fully within boundary.
+
+    Returns:
+        AtomMap: Python Class that wraps spheres. See _particles.pyx.
+
+    """
     if not radii:
         _spheres = spheres[:, 0:3]
         radii = spheres[:, 3]
@@ -189,5 +228,24 @@ def initialize_spheres(
 
     if set_own:
         particles.set_own(subdomain)
+
+    return particles
+
+
+def initialize_cylinders(
+    subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
+    cylinders: NDArray[np.floating[Any]],
+) -> PyCylinderList:
+    """Initialize a list of cylindersd
+
+    Args:
+        subdomain (Subdomain | PaddedSubdomain | VerletSubdomain): pmmoto subdomain
+        cylinders (NDArray[np.floating[Any]]): aray of cylinder data
+
+    Returns:
+        PyCylinderList: _description_
+
+    """
+    particles = _initialize_cylinders(cylinders)
 
     return particles

@@ -11,6 +11,7 @@ from libcpp.memory cimport shared_ptr
 
 from ..particles.particle_list cimport Box
 from ..particles.spheres cimport SphereList
+from ..particles.cylinders cimport CylinderList
 
 cdef extern from "domain_generation.hpp":
 	cdef struct Grid:
@@ -31,8 +32,16 @@ cdef extern from "domain_generation.hpp":
 		uint8_t *img,
 		Grid grid,
 		Verlet verlet,
-		shared_ptr[SphereList] spherelist
+		shared_ptr[SphereList] shape_list
 	)
+
+	cdef void gen_sphere_img_brute_force(
+		uint8_t *img,
+		Grid grid,
+		Verlet verlet,
+		shared_ptr[CylinderList] shape_list
+	)
+
 
 	cdef void gen_sphere_img_kd_method(
 		uint8_t *img,

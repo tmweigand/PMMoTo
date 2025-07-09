@@ -339,8 +339,7 @@ return_boundary_hull(float* img,
     // Select hulls
     int kk = forward ? 0 : k;
     int step = forward ? 1 : -1;
-
-    while (hull.size() <= num_hull && kk >= 0 && kk <= k)
+    while (static_cast<int>(hull.size()) <= num_hull && kk >= 0 && kk <= k)
     {
         if (hull_height[kk] < (std::numeric_limits<float>::max() - 1))
         {

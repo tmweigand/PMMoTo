@@ -7,6 +7,8 @@
 #include <iostream>
 #include <vector>
 
+#include "cylinders.hpp"
+#include "shape.hpp"
 #include "spheres.hpp"
 
 /**
@@ -31,13 +33,13 @@ struct Verlet
 };
 
 /**
- * @brief Brute force approach but with verlet
+ * @brief Brute force approach but with verlet and spheres
  */
 void
 brute_force(uint8_t* img,
             const std::vector<double> voxel,
             const std::vector<size_t>& strides,
-            const std::shared_ptr<SphereList>& sphere_list,
+            std::shared_ptr<SphereList>& sphere_list,
             const std::vector<size_t>& verlet_spheres,
             size_t i,
             size_t j,
@@ -45,8 +47,33 @@ brute_force(uint8_t* img,
 {
     for (size_t index : verlet_spheres)
     {
-        Sphere& sphere = (*sphere_list)[index];
-        if (sphere.in_sphere(voxel))
+        const Sphere& sphere = (*sphere_list)[index];
+        if (sphere.contains(voxel))
+        {
+            size_t stride = i * strides[0] + j * strides[1] + k;
+            img[stride] = 0;
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Brute force approach but with verlet and cylinders
+ */
+void
+brute_force(uint8_t* img,
+            const std::vector<double> voxel,
+            const std::vector<size_t>& strides,
+            std::shared_ptr<CylinderList>& cylinder_list,
+            const std::vector<size_t>& verlet_spheres,
+            size_t i,
+            size_t j,
+            size_t k)
+{
+    for (size_t index : verlet_spheres)
+    {
+        const Cylinder& cylinder = (*cylinder_list)[index];
+        if (cylinder.contains(voxel))
         {
             size_t stride = i * strides[0] + j * strides[1] + k;
             img[stride] = 0;
@@ -61,11 +88,12 @@ brute_force(uint8_t* img,
  * @return A 3D vector representing the voxel grid (1 if inside any sphere, 0
  * otherwise).
  */
+template <typename T>
 void
 gen_sphere_img_brute_force(uint8_t* img,
                            const Grid& grid,
                            Verlet verlet,
-                           std::shared_ptr<SphereList>& sphere_list)
+                           std::shared_ptr<T>& shape_list)
 {
     std::vector<double> voxel(3);
 
@@ -73,7 +101,7 @@ gen_sphere_img_brute_force(uint8_t* img,
     {
         std::vector<std::vector<size_t> > loop = verlet.loops[n];
         std::vector<size_t> verlet_spheres =
-            sphere_list->find_intersecting_sphere_indices(verlet.box[n]);
+            shape_list->find_intersecting_indices(verlet.box[n]);
 
         for (size_t i = loop[0][0]; i < loop[0][1]; ++i)
         {
@@ -87,7 +115,7 @@ gen_sphere_img_brute_force(uint8_t* img,
                     brute_force(img,
                                 voxel,
                                 grid.strides,
-                                sphere_list,
+                                shape_list,
                                 verlet_spheres,
                                 i,
                                 j,
@@ -116,7 +144,7 @@ kd_method(uint8_t* img,
     for (const auto& index : indices)
     {
         Sphere& sphere = (*sphere_list)[index];
-        if (sphere.in_sphere(voxel))
+        if (sphere.contains(voxel))
         {
             size_t stride = i * strides[0] + j * strides[1] + k;
             img[stride] = 0;

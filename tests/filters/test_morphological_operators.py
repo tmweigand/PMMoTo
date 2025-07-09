@@ -7,11 +7,8 @@ from mpi4py import MPI
 import pytest
 
 
-def test_gen_struct_ratio():
-    """
-    Convert sphere radius to num of voxels.
-    """
-
+def test_gen_struct_ratio() -> None:
+    """Convert sphere radius to num of voxels."""
     struct_ratio = pmmoto.filters.morphological_operators.gen_struct_ratio(
         resolution=[0.5, 0.5, 0.5], radius=1
     )
@@ -19,10 +16,8 @@ def test_gen_struct_ratio():
     np.testing.assert_equal(struct_ratio, [2, 2, 2])
 
 
-def test_gen_struct_element():
-    """
-    Generate a spherical/circular structuring element
-    """
+def test_gen_struct_element() -> None:
+    """Generate a spherical/circular structuring element"""
     _, struct_element = pmmoto.filters.morphological_operators.gen_struct_element(
         resolution=[0.01, 0.01, 0.01], radius=0.03
     )
@@ -31,11 +26,8 @@ def test_gen_struct_element():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_morphological_addition():
-    """
-    Generate a spherical/circular structuring element
-    """
-
+def test_morphological_addition() -> None:
+    """Generate a spherical/circular structuring element"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -46,7 +38,11 @@ def test_morphological_addition():
         "tests/test_domains/bcc.in"
     )
 
-    for boundary_type in [0, 1, 2]:
+    for boundary_type in [
+        pmmoto.BoundaryType.END,
+        pmmoto.BoundaryType.WALL,
+        pmmoto.BoundaryType.PERIODIC,
+    ]:
         boundary = ((boundary_type, boundary_type),) * 3
         sd = pmmoto.initialize(
             rank=0,
@@ -69,11 +65,8 @@ def test_morphological_addition():
 
 
 @pytest.mark.mpi(min_size=8)
-def test_morphological_subtraction():
-    """
-    Generate a spherical/circular structuring element
-    """
-
+def test_morphological_subtraction() -> None:
+    """Generate a spherical/circular structuring element"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
@@ -84,7 +77,11 @@ def test_morphological_subtraction():
         "tests/test_domains/bcc.in"
     )
 
-    for boundary_type in [0, 1, 2]:
+    for boundary_type in [
+        pmmoto.BoundaryType.END,
+        pmmoto.BoundaryType.WALL,
+        pmmoto.BoundaryType.PERIODIC,
+    ]:
         boundary = ((boundary_type, boundary_type),) * 3
         sd = pmmoto.initialize(
             rank=0,
@@ -109,11 +106,8 @@ def test_morphological_subtraction():
 
 def morphological_operator(
     operator, rank, sd, img, subdomains, probe_radius, boundary_type, test_scipy=False
-):
-    """
-    Wrapper for more efficient tests
-    """
-
+) -> None:
+    """Morphological test helper"""
     if operator == "addition":
         morph_operator = pmmoto.filters.morphological_operators.addition
         scipy_operator = scipy.ndimage.binary_dilation
@@ -142,14 +136,14 @@ def morphological_operator(
             scipy_morph_result,
         )
 
-    sd_local, local_img = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
         img_base,
         subdomains=subdomains,
         rank=rank,
     )
 
-    sd_local, local_morph_result = pmmoto.core.pmmoto.deconstruct_grid(
+    sd_local, local_morph_result = pmmoto.domain_generation.deconstruct_img(
         sd,
         morph_result,
         subdomains=subdomains,

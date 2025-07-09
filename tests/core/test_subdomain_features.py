@@ -1,18 +1,21 @@
 """test_subdomain_features.py"""
 
-import pytest
 import numpy as np
 import pmmoto
 
 
-def generate_padded_subdomain(rank, pad, reservoir_voxels):
-    """
-    Generate a padded subdomain
-    """
+def generate_padded_subdomain(
+    rank: int, pad: tuple[int, ...], reservoir_voxels: int
+) -> pmmoto.core.subdomain_padded.PaddedSubdomain:
+    """Generate a padded subdomain"""
     box = ((77, 100), (-45, 101.21), (-9.0, -3.14159))
-    boundary_types = ((0, 0), (1, 1), (2, 2))
-    inlet = ((1, 0), (0, 0), (0, 0))
-    outlet = ((0, 1), (0, 0), (0, 0))
+    boundary_types = (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
+    inlet = ((True, False), (False, False), (False, False))
+    outlet = ((False, True), (False, False), (False, False))
     voxels = (100, 100, 100)
     subdomains = (3, 3, 3)
 
@@ -31,229 +34,296 @@ def generate_padded_subdomain(rank, pad, reservoir_voxels):
     return sd
 
 
-def test_collect_features():
-    """
-    Test for subdomain features
-    """
+def test_subdomain():
+    """Test for subdomain"""
+    rank = 12
+    pad = (1, 1, 1)
+    reservoir_voxels = 1
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
 
+    sd_features = pmmoto.core.subdomain_features.SubdomainFeatures(
+        sd, sd.voxels, sd.pad
+    )
+    features = sd_features.get_features()
+
+    for feature_id, feature in features.items():
+        if feature_id == (0, 0, -1):
+            assert feature.global_boundary
+        else:
+            assert not feature.global_boundary
+
+    for feature_id, feature in features.items():
+        if feature_id == (0, 0, -1):
+            assert feature.boundary_type == pmmoto.BoundaryType.PERIODIC
+        else:
+            assert feature.boundary_type == pmmoto.BoundaryType.INTERNAL
+
+
+def test_subdomain_2():
+    """Test for subdomain"""
+    rank = 26
+    pad = (2, 2, 2)
+    reservoir_voxels = 3
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+    sd_features = pmmoto.core.subdomain_features.SubdomainFeatures(
+        sd, sd.voxels, sd.pad
+    )
+    features = sd_features.get_features()
+    global_features = {
+        (1, 0, 0): "end",
+        (0, 1, 0): "wall",
+        (0, 0, 1): "periodic",
+        (1, 0, 1): "end",
+        (1, 1, 0): "end",
+        (0, 1, 1): "wall",
+        (1, 1, 1): "end",
+    }
+
+    for feature_id, feature in features.items():
+        if feature_id in global_features:
+            assert feature.global_boundary
+        else:
+            assert not feature.global_boundary
+
+    for feature_id, feature in features.items():
+        if feature_id in global_features:
+            assert feature.boundary_type == global_features[feature_id]
+        else:
+            assert feature.boundary_type == "internal"
+
+    assert sd.inlet == ((False, False), (False, False), (False, False))
+    assert sd.outlet == ((False, True), (False, False), (False, False))
+
+    assert sd.start == (64, 64, 64)
+
+    res_padding = sd.get_reservoir_padding(reservoir_voxels)
+    np.testing.assert_array_equal(res_padding, [[0, 0], [0, 0], [0, 0]])
+
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [2, 36, 2, 36, 2, 36])
+
+
+def test_subdomain_3():
+    """Test for subdomain"""
     rank = 0
     pad = (1, 1, 1)
-    reservoir_voxels = 0
+    reservoir_voxels = 3
     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+    sd_features = pmmoto.core.subdomain_features.SubdomainFeatures(
+        sd, sd.voxels, sd.pad
+    )
+    features = sd_features.get_features()
 
-    features = pmmoto.core.subdomain_features.collect_features(
-        neighbor_ranks=sd.neighbor_ranks,
-        global_boundary=sd.global_boundary,
-        boundary_types=sd.boundary_types,
-        voxels=sd.voxels,
+    assert sd.index == (0, 0, 0)
+
+    np.testing.assert_array_equal(sd.pad, ((0, 1), (1, 1), (1, 1)))
+    sd_pad, _ = sd.extend_padding(pad)
+    np.testing.assert_array_equal(sd_pad, ((0, 1), (0, 1), (1, 1)))
+
+    assert sd.voxels == (37, 35, 35)
+
+    assert sd.box == (
+        (76.31, 84.82000000000001),
+        (-46.4621, 4.7113999999999905),
+        (-9.0585841, -7.0081406),
     )
 
-    assert len(features["faces"]) == 6
-    assert len(features["edges"]) == 12
-    assert len(features["corners"]) == 8
+    global_features = {
+        (-1, 0, 0): "end",
+        (0, -1, 0): "wall",
+        (0, 0, -1): "periodic",
+        (-1, 0, -1): "end",
+        (-1, -1, 0): "end",
+        (0, -1, -1): "wall",
+        (-1, -1, -1): "end",
+    }
+
+    for feature_id, feature in features.items():
+        if feature_id in global_features:
+            assert feature.global_boundary
+        else:
+            assert not feature.global_boundary
+
+    for feature_id, feature in features.items():
+        if feature_id in global_features:
+            assert feature.boundary_type == global_features[feature_id]
+        else:
+            assert feature.boundary_type == "internal"
+
+    assert sd.inlet == ((True, False), (False, False), (False, False))
+
+    assert sd.outlet == ((False, False), (False, False), (False, False))
+    assert sd.start == (-3, -1, -1)
+
+    res_padding = sd.get_reservoir_padding(reservoir_voxels)
+    np.testing.assert_array_equal(res_padding, [[3, 0], [0, 0], [0, 0]])
+
+    own_voxels = sd.get_own_voxels()
+    np.testing.assert_array_equal(own_voxels, [3, 36, 1, 34, 1, 34])
 
 
-def test_feature_voxels_face():
-    """
-    Test get_feature_voxels
-    """
+# def test_collect_features() -> None:
+#     """Test for subdomain features"""
+#     rank = 0
+#     pad = (1, 1, 1)
+#     reservoir_voxels = 0
+#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
 
-    feature_id = (-1, 0, 0)
-    voxels = (10, 10, 10)
-    pad = [[0, 0], [0, 0], [0, 0]]
+#     features = pmmoto.core.subdomain_features.SubdomainFeatures(sd, sd.voxels, sd.pad)
 
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
+#     print(features)
 
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[0, 1], [0, 10], [0, 10]])
-    )
-
-    feature_id = (-1, 0, 0)
-    voxels = (10, 10, 10)
-    pad = [[1, 1], [1, 1], [1, 1]]
-
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
-
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
-    )
-
-    np.testing.assert_array_equal(
-        feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
-    )
-
-    feature_id = (-1, 0, 0)
-    voxels = (10, 10, 10)
-    pad = [[4, 4], [2, 2], [3, 3]]
-
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
-
-    print(feature_voxels["own"])
-    print(feature_voxels["neighbor"])
-
-    # np.testing.assert_array_equal(
-    #     feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
-    # )
-
-    # np.testing.assert_array_equal(
-    #     feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
-    # )
+#     # assert len(features["faces"]) == 6
+#     # assert len(features["edges"]) == 12
+#     # assert len(features["corners"]) == 8
 
 
-def test_feature_voxels_edge():
-    """
-    Test get_feature_voxels
-    """
+# def test_feature_voxels_face():
+#     """Test get_feature_voxels"""
+#     feature_id = (-1, 0, 0)
+#     voxels = (10, 10, 10)
+#     pad = [[0, 0], [0, 0], [0, 0]]
 
-    feature_id = (-1, 0, 1)
-    voxels = (10, 10, 10)
-    pad = [[0, 0], [0, 0], [0, 0]]
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[0, 1], [0, 10], [0, 10]])
+#     )
 
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[0, 1], [0, 10], [9, 10]])
-    )
+#     feature_id = (-1, 0, 0)
+#     voxels = (10, 10, 10)
+#     pad = [[1, 1], [1, 1], [1, 1]]
 
-    feature_id = (-1, 0, 1)
-    voxels = (10, 10, 10)
-    pad = [[1, 1], [1, 1], [1, 1]]
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
+#     )
 
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[1, 2], [1, 9], [8, 9]])
-    )
+#     np.testing.assert_array_equal(
+#         feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
+#     )
 
-    np.testing.assert_array_equal(
-        feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [9, 10]])
-    )
+#     feature_id = (-1, 0, 0)
+#     voxels = (10, 10, 10)
+#     pad = [[4, 4], [2, 2], [3, 3]]
 
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-def test_feature_voxels_corner():
-    """
-    Test get_feature_voxels
-    """
+#     print(feature_voxels["own"])
+#     print(feature_voxels["neighbor"])
 
-    feature_id = (1, 1, -1)
-    voxels = (10, 10, 10)
-    pad = [[0, 0], [0, 0], [0, 0]]
+#     # np.testing.assert_array_equal(
+#     #     feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
+#     # )
 
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
-
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[9, 10], [9, 10], [0, 1]])
-    )
-
-    feature_id = (1, 1, -1)
-    voxels = (10, 10, 10)
-    pad = [[1, 1], [1, 1], [1, 1]]
-
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
-
-    np.testing.assert_array_equal(
-        feature_voxels["own"], np.array([[8, 9], [8, 9], [1, 2]])
-    )
-
-    np.testing.assert_array_equal(
-        feature_voxels["neighbor"], np.array([[9, 10], [9, 10], [0, 1]])
-    )
+#     # np.testing.assert_array_equal(
+#     #     feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
+#     # )
 
 
-@pytest.mark.figures
-def test_feature_voxels_figure():
-    """
-    Generate output to visually inspect get_feature_voxels
-    """
+# def test_feature_voxels_edge():
+#     """Test get_feature_voxels"""
+#     feature_id = (-1, 0, 1)
+#     voxels = (10, 10, 10)
+#     pad = [[0, 0], [0, 0], [0, 0]]
 
-    voxels = (20, 20, 20)
-    img = np.zeros(voxels)
-    pad = [[1, 1], [1, 1], [1, 1]]
-    extension = [[2, 0], [2, 0], [2, 0]]
-    summed = [[3, 0], [3, 0], [3, 0]]
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-    feature_id = (-1, 0, 0)
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[0, 1], [0, 10], [9, 10]])
+#     )
 
-    feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=pad
-    )
+#     feature_id = (-1, 0, 1)
+#     voxels = (10, 10, 10)
+#     pad = [[1, 1], [1, 1], [1, 1]]
 
-    summed = pmmoto.core.subdomain_features.get_feature_voxels(
-        feature_id=feature_id, voxels=voxels, pad=summed
-    )
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-    print("feature", feature_voxels)
-    print(summed)
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[1, 2], [1, 9], [8, 9]])
+#     )
 
-    updated_img = pmmoto.core.utils.constant_pad_img(img, extension, 255)
-
-    img[
-        feature_voxels["own"][0][0] : feature_voxels["own"][0][1],
-        feature_voxels["own"][1][0] : feature_voxels["own"][1][1],
-        feature_voxels["own"][2][0] : feature_voxels["own"][2][1],
-    ] = 1
-
-    pmmoto.io.save_img("data_out/test_feature_voxels", img)
-
-    updated_img[
-        feature_voxels["neighbor"][0][0] : feature_voxels["neighbor"][0][1],
-        feature_voxels["neighbor"][1][0] : feature_voxels["neighbor"][1][1],
-        feature_voxels["neighbor"][2][0] : feature_voxels["neighbor"][2][1],
-    ] = 2
-
-    pmmoto.io.save_img("data_out/test_feature_voxels_updated", updated_img)
+#     np.testing.assert_array_equal(
+#         feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [9, 10]])
+#     )
 
 
-def test_collect_periodic_features():
-    """
-    Check function that loops through the subdomain features and
-    returns a list of all of the periodic ones.
-    """
+# def test_feature_voxels_corner():
+#     """Test get_feature_voxels"""
+#     feature_id = (1, 1, -1)
+#     voxels = (10, 10, 10)
+#     pad = [[0, 0], [0, 0], [0, 0]]
 
-    rank = 26
-    pad = (1, 1, 1)
-    reservoir_voxels = 0
-    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
 
-    periodic_features = pmmoto.core.subdomain_features.collect_periodic_features(
-        sd.features
-    )
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[9, 10], [9, 10], [0, 1]])
+#     )
 
-    np.testing.assert_equal(periodic_features, [(0, 0, 1)])
+#     feature_id = (1, 1, -1)
+#     voxels = (10, 10, 10)
+#     pad = [[1, 1], [1, 1], [1, 1]]
+
+#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
+#         feature_id=feature_id, voxels=voxels, pad=pad
+#     )
+
+#     np.testing.assert_array_equal(
+#         feature_voxels["own"], np.array([[8, 9], [8, 9], [1, 2]])
+#     )
+
+#     np.testing.assert_array_equal(
+#         feature_voxels["neighbor"], np.array([[9, 10], [9, 10], [0, 1]])
+#     )
 
 
-def test_collect_periodic_corrections():
-    """
-    Check function that loops through the subdomain features and
-    returns a list of all of the periodic corrections.
-    """
+# def test_collect_periodic_features():
+#     """Check function that loops through the subdomain features
 
-    rank = 26
-    pad = (1, 1, 1)
-    reservoir_voxels = 0
-    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+#     Returns a list of all of the periodic ones.
+#     """
+#     rank = 26
+#     pad = (1, 1, 1)
+#     reservoir_voxels = 0
+#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
 
-    periodic_corrections = pmmoto.core.subdomain_features.collect_periodic_corrections(
-        sd.features
-    )
+#     periodic_features = pmmoto.core.subdomain_features.collect_periodic_features(
+#         sd.features
+#     )
 
-    np.testing.assert_equal(
-        periodic_corrections,
-        {
-            (0, 0, 1): (0, 0, -1),
-        },
-    )
+#     np.testing.assert_equal(periodic_features, [(0, 0, 1)])
+
+
+# def test_collect_periodic_corrections():
+#     """Check function that loops through the subdomain features.
+
+#     Returns a list of all of the periodic corrections.
+#     """
+#     rank = 26
+#     pad = (1, 1, 1)
+#     reservoir_voxels = 0
+#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+
+#     periodic_corrections = pmmoto.core.subdomain_features.collect_periodic_corrections(
+#         sd.features
+#     )
+
+#     np.testing.assert_equal(
+#         periodic_corrections,
+#         {
+#             (0, 0, 1): (0, 0, -1),
+#         },
+#     )
