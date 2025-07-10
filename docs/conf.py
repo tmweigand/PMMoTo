@@ -45,8 +45,7 @@ bibtex_bibfiles = ["references.bib"]
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# If your root document is not index.rst, uncomment and set this:
-# master_doc = "index"
+master_doc = "index"
 
 # Show "Show Source" links and the general index page
 html_show_sourcelink = True

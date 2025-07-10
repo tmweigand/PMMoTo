@@ -43,6 +43,7 @@ dev = [
     # "pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master",
     "typing_extensions>=4.6"
 ]
+
 docs = [
     "sphinx>=7.0",
     "sphinx_rtd_theme",

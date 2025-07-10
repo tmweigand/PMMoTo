@@ -1,5 +1,5 @@
 Porous Structure from Molecular Dynamics Simulations
-================================================
+======================================================
 
 This example demonstrates how to generate a porous structure from molecular dynamics (MD) simulations using two approaches to determine atomic radii:
 
@@ -26,7 +26,7 @@ Step 1: Modules and MPI
 
 
 Step 2: Initialize MD Domain
--------------------------
+------------------------------
 
 Matching the MD simulation parameters, the domain size, boundary conditions, as well as the number of voxels, subdomain, and inlet/outlets are specfied. Additionally, ``Verlet domains`` is increased from the default value of ``(1, 1, 1)``. Verlet domains serve to divide a subdomain into yet smaller so-called Verlet domains that allow for optimized domain generation by increasing cache hits. A numerical study into the optimal number of Verlet domains can prove a fruitful exercise for systems with a larger number of atoms.  
 
@@ -96,7 +96,7 @@ Each line represents one atom, with:
       return radii
 
 Step 4: Non-equilibrium Radii
----------------------------
+--------------------------------
 
 This example is based on a non-equilibrium MD simulation of water permeation through a reverse osmosis membrane. Using PMMoTo, distances between water molecules and the atoms comprising the polyamide were binned, and radial distribution functions (RDFs) were generated from the simulation data for the 17 unique atom types of MPD and TMC.
 
@@ -129,7 +129,7 @@ The potential of mean force value, ``G(r)``, is provided at discrete distances, 
 
 
 Step 5: Water Accessible Porous Structure
---------------------------------
+--------------------------------------------
 
 Generation of the porous structure requires the ``subdomain``, an input file specifying the atom location (and other identifying information), the atom radii, and any additional information needed to map from the MD output files to atom ids.  
 
@@ -145,7 +145,7 @@ Generation of the porous structure requires the ``subdomain``, an input file spe
 
 
 Step 5: Water Occupiable Porous Structure
---------------------------------
+---------------------------------------------
 
 In this example, the Columbic radius of water was added to the **eqilibirum approach** and the **non-equilibrium approach** radii accounted for water as well, but in a data driven manner. To determine the water occuiable porous structure, a norplogical dilation (or addition) ius performed on the pore space. 
 
@@ -154,7 +154,7 @@ In this example, the Columbic radius of water was added to the **eqilibirum appr
    pm.img = pmmoto.filters.morphological_operators.dilate(sd, pm.img, 1.4)
 
 Step 6: Comparison of Approaches
---------------------------------
+----------------------------------
 
 The **equilibrium approach** reconstructs the porous structure using van der Waals radii from the Universal Force Field (UFF):
 

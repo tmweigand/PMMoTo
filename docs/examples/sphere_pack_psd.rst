@@ -1,5 +1,5 @@
 Sphere Pack: Euclidean Distance Transform and Pore Size Distribution
-==================================
+======================================================================
 
 This example demonstrates how to compute a **Euclidian distance transform** and a **pore size distribution (PSD)** of a packed bed of spheres using PMMoTo. 
 
@@ -114,7 +114,7 @@ The pore space is shown below where the subdomain with `rank = 5` has been omitt
    :width: 60%
 
 Step 5: Perform a Euclidean Distance Transform
-------------------------------------
+-------------------------------------------------
 
 The Euclidean distance transform provides the distance to the nearest solid for every pore voxel. The distance3 transform can be calculated and attached to a PMMoto ``porousmedia`` object by calling ``pm.distance`` which avoids recalculing the transformn. 
 
@@ -133,7 +133,7 @@ The distance transform of the sphere pack is shown below.
 
 
 Step 6: Determine the Pore Size Distribution
-------------------------------------
+-----------------------------------------------
 
 The pore size distribution of a porous media represents the largest size sphere that full fits at a given pore voxel. With PMMoto, the number of radii can be specified as ``num_radii``. Additioannly, by setting ``inltet=True``, the pore size distribution of only inlet connected voxels can be determined. 
 

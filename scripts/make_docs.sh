@@ -1,13 +1,19 @@
 #!/bin/bash
 # Generate API documentation and build HTML docs for PMMoTo
 
-set -e
+set -euo pipefail
 
-# Clean previous API docs (optional, keeps docs clean)
-rm -rf docs/pmmoto.*.rst docs/modules.rst
+DOCS_DIR="docs"
+API_DOCS_DIR="${DOCS_DIR}/api"
+SRC_DIR="src/pmmoto"
 
-# Generate API documentation
-sphinx-apidoc -o docs/ src/pmmoto --force --module-first
+echo "Cleaning previous API docs in ${API_DOCS_DIR}..."
+rm -fv "${API_DOCS_DIR}"/pmmoto.*.rst "${API_DOCS_DIR}"/modules.rst || true
 
-# Build HTML documentation
-make -C docs clean html
+echo "Generating new API documentation with sphinx-apidoc into ${API_DOCS_DIR}..."
+sphinx-apidoc -o "${API_DOCS_DIR}" "${SRC_DIR}" --force --module-first
+
+echo "Building HTML documentation..."
+make -C "${DOCS_DIR}" clean html
+
+echo "Documentation build completed successfully!"

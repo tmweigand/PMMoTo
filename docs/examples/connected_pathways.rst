@@ -125,7 +125,7 @@ These voxels are connected to the **outlet**:
 
 
 Connected Pathway Voxels (Inlet and Outlet)
----------------------------------
+-------------------------------------------------
 
 These voxels are connected to **both** the inlet and outlet (i.e., a connected path):
 
