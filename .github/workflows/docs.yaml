@@ -2,8 +2,9 @@ name: Build and Deploy Sphinx Docs
 
 on:
   push:
-    branches:
-      - clean_up_for_v1
+    paths:
+      - "docs/**"
+
 jobs:
   build:
     runs-on: macOS-latest
@@ -24,8 +25,8 @@ jobs:
 
       - name: Clean and generate docs
         run: |
-          rm -rf docs/pmmoto.*.rst docs/modules.rst docs/_build/html
-          sphinx-apidoc -o docs/ src/pmmoto --force --module-first
+          rm -rf docs/api/pmmoto.*.rst docs/api/modules.rst docs/_build/html
+          sphinx-apidoc -o docs/api src/pmmoto --force --module-first
           cd docs
           make html
 
@@ -39,4 +40,4 @@ jobs:
         with:
           personal_token: ${{ secrets.GH_PAGES_TOKEN }}
           publish_dir: ./docs/_build/html
-          force_orphan: true # Ensures old files are removed
+          force_orphan: true

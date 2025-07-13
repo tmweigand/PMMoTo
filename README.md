@@ -6,17 +6,17 @@
 
 ---
 
-The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library—backed by Cython and C++—for analyzing, modeling, and characterizing the structure of porous materials. The code is designed for performance on distributed memory systems using MPI. It includes fast connected components analysis, morphological operations (e.g., addition and subtraction), and Euclidean distance transforms. Output images are optimized for visualization in ParaView. PMMoTo also provides processing and analysis tools for reconstructing porous structures from molecular dynamics simulations.
+The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials. Built with Cython and C++ and designed for distributed memory systems using MPI, PMMoTo includes parallelized implementations of connected components analysis, morphological operations (e.g., dilation and erosion), and Euclidean distance transforms. Unlike many tools that focus on image-based analysis, PMMoTo is specifically designed for synthetically generated porous media, such as sphere packings and molecular dynamics simulations.
 
 ---
 
 ## Website
 
-https://tmweigand.github.io/PMMoTo/index.html
+tmweigand.github.io/PMMoTo/
 
 ## Installation
 
-**PMMoTo requires an MPI installation** (see https://tmweigand.github.io/PMMoTo/user_guide/installation.html)
+**PMMoTo requires MPI** (see https://tmweigand.github.io/PMMoTo/user_guide/installation.html)
 
 ### Standard
 
@@ -55,9 +55,29 @@ If you use PMMoTo in your research, please cite the relevant publication (too co
 
 ---
 
+## Community Guidelines
+
+Contributions and community feedback is welcomed!
+
+### Contributing
+
+- Fork the repo and create a branch.
+- Make your changes and submit a pull request.
+- Ensure tests pass.
+
+### Reporting Issues
+
+- Use [GitHub Issues](https://github.com/tmweigand/PMMoTo/issues).
+- Include details: steps to reproduce, expected vs. actual behavior, and system info.
+
+### Support
+
+- See the [docs](https://tmweigand.github.io/PMMoTo) and [examples](https://tmweigand.github.io/PMMoTo/examples).
+- For questions, open a [discussion](https://github.com/tmweigand/PMMoTo/discussions) or file an [issue](https://github.com/tmweigand/PMMoTo/issues).
+
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](https://github.com/tmweigand/PMMoTo/blob/main/LICENSE) for details.
 
 ---
 

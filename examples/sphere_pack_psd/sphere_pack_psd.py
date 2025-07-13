@@ -49,7 +49,7 @@ def sphere_pack_psd() -> None:
 
     # Generate a pdf of the pore sizes
     pmmoto.filters.porosimetry.plot_pore_size_distribution(
-        "examples/sphere_pack_psd/pm", sd, psd, plot_type="pdf"
+       file_name="examples/sphere_pack_psd/pm", sd, psd, plot_type="pdf"
     )
 
     # Invert the porous structure
@@ -64,7 +64,7 @@ def sphere_pack_psd() -> None:
 
     # Generate a pdf of the inverted pore sizes
     pmmoto.filters.porosimetry.plot_pore_size_distribution(
-        "examples/sphere_pack_psd/inverted_pm",
+        file_name="examples/sphere_pack_psd/inverted_pm",
         sd,
         invert_psd,
     )

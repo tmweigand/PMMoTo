@@ -14,6 +14,12 @@ def connected_pathways() -> None:
     rank = comm.Get_rank()
 
     voxels = (2000, 2000, 10)
+    boundary = pmmoto.BoundaryType.END
+    boundary_types = (
+        (boundary, boundary),
+        (boundary, boundary),
+        (boundary, boundary),
+    )
     box = ((0, 2000), (0, 2000), (0, 30))
     inlet = ((True, False), (False, False), (False, False))
     outlet = ((False, True), (False, False), (False, False))
@@ -21,7 +27,13 @@ def connected_pathways() -> None:
     subdomains = (2, 2, 1)
 
     sd = pmmoto.initialize(
-        voxels, rank=rank, subdomains=subdomains, box=box, inlet=inlet, outlet=outlet
+        voxels,
+        boundary_types=boundary_types,
+        rank=rank,
+        subdomains=subdomains,
+        box=box,
+        inlet=inlet,
+        outlet=outlet,
     )
 
     img = pmmoto.domain_generation.gen_img_smoothed_random_binary(

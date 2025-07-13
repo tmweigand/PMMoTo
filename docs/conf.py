@@ -15,7 +15,7 @@ import sys
 project = "PMMoTo"
 copyright = "2025, Timothy M. Weigand"
 author = "Timothy M. Weigand"
-release = "0.1.0"
+release = "1.0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -45,8 +45,7 @@ bibtex_bibfiles = ["references.bib"]
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# If your root document is not index.rst, uncomment and set this:
-# master_doc = "index"
+master_doc = "index"
 
 # Show "Show Source" links and the general index page
 html_show_sourcelink = True

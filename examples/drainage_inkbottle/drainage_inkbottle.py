@@ -88,10 +88,7 @@ def drain_ink_bottle() -> None:
     # The output of this function is the predicted equilibrium saturation at a
     # given capillary pressure
     w_saturation_standard = pmmoto.filters.equilibrium_distribution.drainage(
-        mp,
-        capillary_pressure,
-        gamma=1,
-        method="standard",
+        mp, capillary_pressure, gamma=1, method="standard", save=False
     )
 
     # Save final state

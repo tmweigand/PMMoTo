@@ -12,8 +12,10 @@ fi
 
 VERSION=$1
 
+echo "Cleaning previous build artifacts..."
+rm -rf build dist *.egg-info
+
 echo "Updating version to $VERSION in pyproject.toml..."
-# Use 'sed' to update the version line (POSIX-compliant)
 sed -i.bak -E "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 rm pyproject.toml.bak
 
@@ -23,7 +25,5 @@ python -m build
 echo "Uploading to PyPI..."
 python -m twine upload dist/*
 
-echo "Cleaning up build artifacts..."
-rm -rf build dist *.egg-info
-
 echo "Done! Version $VERSION released."
+
