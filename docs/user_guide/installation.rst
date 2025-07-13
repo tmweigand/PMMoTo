@@ -2,8 +2,7 @@
 Installation
 =============
 
-For best performance and support for distributed memory systems, PMMoTo requires a working MPI environment.
-
+PMMoTo requires a functioning MPI environment to achieve optimal performance on distributed memory systems.
 You may install **OpenMPI** or **MPICH**, depending on your system and preference:
 
 - On macOS (with Homebrew):

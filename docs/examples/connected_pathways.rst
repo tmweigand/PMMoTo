@@ -1,7 +1,7 @@
 Connected Pathways in Random Porous Media
 =========================================
 
-This example demonstrates how to identify connected pathways and isolated pores through a **connected components** analysis.
+This example demonstrates how to identify connected pathways and isolated pores through a **connected components** analysis. The algorithm in PMMoTo is a extension of the Python package ``cc3d`` :cite:`Silversmith_21` for distributed memory systems and periodic porous structures. 
 
 To run this example:
 
@@ -21,13 +21,27 @@ Step 1: Import Modules
 
 Step 2: Domain Setup
 --------------------
+To initialize PMMoTo, the following parameters must be specified for this example:
 
-Initialize the domain and specify the inlet and outlet faces. For this example, we will analyze a porous structure that is thin in the z-dimension to allow for easier visualization. 
+- ``voxels``: the number of voxels in each dimension for the image representing the porous structure
+- ``boundary_types``: the boundary conditions applied during the simulation
+- ``rank``: the MPI rank of the current process
+- ``box``: the physical size of the simulation domain
+- ``inlet`` and ``outlet``: the designated inflow and outflow faces
+- ``subdomains``: the number of subdomains in each dimension
+
+For this example, we will analyze a porous structure that is thin in the z-dimension to allow for easier visualization. 
 
 .. code-block:: python
 
    import pmmoto
    voxels = (2000, 2000, 10)
+   boundary = pmmoto.BoundaryType.END
+   boundary_types = (
+        (boundary, boundary),
+        (boundary, boundary),
+        (boundary, boundary),
+   )
    box = ((0, 2000), (0, 2000), (0, 30))
    inlet = ((True, False), (False, False), (False, False))
    outlet = ((False, True), (False, False), (False, False))
@@ -35,7 +49,7 @@ Initialize the domain and specify the inlet and outlet faces. For this example, 
    subdomains = (2, 2, 1)
 
    sd = pmmoto.initialize(
-        voxels, rank=rank, subdomains=subdomains, box=box, inlet=inlet, outlet=outlet
+        voxels, boundary_types=boundary_types, rank=rank, subdomains=subdomains, box=box, inlet=inlet, outlet=outlet
    )
 
 The domain decomposed into four subdomains is shown below. 
@@ -49,7 +63,9 @@ The domain decomposed into four subdomains is shown below.
 Step 3: Generate Random Porous Media
 ------------------------------------
 
-For the porous media, a smoothed random binary image is used.
+While memory-inefficient and generally discouraged, PMMoTo supports reading or generating an entire image and then transferring ownership to the subdomain (i.e., after domain decomposition). To demonstrate this behavior in this example, each process will generate a full image of the entire domain, which will then be decomposed. For this reason, ``subdomain.domain.voxels`` is passed to the domain generation function instead of ``subdomain.voxels``, which only represents the number of voxels owned by the local process.
+
+The porous structure is generated using the function ``gen_img_smoothed_random_binary``. The total number of domain voxels is specified, and to ensure that an identical image is created on each process, the ``seed`` parameter is set. The ``p_zero`` parameter controls the porosity of the structure and represents the probability of a voxel being a pore. The ``smoothness`` parameter determines the degree of spatial smoothing applied to the image.
 
 .. code-block:: python
 
@@ -66,17 +82,19 @@ For the porous media, a smoothed random binary image is used.
 Step 4: Domain Decomposition
 ----------------------------
 
-While memory inefficient and should be avoided, PMMoTo is able to read an entire image and transfer ownership to the subdomain (i.e., decomposition).
+To deconstruct the image so that each process saves only the portion it is responsible for, the ``deconstruct_img`` function is called. This function takes the ``Subdomain`` object, the full image, the subdomain map, and the process rank as inputs.
 
 .. code-block:: python
 
    sd, img_sd = pmmoto.domain_generation.deconstruct_img(sd, img, subdomains, rank)
 
+The dimensions of ``img_sd`` are now smaller than those of ``img``, as it contains only the portion of the domain assigned to the current process.
+
 
 Step 5: Label Connected Components
 ----------------------------------
 
-A connected components analysis yields a labeled image where voxels of the same label are connected. The default (and currently only) option in PMMoTo is 26-connected (i.e., all faces, edges, and corners). Others include 18-connected (i.e., faces and edges) and 8-connected (i.e., faces). 
+The function ``connect_components`` in PMMoTo performs a connected components analysis which yields a labeled image where voxels of the same label are connected as well as the total number of labels. The default (and currently only) connectivity option in PMMoTo is 26-connected, meaning voxels are considered connected if they share a face, edge, or corner. Other common connectivity schemes include 18-connected (faces and edges) and 6-connected (faces only).8-connected (i.e., faces). 
 
 .. code-block:: python
 
@@ -91,7 +109,7 @@ A connected components analysis yields a labeled image where voxels of the same 
 Step 6: Inlet/Outlet Connectivity
 ---------------------------------
 
-The labeled voxels can be assess to determine if the are connected to the inlet and/or outlet of the porous media. A voxel is connected to the inlet/outlet if the voxel lies on the inlet/outlet face. If a labeled set of voxels is location on both the inlet and the outlet, the labeled set is a connected pathway. If a labeled set of voxels is not connected to an inlet or outlet, the labeled set is isolated. 
+The labeled image returned by ``connect_components`` can be analyzed to determine which labels are connected to the inlet and/or outlet of the domain. A voxel is considered connected to the inlet or outlet if it lies on the corresponding face of the domain. If a labeled set of voxels spans both the inlet and outlet faces, it represents a connected pathway through the domain. In contrast, if a labeled set is not connected to either the inlet or outlet, the labeled set is isolated.
 
 .. code-block:: python
 
@@ -112,6 +130,10 @@ These voxels are connected to the **inlet**:
    :width: 60%
 
 
+.. raw:: html
+
+   <div style="margin-top: 2em;"></div>
+
 Outlet-Connected Voxels
 ------------------------
 
@@ -123,6 +145,9 @@ These voxels are connected to the **outlet**:
    :align: center
    :width: 60%
 
+.. raw:: html
+
+   <div style="margin-top: 2em;"></div>
 
 Connected Pathway Voxels (Inlet and Outlet)
 -------------------------------------------------
@@ -135,6 +160,10 @@ These voxels are connected to **both** the inlet and outlet (i.e., a connected p
    :align: center
    :width: 60%
 
+.. raw:: html
+
+   <div style="margin-top: 2em;"></div>
+
 Isolated Voxels 
 ---------------------------------
 
@@ -146,6 +175,9 @@ These voxels are connected to **neither** the inlet and outlet:
    :align: center
    :width: 60%
 
+.. raw:: html
+
+   <div style="margin-top: 2em;"></div>
 
 Step 7: Save Outputs
 --------------------
@@ -171,11 +203,6 @@ Output
 
 The expected output from a successful run is:
 
-- :code:`image.pvti` and a folder :code:`image_proc` with eight :code:`.vti` files which can be opened in **Paraview**
+- :code:`image.pvti` and a folder :code:`image_proc` with eight :code:`.vti` files, all of which can be opened in **Paraview**
 
 The code used to generate the plots in this example is located at :code:`examples/connected_pathways/plot_connected_pathways.py` and must be run with :code:`pvpython`, ParaView's Python interpreter.
-
-
-
-
----

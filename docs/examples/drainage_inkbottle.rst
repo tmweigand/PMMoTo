@@ -1,10 +1,10 @@
 Drainage of an Ink Bottle
 =========================
 
-This example demonstrates a morphological drainage simulation in an ink bottle using PMMoTo. Two drainage approaches are compared:
+This example demonstrates a morphological drainage simulation of an ink bottle using PMMoTo. A morphological drainage simulation uses morphologic methods such as erosion and dilation to approximate equilibrium states of the displacement of a wetting phase by a non-wetting phase in a porous structure. For the simulation, a porous structure and capillary pressure are specified and the equilibrium state (as a multiphase image) and wetting-phase saturation is output.  Two drainage approaches are examined in this example:
 
-- A standard morphological model :cite:`Hilpert_Miller_2001`
-- A contact angle-based model :cite:`Schulz_Becker_2007`
+- A standard morphological approach :cite:`Hilpert_Miller_2001`
+- An extension to the standard approach where the contact angle can be specified :cite:`Schulz_Becker_2007`
 
 To run this example:
 
@@ -14,6 +14,7 @@ To run this example:
 
 Step 1: Import Modules
 ----------------------
+This script requires ``MPI`` for parallelism, however, ``pmmoto`` handles all communication. ``numpy`` is needed to generate an list of capillary pressures for the simulations and ``matplotlib`` is used for plotting.  
 
 .. code-block:: python
 
@@ -22,10 +23,20 @@ Step 1: Import Modules
    import matplotlib.pyplot as plt
    import pmmoto
 
-This script uses MPI for parallelism, `numpy` and `matplotlib` for postprocessing, and `pmmoto` for domain generation and simulation.
-
-Step 2: Set Up Simulation Domain
+Step 2: Initialize PMMoTo
 --------------------------------
+
+To initialize PMMoTo, several parameters must be specified:
+
+- ``voxels``: the number of voxels in each dimension for the image representing the porous structure
+- ``reservoir_voxels``: the number of voxels added to the inlet
+- ``subdomains``: the number of subdomains in each dimension
+- ``boundary_types``: the boundary conditions applied during the simulation
+- ``inlet`` and ``outlet``: the designated inflow and outflow faces
+- ``box``: the physical size of the simulation domain
+- ``rank``: the MPI rank of the current process
+
+These parameters collectively define the system's geometry, boundary conditions, and how it is partitioned across processes for the morphological drainage simulation.
 
 .. code-block:: python
 
@@ -74,12 +85,6 @@ Step 2: Set Up Simulation Domain
         (False, False),  # z: no outlet
     )
 
-
-
-Initialize the simulation domain with number of voxels and MPI parameters, specifying the decomposition (subdomains), boundary conditions and inlet/outlet, reservoir size, and global domain size for this MPI rank.
-
-.. code-block:: python
-
    sd = pmmoto.initialize(
         voxels=voxels,
         box=box,
@@ -91,7 +96,7 @@ Initialize the simulation domain with number of voxels and MPI parameters, speci
         reservoir_voxels=reservoir_voxels,
    )
 
-The domain, which consists of two subdomains, is represented below:
+The outline of the domain, which consists of two subdomains, is shown below:
 
 .. image:: /_static/examples/drainage_inkbottle/subdomains.png
    :alt: Domain
@@ -102,19 +107,21 @@ The domain, which consists of two subdomains, is represented below:
 Step 3: Generate Ink Bottle Geometry
 ------------------------------------
 
-To create a traditional ink bottle as described in :cite:`Miller_Bruning_19` and given as 
+The porous structure for this example is an ink bottle as described in :cite:`Miller_Bruning_19` and is constructed by a surface of revolution around the x axis, where the radius of the cross section, `r(x)`, is
 
 .. math::
-   y=0.01\cos(0.01x) + 0.5sin(x) + 0.75 \quad \forall x \in [0,14]
+   r(x)=0.01\cos(0.01x) + 0.5\sin(x) + 0.75 \quad \forall x \in [0,14].
 
-the ``domain_generation`` module in PMMoTo is used to provide a ``porous media`` object. 
+A voxel is labeled as a pore voxel (i.e., assigned a value of 1) if the radial distance of its centroid from the x-axis is less than `r(x)`.
+
+The ``domain_generation`` module in PMMoTo provides the ``PorousMedia`` object and includes functionality to generate the ink bottle geometry.
 
 .. code-block:: python
 
    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
 
 
-The pore space and reservoir of the ink bottle is shown below:
+The pore voxels and reservoir voxels for the ink bottle:
 
 .. image:: /_static/examples/drainage_inkbottle/ink_bottle.png
    :alt: Ink bottle pore geometry
@@ -125,7 +132,7 @@ The pore space and reservoir of the ink bottle is shown below:
 Step 4: Initialize Multiphase System
 ------------------------------------
 
-Initialize a ``multiphase`` system and fill the pore space the wetting phase (fluid ID = 2).
+A drainage simulation estimates the equilibrium state of a multiphase system, where two immiscible fluids occupy the pore space. A ``Multiphase`` object is initialized, and the pore space is initially filled with the wetting phase (fluid ID = 2).
 
 .. code-block:: python
 
@@ -134,7 +141,9 @@ Initialize a ``multiphase`` system and fill the pore space the wetting phase (fl
 Step 5: Define Capillary Pressure Range
 ---------------------------------------
 
-Create a sequence of capillary pressures designed to resolve a range of pore throat sizes for the ink bottle geometry. 
+Multiple equilibrium states exist for most multiphase systems, and they depend on the porous structure as well as the properties and interactions of the fluids. In the standard morphological approach, the contact angle is restricted to zero, and the resulting equilibrium states are determined by the capillary pressure and the surface tension.
+
+A sequence of capillary pressures is created that are designed to capture behavior for the ink bottle geometry. 
 
 .. code-block:: python
 
@@ -144,20 +153,28 @@ Create a sequence of capillary pressures designed to resolve a range of pore thr
 
 Step 6: Perform Standard Morphological Drainage
 -----------------------------------------------
+To perform the simulation, the following parameters are needed:
 
-Simulates drainage using the standard approach with a surface tension (gamma) of 1 :math:`\mathrm{mass}/\mathrm{seconds}^2`. The output of this function is the predicted equilibrium saturation at a given capillary pressure.
+- ``Multiphase``: object that includes the initial fluid configuration.
+- ``capillary_pressure``: capillary pressures used to determine equilibrium states.
+- ``gamma``: surface tension, with units :math:`\mathrm{mass}/\mathrm{seconds}^2`.
+- ``method``: specifies which drainage approach to use.
+- ``save``: where to save the ``Multiphase`` image at every capillary pressure.
+
+The output of this function is the predicted equilibrium saturation at a given capillary pressure.
+
 
 .. code-block:: python
 
    w_saturation_standard = pmmoto.filters.equilibrium_distribution.drainage(
-       mp, capillary_pressure, gamma=1, method="standard"
+      mp, capillary_pressure, gamma=1, method="standard", save=False
    )
 
 
 Step 7: Save Images
 -------------------
 
-Save the porous media image and the multiphase image at the last capillary pressure. The multiphase image ``mp.img`` is overwritten at every capillary pressure. Switching :code:`save=True` saves every multiphase image. 
+When :code:`save=False`, the ``Multiphase`` image is only available at the last provided capillary pressure. Both the ``PorousMedia`` and ``Multiphase`` images can be accessed via the ``.img`` attribute, which contains the corresponding ``numpy`` arrays. These are passed to the ``save_img`` function as well as a ``file_name`` and the ``Subdomain`` object. 
 
 .. code-block:: python
 
@@ -168,7 +185,7 @@ Save the porous media image and the multiphase image at the last capillary press
        additional_img={"mp_img": mp.img},
    )
 
-A cross-section of the multiphase image is shown below:
+A cross-section of the multiphase image which depicts the fluid configuration at the last capillary pressure is shown below:
 
 .. image:: /_static/examples/drainage_inkbottle/standard_drainage.png
    :alt: Multiphase image
@@ -180,7 +197,7 @@ A cross-section of the multiphase image is shown below:
 Step 8: Drainage with Contact Angle
 -----------------------------------
 
-Refill the pore space with the wetting fluid (fluid id = 2) and run the contact angle model where we set the contact angle to 20° and keep the surface tension at 1 :math:`\mathrm{mass}/\mathrm{seconds}^2`.
+The other available approach is an extension of the standard morphological method and allows for specification of the contact angle between the solid and fluid phases. First, we refill the pore space with the wetting fluid (fluid id = 2) and run the contact angle model where we set ``contact_angle`` to 20° and change the ``method``.
 
 .. code-block:: python
 
@@ -192,7 +209,7 @@ Refill the pore space with the wetting fluid (fluid id = 2) and run the contact 
 Step 9: Plot Results
 --------------------
 
-Generate a capillary pressure vs. saturation plot to compare both methods.
+To assess the impacts of contact angle and compare the wetting-phase saturations predicted by the two methods, a plot is generated. 
 
 .. code-block:: python
 
@@ -221,10 +238,3 @@ The expected output from a successful run is:
 - :code:`saturation_pressure_plot.png`: Plot of capillary pressure vs. saturation.
 
 The code used to generate the plots in this example is located at :code:`examples/drainage_inkbottle/plot_drainage_inkbottle.py` and must be run with :code:`pvpython`, ParaView's Python interpreter.
-
-
-References
-----------
-
-.. bibliography::
-   :style: unsrt

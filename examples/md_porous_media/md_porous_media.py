@@ -182,4 +182,4 @@ if __name__ == "__main__":
         radii_plot(pmf)
 
     # Plot for comparing radii from RDF and UFF
-    # compare_radii(pmf, sd, membrane_file)
+    compare_radii(pmf, sd, membrane_file)

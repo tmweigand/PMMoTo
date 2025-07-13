@@ -6,7 +6,7 @@
 PMMoTo
 ====================
 
-The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Python library—backed by Cython and C++—for analyzing, modeling, and characterizing the structure of porous materials. The code is designed for performance on distributed memory systems using MPI. It includes fast connected components analysis, morphological operations (e.g., addition and subtraction), and Euclidean distance transforms. Output images are optimized for visualization in ParaView. PMMoTo also provides processing and analysis tools for reconstructing porous structures from molecular dynamics simulations.
+The **Porous Media Morphology and Topology (PMMoTo)** toolkit is an open-source Python library for analyzing, modeling, and characterizing the structure of porous materials. Built with Cython and C++ and designed for distributed memory systems using MPI, PMMoTo includes parallelized implementations of connected components analysis, morphological operations (e.g., dilation and erosion), and Euclidean distance transforms. Unlike many tools that focus on image-based analysis, PMMoTo is specifically designed for synthetically generated porous media, such as sphere packings and molecular dynamics simulations.
 
 
 .. toctree::
@@ -15,15 +15,8 @@ The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Pyth
 
    user_guide/installation
    user_guide/quickstart
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
-
-   examples/drainage_inkbottle
-   examples/sphere_pack_psd
-   examples/connected_pathways
-   examples/md_porous_media
+   examples/index
+   references
 
 
 .. toctree::

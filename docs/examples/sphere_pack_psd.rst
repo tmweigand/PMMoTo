@@ -1,7 +1,7 @@
-Sphere Pack: Euclidean Distance Transform and Pore Size Distribution
-======================================================================
+Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack
+=========================================================================
 
-This example demonstrates how to compute a **Euclidian distance transform** and a **pore size distribution (PSD)** of a packed bed of spheres using PMMoTo. 
+This example demonstrates how to compute a **Euclidean distance transform** and a **pore size distribution (PSD)** of a sphere pack using PMMoTo. 
 
 To run this example with 8 MPI processes:
 
@@ -12,6 +12,8 @@ To run this example with 8 MPI processes:
 
 Step 1: Import Modules
 ----------------------
+
+``MPI`` is needed to determine the rank of each process. 
 
 .. code-block:: python
 
@@ -32,7 +34,7 @@ The sphere pack geometry file defines the simulation domain extents and the posi
       ...
 
 
-- The first three lines define the domain box for each axis
+- The first three lines define the domain extents for each axis
 - Each subsequent line defines a sphere with:
 
    - Center coordinates: `x`, `y`, `z`
@@ -49,7 +51,7 @@ The sphere pack geometry file defines the simulation domain extents and the posi
    25.0 20.0 18.0 5.0
    30.0 30.0 10.0 3.0
 
-In PMMoto, the file is read with:
+To initialize the spheres and domain box, the sphere pack geometry file is passed to the function ``read_sphere_pack_xyzr_domain``.
 
 .. code-block:: python
 
@@ -61,8 +63,13 @@ In PMMoto, the file is read with:
 
 Step 3: Initialize Simulation Domain
 ------------------------------------
+To initialize PMMoTo, the following parameters must be specified for this example:
 
-Initialize the simulation domain by specifying the number of voxels, domain size from the sphere pack input file, number of subdomains, boundary types, and the rank for each MPI process. 
+- ``voxels``: the number of voxels in each dimension for the image representing the porous structure  
+- ``rank``: the MPI rank of the current process
+- ``subdomains``: the number of subdomains in each dimension 
+- ``box``: the physical size of the simulation domain
+- ``boundary_types``: the boundary conditions used for the images
 
 .. code-block:: python
 
@@ -86,7 +93,7 @@ Initialize the simulation domain by specifying the number of voxels, domain size
        boundary_types=boundary_types,
    )
 
-The domain, which consists of eight subdomains, is represented below. By default, each subdomain shares 1 voxel with its neighbors. This value can be modified by specifying ``pad``. 
+The domain is decomposed into eight subdomains and is shown below. By default, each subdomain shares 1 voxel with its neighbor subdomains.
 
 .. image:: /_static/examples/sphere_pack_psd/subdomains.png
    :alt: Domain
@@ -98,14 +105,13 @@ The domain, which consists of eight subdomains, is represented below. By default
 
 Step 4: Generate the Porous Media
 ------------------------------------
-
-First, we will treat the spheres as solids. 
+To generate the porous structure for a sphere pack, the function ``gen_pm_spheres_domain`` is called with the ``Subdomain`` object and ``spheres`` as inputs. The ``invert`` parameter determines whether the ``spheres`` are considered solid (i.e., 0) or pore space (i.e., 1). In this example, we treat the spheres as solids by setting ``invert=False``.
 
 .. code-block:: python
 
    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=False)
 
-The pore space is shown below where the subdomain with `rank = 5` has been omitted:
+The pore space is shown below where the subdomain with ``rank = 5`` has been omitted:
 
 .. image:: /_static/examples/sphere_pack_psd/pore_space.png
    :alt: Pore Space
@@ -116,12 +122,11 @@ The pore space is shown below where the subdomain with `rank = 5` has been omitt
 Step 5: Perform a Euclidean Distance Transform
 -------------------------------------------------
 
-The Euclidean distance transform provides the distance to the nearest solid for every pore voxel. The distance3 transform can be calculated and attached to a PMMoto ``porousmedia`` object by calling ``pm.distance`` which avoids recalculing the transformn. 
+The Euclidean distance transform computes the distance from every pore voxel to the nearest solid voxel and is central to many morphological analyses. The function ``edt`` is called and the image of the porous structure ``PorousMedia.img`` and the ``Subdomain`` are passed in. The Euclidean distance transform implementation in PMMoTo is an extension of the work of :cite:`Silversmith_Hilei_24`.
 
 .. code-block:: python
 
    dist = pmmoto.filters.distance.edt(pm.img,sd)
-   dist = pm.distance
 
 The distance transform of the sphere pack is shown below. 
 
@@ -134,8 +139,7 @@ The distance transform of the sphere pack is shown below.
 
 Step 6: Determine the Pore Size Distribution
 -----------------------------------------------
-
-The pore size distribution of a porous media represents the largest size sphere that full fits at a given pore voxel. With PMMoto, the number of radii can be specified as ``num_radii``. Additioannly, by setting ``inltet=True``, the pore size distribution of only inlet connected voxels can be determined. 
+The pore size distribution of a porous structure represents the largest sphere that can fully fit at each pore voxel. The function ``pore_size_distribution`` generates an image representing this distribution. A list of sphere radii can be passed to the function. If ``radii`` is not specified, a Euclidean distance transform is performed, and a list of radii is generated spanning from the image resolution up to the maximum observed distance, controlled by ``num_radii``. Additionally, by setting ``inlet=True``, the pore size distribution is computed only for voxels connected to the inlet. 
 
 .. code-block:: python
 
@@ -155,7 +159,7 @@ The pore size distribution of the sphere pack is shown below.
 Step 7: Generate PSD Plot
 -------------------------
 
-Generate a histogram of pore sizes as either a ``pdf`` or ``cdf``.
+To generate a histogram of pore sizes, the function ``plot_pore_size_distribution`` is called and the ``file_name``,  ``Subdomain`` object, the pore size distribution image, and ``plot_type`` as either ``"pdf"`` or ``"cdf"`` are specified.
 
 .. code-block:: python
 
@@ -172,7 +176,7 @@ Generate a histogram of pore sizes as either a ``pdf`` or ``cdf``.
 Step 8: Analysis on Inverted Pore Space
 -------------------------------------------
 
-As a check, invert the porous media so that the spheres represent the pore space and perform a Euclidean distrance transform and a pore size distribution analysis. 
+As a check, the spheres will be considered the pore space. To accomplish this, a new ``PorousMedia`` object is created and ``invert=True`` inverts the porous media so that the spheres represent the pore space. The Euclidean distance transform can also be calculated and accessed by ``PorousMedia.distance``. The pore size distribution of the inverted pore space is also determined. 
 
 .. code-block:: python
 
@@ -187,7 +191,7 @@ As a check, invert the porous media so that the spheres represent the pore space
        "examples/sphere_pack_psd/inverted_pm", sd, invert_psd, num_radii=25, inlet=False
    )
 
-The inverted pore space is:
+The sphere pack consists of spheres with a uniform radius of 1.0 and the inverted pore space is:
 
 .. image:: /_static/examples/sphere_pack_psd/inverted_pore_space.png
    :alt: Inverted Pore Space
@@ -196,7 +200,7 @@ The inverted pore space is:
    :width: 60%
 
 
-The sphere pack consists of spheres with a uniform radius of 1.0. The Euclidean distance transforms detemines the distance to the nearest solid voxel. 
+The Euclidean distance transforms determines the distance to the nearest solid voxel so the centers of every pore should equal 1.0 
 
 .. image:: /_static/examples/sphere_pack_psd/invert_distance.png
    :alt: Inverted Pore Space Distance
@@ -204,7 +208,7 @@ The sphere pack consists of spheres with a uniform radius of 1.0. The Euclidean 
    :align: center
    :width: 60%
 
-The pore size distribution correctly estimates that maximum radius of 1.0 with some numerical artifacts that may be resolved with improved resolution. 
+The pore size distribution image should equal 1.0 for every pore voxel. 
 
 .. image:: /_static/examples/sphere_pack_psd/invert_psd.png
    :alt: Inverted Pore Space PSD
@@ -212,7 +216,7 @@ The pore size distribution correctly estimates that maximum radius of 1.0 with s
    :align: center
    :width: 60%
 
-The probability distribution function correctly determines the uniform sphere size. 
+The pore size distribution correctly estimates that maximum radius of 1.0 with some numerical artifacts that may be resolved with improved resolution (i.e., more voxels). 
 
 .. image:: /_static/examples/sphere_pack_psd/inverted_pm_pore_size_distribution.png
    :alt: Domain
@@ -222,6 +226,8 @@ The probability distribution function correctly determines the uniform sphere si
 
 Step 9: Save Images
 ---------------------------
+
+This will save both the original and inverted pore space images, as well as the Euclidean distance transforms and pore size distribution images.
 
 .. code-block:: python
 
@@ -244,7 +250,7 @@ Output
 The expected output from a successful run is:
 
 - :code:`image.pvti` and a folder :code:`image_proc` with eight :code:`.vti` files which can be opened in **Paraview**
-- :code: Two `.png` files of a pdf of the pore size distribution. 
+- Two :code:`.png` files of a pdf of the pore size distribution. 
 
 The code used to generate the plots in this example is located at :code:`examples/sphere_pack_psd/plot_sphere_pack_psd.py` and must be run with :code:`pvpython`, ParaView's Python interpreter.
 

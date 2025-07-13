@@ -1,12 +1,15 @@
 [project]
 name = "pmmoto"
-version = "0.1.2"
+version = "0.1.4"
 description = "Porous Media Topology and Morphology Toolkit"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 
 authors = [
     {name = "Timothy M. Weigand", email = "timothy.weigand@unc.edu"},
 ]
+
+readme = "README.md"
 
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -22,6 +25,12 @@ dependencies = [
     "matplotlib>=3.0"
 ]
 requires-python = ">=3.10"
+
+
+[project.urls]
+"Homepage" = "https://tmweigand.github.io/PMMoTo/"
+"Source" = "https://github.com/tmweigand/PMMoTo"
+"Issue Tracker" = "https://github.com/tmweigand/PMMoTo/issues"
 
 [build-system]
 requires = ["setuptools", "numpy", "cython"]
