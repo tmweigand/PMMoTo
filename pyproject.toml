@@ -84,3 +84,6 @@ ignore-module = true
 
 [tool.mypy]
 exclude = ['examples/', 'tests/']
+
+[tool.cibuildwheel]
+build-verbosity = 1
