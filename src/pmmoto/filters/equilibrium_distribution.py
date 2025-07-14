@@ -28,6 +28,7 @@ def drainage(
     gamma: float = 1,
     contact_angle: float = 0,
     method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
+    mode: Literal["morph", "hybrid", "distance"] = "hybrid",
     save: bool = False,
 ) -> NDArray[np.float64]:
     """Simulate morphological drainage for a multiphase system.
@@ -42,6 +43,7 @@ def drainage(
         gamma (float, optional): Surface tension parameter.
         contact_angle (float, optional): Contact angle in degrees.
         method (str, optional): Drainage method.
+        mode (str, optional): Morphological approach mode.
         save (bool, optional): If True, save intermediate results.
 
     Returns:
@@ -92,7 +94,7 @@ def drainage(
     for n, capillary_pressure in enumerate(capillary_pressures):
 
         # Apply the specified approach for the erosion and dilation step
-        morph = approach(multiphase, capillary_pressure, gamma, contact_angle)
+        morph = approach(multiphase, capillary_pressure, gamma, contact_angle, mode)
 
         # Identify wetting-phase connectivity
         w_connected = connected_components.outlet_connected_img(
@@ -139,6 +141,7 @@ def _standard_method(
     capillary_pressure: float,
     gamma: float,
     contact_angle: float,
+    mode: Literal["morph", "hybrid", "distance"] = "hybrid",
 ) -> NDArray[np.uint8]:
     """Drainage method following Hilpert and Miller 2001.
 
@@ -151,6 +154,7 @@ def _standard_method(
         capillary_pressure (float): Capillary pressure.
         gamma (float): Surface tension.
         contact_angle (float): Contact angle (should be zero for this method).
+        mode (str, optional): Morphological approach mode.
 
     Returns:
         np.ndarray: Morphological result.
@@ -175,7 +179,7 @@ def _standard_method(
             radius=radius,
             inlet=True,
             multiphase=multiphase,
-            mode="hybrid",
+            mode=mode,
         )
 
     return morph
@@ -186,6 +190,7 @@ def _contact_angle_method(
     capillary_pressure: float,
     gamma: float,
     contact_angle: float,
+    mode: Literal["morph", "hybrid", "distance"] = "hybrid",
 ) -> NDArray[np.uint8]:
     """Drainage method following Schulz and Becker 2007.
 
@@ -199,6 +204,7 @@ def _contact_angle_method(
         capillary_pressure (float): Capillary pressure.
         gamma (float): Surface tension.
         contact_angle (float): Contact angle in degrees.
+        mode (str, optional): Morphological approach mode.
 
     Returns:
         np.ndarray: Morphological result.
@@ -223,7 +229,7 @@ def _contact_angle_method(
             radius=radius,
             inlet=True,
             multiphase=multiphase,
-            mode="hybrid",
+            mode=mode,
         )
 
     return morph
@@ -234,6 +240,7 @@ def _extended_contact_angle_method(
     capillary_pressure: float,
     gamma: float,
     contact_angle: float,
+    mode: Literal["morph", "hybrid", "distance"] = "hybrid",
 ) -> NDArray[np.uint8]:
     """Drainage method from Schulz and Wargo 2015.
 
@@ -245,6 +252,7 @@ def _extended_contact_angle_method(
         capillary_pressure (float): Capillary pressure.
         gamma (float): Surface tension.
         contact_angle (float): Contact angle in degrees.
+        mode (str, optional): Morphological approach mode.
 
     Returns:
         np.ndarray: Morphological result.
@@ -281,7 +289,7 @@ def _extended_contact_angle_method(
             radius=radius,
             inlet=True,
             multiphase=multiphase,
-            mode="hybrid",
+            mode=mode,
         )
 
     return morph
