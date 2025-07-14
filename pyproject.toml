@@ -3,7 +3,7 @@ name = "pmmoto"
 version = "0.1.5"
 description = "Porous Media Topology and Morphology Toolkit"
 
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 
 
 authors = [
@@ -36,6 +36,9 @@ requires-python = ">=3.10"
 [build-system]
 requires = ["setuptools", "numpy", "cython"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
