@@ -41,11 +41,20 @@ jobs:
           CIBW_PLATFORM: ${{ matrix.os == 'ubuntu-latest' && 'linux' || 'macos' }}
         run: python -m cibuildwheel --output-dir wheelhouse
 
+      - name: Debug wheelhouse contents
+        run: ls -lh wheelhouse
+
+      - name: Show CIBW build identifiers
+        run: python -m cibuildwheel --print-build-identifiers
+
+      - name: Check wheels with twine
+        run: python -m twine check wheelhouse/*
+
       - name: Publish wheels to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload wheelhouse/*
+        run: python -m twine upload --verbose wheelhouse/*
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
