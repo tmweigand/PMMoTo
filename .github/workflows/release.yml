@@ -30,6 +30,9 @@ jobs:
       - name: Install cibuildwheel and twine
         run: python -m pip install --upgrade pip cibuildwheel twine
 
+      - name: Cleanup
+        run: rm -rf build/ dist/ wheelhouse/
+
       - name: Build wheels
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-*"
@@ -37,7 +40,6 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
           CIBW_ARCHS_LINUX: "x86_64"
           CIBW_PLATFORM: ${{ matrix.os == 'ubuntu-latest' && 'linux' || 'macos' }}
-        run: rm -rf build/ dist/ wheelhouse/
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Debug wheelhouse contents
