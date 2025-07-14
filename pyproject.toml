@@ -3,8 +3,8 @@ name = "pmmoto"
 version = "0.1.5"
 description = "Porous Media Topology and Morphology Toolkit"
 
-license = { file = "LICENSE" }
-
+license = "MIT"
+license-files = ["LICENSE"]
 
 authors = [
     {name = "Timothy M. Weigand", email = "timothy.weigand@unc.edu"},
@@ -36,9 +36,6 @@ requires-python = ">=3.10"
 [build-system]
 requires = ["setuptools", "numpy", "cython"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
