@@ -5,6 +5,7 @@ from . import connected_components
 from . import distance
 from . import porosimetry
 from . import equilibrium_distribution
+from . import medial_axis
 
 __all__ = [
     "morphological_operators",
@@ -12,4 +13,5 @@ __all__ = [
     "distance",
     "porosimetry",
     "equilibrium_distribution",
+    "medial_axis",
 ]

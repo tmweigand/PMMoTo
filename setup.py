@@ -11,14 +11,6 @@ import numpy
 
 Cython.Compiler.Options.annotate = True
 
-
-# try:
-#     subprocess.run(["mpirun", "--version"], check=True, stdout=subprocess.PIPE)
-# except FileNotFoundError:
-#     sys.stderr.write("Error: MPI is not installed. Install OpenMPI or MPICH.\n")
-#     sys.exit(1)
-
-
 extra_compile_args = ["-std=c++17"]
 if sys.platform == "win32":
     extra_compile_args += ["/std:c++17", "/O2"]
@@ -53,7 +45,7 @@ ext_modules = [
             "src/pmmoto/analysis/quantimpyc.c",
             "src/pmmoto/analysis/minkowskic.c",
         ],
-        include_dirs=["pmmoto/analysis"],
+        include_dirs=["src/pmmoto/analysis"],
     ),
     Extension(
         "pmmoto.io._data_read",
@@ -88,6 +80,13 @@ ext_modules = [
         "pmmoto.domain_generation._domain_generation",
         ["src/pmmoto/domain_generation/_domain_generation.pyx"],
         include_dirs=["src/pmmoto/domain_generation/", "src/pmmoto/particles/"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+    ),
+    Extension(
+        "pmmoto.filters.medial_axis._medial_axis",
+        ["src/pmmoto/filters/medial_axis/_medial_axis.pyx"],
+        include_dirs=["src/pmmoto/filters/medial_axis/"],
         language="c++",
         extra_compile_args=extra_compile_args,
     ),
