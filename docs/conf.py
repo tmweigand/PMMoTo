@@ -35,6 +35,10 @@ autodoc_mock_imports = [
     "pmmoto.io.evtk",
 ]
 
+html_meta = {
+    "google-site-verification": "google3b5bcbcab44d9f6d.html"
+}
+
 autoclass_content = "both"
 
 highlight_language = "python3"
