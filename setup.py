@@ -85,7 +85,16 @@ ext_modules = [
     ),
     Extension(
         "pmmoto.filters.medial_axis._medial_axis",
-        ["src/pmmoto/filters/medial_axis/_medial_axis.pyx"],
+        [
+            "src/pmmoto/filters/medial_axis/_medial_axis.pyx",
+        ],
+        include_dirs=["src/pmmoto/filters/medial_axis/"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+    ),
+    Extension(
+        "pmmoto.filters.medial_axis._skeletonize_3d_cy",
+        ["src/pmmoto/filters/medial_axis/_skeletonize_3d_cy.pyx"],
         include_dirs=["src/pmmoto/filters/medial_axis/"],
         language="c++",
         extra_compile_args=extra_compile_args,

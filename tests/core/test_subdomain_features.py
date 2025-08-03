@@ -56,7 +56,32 @@ def test_subdomain():
         if feature_id == (0, 0, -1):
             assert feature.boundary_type == pmmoto.BoundaryType.PERIODIC
         else:
-            assert feature.boundary_type == pmmoto.BoundaryType.INTERNAL
+            if isinstance(feature, pmmoto.core.features.Face):
+                assert feature.boundary_type == pmmoto.BoundaryType.INTERNAL
+            elif isinstance(feature, pmmoto.core.features.Edge):
+                if feature_id[2] == -1:
+                    assert feature.boundary_type == (
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.PERIODIC,
+                    )
+                else:
+                    assert feature.boundary_type == (
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.INTERNAL,
+                    )
+            elif isinstance(feature, pmmoto.core.features.Corner):
+                if feature_id[2] == -1:
+                    assert feature.boundary_type == (
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.PERIODIC,
+                    )
+                else:
+                    assert feature.boundary_type == (
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.INTERNAL,
+                        pmmoto.BoundaryType.INTERNAL,
+                    )
 
 
 def test_subdomain_2():
@@ -70,13 +95,17 @@ def test_subdomain_2():
     )
     features = sd_features.get_features()
     global_features = {
-        (1, 0, 0): "end",
-        (0, 1, 0): "wall",
-        (0, 0, 1): "periodic",
-        (1, 0, 1): "end",
-        (1, 1, 0): "end",
-        (0, 1, 1): "wall",
-        (1, 1, 1): "end",
+        (1, 0, 0): pmmoto.BoundaryType.END,
+        (0, 1, 0): pmmoto.BoundaryType.WALL,
+        (0, 0, 1): pmmoto.BoundaryType.PERIODIC,
+        (1, 0, 1): (pmmoto.BoundaryType.END, pmmoto.BoundaryType.PERIODIC),
+        (1, 1, 0): (pmmoto.BoundaryType.END, pmmoto.BoundaryType.WALL),
+        (0, 1, 1): (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.PERIODIC),
+        (1, 1, 1): (
+            pmmoto.BoundaryType.END,
+            pmmoto.BoundaryType.WALL,
+            pmmoto.BoundaryType.PERIODIC,
+        ),
     }
 
     for feature_id, feature in features.items():
@@ -88,8 +117,6 @@ def test_subdomain_2():
     for feature_id, feature in features.items():
         if feature_id in global_features:
             assert feature.boundary_type == global_features[feature_id]
-        else:
-            assert feature.boundary_type == "internal"
 
     assert sd.inlet == ((False, False), (False, False), (False, False))
     assert sd.outlet == ((False, True), (False, False), (False, False))
@@ -129,13 +156,17 @@ def test_subdomain_3():
     )
 
     global_features = {
-        (-1, 0, 0): "end",
-        (0, -1, 0): "wall",
-        (0, 0, -1): "periodic",
-        (-1, 0, -1): "end",
-        (-1, -1, 0): "end",
-        (0, -1, -1): "wall",
-        (-1, -1, -1): "end",
+        (-1, 0, 0): pmmoto.BoundaryType.END,
+        (0, -1, 0): pmmoto.BoundaryType.WALL,
+        (0, 0, -1): pmmoto.BoundaryType.PERIODIC,
+        (-1, 0, -1): (pmmoto.BoundaryType.END, pmmoto.BoundaryType.PERIODIC),
+        (-1, -1, 0): (pmmoto.BoundaryType.END, pmmoto.BoundaryType.WALL),
+        (0, -1, -1): (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.PERIODIC),
+        (-1, -1, -1): (
+            pmmoto.BoundaryType.END,
+            pmmoto.BoundaryType.WALL,
+            pmmoto.BoundaryType.PERIODIC,
+        ),
     }
 
     for feature_id, feature in features.items():
@@ -147,8 +178,6 @@ def test_subdomain_3():
     for feature_id, feature in features.items():
         if feature_id in global_features:
             assert feature.boundary_type == global_features[feature_id]
-        else:
-            assert feature.boundary_type == "internal"
 
     assert sd.inlet == ((True, False), (False, False), (False, False))
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 from .boundary_types import BoundaryType
+from .octants import get_neighbors_vertices
 from .orientation import get_boundary_id
 from .orientation import FEATURE_MAP
 
@@ -27,7 +28,7 @@ class Feature(object):
         dim: int,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: BoundaryType,
+        boundary_type: BoundaryType | tuple[BoundaryType, ...],
         global_boundary: bool | None = None,
     ):
         """Initialize a Feature.
@@ -49,8 +50,8 @@ class Feature(object):
         self.periodic = False
         self.periodic_correction: tuple[int, ...] = (0, 0, 0)
         self.extend: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0))
-        self.own: NDArray[np.uint64] = np.zeros((self.dim, 2), dtype=np.uint64)
-        self.neighbor: NDArray[np.uint64] = np.zeros((self.dim, 2), dtype=np.uint64)
+        self.own: None | NDArray[np.uint64] = None
+        self.neighbor: None | NDArray[np.uint64] = None
 
     def convert_feature_id(self, index: tuple[int, ...] | None = None) -> int:
         """Convert the feature type to id.
@@ -64,39 +65,66 @@ class Feature(object):
 
         return get_boundary_id(index)
 
-    def is_periodic(self, boundary_type: BoundaryType) -> bool:
+    def is_periodic(
+        self, boundary_type: BoundaryType | tuple[BoundaryType, ...]
+    ) -> bool:
         """Determine if a feature is periodic
 
         Returns:
             bool: True if periodic
 
         """
+        if isinstance(boundary_type, tuple):
+            return all(bt == BoundaryType.PERIODIC for bt in boundary_type)
+
         return boundary_type == BoundaryType.PERIODIC
+
+    def set_voxels(
+        self,
+        voxels: tuple[int, ...],
+        pad: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
+        extract_features: bool = False,
+    ):
+        """Set attributes for own and neighbor voxels"""
+        self.own, self.neighbor = self.get_voxels(voxels, pad, extract_features)
 
     def get_voxels(
         self,
         voxels: tuple[int, ...],
         pad: tuple[tuple[int, int], ...] = ((0, 0), (0, 0), (0, 0)),
-    ) -> None:
-        """Determine the voxel indices for the feature"""
+        extract_features: bool = False,
+    ) -> tuple[NDArray[np.uint64], NDArray[np.uint64]]:
+        """Determine the voxel indices for the feature.
+
+        If pad is zeros and extract_features is True, the features are decomposed
+        """
+        own: NDArray[np.uint64] = np.zeros((self.dim, 2), dtype=np.uint64)
+        neighbor: NDArray[np.uint64] = np.zeros((self.dim, 2), dtype=np.uint64)
+
         padded = np.any(pad)
-        for i in range(self.dim):
-            f_id = self.feature_id[i]
+        for i, f_id in enumerate(self.feature_id):
             length = voxels[i]
             p_before, p_after = pad[i]
             if f_id == -1:
-                self.own[i] = self.compute_lower_face(p_before)
+                own[i] = self.compute_lower_face(p_before)
                 if padded:
-                    self.neighbor[i] = self.compute_lower_neighbor(p_before)
+                    neighbor[i] = self.compute_lower_neighbor(p_before)
             elif f_id == 1:
-                self.own[i] = self.compute_upper_face(length, p_after)
+                own[i] = self.compute_upper_face(length, p_after)
                 if padded:
-                    self.neighbor[i] = self.compute_upper_neighbor(length, p_after)
+                    neighbor[i] = self.compute_upper_neighbor(length, p_after)
 
             else:  # f_id == 0
-                self.own[i] = [p_before, length - p_after]
+                if extract_features and p_before == 0 and p_after == 0:
+                    own[i] = [1, length - 1]
+                elif extract_features and (p_before != 0 or p_after != 0):
+                    own[i] = [p_before + 1, length - p_after - 1]
+                else:
+                    own[i] = [p_before, length - p_after]
                 if padded:
-                    self.neighbor[i] = [p_before, length - p_after]
+                    neighbor[i] = [p_before, length - p_after]
+
+        return own, neighbor
 
     def compute_lower_face(self, lower_pad: int) -> list[int]:
         """Determine lower face voxels"""
@@ -172,7 +200,7 @@ class Face(Feature):
         )
         self.info: FaceInfo = FEATURE_MAP.faces[feature_id]
         self.global_boundary = global_boundary
-        self.periodic = self.is_periodic(boundary_type)
+        self.periodic = self.is_periodic(self.boundary_type)
         self.inlet = inlet
         self.outlet = outlet
         self.periodic_correction = self.get_periodic_correction()
@@ -265,19 +293,30 @@ class Face(Feature):
             "Feature ID does not correspond to a face (no nonzero entries)."
         )
 
+    def get_octant_vertices(self) -> list[int]:
+        """Determine allowable octant vertices"""
+        vertices: list[int] = []
+
+        if self.boundary_type != BoundaryType.WALL:
+            vertices = get_neighbors_vertices(self.feature_id, self.feature_id)
+        else:
+            vertices = get_neighbors_vertices(self.feature_id)
+
+        return vertices
+
 
 class Edge(Feature):
     """Edge information for a subdomain.
 
     Need to distinguish between internal and external edges.
-    There are 12 external corners. All others are termed internal.
+    There are 12 external edges. All others are termed internal.
     """
 
     def __init__(
         self,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: BoundaryType,
+        boundary_type: tuple[BoundaryType, BoundaryType],
         global_boundary: bool | None = None,
     ):
         """Initialize an Edge feature.
@@ -290,24 +329,42 @@ class Edge(Feature):
 
         """
         assert feature_id in FEATURE_MAP.edges
+        assert len(boundary_type) == 2
         super().__init__(
-            FEATURE_MAP.dim, feature_id, neighbor_rank, boundary_type, global_boundary
+            FEATURE_MAP.dim,
+            feature_id,
+            neighbor_rank,
+            tuple(boundary_type),
+            global_boundary,
         )
         self.info: EdgeInfo = FEATURE_MAP.edges[feature_id]
-        self.periodic = self.is_periodic(boundary_type)
+        self.periodic = self.is_periodic(self.boundary_type)
         self.global_boundary = global_boundary
         self.periodic_correction = self.get_periodic_correction()
 
     def get_periodic_correction(self) -> tuple[int, ...]:
         """Determine spatial correction factor if periodic"""
         _period_correction = [0, 0, 0]
-        for face in self.info.faces:
-            if self.boundary_type == "periodic":
+        if self.periodic:
+            for face in self.info.faces:
                 _period_correction[FEATURE_MAP.faces[face].arg_order[0]] = (
                     FEATURE_MAP.faces[face].direction
                 )
 
         return tuple(_period_correction)
+
+    def get_octant_vertices(self) -> list[int]:
+        """Determine allowable octant vertices"""
+        vertices: set[int] = set()
+        for b_face, b_type in zip(self.info.faces, self.boundary_type):
+            if b_type != BoundaryType.WALL:
+                _vertices = get_neighbors_vertices(self.feature_id, b_face)
+                vertices.update(_vertices)
+            else:
+                _vertices = get_neighbors_vertices(self.feature_id)
+                vertices.update(_vertices)
+
+        return list(vertices)
 
 
 class Corner(Feature):
@@ -321,7 +378,7 @@ class Corner(Feature):
         self,
         feature_id: tuple[int, ...],
         neighbor_rank: int,
-        boundary_type: BoundaryType,
+        boundary_type: tuple[BoundaryType, BoundaryType, BoundaryType],
         global_boundary: bool | None = None,
     ):
         """Initialize a Corner feature.
@@ -333,22 +390,40 @@ class Corner(Feature):
             global_boundary: Whether this is a global boundary (bool).
 
         """
+        assert feature_id in FEATURE_MAP.corners
+        assert len(boundary_type) == 3
         super().__init__(
-            FEATURE_MAP.dim, feature_id, neighbor_rank, boundary_type, global_boundary
+            FEATURE_MAP.dim,
+            feature_id,
+            neighbor_rank,
+            tuple(boundary_type),
+            global_boundary,
         )
         self.info: CornerInfo = FEATURE_MAP.corners[feature_id]
-        self.periodic = self.is_periodic(boundary_type)
-
+        self.periodic = self.is_periodic(self.boundary_type)
         self.periodic_correction = self.get_periodic_correction()
         self.global_boundary = global_boundary
 
     def get_periodic_correction(self) -> tuple[int, ...]:
         """Determine spatial correction factor (shift) if periodic"""
         _period_correction = [0, 0, 0]
-        for n_face in self.info.faces:
-            if self.boundary_type == "periodic":
+        if self.periodic:
+            for n_face in self.info.faces:
                 _period_correction[FEATURE_MAP.faces[n_face].arg_order[0]] = (
                     FEATURE_MAP.faces[n_face].direction
                 )
 
         return tuple(_period_correction)
+
+    def get_octant_vertices(self) -> list[int]:
+        """Determine allowable octant vertices"""
+        vertices: set[int] = set()
+        for b_face, b_type in zip(self.info.faces, self.boundary_type):
+            if b_type != BoundaryType.WALL:
+                _vertices = get_neighbors_vertices(self.feature_id, b_face)
+                vertices.update(_vertices)
+            else:
+                _vertices = get_neighbors_vertices(self.feature_id)
+                vertices.update(_vertices)
+
+        return list(vertices)

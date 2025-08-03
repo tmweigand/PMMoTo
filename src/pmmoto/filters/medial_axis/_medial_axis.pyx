@@ -13,37 +13,38 @@ from libc.stdint cimport uint8_t
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 
+from ...core import octants
+
 from .medial_extraction cimport coordinate
 from .medial_extraction cimport get_neighborhood
 from .medial_extraction cimport is_endpoint
 from .medial_extraction cimport is_Euler_invariant
 from .medial_extraction cimport is_simple_point
-from .medial_extraction cimport find_simple_points
 from .medial_extraction cimport find_simple_point_candidates
-from .medial_extraction cimport compute_thin_image
-
+from .medial_extraction cimport find_boundary_simple_point_candidates
+from .medial_extraction cimport is_last_boundary_point
+from .medial_extraction cimport remove_points
 __all__ = [
     "_get_neighborhood", 
     "_is_endpoint", 
     "_is_Euler_invariant", 
     "_is_simple_point",
-    "_find_simple_points",
     "_find_simple_point_candidates",
-    "_compute_thin_image"
+    "_find_boundary_simple_point_candidates",
+    "_is_last_boundary_point",
+    "_skeleton"
 ]
 
 
 def _get_neighborhood(uint8_t[:,:,:] img, x, y, z, index = None):
-
-    if index is None:
-        index = [0,0,0]
-
     cdef:
         uint8_t* data_ptr = <uint8_t*>&img[0, 0, 0]
         size_t* shape_ptr = <size_t*>img.shape
 
-    neighbors = get_neighborhood(data_ptr,x, y, z, shape_ptr, index)
+    if index is None:
+        index = [0,0,0]
 
+    neighbors = get_neighborhood(data_ptr,x, y, z, shape_ptr, index)
     return np.array([neighbors[i] for i in range(27)], dtype=np.uint8)
 
 def _is_endpoint(neighbors):
@@ -52,52 +53,103 @@ def _is_endpoint(neighbors):
 def _is_Euler_invariant(neighbors, octants = None):
     if octants is None:
         octants = [0,1,2,3,4,5,6,7]
-    return is_Euler_invariant(neighbors,octants)
+    return is_Euler_invariant(neighbors, octants)
 
 def _is_simple_point(neighbors):
     return is_simple_point(neighbors)
 
-def _find_simple_points(uint8_t[:, :, :] img, float[:, :, :] edt):
-    cdef:
-        uint8_t* data_ptr = &img[0, 0, 0]
-        float* edt_ptr = &edt[0, 0, 0]
-        size_t shape_ptr[3]
-        vector[pair[int, int]] loop
-        int dim
+def _is_last_boundary_point(neighbors,vertices):
+    return is_last_boundary_point(neighbors,vertices)
 
-    # Copy shape from memoryview to shape_ptr
-    for dim in range(3):
-        shape_ptr[dim] = img.shape[dim]
-        loop.push_back(pair[int, int](1, img.shape[dim] - 1))
+def _find_boundary_simple_point_candidates(uint8_t[:, :, :] img, direction_index, loop, index, octants, vertices):
 
-    # Now call the C++ function with proper pointers
-    coords = find_simple_points(data_ptr, edt_ptr, shape_ptr, loop)
-
-    return coords
-
-
-def _find_simple_point_candidates(uint8_t[:, :, :] img, int border, index = None):
-
-    if index is None:
-        index = [0,0,0]
 
     cdef:
         uint8_t* data_ptr = &img[0, 0, 0]
         size_t* shape_ptr = <size_t*>img.shape
         vector[coordinate] coords
-        vector[pair[int, int]] loop
+        vector[pair[int, int]] _loop
 
-    for dim in range(3):
-        loop.push_back(pair[int, int](1, img.shape[dim] - 1))
 
-    find_simple_point_candidates(data_ptr,border,coords,loop,shape_ptr,index)
+    for bounds in loop:
+        _loop.push_back(pair[int, int](bounds[0], bounds[1]))
+
+
+    find_boundary_simple_point_candidates(
+        data_ptr,
+        direction_index,
+        coords,
+        _loop,
+        shape_ptr,
+        index,
+        octants,
+        vertices
+    )
 
     return coords
 
-def _compute_thin_image(uint8_t[:, :, :] img):
+
+def _find_simple_point_candidates(uint8_t[:, :, :] img, direction_index, loop = None):
+
     cdef:
         uint8_t* data_ptr = &img[0, 0, 0]
         size_t* shape_ptr = <size_t*>img.shape
+        vector[coordinate] coords
+        vector[pair[int, int]] _loop
+
+    for dim in range(3):
+        _loop.push_back(pair[int, int](1, img.shape[dim] - 1))
+
+    find_simple_point_candidates(
+        data_ptr,
+        direction_index,
+        coords,
+        _loop,
+        shape_ptr,
+    )
+
+    return coords
 
 
-    compute_thin_image(data_ptr,shape_ptr)
+
+def pm_find_simple_point_candidates(subdomain, img, dir_index):
+
+    cdef list _coords = []
+    cdef list coords
+
+    for feature_id, feature in subdomain.features.all_features:
+        feature_octants = octants.feature_octants(feature_id)
+        vertices = feature.get_octant_vertices()
+        feature_loop, _ = subdomain.features.get_feature_voxels(
+            feature_id, extract_features=True
+        )
+
+        coords = _find_boundary_simple_point_candidates(
+            img, dir_index, feature_loop, feature_id, feature_octants, vertices
+        )
+        _coords.extend(coords)
+
+    _coords.extend(_find_simple_point_candidates(img, dir_index))
+
+    return _coords
+
+def _remove_points(uint8_t[:,:,:] img,coords):
+    cdef:
+        uint8_t* data_ptr = <uint8_t*>&img[0, 0, 0]
+        size_t* shape_ptr = <size_t*>img.shape
+
+    no_change  = remove_points(data_ptr,coords,shape_ptr)
+    return no_change
+
+def _skeleton(subdomain, img):
+
+    num_directions = 6
+    directions = ((-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1))
+
+    converged = False
+    while not converged:
+        for dir_index in directions:
+            coords = pm_find_simple_point_candidates(subdomain, img, dir_index)
+            no_change = _remove_points(img,coords)
+            if no_change:
+                converged = True

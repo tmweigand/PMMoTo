@@ -2,6 +2,7 @@
 
 import pmmoto
 import numpy as np
+import skimage
 
 
 def test_neighborhood() -> None:
@@ -29,31 +30,31 @@ def test_get_neighborhood_center_voxel():
     expected = np.array(
         [
             31,
-            36,
-            41,
             32,
-            37,
-            42,
             33,
+            36,
+            37,
             38,
+            41,
+            42,
             43,
             56,
-            61,
-            66,
             57,
-            62,
-            67,
             58,
+            61,
+            62,
             63,
+            66,
+            67,
             68,
             81,
-            86,
-            91,
             82,
-            87,
-            92,
             83,
+            86,
+            87,
             88,
+            91,
+            92,
             93,
         ]
     )
@@ -63,57 +64,66 @@ def test_get_neighborhood_center_voxel():
     np.testing.assert_array_equal(neighbors, expected)
 
 
-def test_neighborhood_index() -> None:
-    """Test the Neighborhood function for medial axis"""
-    img = np.ones((5, 5, 5), dtype=np.uint8)
-    neighbors = pmmoto.filters.medial_axis._medial_axis._get_neighborhood(
-        img, 2, 2, 2, [0, -1, 0]
+def test_find_skeleton():
+    # 5x5x5 array filled with increasing integers for easy indexing
+    voxels = (700, 700, 10)
+    # voxels = (300, 300, 5)
+    img = pmmoto.domain_generation.gen_img_smoothed_random_binary(
+        voxels, 0.5, 3, seed=123
     )
-    print(neighbors)
-    # assert (neighbors == 1).all()
-    # assert len(neighbors) == 27
 
+    boundary = pmmoto.BoundaryType.END
 
-# def test_find_simple_points():
-#     # 5x5x5 array filled with increasing integers for easy indexing
-#     voxels = (10, 10, 10)
-#     img = np.zeros(voxels, dtype=np.uint8)
-#     img[2:8, :, 2:8] = 1
+    boundary_types = ((boundary, boundary), (boundary, boundary), (boundary, boundary))
 
-#     sd = pmmoto.initialize(voxels)
-#     edt = pmmoto.filters.distance.edt(img, sd)
+    sd = pmmoto.initialize(
+        voxels,
+        boundary_types=boundary_types,
+        box=((0, voxels[0]), (0, voxels[1]), (0, voxels[2])),
+    )
+    edt = pmmoto.filters.distance.edt(img, sd)
 
-#     neighbors = pmmoto.filters.medial_axis._medial_axis._get_neighborhood(img, 2, 2, 2)
+    pm_ma = pmmoto.filters.medial_axis.skeleton(sd, img)
 
-#     is_endpoint = pmmoto.filters.medial_axis._medial_axis._is_endpoint(neighbors)
-#     is_Euler_invariant = pmmoto.filters.medial_axis._medial_axis._is_Euler_invariant(
-#         neighbors
-#     )
-#     is_simple_point = pmmoto.filters.medial_axis._medial_axis._is_simple_point(
-#         neighbors
-#     )
+    # simples = pmmoto.filters.medial_axis.find_simple_point_candidates(
+    #     sd, pm_ma, (1, 0, 0)
+    # )
 
-#     simples = pmmoto.filters.medial_axis._medial_axis._find_simple_point_candidates(
-#         img, 1
-#     )
+    # sp = pm_ma.copy()
+    # for s in simples:
+    #     sp[s["x"], s["y"], s["z"]] = 2
+    #     # print(s)
 
-#     print(neighbors, is_endpoint, is_Euler_invariant, is_simple_point)
-#     sp = img.copy()
-#     for s in simples:
-#         sp[s["x"], s["y"], s["z"]] = 2
-#         print(s)
+    # # ma = img.copy()
+    # # pmmoto.filters.medial_axis._medial_axis._compute_thin_image(ma)
 
-#     ma = img.copy()
-#     pmmoto.filters.medial_axis._medial_axis._compute_thin_image(ma)
+    # # # Get neighbors at the center (2, 2, 2)
+    # # simple_points = pmmoto.filters.medial_axis._medial_axis._find_simple_points(
+    # #     img, edt
+    # # )
+    # # print(simple_points)
 
-#     # # Get neighbors at the center (2, 2, 2)
-#     # simple_points = pmmoto.filters.medial_axis._medial_axis._find_simple_points(
-#     #     img, edt
-#     # )
-#     # print(simple_points)
+    # ma = pmmoto.filters.medial_axis.medial_axis(img)
+    ma_skim = skimage.morphology.skeletonize(img, method="lee")
 
-#     # ma = pmmoto.filters.medial_axis.medial_axis(img)
+    # img_cc, img_count = pmmoto.filters.connected_components.connect_components(img, sd)
 
-#     pmmoto.io.output.save_img(
-#         "data_out/medial_axis", sd, img, additional_img={"edt": edt, "sp": sp, "ma": ma}
-#     )
+    # ma_cc, ma_count = pmmoto.filters.connected_components.connect_components(pm_ma, sd)
+
+    # _, skim_count = pmmoto.filters.connected_components.connect_components(ma_skim, sd)
+
+    # print(img_count, ma_count, skim_count)
+
+    # pmmoto.io.output.save_img(
+    #     "data_out/medial_axis",
+    #     sd,
+    #     img,
+    #     additional_img={
+    #         "edt": edt,
+    #         "ma": ma,
+    #         "ma_skim": ma_skim.astype(np.uint8),
+    #         "pm_ma": pm_ma,
+    #         "img_cc": img_cc,
+    #         "ma_cc": ma_cc,
+    #     },
+    # )

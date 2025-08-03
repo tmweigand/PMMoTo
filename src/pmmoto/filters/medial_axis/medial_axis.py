@@ -1,6 +1,13 @@
-from ._skeletonize_3d_cy import _compute_thin_image
+"""medial_axis.py
 
-__all__ = ["medial_axis"]
+Tools for extracting a medial axis or skeleton.
+"""
+
+from ._skeletonize_3d_cy import _compute_thin_image
+from ._medial_axis import _skeleton
+
+
+__all__ = ["medial_axis", "skeleton"]
 
 
 def medial_axis(img):
@@ -9,143 +16,8 @@ def medial_axis(img):
     return ma
 
 
-# class medialAxis(object):
-#     """Calculate Medial Axis and PostProcess
-#     Nodes -> Sets -> Paths
-#     Sets are broken into Reaches -> Medial Nodes -> Medial Clusters
-#     """
+def skeleton(subdomain, img):
+    ma = img.copy()
+    _skeleton(subdomain, ma)
 
-#     def __init__(self, Domain, subDomain, grid):
-#         self.Domain = Domain
-#         self.subDomain = subDomain
-#         self.grid = grid
-#         self.Orientation = subDomain.Orientation
-#         self.padding = np.zeros([3], dtype=np.int64)
-#         self.haloGrid = None
-#         self.halo = np.zeros(6)
-#         self.haloPadNeigh = np.zeros(6)
-#         self.haloPadNeighNot = np.zeros(6)
-#         self.MA = None
-
-#     def genMAArrays(self):
-#         """Generate Trimmed MA arrays to get nodeInfo and Correct Neighbor Counts for Boundary Nodes"""
-#         dim = self.MA.shape
-#         tempMA = self.MA[
-#             self.haloPadNeigh[0] : dim[0] - self.haloPadNeigh[1],
-#             self.haloPadNeigh[2] : dim[1] - self.haloPadNeigh[3],
-#             self.haloPadNeigh[4] : dim[2] - self.haloPadNeigh[5],
-#         ]
-
-#         neighMA = np.pad(
-#             self.MA,
-#             (
-#                 (self.haloPadNeighNot[0], self.haloPadNeighNot[1]),
-#                 (self.haloPadNeighNot[2], self.haloPadNeighNot[3]),
-#                 (self.haloPadNeighNot[4], self.haloPadNeighNot[5]),
-#             ),
-#             "constant",
-#             constant_values=0,
-#         )
-#         return tempMA, neighMA
-
-
-# def medialAxisEval(subDomain, porousMedia, grid, distance, connect=False, trim=False):
-
-#     rank = subDomain.ID
-#     size = subDomain.Domain.numSubDomains
-
-#     grid = porousMedia.grid
-
-#     ### Initialize Classes
-#     sDMA = medialAxis(Domain=subDomain.Domain, subDomain=subDomain, grid=grid)
-
-#     ### Extract MA
-#     mE = medialExtraction.medialExtraction(
-#         Domain=subDomain.Domain, subDomain=subDomain, grid=grid, edt=distance
-#     )
-
-#     if not connect:
-#         sDMA.MA = mE.extractMedialAxis(connect)
-
-#     if connect:
-
-#         ### CLEAN this up with Array and MA Neighbors
-#         sDMA.MA, sDMA.haloPadNeigh, sDMA.haloPadNeighNot = mE.extractMedialAxis(connect)
-
-#         ### Get Info for Medial Axis Nodes and Get Connected Sets and Boundary Sets
-#         tempMA, neighMA = sDMA.genMAArrays()
-
-#         Nodes = nodes.get_node_info(
-#             rank,
-#             tempMA,
-#             1,
-#             porousMedia.inlet,
-#             porousMedia.outlet,
-#             subDomain.Domain,
-#             porousMedia.loopInfo,
-#             subDomain,
-#             subDomain.Orientation,
-#         )
-#         maNodesType = medialNodes.updateMANeighborCount(
-#             neighMA, porousMedia, subDomain.Orientation, Nodes[0]
-#         )
-#         sDMA.MA = np.ascontiguousarray(tempMA)
-
-#         mSets = medialNodes.getConnectedMedialAxis(
-#             subDomain, sDMA.MA, Nodes, maNodesType
-#         )
-
-#         sDMA.Sets = mSets
-
-#         ## Update Set Information
-#         mSets.match_and_update_sets()
-
-#         ## Update Path Information
-#         mPaths = mSets.collect_paths()
-
-#         ### Collect paths from medialSets
-#         mPaths = mSets.collect_paths()
-#         mPaths.get_boundary_paths()
-#         mPaths.pack_boundary_data()
-#         boundaryData = communication.set_COMM(
-#             subDomain.Orientation, subDomain, mPaths.boundaryData
-#         )
-
-#         mPaths.unpack_boundary_data(boundaryData)
-#         mPaths.match_boundary_paths()
-#         mPaths.pack_matched_paths()
-
-#         ### Generate global information for paths
-#         allMatchedPathData = comm.gather(mPaths.matchedPathData, root=0)
-#         mPaths.organize_matched_paths(allMatchedPathData)
-
-#         ### Generate and Update global ID information
-#         globalIDInfo = comm.gather([mPaths.pathCount, mPaths.boundaryPathCount], root=0)
-#         mPaths.organize_globalPathID(globalIDInfo)
-#         mPaths.update_globalPathID()
-
-#         if trim:
-#             if sDMA.subDomain.ID == 0:
-#                 print("Trimming...")
-
-#             ### Trim paths not connected to inlet and outlet
-#             mPaths.trim_paths()
-
-#             ### Trim sets that are not
-#             mSets.trim_sets()
-#             mSets.update_trimmed_connected_sets()
-#             mSets.pack_untrimmed_sets()
-#             allTrimSetData = comm.gather(mSets.trimSetData, root=0)
-#             setInfo, indexMap = mSets.unpack_untrimmed_sets(allTrimSetData)
-#             setInfo = mSets.serial_trim_sets(setInfo, indexMap)
-#             setInfo = mSets.repack_global_trimmed_sets(setInfo)
-
-#     return sDMA
-
-
-# def medialAxisTrim(sDMA, porousMedia, subDomain, distance, cutoffs):
-
-#     rank = subDomain.ID
-#     size = subDomain.Domain.numSubDomains
-
-#     return sDMA
+    return ma

@@ -9,15 +9,15 @@ struct coordinate
     int x;
     int y;
     int z;
-    int ID;
-    int faceCount;
+    std::vector<int> index = { 0, 0, 0 };
     float edt;
+    std::vector<int> vertices = {};
 };
 
 inline int
 flat_index(int x, int y, int z, const size_t* shape)
 {
-    return z * shape[1] * shape[0] + y * shape[0] + x;
+    return x * shape[1] * shape[2] + y * shape[2] + z;
 }
 
 constexpr std::array<int, 256>
@@ -46,14 +46,14 @@ constexpr auto Euler_LUT = make_Euler_LUT();
 
 constexpr std::array<std::array<int, 7>, 8> neighbor_indices = { {
     // Octants:
-    { { 2, 1, 11, 10, 5, 4, 14 } },     // NEB
-    { { 0, 9, 3, 12, 1, 10, 4 } },      // NWB
-    { { 8, 7, 17, 16, 5, 4, 14 } },     // SEB
-    { { 6, 15, 7, 16, 3, 12, 4 } },     // SWB
-    { { 20, 23, 19, 22, 11, 14, 10 } }, // NEU
-    { { 18, 21, 9, 12, 19, 22, 10 } },  // NWU
-    { { 26, 23, 17, 14, 25, 22, 16 } }, // SEU
-    { { 24, 25, 15, 16, 21, 22, 12 } }, // SWU
+    { { 0, 1, 3, 4, 9, 10, 12 } },
+    { { 2, 1, 5, 4, 11, 10, 14 } },
+    { { 6, 7, 3, 4, 15, 16, 12 } },
+    { { 8, 7, 5, 4, 17, 16, 14 } },
+    { { 18, 19, 21, 22, 9, 10, 12 } },
+    { { 20, 19, 23, 22, 11, 10, 14 } },
+    { { 24, 25, 21, 22, 15, 16, 12 } },
+    { { 26, 25, 23, 22, 17, 16, 14 } },
 } };
 
 /**
@@ -88,24 +88,16 @@ get_neighborhood(const uint8_t* img,
     int dz_min = (index[2] == -1) ? 0 : -1;
     int dz_max = (index[2] == 1) ? 0 : 1;
 
-    std::cout << "Computing neighborhood bounds with index: [" << index[0]
-              << ", " << index[1] << ", " << index[2] << "]" << std::endl;
-
-    std::cout << "dx_min = " << dx_min << ", dx_max = " << dx_max << std::endl;
-    std::cout << "dy_min = " << dy_min << ", dy_max = " << dy_max << std::endl;
-    std::cout << "dz_min = " << dz_min << ", dz_max = " << dz_max << std::endl;
-
-    // Following skeletonize implementation for now
-    for (int dz = dz_min; dz <= dz_max; ++dz)
+    for (int dx = dx_min; dx <= dx_max; ++dx)
     {
-        for (int dx = dx_min; dx <= dx_max; ++dx)
+        for (int dy = dy_min; dy <= dy_max; ++dy)
         {
-            for (int dy = dy_min; dy <= dy_max; ++dy)
+            for (int dz = dz_min; dz <= dz_max; ++dz)
             {
                 int xi = x + dx;
                 int yi = y + dy;
                 int zi = z + dz;
-                idx = (dz + 1) * 9 + (dx + 1) * 3 + (dy + 1);
+                idx = (dx + 1) * 9 + (dy + 1) * 3 + (dz + 1);
                 neighbors[idx] = img[flat_index(xi, yi, zi, shape)];
             }
         }
@@ -148,70 +140,72 @@ is_Euler_invariant(
 }
 
 static const std::array<std::array<std::pair<int, std::vector<int> >, 7>, 8>
-    octree = { { // Octant 1
-                 { { { 0, {} },
-                     { 1, { 2 } },
-                     { 3, { 3 } },
-                     { 4, { 2, 3, 4 } },
-                     { 9, { 5 } },
-                     { 10, { 2, 5, 6 } },
-                     { 12, { 3, 5, 7 } } } },
-                 // Octant 2
-                 { { { 1, { 1 } },
-                     { 4, { 1, 3, 4 } },
-                     { 10, { 1, 5, 6 } },
-                     { 2, {} },
-                     { 5, { 4 } },
-                     { 11, { 6 } },
-                     { 13, { 4, 6, 8 } } } },
-                 // Octant 3
-                 { { { 3, { 1 } },
-                     { 4, { 1, 2, 4 } },
-                     { 12, { 1, 5, 7 } },
-                     { 6, {} },
-                     { 7, { 4 } },
-                     { 14, { 7 } },
-                     { 15, { 4, 7, 8 } } } },
-                 // Octant 4
-                 { { { 4, { 1, 2, 3 } },
-                     { 5, { 2 } },
-                     { 13, { 2, 6, 8 } },
-                     { 7, { 3 } },
-                     { 15, { 3, 7, 8 } },
-                     { 8, {} },
-                     { 16, { 8 } } } },
-                 // Octant 5
-                 { { { 9, { 1 } },
-                     { 10, { 1, 2, 6 } },
-                     { 12, { 1, 3, 7 } },
-                     { 17, {} },
-                     { 18, { 6 } },
-                     { 20, { 7 } },
-                     { 21, { 6, 7, 8 } } } },
-                 // Octant 6
-                 { { { 10, { 1, 2, 5 } },
-                     { 11, { 2 } },
-                     { 13, { 2, 4, 8 } },
-                     { 18, { 5 } },
-                     { 21, { 5, 7, 8 } },
-                     { 19, {} },
-                     { 22, { 8 } } } },
-                 // Octant 7
-                 { { { 12, { 1, 3, 5 } },
-                     { 14, { 3 } },
-                     { 15, { 3, 4, 8 } },
-                     { 20, { 5 } },
-                     { 21, { 5, 6, 8 } },
-                     { 23, {} },
-                     { 24, { 8 } } } },
-                 // Octant 8
-                 { { { 13, { 2, 4, 6 } },
-                     { 15, { 3, 4, 7 } },
-                     { 16, { 4 } },
-                     { 21, { 5, 6, 7 } },
-                     { 22, { 6 } },
-                     { 24, { 7 } },
-                     { 25, {} } } } } };
+    octree = { {
+        { // Octant 0
+          std::make_pair(0, std::vector<int>{}),
+          std::make_pair(1, std::vector<int>{ 1 }),
+          std::make_pair(3, std::vector<int>{ 2 }),
+          std::make_pair(4, std::vector<int>{ 1, 2, 3 }),
+          std::make_pair(9, std::vector<int>{ 4 }),
+          std::make_pair(10, std::vector<int>{ 1, 4, 5 }),
+          std::make_pair(12, std::vector<int>{ 2, 4, 6 }) },
+        { // Octant 1
+          std::make_pair(2, std::vector<int>{}),
+          std::make_pair(5, std::vector<int>{ 3 }),
+          std::make_pair(11, std::vector<int>{ 5 }),
+          std::make_pair(13, std::vector<int>{ 3, 5, 7 }),
+          std::make_pair(1, std::vector<int>{ 0 }),
+          std::make_pair(4, std::vector<int>{ 0, 2, 3 }),
+          std::make_pair(10, std::vector<int>{ 0, 4, 5 }) },
+        { // Octant 2
+          std::make_pair(6, std::vector<int>{}),
+          std::make_pair(7, std::vector<int>{ 3 }),
+          std::make_pair(14, std::vector<int>{ 6 }),
+          std::make_pair(15, std::vector<int>{ 3, 6, 7 }),
+          std::make_pair(3, std::vector<int>{ 0 }),
+          std::make_pair(4, std::vector<int>{ 0, 1, 3 }),
+          std::make_pair(12, std::vector<int>{ 0, 4, 6 }) },
+        { // Octant 3
+          std::make_pair(8, std::vector<int>{}),
+          std::make_pair(16, std::vector<int>{ 7 }),
+          std::make_pair(7, std::vector<int>{ 2 }),
+          std::make_pair(15, std::vector<int>{ 2, 6, 7 }),
+          std::make_pair(5, std::vector<int>{ 1 }),
+          std::make_pair(13, std::vector<int>{ 1, 5, 7 }),
+          std::make_pair(4, std::vector<int>{ 0, 1, 2 }) },
+        { // Octant 4
+          std::make_pair(17, std::vector<int>{}),
+          std::make_pair(18, std::vector<int>{ 5 }),
+          std::make_pair(20, std::vector<int>{ 6 }),
+          std::make_pair(21, std::vector<int>{ 5, 6, 7 }),
+          std::make_pair(9, std::vector<int>{ 0 }),
+          std::make_pair(10, std::vector<int>{ 0, 1, 5 }),
+          std::make_pair(12, std::vector<int>{ 0, 2, 6 }) },
+        { // Octant 5
+          std::make_pair(19, std::vector<int>{}),
+          std::make_pair(22, std::vector<int>{ 7 }),
+          std::make_pair(18, std::vector<int>{ 4 }),
+          std::make_pair(21, std::vector<int>{ 4, 6, 7 }),
+          std::make_pair(11, std::vector<int>{ 1 }),
+          std::make_pair(13, std::vector<int>{ 1, 3, 7 }),
+          std::make_pair(10, std::vector<int>{ 0, 1, 4 }) },
+        { // Octant 6
+          std::make_pair(23, std::vector<int>{}),
+          std::make_pair(24, std::vector<int>{ 7 }),
+          std::make_pair(20, std::vector<int>{ 4 }),
+          std::make_pair(21, std::vector<int>{ 4, 5, 7 }),
+          std::make_pair(14, std::vector<int>{ 2 }),
+          std::make_pair(15, std::vector<int>{ 2, 3, 7 }),
+          std::make_pair(12, std::vector<int>{ 0, 2, 4 }) },
+        { // Octant 7
+          std::make_pair(25, std::vector<int>{}),
+          std::make_pair(24, std::vector<int>{ 6 }),
+          std::make_pair(22, std::vector<int>{ 5 }),
+          std::make_pair(21, std::vector<int>{ 4, 5, 6 }),
+          std::make_pair(16, std::vector<int>{ 3 }),
+          std::make_pair(15, std::vector<int>{ 2, 3, 6 }),
+          std::make_pair(13, std::vector<int>{ 1, 3, 5 }) },
+    } };
 
 /**
  * @brief Perform recursive octree-based labeling of connected voxels in a local
@@ -229,7 +223,7 @@ static const std::array<std::array<std::pair<int, std::vector<int> >, 7>, 8>
 void
 octree_labeling(int octant, int label, std::array<uint8_t, 26>& cube)
 {
-    for (const auto& [voxel_idx, recurse_octants] : octree[octant - 1])
+    for (const auto& [voxel_idx, recurse_octants] : octree[octant])
     {
         if (cube[voxel_idx] == 1)
         {
@@ -249,6 +243,13 @@ octree_labeling(int octant, int label, std::array<uint8_t, 26>& cube)
  * of the foreground in its 26-neighbor 3D neighborhood. This implements the
  * N(v)_labeling method described in Lee et al. (1994).
  *
+ *
+ * @note: If only the center voxel is present, most implementations return true
+ * which should not be the case, as it deletes an object, thus changes the
+ * connectivity. For this, a check for this conditions is performed and false is
+ * returned.
+ *
+ *
  * @param neighbors A pointer to a 27-element array representing a 3x3x3
  * neighborhood of voxel values (typically 0 or 1), ordered in raster scan
  * (z-fastest). The center voxel is at index 13 and is ignored during
@@ -264,6 +265,10 @@ octree_labeling(int octant, int label, std::array<uint8_t, 26>& cube)
 bool
 is_simple_point(const std::vector<uint8_t>& neighbors)
 {
+    bool is_single =
+        std::accumulate(neighbors.begin(), neighbors.end(), 0) == 1;
+    if (is_single) return false;
+
     std::array<uint8_t, 26> cube;
     // Copy neighbors[0..12] into cube[0..12]
     std::memcpy(cube.data(), neighbors.data(), 13 * sizeof(uint8_t));
@@ -273,18 +278,16 @@ is_simple_point(const std::vector<uint8_t>& neighbors)
 
     int label = 2;
 
-    // Lookup table mapping voxel index (0–25, excluding center) to octant
-    // number (1–8)
-    static constexpr std::array<uint8_t, 26> voxel_to_octant = {
-        { 1, 1, 2, 1, 1, 2, 3, 3, 4, 1, 1, 2, 1,
-          2, 3, 3, 4, 5, 5, 6, 5, 5, 6, 7, 7, 8 }
+    static constexpr std::array<uint8_t, 26> voxel_octant_owner = {
+        { 0, 0, 1, 0, 0, 1, 2, 2, 3, 0, 0, 1, 0,
+          1, 2, 2, 3, 4, 4, 5, 4, 4, 5, 6, 6, 7 }
     };
 
     for (int i = 0; i < 26; ++i)
     {
         if (cube[i] == 1)
         {
-            int octant = voxel_to_octant[i];
+            int octant = voxel_octant_owner[i];
             octree_labeling(octant, label, cube);
             label++;
             if (label - 2 >= 2)
@@ -297,15 +300,38 @@ is_simple_point(const std::vector<uint8_t>& neighbors)
     return true;
 }
 
-std::vector<coordinate>
-find_simple_points(const uint8_t* img,
-                   const float* edt,
-                   const size_t* shape,
-                   const std::vector<std::pair<int, int> >& loop)
+bool(const uint8_t* img, int x, int y, int z, const size_t* shape)
 {
-    coordinate point;
-    std::vector<coordinate> simple_border_points;
+    if (x < 0 || y < 0 || z < 0 || x > shape[0] - 1 || y > shape[1] - 1 ||
+        z > shape[2] - 1)
+        return true; // out-of-bounds treated as background
 
+    return img[flat_index(x, y, z, shape)] == 0;
+}
+
+bool
+is_last_boundary_point(const std::vector<uint8_t>& neighbors,
+                       const std::vector<int>& vertices)
+{
+    int sum = 0;
+    for (int v : vertices)
+    {
+        sum += neighbors[v];
+    }
+    return sum == 1;
+}
+
+void
+find_boundary_simple_point_candidates(
+    uint8_t* img,
+    const std::vector<int>& erode_index,
+    std::vector<coordinate>& simple_border_points,
+    const std::vector<std::pair<int, int> >& loop,
+    const size_t* shape,
+    const std::vector<int>& index,
+    const std::vector<int>& octants,
+    const std::vector<int>& vertices)
+{
     for (int x = loop[0].first; x < loop[0].second; ++x)
     {
         for (int y = loop[1].first; y < loop[1].second; ++y)
@@ -314,47 +340,81 @@ find_simple_points(const uint8_t* img,
             {
                 if (img[flat_index(x, y, z, shape)] != 1) continue;
 
-                auto neighbors = get_neighborhood(img, x, y, z, shape);
+                bool is_border_pt = is_foreground(img,
+                                                  x + erode_index[0],
+                                                  y + erode_index[1],
+                                                  z + erode_index[2],
+                                                  shape);
 
-                std::cout << is_endpoint(neighbors) << " "
-                          << is_Euler_invariant(neighbors) << " "
-                          << is_simple_point(neighbors) << std::endl;
+                if (!is_border_pt) continue;
 
-                if (is_endpoint(neighbors) || !is_Euler_invariant(neighbors) ||
-                    !is_simple_point(neighbors))
-                {
-                    continue;
-                }
+                // This performs bounds checks with index
+                auto neighborhood =
+                    get_neighborhood(img, x, y, z, shape, index);
 
+                if (is_last_boundary_point(neighborhood, vertices)) continue;
+
+                if (is_endpoint(neighborhood)) continue;
+                if (!is_Euler_invariant(neighborhood, octants)) continue;
+                if (!is_simple_point(neighborhood)) continue;
+
+                // std::cout << "Simple Point" << std::endl;
+                coordinate point;
                 point.x = x;
                 point.y = y;
                 point.z = z;
-                point.ID = 0;
-                point.edt = edt[flat_index(x, y, z, shape)];
+                point.index = index;
+                point.vertices = vertices;
 
                 simple_border_points.push_back(point);
             }
         }
     }
-    return simple_border_points;
 }
 
 bool
-is_foreground(const uint8_t* img, int x, int y, int z, const size_t* shape)
+remove_points(uint8_t* img,
+              std::vector<coordinate>& simple_points,
+              const size_t* shape)
 {
-    if (x < 0 || y < 0 || z < 0 || x >= shape[0] || y >= shape[1] ||
-        z >= shape[2])
-        return false; // out-of-bounds treated as background
-    return img[flat_index(x, y, z, shape)] == 1;
+    bool no_change = true;
+    int count_change = 0;
+
+    for (const auto& point : simple_points)
+    {
+        int x = point.x;
+        int y = point.y;
+        int z = point.z;
+        const auto& index = point.index;
+        const auto& vertices = point.vertices;
+
+        auto neighbors = get_neighborhood(img, x, y, z, shape, index);
+
+        if (!(index[0] == 0 && index[1] == 0 && index[2] == 0))
+        {
+            if (is_last_boundary_point(neighbors, vertices))
+            {
+                continue;
+            }
+        }
+
+        if (is_simple_point(neighbors))
+        {
+            img[flat_index(x, y, z, shape)] = 0;
+            no_change = false;
+            count_change++;
+        }
+    }
+
+    return no_change;
 }
 
 void
 find_simple_point_candidates(uint8_t* img,
-                             int curr_border,
+                             const std::vector<int>& erode_index,
                              std::vector<coordinate>& simple_border_points,
                              const std::vector<std::pair<int, int> >& loop,
-                             const size_t* shape,
-                             const std::vector<int>& index = { 0, 0, 0 })
+                             const size_t* shape)
 {
     for (int x = loop[0].first; x < loop[0].second; ++x)
     {
@@ -364,24 +424,16 @@ find_simple_point_candidates(uint8_t* img,
             {
                 if (img[flat_index(x, y, z, shape)] != 1) continue;
 
-                bool is_border_pt =
-                    (curr_border == 1 &&
-                     !is_foreground(img, x, y, z - 1, shape)) || // N
-                    (curr_border == 2 &&
-                     !is_foreground(img, x, y, z + 1, shape)) || // S
-                    (curr_border == 3 &&
-                     !is_foreground(img, x, y + 1, z, shape)) || // E
-                    (curr_border == 4 &&
-                     !is_foreground(img, x, y - 1, z, shape)) || // W
-                    (curr_border == 5 &&
-                     !is_foreground(img, x + 1, y, z, shape)) || // U
-                    (curr_border == 6 &&
-                     !is_foreground(img, x - 1, y, z, shape)); // B
+                bool is_border_pt = is_foreground(img,
+                                                  x + erode_index[0],
+                                                  y + erode_index[1],
+                                                  z + erode_index[2],
+                                                  shape);
 
                 if (!is_border_pt) continue;
 
-                auto neighborhood =
-                    get_neighborhood(img, x, y, z, shape, index);
+                // This performs bounds checks with index
+                auto neighborhood = get_neighborhood(img, x, y, z, shape);
 
                 if (is_endpoint(neighborhood)) continue;
                 if (!is_Euler_invariant(neighborhood)) continue;
@@ -391,59 +443,9 @@ find_simple_point_candidates(uint8_t* img,
                 point.x = x;
                 point.y = y;
                 point.z = z;
-                point.ID = 0;
 
                 simple_border_points.push_back(point);
             }
-        }
-    }
-}
-
-void
-compute_thin_image(uint8_t* img, const size_t* shape)
-{
-    std::array<int, 6> borders = { 4, 3, 2, 1, 5, 6 };
-
-    int unchanged_borders = 0;
-    int num_borders = 6;
-    std::vector<coordinate> simple_border_points;
-
-    while (unchanged_borders < num_borders)
-    {
-        unchanged_borders = 0;
-
-        for (int j = 0; j < num_borders; ++j)
-        {
-            int curr_border = borders[j];
-            simple_border_points.clear();
-
-            // find_simple_point_candidates(
-            //     img, curr_border, simple_border_points, shape);
-
-            // // Sort by faceCount descending
-            // std::sort(simple_border_points.begin(),
-            //           simple_border_points.end(),
-            //           [](const Coordinate& a, const Coordinate& b)
-            //           { return a.faceCount > b.faceCount; });
-
-            bool no_change = true;
-            for (const auto& point : simple_border_points)
-            {
-                int x = point.x;
-                int y = point.y;
-                int z = point.z;
-                int ID = point.ID;
-
-                auto neighbors = get_neighborhood(img, x, y, z, shape);
-
-                if (is_simple_point(neighbors))
-                {
-                    img[flat_index(x, y, z, shape)] = 0;
-                    no_change = false;
-                }
-            }
-
-            if (no_change) ++unchanged_borders;
         }
     }
 }

@@ -7,8 +7,9 @@ including boundary and periodicity information.
 from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator, Any
 import numpy as np
+from numpy.typing import NDArray
 
-from .boundary_types import BoundaryType, boundary_order
+from .boundary_types import BoundaryType
 from .features import Face, Edge, Corner
 from .orientation import FEATURE_MAP
 
@@ -47,7 +48,36 @@ class SubdomainFeatures:
         """Set the own and neighbor voxels for each feature"""
         for group in (self.faces, self.edges, self.corners):
             for feature in group.values():
-                feature.get_voxels(voxels, self.pad)
+                feature.set_voxels(voxels, self.pad)
+
+    def get_feature_voxels(
+        self,
+        feature_index: tuple[int, ...],
+        extract_features: bool = False,
+    ) -> tuple[NDArray[np.uint64], NDArray[np.uint64]]:
+        """Get feature voxels.
+
+        Args:
+            feature_index (tuple[int, ...]): feature index
+            extract_features (bool, optional): extract own voxels features
+
+        """
+        _sum = sum(abs(x) for x in feature_index)
+
+        feature_map = {
+            1: self.faces,
+            2: self.edges,
+            3: self.corners,
+        }
+
+        # Select which feature dict to use
+        feature_dict = feature_map.get(_sum)
+
+        own, neighbors = feature_dict[feature_index].get_voxels(
+            self.subdomain.voxels, self.subdomain.pad, extract_features
+        )
+
+        return own, neighbors
 
     def get_features(self) -> dict[tuple[int, ...], Face | Edge | Corner]:
         """Return a dict of all features"""
@@ -137,7 +167,7 @@ class SubdomainFeatures:
 
     def get_boundary_type(
         self, feature_id: tuple[int, ...], neighbor_rank: int
-    ) -> BoundaryType:
+    ) -> BoundaryType | tuple[BoundaryType, ...]:
         """Determine the boundary type for a feature.
 
         For a feature to be on a domain boundary, the subdomain index must contain
@@ -147,8 +177,8 @@ class SubdomainFeatures:
             bool: If feature is on domain boundary
 
         """
-        if not self.get_global_boundary(feature_id) or neighbor_rank == 0:
-            return BoundaryType.INTERNAL
+        # if not self.get_global_boundary(feature_id) or neighbor_rank == 0:
+        #     return BoundaryType.INTERNAL
 
         boundary_type = []
         for ind, f_id, subdomains, boundary_types in zip(
@@ -162,11 +192,15 @@ class SubdomainFeatures:
                 boundary_type.append(boundary_types[0])
             elif (ind == subdomains - 1) and (f_id == 1):
                 boundary_type.append(boundary_types[1])
+            elif f_id != 0:
+                boundary_type.append(BoundaryType.INTERNAL)
+        # if not boundary_type:
+        #     return BoundaryType.INTERNAL
 
-        if not boundary_type:
-            return BoundaryType.INTERNAL
+        # print(feature_id, boundary_type, len(tuple(boundary_type)))
 
-        return boundary_order(boundary_type)
+        # return boundary_order(boundary_type)
+        return boundary_type[0] if len(boundary_type) == 1 else tuple(boundary_type)
 
     def collect_periodic_features(self) -> list[tuple[int, ...]]:
         """Collect all periodic features from a features dictionary.

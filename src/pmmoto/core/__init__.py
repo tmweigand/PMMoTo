@@ -4,12 +4,13 @@ This package provides core domain, subdomain, and utility functionality.
 """
 
 __all__ = [
-    "orientation",
     "communication",
     "domain",
     "domain_decompose",
     "domain_discretization",
     "features",
+    "octants",
+    "orientation",
     "subdomain",
     "subdomain_padded",
     "subdomain_features",
@@ -18,12 +19,14 @@ __all__ = [
     "voxels",
 ]
 
-from . import orientation
+
 from . import communication
 from . import domain
 from . import domain_decompose
 from . import domain_discretization
 from . import features
+from . import octants
+from . import orientation
 from . import subdomain
 from . import subdomain_padded
 from . import subdomain_features
