@@ -17,6 +17,7 @@ struct LammpsData
     std::vector<std::vector<double> > atom_positions;
     std::vector<int> atom_types;
     std::vector<std::vector<double> > domain_data;
+    std::vector<int> atom_ids;
     double timestep;
 };
 
@@ -149,6 +150,7 @@ private:
     {
         int num_atoms = std::stoi(line);
         data.atom_positions.resize(num_atoms, std::vector<double>(3, 0.0));
+        data.atom_ids.resize(num_atoms, 0);
         data.atom_types.resize(num_atoms, 0);
         return num_atoms;
     }
@@ -172,6 +174,7 @@ private:
 
         if (tokens.size() >= 8)
         {
+            data.atom_ids[atom_count] = std::stoi(tokens[0]);
             data.atom_types[atom_count] = std::stoi(tokens[2]);
 
             for (size_t i = 0; i < 3; ++i)
@@ -190,6 +193,7 @@ private:
 
         if (tokens.size() >= 8)
         {
+            data.atom_ids[atom_count] = std::stoi(tokens[0]);
             int type = std::stoi(tokens[2]);
             double charge = std::stod(tokens[4]);
 
@@ -243,6 +247,7 @@ public:
                 num_atoms = std::stoull(line);
                 data.atom_positions.resize(num_atoms,
                                            std::vector<double>(3, 0.0));
+                data.atom_ids.resize(num_atoms);
                 data.atom_types.resize(num_atoms);
             }
             else if (line_count >= 5 && line_count <= 7)

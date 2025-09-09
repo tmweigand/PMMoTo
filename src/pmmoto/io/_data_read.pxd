@@ -6,6 +6,7 @@ from libcpp.pair cimport pair
 cdef extern from "data_read.hpp":
     cdef struct LammpsData:
         vector[vector[double]] atom_positions
+        vector[int] atom_ids
         vector[int] atom_types
         vector[vector[double]] domain_data
         double timestep
