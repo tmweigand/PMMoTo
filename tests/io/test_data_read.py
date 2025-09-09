@@ -66,13 +66,22 @@ def test_lammps_file_read():
     assert len(types) == positions.shape[0]
     assert domain.shape == (3, 2)
 
-    c_positions, c_types, c_domain, time = pmmoto.io.data_read.read_lammps_atoms(
-        membrane_file
+    _, c_positions, c_types, c_mass_ignore, c_domain, time = (
+        pmmoto.io.data_read.read_lammps_atoms(membrane_file, include_mass=False)
     )
 
     np.testing.assert_array_equal(positions, c_positions)
     np.testing.assert_array_equal(types, c_types)
     np.testing.assert_array_equal(domain, c_domain)
+    np.testing.assert_array_equal(c_mass_ignore, np.zeros_like(c_mass_ignore))
+
+    _, _, _, c_mass, _, _ = pmmoto.io.data_read.read_lammps_atoms(
+        membrane_file, include_mass=True
+    )
+
+    np.testing.assert_raises(
+        AssertionError, np.testing.assert_array_equal, c_mass, c_mass_ignore
+    )
 
 
 def test_read_binned_distances(tmp_path):
