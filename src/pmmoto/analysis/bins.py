@@ -131,7 +131,7 @@ class Bin:
             np.ndarray: RDF values for each bin.
 
         """
-        self.calculate_volume(radial_volume=True)
+        self.volume = self.calculate_volume(radial_volume=True)
         _sum = np.sum(self.values)
         if _sum == 0:
             rdf = np.zeros_like(self.values)
