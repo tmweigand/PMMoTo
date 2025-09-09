@@ -42,6 +42,7 @@ def read_lammps_atoms(str filename, type_map=None):
     # Convert C++ vectors to numpy arrays
     cdef np.ndarray[double, ndim=2] positions = np.array(data.atom_positions)
     cdef np.ndarray[long, ndim=1] types = np.array(data.atom_types)
+    cdef np.ndarray[long, ndim=1] ids = np.array(data.atom_ids)
     cdef np.ndarray[double, ndim=2] domain = np.array(data.domain_data)
     
-    return positions, types, domain, data.timestep
+    return ids, positions, types, domain, data.timestep
