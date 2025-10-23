@@ -3,6 +3,7 @@
 
 #include <zlib.h>
 
+#include <cstdint>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -12,13 +13,22 @@
 #include <string_view>
 #include <vector>
 
+// struct LammpsData
+// {
+//     std::vector<std::vector<double> > atom_positions;
+//     std::vector<uint8_t> atom_types;
+//     std::vector<uint64_t> atom_ids;
+//     std::vector<std::vector<double> > domain_data;
+//     double timestep;
+// };
+
 struct LammpsData
 {
-    std::vector<std::vector<double> > atom_positions;
-    std::vector<int> atom_types;
+    std::vector<double> atom_positions;
+    std::vector<uint64_t> atom_ids;
+    std::vector<uint8_t> atom_types;
     std::vector<std::vector<double> > domain_data;
-    std::vector<int> atom_ids;
-    double timestep;
+    double timestep = 0.0;
 };
 
 class LammpsReader
@@ -27,7 +37,6 @@ private:
     using AtomIdMap =
         std::map<std::pair<int, double>, int>;       // type, charge -> atom_id
     static constexpr size_t BUFFER_SIZE = 64 * 1024; // 64KB buffer
-    static inline std::vector<std::string> tokens;
 
     class GzFileWrapper
     {
@@ -61,27 +70,6 @@ private:
         GzFileWrapper(const GzFileWrapper&) = delete;
         GzFileWrapper& operator=(const GzFileWrapper&) = delete;
     };
-
-    // Efficient string splitting
-    static void split(const std::string& str, std::vector<std::string>& out)
-    {
-        out.clear();
-        size_t start = 0;
-        size_t end = 0;
-
-        // Pre-reserve some space to avoid reallocations
-        out.reserve(8); // Most lines have 8 or fewer tokens
-
-        while ((end = str.find(' ', start)) != std::string::npos)
-        {
-            if (end > start) out.emplace_back(str.substr(start, end - start));
-            start = end + 1;
-            // Skip multiple spaces
-            while (start < str.length() && str[start] == ' ') ++start;
-        }
-
-        if (start < str.length()) out.emplace_back(str.substr(start));
-    }
 
     static std::string readGzipFile(const std::string& filename)
     {
@@ -146,15 +134,6 @@ private:
         return std::stod(line);
     }
 
-    static int readNumAtoms(const std::string& line, LammpsData& data)
-    {
-        int num_atoms = std::stoi(line);
-        data.atom_positions.resize(num_atoms, std::vector<double>(3, 0.0));
-        data.atom_ids.resize(num_atoms, 0);
-        data.atom_types.resize(num_atoms, 0);
-        return num_atoms;
-    }
-
     static void
     readDomainBounds(const std::string& line, int dim, LammpsData& data)
     {
@@ -166,137 +145,148 @@ private:
         }
     }
 
-    static void processAtomLine(const std::string& line,
-                                size_t atom_count,
-                                LammpsData& data)
+    static inline void processAtomLine(const std::string_view& line,
+                                       size_t atom_count,
+                                       LammpsData& data)
     {
-        split(line, tokens);
+        size_t pos = 0;
+        size_t next;
 
-        if (tokens.size() >= 8)
+        // Parse id
+        next = line.find(' ', pos);
+        data.atom_ids[atom_count] =
+            std::stoull(std::string(line.substr(pos, next - pos)));
+        pos = next + 1;
+
+        // Parse mol (skip)
+        next = line.find(' ', pos);
+        pos = next + 1;
+
+        // Parse type
+        next = line.find(' ', pos);
+        data.atom_types[atom_count] =
+            std::stoi(std::string(line.substr(pos, next - pos)));
+        pos = next + 1;
+
+        // Parse mass (skip)
+        next = line.find(' ', pos);
+        pos = next + 1;
+
+        // Parse q (skip)
+        next = line.find(' ', pos);
+        pos = next + 1;
+
+        // Parse x, y, z
+        for (int i = 0; i < 3; ++i)
         {
-            data.atom_ids[atom_count] = std::stoi(tokens[0]);
-            data.atom_types[atom_count] = std::stoi(tokens[2]);
-
-            for (size_t i = 0; i < 3; ++i)
-            {
-                data.atom_positions[atom_count][i] = std::stod(tokens[i + 5]);
-            }
+            next = line.find(' ', pos);
+            data.atom_positions[3 * atom_count + i] =
+                std::stod(std::string(line.substr(pos, next - pos)));
+            pos = next + 1;
         }
     }
 
-    static void processAtomLineWithMap(const std::string& line,
+    static inline void processAtomLine(const std::string_view& line,
                                        size_t atom_count,
                                        LammpsData& data,
                                        const AtomIdMap& id_map)
     {
-        split(line, tokens);
+        size_t pos = 0;
+        size_t next;
 
-        if (tokens.size() >= 8)
+        // Parse id
+        next = line.find(' ', pos);
+        data.atom_ids[atom_count] =
+            std::stoull(std::string(line.substr(pos, next - pos)));
+        pos = next + 1;
+
+        // Parse mol (skip)
+        next = line.find(' ', pos);
+        pos = next + 1;
+
+        // Parse type
+        next = line.find(' ', pos);
+        auto type = std::stoi(std::string(line.substr(pos, next - pos)));
+        pos = next + 1;
+
+        // Parse mass (skip)
+        next = line.find(' ', pos);
+        pos = next + 1;
+
+        // Parse q - charge
+        next = line.find(' ', pos);
+        auto charge = std::stod(std::string(line.substr(pos, next - pos)));
+        pos = next + 1;
+
+        auto it = id_map.find({ type, charge });
+        if (it == id_map.end())
         {
-            data.atom_ids[atom_count] = std::stoi(tokens[0]);
-            int type = std::stoi(tokens[2]);
-            double charge = std::stod(tokens[4]);
+            throw std::runtime_error("No atom ID found for type " +
+                                     std::to_string(type) + " and charge " +
+                                     std::to_string(charge));
+        }
 
-            auto it = id_map.find({ type, charge });
-            if (it == id_map.end())
-            {
-                throw std::runtime_error("No atom ID found for type " +
-                                         std::to_string(type) + " and charge " +
-                                         std::to_string(charge));
-            }
-            data.atom_types[atom_count] = it->second;
+        data.atom_types[atom_count] = it->second;
 
-            // Store positions - use direct conversion from string_view
-            for (size_t i = 0; i < 3; ++i)
-            {
-                data.atom_positions[atom_count][i] = std::stod(tokens[i + 5]);
-            }
+        // Parse x, y, z
+        for (int i = 0; i < 3; ++i)
+        {
+            next = line.find(' ', pos);
+            data.atom_positions[3 * atom_count + i] =
+                std::stod(std::string(line.substr(pos, next - pos)));
+            pos = next + 1;
         }
     }
 
 public:
-    static LammpsData read_lammps_atoms(const std::string& filename)
+    static LammpsData read_lammps_atoms(const std::string& filename,
+                                        const AtomIdMap* id_map = nullptr)
     {
         LammpsData data;
-        data.domain_data =
-            std::vector<std::vector<double> >(3, std::vector<double>(2, 0.0));
+        data.domain_data = { { { 0.0, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0 } } };
 
         auto file = openFile(filename);
         std::string line;
-        size_t line_count = 0;
-        size_t num_atoms = 0;
-        size_t atom_count = 0;
 
-        // Pre-allocate tokens vector
-        tokens.reserve(10);
+        // Skip line ITEM: TIMESTEP
+        std::getline(file, line);
 
-        while (std::getline(file, line))
+        // timestep
+        std::getline(file, line);
+        data.timestep = std::stod(line);
+
+        // skip line ITEM: NUMBER OF ATOMS
+        std::getline(file, line);
+
+        // num atoms
+        std::getline(file, line);
+
+        size_t num_atoms = std::stoull(line);
+        data.atom_positions.resize(3 * num_atoms, 0.0);
+        data.atom_ids.resize(num_atoms);
+        data.atom_types.resize(num_atoms);
+
+        // skip line ITEM: BOX BOUNDS pp pp pp
+        std::getline(file, line);
+
+        // read domain bounds (3 lines)
+        for (int i = 0; i < 3; ++i)
         {
-            if (line.empty())
-            {
-                ++line_count;
-                continue;
-            }
-
-            if (line_count == 1)
-            {
-                data.timestep = std::stod(line);
-            }
-            else if (line_count == 3)
-            {
-                num_atoms = std::stoull(line);
-                data.atom_positions.resize(num_atoms,
-                                           std::vector<double>(3, 0.0));
-                data.atom_ids.resize(num_atoms);
-                data.atom_types.resize(num_atoms);
-            }
-            else if (line_count >= 5 && line_count <= 7)
-            {
-                readDomainBounds(line, line_count - 5, data);
-            }
-            else if (line_count >= 9 && atom_count < num_atoms)
-            {
-                processAtomLine(line, atom_count++, data);
-            }
-            ++line_count;
+            std::getline(file, line);
+            readDomainBounds(line, i, data);
         }
 
-        return data;
-    }
+        // skip line ITEM: ATOMS id mol type mass q x y z
+        std::getline(file, line);
 
-    static LammpsData read_lammps_atoms_with_map(const std::string& filename,
-                                                 const AtomIdMap& id_map)
-    {
-        LammpsData data;
-        data.domain_data =
-            std::vector<std::vector<double> >(3, std::vector<double>(2, 0.0));
-
-        auto file = openFile(filename);
-        std::string line;
-        size_t line_count = 0;
-        size_t num_atoms = 0;
         size_t atom_count = 0;
-
-        while (std::getline(file, line))
+        while (atom_count < num_atoms && std::getline(file, line))
         {
-            if (line_count == 1)
-            {
-                data.timestep = readTimestep(line);
-            }
-            else if (line_count == 3)
-            {
-                num_atoms = readNumAtoms(line, data);
-            }
-            else if (line_count >= 5 && line_count <= 7)
-            {
-                readDomainBounds(line, line_count - 5, data);
-            }
-            else if (line_count >= 9 && atom_count < num_atoms)
-            {
-                processAtomLineWithMap(line, atom_count, data, id_map);
-                atom_count++;
-            }
-            line_count++;
+            if (id_map)
+                processAtomLine(line, atom_count, data, *id_map);
+            else
+                processAtomLine(line, atom_count, data);
+            ++atom_count;
         }
 
         return data;

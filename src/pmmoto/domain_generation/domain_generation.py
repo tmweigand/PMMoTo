@@ -237,7 +237,9 @@ def gen_pm_atom_file(
         PorousMedia: Initialized porous media object.
 
     """
-    positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
+    ids, positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
+
+    print(types)
 
     _atoms = particles.initialize_atoms(
         subdomain=subdomain,
