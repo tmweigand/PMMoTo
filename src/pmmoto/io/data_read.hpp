@@ -24,6 +24,15 @@
 #include <utility>
 #include <vector>
 
+// Branch hints for hot paths
+#if defined(__GNUC__) || defined(__clang__)
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
 // Result container (must match Cython .pxd)
 struct LammpsData
 {
@@ -85,32 +94,35 @@ map_file_readonly(const std::string& filename)
 {
     MMapBuffer out;
     int fd = open(filename.c_str(), O_RDONLY);
-    if (fd < 0) throw std::runtime_error("open failed: " + filename);
+    if (UNLIKELY(fd < 0)) throw std::runtime_error("open failed: " + filename);
 
     struct stat st
     {
     };
-    if (fstat(fd, &st) != 0)
+    if (UNLIKELY(fstat(fd, &st) != 0))
     {
         int e = errno;
         close(fd);
         throw std::runtime_error("fstat failed (" + std::to_string(e) +
                                  "): " + filename);
     }
+
     size_t size = static_cast<size_t>(st.st_size);
     if (size == 0)
     {
         close(fd);
         return out;
     }
+
     void* p = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
     int e = errno;
     close(fd);
-    if (p == MAP_FAILED)
+    if (UNLIKELY(p == MAP_FAILED))
     {
         throw std::runtime_error("mmap failed (" + std::to_string(e) +
                                  "): " + filename);
     }
+
     out.map = p;
     out.ptr = static_cast<const char*>(p);
     out.len = size;
@@ -122,14 +134,19 @@ static inline size_t
 gzip_uncompressed_size_from_footer(const std::string& filename)
 {
     std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
-    if (!ifs) throw std::runtime_error("Could not open gz file: " + filename);
+    if (UNLIKELY(!ifs))
+        throw std::runtime_error("Could not open gz file: " + filename);
+
     auto end = ifs.tellg();
-    if (end < std::streamoff(4))
+    if (UNLIKELY(end < std::streamoff(4)))
         throw std::runtime_error("Invalid gz (too small): " + filename);
+
     ifs.seekg(end - std::streamoff(4));
     unsigned char isize[4]{};
     ifs.read(reinterpret_cast<char*>(isize), 4);
-    if (!ifs) throw std::runtime_error("Failed reading gz footer: " + filename);
+    if (UNLIKELY(!ifs))
+        throw std::runtime_error("Failed reading gz footer: " + filename);
+
     size_t n = size_t(isize[0]) | (size_t(isize[1]) << 8) |
                (size_t(isize[2]) << 16) | (size_t(isize[3]) << 24);
     return n;
@@ -140,13 +157,15 @@ static inline std::string
 readGzipFile_fast_zlib(const std::string& filename)
 {
     std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
-    if (!ifs) throw std::runtime_error("open gz failed: " + filename);
+    if (UNLIKELY(!ifs)) throw std::runtime_error("open gz failed: " + filename);
+
     size_t comp_size = static_cast<size_t>(ifs.tellg());
     ifs.seekg(0);
+
     std::string comp;
     comp.resize(comp_size);
     ifs.read(comp.data(), comp_size);
-    if (!ifs) throw std::runtime_error("read gz failed: " + filename);
+    if (UNLIKELY(!ifs)) throw std::runtime_error("read gz failed: " + filename);
     ifs.close();
 
     size_t out_size = gzip_uncompressed_size_from_footer(filename);
@@ -160,11 +179,11 @@ readGzipFile_fast_zlib(const std::string& filename)
     strm.avail_out = static_cast<uInt>(out.size());
 
     int ret = inflateInit2(&strm, 16 + MAX_WBITS);
-    if (ret != Z_OK)
+    if (UNLIKELY(ret != Z_OK))
         throw std::runtime_error("inflateInit2 failed: " + std::to_string(ret));
 
     ret = inflate(&strm, Z_FINISH);
-    if (ret != Z_STREAM_END)
+    if (UNLIKELY(ret != Z_STREAM_END))
     {
         inflateEnd(&strm);
         if (ret == Z_BUF_ERROR || ret == Z_OK)
@@ -177,13 +196,13 @@ readGzipFile_fast_zlib(const std::string& filename)
             strm.next_out = reinterpret_cast<Bytef*>(out.data());
             strm.avail_out = static_cast<uInt>(out.size());
             ret = inflateInit2(&strm, 16 + MAX_WBITS);
-            if (ret != Z_OK)
+            if (UNLIKELY(ret != Z_OK))
                 throw std::runtime_error("inflateInit2 retry failed: " +
                                          std::to_string(ret));
             ret = inflate(&strm, Z_FINISH);
         }
     }
-    if (ret != Z_STREAM_END)
+    if (UNLIKELY(ret != Z_STREAM_END))
     {
         inflateEnd(&strm);
         throw std::runtime_error("inflate failed: " + std::to_string(ret));
@@ -200,9 +219,11 @@ readGzipFile_fast_zlib(const std::string& filename)
 static inline const char*
 skip_spaces(const char* p, const char* end)
 {
-    while (p < end)
+    while (LIKELY(p < end))
     {
-        char c = *p;
+        unsigned char c = static_cast<unsigned char>(*p);
+        if (LIKELY(c > ' '))
+            break; // catches space, tab, newline, CR in one compare
         if (c != ' ' && c != '\t' && c != '\r') break;
         ++p;
     }
@@ -212,10 +233,11 @@ skip_spaces(const char* p, const char* end)
 static inline const char*
 skip_token(const char* p, const char* end)
 {
-    while (p < end)
+    while (LIKELY(p < end))
     {
-        char c = *p;
-        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') break;
+        unsigned char c = static_cast<unsigned char>(*p);
+        if (c <= ' ' && (c == ' ' || c == '\t' || c == '\n' || c == '\r'))
+            break;
         ++p;
     }
     return p;
@@ -249,13 +271,13 @@ read_line(const char*& p,
           const char*& line_end)
 {
     line_start = p;
-    while (p < end && *p != '\n') ++p;
+    while (LIKELY(p < end) && *p != '\n') ++p;
     line_end = p;
-    if (p < end && *p == '\n') ++p;
-    if (line_end > line_start && *(line_end - 1) == '\r') --line_end;
+    if (LIKELY(p < end) && *p == '\n') ++p;
+    if (UNLIKELY(line_end > line_start && *(line_end - 1) == '\r')) --line_end;
 }
 
-// Parse one atom line: id mol type mass q x y z
+// Optimized atom parser - parse coordinates in batch, fewer branches
 static inline const char*
 parse_atom_fields(const char* p,
                   const char* end,
@@ -264,27 +286,36 @@ parse_atom_fields(const char* p,
                   double coords[3],
                   double& charge_out)
 {
+    // id
     p = skip_spaces(p, end);
     p = parse_uint64_ptr(p, end, id_out);
+
+    // mol (skip)
     p = skip_spaces(p, end);
-    p = skip_token(p, end); // mol
+    p = skip_token(p, end);
+
+    // type
     p = skip_spaces(p, end);
     p = parse_int_ptr(p, end, type_out);
+
+    // mass (skip)
     p = skip_spaces(p, end);
-    p = skip_token(p, end); // mass
+    p = skip_token(p, end);
+
+    // charge
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, charge_out);
+
+    // x, y, z - unrolled loop for better instruction scheduling
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, coords[0]);
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, coords[1]);
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, coords[2]);
-    p = skip_spaces(p, end);
+
     return p;
 }
-
-// ====== Main parser ======
 
 struct PairHash
 {
@@ -325,6 +356,10 @@ parse_lammps_atoms_buffer(
     parse_uint64_ptr(line_s, line_e, natoms_u);
     size_t natoms = static_cast<size_t>(natoms_u);
 
+    // Reserve exact capacity to avoid reallocations
+    data.atom_ids.reserve(natoms);
+    data.atom_types.reserve(natoms);
+    data.atom_positions.reserve(3 * natoms);
     data.atom_ids.resize(natoms);
     data.atom_types.resize(natoms);
     data.atom_positions.resize(3 * natoms);
@@ -345,8 +380,10 @@ parse_lammps_atoms_buffer(
 
     read_line(p, end, line_s, line_e); // "ITEM: ATOMS ..."
 
+    // Build fast lookup map once
     std::unordered_map<std::pair<int, double>, int, PairHash> fast_map;
-    if (id_map && !id_map->empty())
+    const bool use_map = id_map && !id_map->empty();
+    if (use_map)
     {
         fast_map.reserve(id_map->size() * 2);
         for (const auto& kv : *id_map)
@@ -355,40 +392,48 @@ parse_lammps_atoms_buffer(
         }
     }
 
+    // Hot loop - parse atoms
     size_t i = 0;
-    while (i < natoms && p < end)
+    uint64_t* ids_ptr = data.atom_ids.data();
+    uint8_t* types_ptr = data.atom_types.data();
+    double* pos_ptr = data.atom_positions.data();
+
+    while (LIKELY(i < natoms && p < end))
     {
         uint64_t id = 0;
         int type = 0;
         double q = 0.0;
         double xyz[3] = { 0.0, 0.0, 0.0 };
 
-        const char* after = parse_atom_fields(p, end, id, type, xyz, q);
+        p = parse_atom_fields(p, end, id, type, xyz, q);
 
-        data.atom_ids[i] = id;
-        if (!fast_map.empty())
+        ids_ptr[i] = id;
+
+        if (UNLIKELY(use_map))
         {
             auto it = fast_map.find({ type, q });
-            if (it == fast_map.end())
+            if (UNLIKELY(it == fast_map.end()))
             {
                 throw std::runtime_error("No mapping for type/charge: type=" +
                                          std::to_string(type));
             }
-            data.atom_types[i] = static_cast<uint8_t>(it->second);
+            types_ptr[i] = static_cast<uint8_t>(it->second);
         }
         else
         {
-            data.atom_types[i] = static_cast<uint8_t>(type);
+            types_ptr[i] = static_cast<uint8_t>(type);
         }
+
         size_t base = 3 * i;
-        data.atom_positions[base + 0] = xyz[0];
-        data.atom_positions[base + 1] = xyz[1];
-        data.atom_positions[base + 2] = xyz[2];
+        pos_ptr[base + 0] = xyz[0];
+        pos_ptr[base + 1] = xyz[1];
+        pos_ptr[base + 2] = xyz[2];
 
         ++i;
-        p = after;
-        while (p < end && *p != '\n') ++p;
-        if (p < end && *p == '\n') ++p;
+
+        // Skip to next line
+        while (LIKELY(p < end) && *p != '\n') ++p;
+        if (LIKELY(p < end) && *p == '\n') ++p;
     }
 }
 
@@ -402,6 +447,7 @@ public:
                                         const AtomIdMap* id_map = nullptr)
     {
         LammpsData out;
+
         if (filename.size() >= 3 &&
             filename.compare(filename.size() - 3, 3, ".gz") == 0)
         {
