@@ -4,6 +4,7 @@ Builds Cython/C++ extensions and installs the PMMoTo package.
 """
 
 import sys
+import platform
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 import Cython.Compiler.Options
@@ -32,28 +33,31 @@ extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
     extra_link_args += ["-lm", "-lmvec"]
+    # Enable native optimizations on Linux
+    cpp_compile_args += ["-march=native", "-mtune=native"]
 
 if sys.platform == "darwin":
-    import platform
-
     machine = platform.machine()
 
-    if machine == "arm64":  # Apple Silicon M1/M2/M3
-        cpp_compile_args += [
-            "-mcpu=apple-m1",  # or apple-m2, apple-m3
-            "-mtune=native",
-        ]
-    else:  # Intel Mac
-        cpp_compile_args += [
-            "-march=native",
-            "-mtune=native",
-        ]
+    # Only use -mcpu=apple-m1 on actual Apple Silicon
+    # GitHub CI macOS runners are x86_64, so detect properly
+    if machine == "arm64":
+        # Apple Silicon M1/M2/M3
+        cpp_compile_args += ["-mcpu=apple-m1", "-mtune=native"]
+    elif machine == "x86_64":
+        # Intel Mac (including GitHub CI runners)
+        # Use conservative flags for portability, or enable native if local
+        import os
+
+        if os.environ.get("PMMOTO_NATIVE") == "1":
+            cpp_compile_args += ["-march=native", "-mtune=native"]
+        # else: skip -march for portable builds on CI
 
     base_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     cpp_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     extra_link_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
 
-# _data_read specific flags (don't add -march twice if already in cpp_compile_args)
+# _data_read specific flags
 dr_compile_args = cpp_compile_args[:] + [
     "-fno-rtti",
     "-ftree-vectorize",
@@ -85,7 +89,7 @@ ext_modules = [
             "src/pmmoto/analysis/minkowskic.c",
         ],
         include_dirs=["src/pmmoto/analysis"],
-        language="c",  # keep C for the .c sources
+        language="c",
         extra_compile_args=base_compile_args,
         extra_link_args=extra_link_args,
     ),
