@@ -5,6 +5,9 @@ Builds Cython/C++ extensions and installs the PMMoTo package.
 
 import sys
 import platform
+import os
+import subprocess
+import tempfile
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 import Cython.Compiler.Options
@@ -15,7 +18,33 @@ Cython.Compiler.Options.annotate = True
 if sys.platform == "win32":
     sys.exit("Windows is not supported for building this package.")
 
-# common fast flags for Unix / macOS (no language-specific flags)
+
+def _flag_supported(flag: str, lang: str = "c++") -> bool:
+    compiler = os.environ.get("CXX", "clang++" if sys.platform == "darwin" else "c++")
+    code = "int main(){return 0;}\n"
+    with tempfile.TemporaryDirectory() as td:
+        src = os.path.join(td, "t.cc")
+        obj = os.path.join(td, "t.o")
+        with open(src, "w") as f:
+            f.write(code)
+        try:
+            cmd = [compiler, "-Werror", "-x", lang, src, "-c", "-o", obj, flag]
+            return (
+                subprocess.run(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                ).returncode
+                == 0
+            )
+        except Exception:
+            return False
+
+
+def _try_add(flags: list, flag: str, lang: str = "c++"):
+    if _flag_supported(flag, lang):
+        flags.append(flag)
+
+
+# common fast flags
 base_compile_args = [
     "-O3",
     "-ffast-math",
@@ -25,37 +54,42 @@ base_compile_args = [
     "-flto",
     "-pthread",
 ]
-
-# C++-specific flags (only add to extensions using C++)
 cpp_compile_args = ["-std=c++17"] + base_compile_args[:]
-
 extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
     extra_link_args += ["-lm", "-lmvec"]
-    # Enable native optimizations on Linux
-    cpp_compile_args += ["-march=native", "-mtune=native"]
+    _try_add(cpp_compile_args, "-march=native")
+    _try_add(cpp_compile_args, "-mtune=native")
 
 if sys.platform == "darwin":
     machine = platform.machine()
 
-    # Only use -mcpu=apple-m1 on actual Apple Silicon
-    # GitHub CI macOS runners are x86_64, so detect properly
+    # Always add standard macOS flags
+    for f in ["-stdlib=libc++", "-mmacosx-version-min=10.9"]:
+        base_compile_args.append(f)
+        cpp_compile_args.append(f)
+        extra_link_args.append(f)
+
     if machine == "arm64":
-        # Apple Silicon M1/M2/M3
-        cpp_compile_args += ["-mcpu=apple-m1", "-mtune=native"]
+        # Prefer specific Apple CPUs; fall back to armv8*
+        for f in [
+            "-mcpu=apple-m3",
+            "-mcpu=apple-m2",
+            "-mcpu=apple-m1",
+            "-march=armv8.5-a",
+            "-march=armv8.4-a",
+            "-march=armv8-a",
+        ]:
+            if _flag_supported(f):
+                cpp_compile_args.append(f)
+                break
+        _try_add(cpp_compile_args, "-mtune=native")
     elif machine == "x86_64":
-        # Intel Mac (including GitHub CI runners)
-        # Use conservative flags for portability, or enable native if local
-        import os
-
+        # Only enable native on request; probe support
         if os.environ.get("PMMOTO_NATIVE") == "1":
-            cpp_compile_args += ["-march=native", "-mtune=native"]
-        # else: skip -march for portable builds on CI
-
-    base_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
-    cpp_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
-    extra_link_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
+            _try_add(cpp_compile_args, "-march=native")
+            _try_add(cpp_compile_args, "-mtune=native")
 
 # _data_read specific flags
 dr_compile_args = cpp_compile_args[:] + [
