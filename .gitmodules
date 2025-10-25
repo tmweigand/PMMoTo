@@ -1,0 +1,3 @@
+[submodule "extern/fast_float"]
+	path = extern/fast_float
+	url = https://github.com/fastfloat/fast_float.git
