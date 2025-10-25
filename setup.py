@@ -34,17 +34,29 @@ if sys.platform.startswith("linux"):
     extra_link_args += ["-lm", "-lmvec"]
 
 if sys.platform == "darwin":
+    import platform
+
+    machine = platform.machine()
+
+    if machine == "arm64":  # Apple Silicon M1/M2/M3
+        cpp_compile_args += [
+            "-mcpu=apple-m1",  # or apple-m2, apple-m3
+            "-mtune=native",
+        ]
+    else:  # Intel Mac
+        cpp_compile_args += [
+            "-march=native",
+            "-mtune=native",
+        ]
+
     base_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     cpp_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     extra_link_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
 
-# Add to dr_compile_args for _data_read extension:
+# _data_read specific flags (don't add -march twice if already in cpp_compile_args)
 dr_compile_args = cpp_compile_args[:] + [
-    "-march=native",  # Enable AVX2/SSE if available
-    "-mtune=native",
     "-fno-rtti",
-    "-ffast-math",
-    "-ftree-vectorize",  # Auto-vectorize loops
+    "-ftree-vectorize",
     "-funroll-loops",
 ]
 
