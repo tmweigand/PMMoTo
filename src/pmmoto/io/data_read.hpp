@@ -1,436 +1,423 @@
 #ifndef DATA_READ_HPP
 #define DATA_READ_HPP
 
+// You vendored fast_float headers under extern/fast_float/include
+// Ensure setup.py adds that path to include_dirs.
 #include "fast_float.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <zlib.h>
 
 #include <charconv>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <map>
-#include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+// Result container (must match Cython .pxd)
 struct LammpsData
 {
-    std::vector<double> atom_positions;
     std::vector<uint64_t> atom_ids;
     std::vector<uint8_t> atom_types;
-    std::vector<std::vector<double> > domain_data;
+    std::vector<double> atom_positions;            // 3N flat
+    std::vector<std::vector<double> > domain_data; // [[lo,hi],[lo,hi],[lo,hi]]
     double timestep = 0.0;
 };
 
-class LammpsReader
+// ====== Fast IO helpers ======
+
+// RAII mmap view (no copy for plain files)
+struct MMapBuffer
 {
-private:
-    using AtomIdMap =
-        std::map<std::pair<int, double>, int>;       // type, charge -> atom_id
-    static constexpr size_t BUFFER_SIZE = 64 * 1024; // 64KB buffer
+    const char* ptr = nullptr;
+    size_t len = 0;
+    void* map = nullptr;
 
-    class GzFileWrapper
+    MMapBuffer() = default;
+    MMapBuffer(const MMapBuffer&) = delete;
+    MMapBuffer& operator=(const MMapBuffer&) = delete;
+
+    // Move constructor and assignment
+    MMapBuffer(MMapBuffer&& other) noexcept : ptr(other.ptr),
+                                              len(other.len),
+                                              map(other.map)
     {
-        gzFile file_;
-
-    public:
-        explicit GzFileWrapper(const std::string& filename)
-        {
-            file_ = gzopen(filename.c_str(), "r");
-            if (!file_)
-            {
-                throw std::runtime_error("Could not open gzipped file: " +
-                                         filename);
-            }
-        }
-
-        ~GzFileWrapper()
-        {
-            if (file_)
-            {
-                gzclose(file_);
-            }
-        }
-
-        gzFile get()
-        {
-            return file_;
-        }
-
-        // Prevent copying
-        GzFileWrapper(const GzFileWrapper&) = delete;
-        GzFileWrapper& operator=(const GzFileWrapper&) = delete;
-    };
-
-    static std::string readGzipFile(const std::string& filename)
+        other.ptr = nullptr;
+        other.len = 0;
+        other.map = nullptr;
+    }
+    MMapBuffer& operator=(MMapBuffer&& other) noexcept
     {
-        GzFileWrapper file(filename); // RAII wrapper handles cleanup
-
-        std::string content;
-        content.reserve(1024 * 1024);
-        std::vector<char> buffer(BUFFER_SIZE);
-
-        while (int bytesRead = gzread(file.get(), buffer.data(), buffer.size()))
+        if (this != &other)
         {
-            if (bytesRead < 0)
-            {
-                throw std::runtime_error("Error reading gzipped file: " +
-                                         filename);
-            }
-            content.append(buffer.data(), bytesRead);
+            if (map && len) munmap(map, len);
+            ptr = other.ptr;
+            len = other.len;
+            map = other.map;
+            other.ptr = nullptr;
+            other.len = 0;
+            other.map = nullptr;
         }
-
-        return content;
+        return *this;
     }
 
-    static std::string readFile(const std::string& filename)
+    ~MMapBuffer()
     {
-        std::ifstream file(filename, std::ios::binary | std::ios::ate);
-        if (!file)
+        if (map && len)
         {
-            throw std::runtime_error("Could not open file: " + filename);
+            munmap(map, len);
         }
-
-        // Get file size and reserve space
-        size_t size = file.tellg();
-        file.seekg(0);
-
-        std::string content;
-        content.reserve(size);
-        content.assign(std::istreambuf_iterator<char>(file),
-                       std::istreambuf_iterator<char>());
-
-        file.close();
-        return content;
-    }
-
-    static std::stringstream openFile(const std::string& filename)
-    {
-        std::string content;
-        // C++17 compatible check for .gz extension
-        if (filename.length() > 3 &&
-            filename.compare(filename.length() - 3, 3, ".gz") == 0)
-        {
-            content = readGzipFile(filename);
-        }
-        else
-        {
-            content = readFile(filename);
-        }
-        return std::stringstream(std::move(content));
-    }
-
-    static double readTimestep(const std::string& line)
-    {
-        return std::stod(line);
-    }
-
-    static void
-    readDomainBounds(const std::string& line, int dim, LammpsData& data)
-    {
-        size_t space_pos = line.find(' ');
-        if (space_pos != std::string::npos)
-        {
-            data.domain_data[dim][0] = std::stod(line.substr(0, space_pos));
-            data.domain_data[dim][1] = std::stod(line.substr(space_pos + 1));
-        }
-    }
-
-    static inline const char* skip_spaces(const char* p, const char* end)
-    {
-        while (p < end && (*p == ' ' || *p == '\t')) ++p;
-        return p;
-    }
-
-    static inline const char*
-    parse_uint64_ptr(const char* p, const char* end, uint64_t& out)
-    {
-        auto res = std::from_chars(p, end, out);
-        return res.ptr;
-    }
-
-    static inline const char*
-    parse_int_ptr(const char* p, const char* end, int& out)
-    {
-        auto res = std::from_chars(p, end, out);
-        return res.ptr;
-    }
-
-    static inline const char*
-    parse_double_ptr(const char* p, const char* end, double& out)
-    {
-        // fast_float::from_chars is much faster than std::stod/strtod
-        auto result = fast_float::from_chars(p, end, out);
-        return result.ptr;
-    }
-
-    // Replace processAtomLine with a pointer-based routine used in the main
-    // loop
-    static inline const char* parse_atom_fields(const char* p,
-                                                const char* end,
-                                                uint64_t& id_out,
-                                                int& type_out,
-                                                double coords[3],
-                                                double& charge_out,
-                                                bool parse_charge)
-    {
-        p = skip_spaces(p, end);
-        p = parse_uint64_ptr(p, end, id_out);
-        p = skip_spaces(p, end);
-
-        // mol (skip token)
-        while (p < end && *p != ' ' && *p != '\t' && *p != '\n') ++p;
-        p = skip_spaces(p, end);
-
-        p = parse_int_ptr(p, end, type_out);
-        p = skip_spaces(p, end);
-
-        // mass (skip token)
-        while (p < end && *p != ' ' && *p != '\t' && *p != '\n') ++p;
-        p = skip_spaces(p, end);
-
-        if (parse_charge)
-        {
-            p = parse_double_ptr(p, end, charge_out);
-            p = skip_spaces(p, end);
-        }
-        else
-        {
-            // skip q token
-            while (p < end && *p != ' ' && *p != '\t' && *p != '\n') ++p;
-            p = skip_spaces(p, end);
-        }
-
-        for (int i = 0; i < 3; ++i)
-        {
-            p = parse_double_ptr(p, end, coords[i]);
-            p = skip_spaces(p, end);
-        }
-        return p;
-    }
-
-    static inline void processAtomLine(const std::string_view& line,
-                                       size_t atom_count,
-                                       LammpsData& data)
-    {
-        size_t pos = 0;
-        size_t next;
-
-        // Parse id
-        next = line.find(' ', pos);
-        data.atom_ids[atom_count] =
-            std::stoull(std::string(line.substr(pos, next - pos)));
-        pos = next + 1;
-
-        // Parse mol (skip)
-        next = line.find(' ', pos);
-        pos = next + 1;
-
-        // Parse type
-        next = line.find(' ', pos);
-        data.atom_types[atom_count] =
-            std::stoi(std::string(line.substr(pos, next - pos)));
-        pos = next + 1;
-
-        // Parse mass (skip)
-        next = line.find(' ', pos);
-        pos = next + 1;
-
-        // Parse q (skip)
-        next = line.find(' ', pos);
-        pos = next + 1;
-
-        // Parse x, y, z
-        for (int i = 0; i < 3; ++i)
-        {
-            next = line.find(' ', pos);
-            data.atom_positions[3 * atom_count + i] =
-                std::stod(std::string(line.substr(pos, next - pos)));
-            pos = next + 1;
-        }
-    }
-
-    static inline void processAtomLine(const std::string_view& line,
-                                       size_t atom_count,
-                                       LammpsData& data,
-                                       const AtomIdMap& id_map)
-    {
-        size_t pos = 0;
-        size_t next;
-
-        // Parse id
-        next = line.find(' ', pos);
-        data.atom_ids[atom_count] =
-            std::stoull(std::string(line.substr(pos, next - pos)));
-        pos = next + 1;
-
-        // Parse mol (skip)
-        next = line.find(' ', pos);
-        pos = next + 1;
-
-        // Parse type
-        next = line.find(' ', pos);
-        auto type = std::stoi(std::string(line.substr(pos, next - pos)));
-        pos = next + 1;
-
-        // Parse mass (skip)
-        next = line.find(' ', pos);
-        pos = next + 1;
-
-        // Parse q - charge
-        next = line.find(' ', pos);
-        auto charge = std::stod(std::string(line.substr(pos, next - pos)));
-        pos = next + 1;
-
-        auto it = id_map.find({ type, charge });
-        if (it == id_map.end())
-        {
-            throw std::runtime_error("No atom ID found for type " +
-                                     std::to_string(type) + " and charge " +
-                                     std::to_string(charge));
-        }
-
-        data.atom_types[atom_count] = it->second;
-
-        // Parse x, y, z
-        for (int i = 0; i < 3; ++i)
-        {
-            next = line.find(' ', pos);
-            data.atom_positions[3 * atom_count + i] =
-                std::stod(std::string(line.substr(pos, next - pos)));
-            pos = next + 1;
-        }
-    }
-
-public:
-    static LammpsData read_lammps_atoms(const std::string& filename,
-                                        const AtomIdMap* id_map = nullptr)
-    {
-        LammpsData data;
-        data.domain_data = { { { 0.0, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0 } } };
-
-        // Read whole file (gz or plain) into a single string buffer
-        std::string content;
-        if (filename.size() > 3 &&
-            filename.compare(filename.size() - 3, 3, ".gz") == 0)
-        {
-            content = readGzipFile(filename);
-        }
-        else
-        {
-            content = readFile(filename);
-        }
-
-        const char* buf = content.data();
-        const char* end = buf + content.size();
-        const char* p = buf;
-
-        // helper to read a single line [start, end) and advance p to next line
-        auto read_line = [&](const char*& start, const char*& line_end)
-        {
-            start = p;
-            while (p < end && *p != '\n') ++p;
-            line_end = p;
-            if (p < end && *p == '\n') ++p; // skip newline
-            // trim optional '\r' at end
-            if (line_end > start && *(line_end - 1) == '\r') --line_end;
-        };
-
-        const char* line_start;
-        const char* line_end;
-
-        // Skip "ITEM: TIMESTEP"
-        read_line(line_start, line_end);
-
-        // Timestep line -> parse double
-        read_line(line_start, line_end);
-        {
-            double ts = 0.0;
-            parse_double_ptr(line_start, line_end, ts);
-            data.timestep = ts;
-        }
-
-        // Skip "ITEM: NUMBER OF ATOMS"
-        read_line(line_start, line_end);
-
-        // Number of atoms
-        read_line(line_start, line_end);
-        uint64_t num_atoms_u = 0;
-        parse_uint64_ptr(line_start, line_end, num_atoms_u);
-        size_t num_atoms = static_cast<size_t>(num_atoms_u);
-
-        data.atom_positions.resize(3 * num_atoms, 0.0);
-        data.atom_ids.resize(num_atoms);
-        data.atom_types.resize(num_atoms);
-
-        // Skip "ITEM: BOX BOUNDS ..."
-        read_line(line_start, line_end);
-
-        // Read 3 domain lines, each with two doubles
-        for (int i = 0; i < 3; ++i)
-        {
-            read_line(line_start, line_end);
-            const char* q = line_start;
-            double lo = 0.0, hi = 0.0;
-            q = parse_double_ptr(q, line_end, lo);
-            q = skip_spaces(q, line_end);
-            q = parse_double_ptr(q, line_end, hi);
-            data.domain_data[i][0] = lo;
-            data.domain_data[i][1] = hi;
-        }
-
-        // Skip "ITEM: ATOMS id mol type mass q x y z ..."
-        read_line(line_start, line_end);
-
-        // Now parse atom lines in a tight pointer loop
-        size_t atom_count = 0;
-        while (atom_count < num_atoms && p < end)
-        {
-            uint64_t id = 0;
-            int type = 0;
-            double coords[3] = { 0.0, 0.0, 0.0 };
-            double charge = 0.0;
-
-            // parse_atom_fields advances p to after the coordinates
-            p = parse_atom_fields(
-                p, end, id, type, coords, charge, id_map != nullptr);
-
-            data.atom_ids[atom_count] = id;
-
-            if (id_map)
-            {
-                auto it = id_map->find({ type, charge });
-                if (it == id_map->end())
-                {
-                    throw std::runtime_error(
-                        "No atom ID found for type " + std::to_string(type) +
-                        " and charge " + std::to_string(charge));
-                }
-                data.atom_types[atom_count] = static_cast<uint8_t>(it->second);
-            }
-            else
-            {
-                data.atom_types[atom_count] = static_cast<uint8_t>(type);
-            }
-
-            const size_t base = 3 * atom_count;
-            data.atom_positions[base + 0] = coords[0];
-            data.atom_positions[base + 1] = coords[1];
-            data.atom_positions[base + 2] = coords[2];
-
-            ++atom_count;
-
-            // advance p to the start of next line (skip remainder of this line)
-            while (p < end && *p != '\n') ++p;
-            if (p < end && *p == '\n') ++p;
-        }
-
-        return data;
     }
 };
 
-#endif
+static inline MMapBuffer
+map_file_readonly(const std::string& filename)
+{
+    MMapBuffer out;
+    int fd = open(filename.c_str(), O_RDONLY);
+    if (fd < 0) throw std::runtime_error("open failed: " + filename);
+
+    struct stat st
+    {
+    };
+    if (fstat(fd, &st) != 0)
+    {
+        int e = errno;
+        close(fd);
+        throw std::runtime_error("fstat failed (" + std::to_string(e) +
+                                 "): " + filename);
+    }
+    size_t size = static_cast<size_t>(st.st_size);
+    if (size == 0)
+    {
+        close(fd);
+        return out;
+    }
+    void* p = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    int e = errno;
+    close(fd);
+    if (p == MAP_FAILED)
+    {
+        throw std::runtime_error("mmap failed (" + std::to_string(e) +
+                                 "): " + filename);
+    }
+    out.map = p;
+    out.ptr = static_cast<const char*>(p);
+    out.len = size;
+    return out;
+}
+
+// Read last 4 bytes of gzip (ISIZE) to get uncompressed size (mod 2^32)
+static inline size_t
+gzip_uncompressed_size_from_footer(const std::string& filename)
+{
+    std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
+    if (!ifs) throw std::runtime_error("Could not open gz file: " + filename);
+    auto end = ifs.tellg();
+    if (end < std::streamoff(4))
+        throw std::runtime_error("Invalid gz (too small): " + filename);
+    ifs.seekg(end - std::streamoff(4));
+    unsigned char isize[4]{};
+    ifs.read(reinterpret_cast<char*>(isize), 4);
+    if (!ifs) throw std::runtime_error("Failed reading gz footer: " + filename);
+    size_t n = size_t(isize[0]) | (size_t(isize[1]) << 8) |
+               (size_t(isize[2]) << 16) | (size_t(isize[3]) << 24);
+    return n;
+}
+
+// Single-pass zlib inflate using exact-size allocation from ISIZE
+static inline std::string
+readGzipFile_fast_zlib(const std::string& filename)
+{
+    std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
+    if (!ifs) throw std::runtime_error("open gz failed: " + filename);
+    size_t comp_size = static_cast<size_t>(ifs.tellg());
+    ifs.seekg(0);
+    std::string comp;
+    comp.resize(comp_size);
+    ifs.read(comp.data(), comp_size);
+    if (!ifs) throw std::runtime_error("read gz failed: " + filename);
+    ifs.close();
+
+    size_t out_size = gzip_uncompressed_size_from_footer(filename);
+    std::string out;
+    out.resize(out_size);
+
+    z_stream strm{};
+    strm.next_in = reinterpret_cast<Bytef*>(comp.data());
+    strm.avail_in = static_cast<uInt>(comp.size());
+    strm.next_out = reinterpret_cast<Bytef*>(out.data());
+    strm.avail_out = static_cast<uInt>(out.size());
+
+    int ret = inflateInit2(&strm, 16 + MAX_WBITS);
+    if (ret != Z_OK)
+        throw std::runtime_error("inflateInit2 failed: " + std::to_string(ret));
+
+    ret = inflate(&strm, Z_FINISH);
+    if (ret != Z_STREAM_END)
+    {
+        inflateEnd(&strm);
+        if (ret == Z_BUF_ERROR || ret == Z_OK)
+        {
+            size_t bigger = out.size() * 2 + 65536;
+            out.resize(bigger);
+            strm = z_stream{};
+            strm.next_in = reinterpret_cast<Bytef*>(comp.data());
+            strm.avail_in = static_cast<uInt>(comp.size());
+            strm.next_out = reinterpret_cast<Bytef*>(out.data());
+            strm.avail_out = static_cast<uInt>(out.size());
+            ret = inflateInit2(&strm, 16 + MAX_WBITS);
+            if (ret != Z_OK)
+                throw std::runtime_error("inflateInit2 retry failed: " +
+                                         std::to_string(ret));
+            ret = inflate(&strm, Z_FINISH);
+        }
+    }
+    if (ret != Z_STREAM_END)
+    {
+        inflateEnd(&strm);
+        throw std::runtime_error("inflate failed: " + std::to_string(ret));
+    }
+
+    size_t actual = out.size() - strm.avail_out;
+    inflateEnd(&strm);
+    out.resize(actual);
+    return out;
+}
+
+// ====== Pointer-based parsing helpers ======
+
+static inline const char*
+skip_spaces(const char* p, const char* end)
+{
+    while (p < end)
+    {
+        char c = *p;
+        if (c != ' ' && c != '\t' && c != '\r') break;
+        ++p;
+    }
+    return p;
+}
+
+static inline const char*
+skip_token(const char* p, const char* end)
+{
+    while (p < end)
+    {
+        char c = *p;
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') break;
+        ++p;
+    }
+    return p;
+}
+
+static inline const char*
+parse_uint64_ptr(const char* p, const char* end, uint64_t& out)
+{
+    auto res = std::from_chars(p, end, out);
+    return res.ptr;
+}
+
+static inline const char*
+parse_int_ptr(const char* p, const char* end, int& out)
+{
+    auto res = std::from_chars(p, end, out);
+    return res.ptr;
+}
+
+static inline const char*
+parse_double_ptr(const char* p, const char* end, double& out)
+{
+    auto res = fast_float::from_chars(p, end, out);
+    return res.ptr;
+}
+
+static inline void
+read_line(const char*& p,
+          const char* end,
+          const char*& line_start,
+          const char*& line_end)
+{
+    line_start = p;
+    while (p < end && *p != '\n') ++p;
+    line_end = p;
+    if (p < end && *p == '\n') ++p;
+    if (line_end > line_start && *(line_end - 1) == '\r') --line_end;
+}
+
+// Parse one atom line: id mol type mass q x y z
+static inline const char*
+parse_atom_fields(const char* p,
+                  const char* end,
+                  uint64_t& id_out,
+                  int& type_out,
+                  double coords[3],
+                  double& charge_out)
+{
+    p = skip_spaces(p, end);
+    p = parse_uint64_ptr(p, end, id_out);
+    p = skip_spaces(p, end);
+    p = skip_token(p, end); // mol
+    p = skip_spaces(p, end);
+    p = parse_int_ptr(p, end, type_out);
+    p = skip_spaces(p, end);
+    p = skip_token(p, end); // mass
+    p = skip_spaces(p, end);
+    p = parse_double_ptr(p, end, charge_out);
+    p = skip_spaces(p, end);
+    p = parse_double_ptr(p, end, coords[0]);
+    p = skip_spaces(p, end);
+    p = parse_double_ptr(p, end, coords[1]);
+    p = skip_spaces(p, end);
+    p = parse_double_ptr(p, end, coords[2]);
+    p = skip_spaces(p, end);
+    return p;
+}
+
+// ====== Main parser ======
+
+struct PairHash
+{
+    std::size_t operator()(const std::pair<int, double>& p) const noexcept
+    {
+        uint64_t dbits;
+        static_assert(sizeof(double) == sizeof(uint64_t),
+                      "double must be 64-bit");
+        std::memcpy(&dbits, &p.second, sizeof(dbits));
+        std::size_t h1 = std::hash<int>{}(p.first);
+        std::size_t h2 = std::hash<uint64_t>{}(dbits);
+        return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+    }
+};
+
+static inline void
+parse_lammps_atoms_buffer(
+    const char* buf,
+    const char* end,
+    LammpsData& data,
+    const std::map<std::pair<int, double>, int>* id_map = nullptr)
+{
+    const char* p = buf;
+    const char* line_s = nullptr;
+    const char* line_e = nullptr;
+
+    read_line(p, end, line_s, line_e); // "ITEM: TIMESTEP"
+    read_line(p, end, line_s, line_e); // timestep value
+    {
+        double ts = 0.0;
+        parse_double_ptr(line_s, line_e, ts);
+        data.timestep = ts;
+    }
+
+    read_line(p, end, line_s, line_e); // "ITEM: NUMBER OF ATOMS"
+    read_line(p, end, line_s, line_e); // number
+    uint64_t natoms_u = 0;
+    parse_uint64_ptr(line_s, line_e, natoms_u);
+    size_t natoms = static_cast<size_t>(natoms_u);
+
+    data.atom_ids.resize(natoms);
+    data.atom_types.resize(natoms);
+    data.atom_positions.resize(3 * natoms);
+    data.domain_data.resize(3, std::vector<double>(2));
+
+    read_line(p, end, line_s, line_e); // "ITEM: BOX BOUNDS ..."
+    for (int i = 0; i < 3; ++i)
+    {
+        read_line(p, end, line_s, line_e);
+        const char* q = line_s;
+        double lo = 0.0, hi = 0.0;
+        q = parse_double_ptr(q, line_e, lo);
+        q = skip_spaces(q, line_e);
+        q = parse_double_ptr(q, line_e, hi);
+        data.domain_data[i][0] = lo;
+        data.domain_data[i][1] = hi;
+    }
+
+    read_line(p, end, line_s, line_e); // "ITEM: ATOMS ..."
+
+    std::unordered_map<std::pair<int, double>, int, PairHash> fast_map;
+    if (id_map && !id_map->empty())
+    {
+        fast_map.reserve(id_map->size() * 2);
+        for (const auto& kv : *id_map)
+        {
+            fast_map.emplace(kv.first, kv.second);
+        }
+    }
+
+    size_t i = 0;
+    while (i < natoms && p < end)
+    {
+        uint64_t id = 0;
+        int type = 0;
+        double q = 0.0;
+        double xyz[3] = { 0.0, 0.0, 0.0 };
+
+        const char* after = parse_atom_fields(p, end, id, type, xyz, q);
+
+        data.atom_ids[i] = id;
+        if (!fast_map.empty())
+        {
+            auto it = fast_map.find({ type, q });
+            if (it == fast_map.end())
+            {
+                throw std::runtime_error("No mapping for type/charge: type=" +
+                                         std::to_string(type));
+            }
+            data.atom_types[i] = static_cast<uint8_t>(it->second);
+        }
+        else
+        {
+            data.atom_types[i] = static_cast<uint8_t>(type);
+        }
+        size_t base = 3 * i;
+        data.atom_positions[base + 0] = xyz[0];
+        data.atom_positions[base + 1] = xyz[1];
+        data.atom_positions[base + 2] = xyz[2];
+
+        ++i;
+        p = after;
+        while (p < end && *p != '\n') ++p;
+        if (p < end && *p == '\n') ++p;
+    }
+}
+
+// Wrap in LammpsReader class to match Cython interface
+class LammpsReader
+{
+public:
+    using AtomIdMap = std::map<std::pair<int, double>, int>;
+
+    static LammpsData read_lammps_atoms(const std::string& filename,
+                                        const AtomIdMap* id_map = nullptr)
+    {
+        LammpsData out;
+        if (filename.size() >= 3 &&
+            filename.compare(filename.size() - 3, 3, ".gz") == 0)
+        {
+            std::string content = readGzipFile_fast_zlib(filename);
+            parse_lammps_atoms_buffer(
+                content.data(), content.data() + content.size(), out, id_map);
+            return out;
+        }
+
+        MMapBuffer mm = map_file_readonly(filename);
+        if (mm.ptr && mm.len)
+        {
+            parse_lammps_atoms_buffer(mm.ptr, mm.ptr + mm.len, out, id_map);
+        }
+        return out;
+    }
+};
+
+#endif // DATA_READ_HPP
