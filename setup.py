@@ -70,7 +70,7 @@ ext_modules = [
     Extension(
         "pmmoto.io._data_read",
         ["src/pmmoto/io/_data_read.pyx"],
-        include_dirs=["src/pmmoto/io"],
+        include_dirs=["src/pmmoto/io", "extern/fast_float/include"],
         libraries=["z"],
         language="c++",
         extra_compile_args=cpp_compile_args,
