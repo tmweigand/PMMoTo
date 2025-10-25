@@ -1,7 +1,7 @@
 #ifndef DATA_READ_HPP
 #define DATA_READ_HPP
 
-#include "fast_float/fast_float.h" // add fast_float to project (git submodule / fetch)
+#include "fast_float.h"
 
 #include <zlib.h>
 
