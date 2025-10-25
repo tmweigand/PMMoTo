@@ -30,6 +30,9 @@ cpp_compile_args = ["-std=c++17"] + base_compile_args[:]
 
 extra_link_args = ["-flto"]
 
+if sys.platform.startswith("linux"):
+    extra_link_args += ["-lm", "-lmvec"]
+
 if sys.platform == "darwin":
     base_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     cpp_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
