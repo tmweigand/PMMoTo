@@ -38,6 +38,16 @@ if sys.platform == "darwin":
     cpp_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
     extra_link_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
 
+# Add to dr_compile_args for _data_read extension:
+dr_compile_args = cpp_compile_args[:] + [
+    "-march=native",  # Enable AVX2/SSE if available
+    "-mtune=native",
+    "-fno-rtti",
+    "-ffast-math",
+    "-ftree-vectorize",  # Auto-vectorize loops
+    "-funroll-loops",
+]
+
 ext_modules = [
     Extension(
         "pmmoto.core._voxels",
@@ -73,7 +83,7 @@ ext_modules = [
         include_dirs=["src/pmmoto/io", "extern/fast_float/include"],
         libraries=["z"],
         language="c++",
-        extra_compile_args=cpp_compile_args,
+        extra_compile_args=dr_compile_args,
         extra_link_args=extra_link_args,
     ),
     Extension(

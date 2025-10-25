@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <zlib.h>
 
+#include <algorithm>
 #include <charconv>
 #include <cstdint>
 #include <cstdlib>
@@ -20,32 +21,41 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-// Branch hints for hot paths
+// SIMD headers for fast scanning
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
+#ifdef __AVX2__
+#include <immintrin.h>
+#endif
+
+// Branch hints
 #if defined(__GNUC__) || defined(__clang__)
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#define PREFETCH_READ(addr) __builtin_prefetch(addr, 0, 3)
+#define PREFETCH_WRITE(addr) __builtin_prefetch(addr, 1, 3)
 #else
 #define LIKELY(x) (x)
 #define UNLIKELY(x) (x)
+#define PREFETCH_READ(addr) ((void)0)
+#define PREFETCH_WRITE(addr) ((void)0)
 #endif
 
-// Result container (must match Cython .pxd)
 struct LammpsData
 {
     std::vector<uint64_t> atom_ids;
     std::vector<uint8_t> atom_types;
-    std::vector<double> atom_positions;            // 3N flat
-    std::vector<std::vector<double> > domain_data; // [[lo,hi],[lo,hi],[lo,hi]]
+    std::vector<double> atom_positions;
+    std::vector<std::vector<double> > domain_data;
     double timestep = 0.0;
 };
 
-// ====== Fast IO helpers ======
-
-// RAII mmap view (no copy for plain files)
 struct MMapBuffer
 {
     const char* ptr = nullptr;
@@ -56,7 +66,6 @@ struct MMapBuffer
     MMapBuffer(const MMapBuffer&) = delete;
     MMapBuffer& operator=(const MMapBuffer&) = delete;
 
-    // Move constructor and assignment
     MMapBuffer(MMapBuffer&& other) noexcept : ptr(other.ptr),
                                               len(other.len),
                                               map(other.map)
@@ -65,6 +74,7 @@ struct MMapBuffer
         other.len = 0;
         other.map = nullptr;
     }
+
     MMapBuffer& operator=(MMapBuffer&& other) noexcept
     {
         if (this != &other)
@@ -82,10 +92,7 @@ struct MMapBuffer
 
     ~MMapBuffer()
     {
-        if (map && len)
-        {
-            munmap(map, len);
-        }
+        if (map && len) munmap(map, len);
     }
 };
 
@@ -123,13 +130,15 @@ map_file_readonly(const std::string& filename)
                                  "): " + filename);
     }
 
+    // Advise kernel we'll read sequentially
+    madvise(p, size, MADV_SEQUENTIAL);
+
     out.map = p;
     out.ptr = static_cast<const char*>(p);
     out.len = size;
     return out;
 }
 
-// Read last 4 bytes of gzip (ISIZE) to get uncompressed size (mod 2^32)
 static inline size_t
 gzip_uncompressed_size_from_footer(const std::string& filename)
 {
@@ -152,7 +161,6 @@ gzip_uncompressed_size_from_footer(const std::string& filename)
     return n;
 }
 
-// Single-pass zlib inflate using exact-size allocation from ISIZE
 static inline std::string
 readGzipFile_fast_zlib(const std::string& filename)
 {
@@ -214,16 +222,89 @@ readGzipFile_fast_zlib(const std::string& filename)
     return out;
 }
 
-// ====== Pointer-based parsing helpers ======
+// SIMD-accelerated newline finder (AVX2 version)
+#ifdef __AVX2__
+static inline const char*
+find_next_newline_simd(const char* p, const char* end)
+{
+    const char* aligned_end = p + ((end - p) & ~31);
+    __m256i newline = _mm256_set1_epi8('\n');
 
+    while (p < aligned_end)
+    {
+        __m256i chunk = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(p));
+        __m256i cmp = _mm256_cmpeq_epi8(chunk, newline);
+        int mask = _mm256_movemask_epi8(cmp);
+
+        if (mask != 0)
+        {
+            return p + __builtin_ctz(mask);
+        }
+        p += 32;
+    }
+
+    // Scalar fallback for tail
+    while (p < end && *p != '\n') ++p;
+    return p;
+}
+#elif defined(__SSE2__)
+static inline const char*
+find_next_newline_simd(const char* p, const char* end)
+{
+    const char* aligned_end = p + ((end - p) & ~15);
+    __m128i newline = _mm_set1_epi8('\n');
+
+    while (p < aligned_end)
+    {
+        __m128i chunk = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+        __m128i cmp = _mm_cmpeq_epi8(chunk, newline);
+        int mask = _mm_movemask_epi8(cmp);
+
+        if (mask != 0)
+        {
+            return p + __builtin_ctz(mask);
+        }
+        p += 16;
+    }
+
+    while (p < end && *p != '\n') ++p;
+    return p;
+}
+#else
+static inline const char*
+find_next_newline_simd(const char* p, const char* end)
+{
+    while (p < end && *p != '\n') ++p;
+    return p;
+}
+#endif
+
+// Optimized skip_spaces with unrolled loop
 static inline const char*
 skip_spaces(const char* p, const char* end)
 {
+    // Unroll 4x for better throughput
+    while (LIKELY(p + 3 < end))
+    {
+        if (LIKELY(static_cast<unsigned char>(p[0]) > ' ')) return p;
+        if (p[0] != ' ' && p[0] != '\t' && p[0] != '\r') return p;
+
+        if (LIKELY(static_cast<unsigned char>(p[1]) > ' ')) return p + 1;
+        if (p[1] != ' ' && p[1] != '\t' && p[1] != '\r') return p + 1;
+
+        if (LIKELY(static_cast<unsigned char>(p[2]) > ' ')) return p + 2;
+        if (p[2] != ' ' && p[2] != '\t' && p[2] != '\r') return p + 2;
+
+        if (LIKELY(static_cast<unsigned char>(p[3]) > ' ')) return p + 3;
+        if (p[3] != ' ' && p[3] != '\t' && p[3] != '\r') return p + 3;
+
+        p += 4;
+    }
+
     while (LIKELY(p < end))
     {
         unsigned char c = static_cast<unsigned char>(*p);
-        if (LIKELY(c > ' '))
-            break; // catches space, tab, newline, CR in one compare
+        if (LIKELY(c > ' ')) break;
         if (c != ' ' && c != '\t' && c != '\r') break;
         ++p;
     }
@@ -271,13 +352,13 @@ read_line(const char*& p,
           const char*& line_end)
 {
     line_start = p;
-    while (LIKELY(p < end) && *p != '\n') ++p;
+    p = find_next_newline_simd(p, end);
     line_end = p;
     if (LIKELY(p < end) && *p == '\n') ++p;
     if (UNLIKELY(line_end > line_start && *(line_end - 1) == '\r')) --line_end;
 }
 
-// Optimized atom parser - parse coordinates in batch, fewer branches
+// Batch parse with prefetching
 static inline const char*
 parse_atom_fields(const char* p,
                   const char* end,
@@ -286,27 +367,19 @@ parse_atom_fields(const char* p,
                   double coords[3],
                   double& charge_out)
 {
-    // id
+    // Prefetch next cache line (64 bytes ahead)
+    PREFETCH_READ(p + 64);
+
     p = skip_spaces(p, end);
     p = parse_uint64_ptr(p, end, id_out);
-
-    // mol (skip)
     p = skip_spaces(p, end);
     p = skip_token(p, end);
-
-    // type
     p = skip_spaces(p, end);
     p = parse_int_ptr(p, end, type_out);
-
-    // mass (skip)
     p = skip_spaces(p, end);
     p = skip_token(p, end);
-
-    // charge
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, charge_out);
-
-    // x, y, z - unrolled loop for better instruction scheduling
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, coords[0]);
     p = skip_spaces(p, end);
@@ -342,30 +415,26 @@ parse_lammps_atoms_buffer(
     const char* line_s = nullptr;
     const char* line_e = nullptr;
 
-    read_line(p, end, line_s, line_e); // "ITEM: TIMESTEP"
-    read_line(p, end, line_s, line_e); // timestep value
+    read_line(p, end, line_s, line_e);
+    read_line(p, end, line_s, line_e);
     {
         double ts = 0.0;
         parse_double_ptr(line_s, line_e, ts);
         data.timestep = ts;
     }
 
-    read_line(p, end, line_s, line_e); // "ITEM: NUMBER OF ATOMS"
-    read_line(p, end, line_s, line_e); // number
+    read_line(p, end, line_s, line_e);
+    read_line(p, end, line_s, line_e);
     uint64_t natoms_u = 0;
     parse_uint64_ptr(line_s, line_e, natoms_u);
     size_t natoms = static_cast<size_t>(natoms_u);
 
-    // Reserve exact capacity to avoid reallocations
-    data.atom_ids.reserve(natoms);
-    data.atom_types.reserve(natoms);
-    data.atom_positions.reserve(3 * natoms);
     data.atom_ids.resize(natoms);
     data.atom_types.resize(natoms);
     data.atom_positions.resize(3 * natoms);
     data.domain_data.resize(3, std::vector<double>(2));
 
-    read_line(p, end, line_s, line_e); // "ITEM: BOX BOUNDS ..."
+    read_line(p, end, line_s, line_e);
     for (int i = 0; i < 3; ++i)
     {
         read_line(p, end, line_s, line_e);
@@ -378,9 +447,8 @@ parse_lammps_atoms_buffer(
         data.domain_data[i][1] = hi;
     }
 
-    read_line(p, end, line_s, line_e); // "ITEM: ATOMS ..."
+    read_line(p, end, line_s, line_e);
 
-    // Build fast lookup map once
     std::unordered_map<std::pair<int, double>, int, PairHash> fast_map;
     const bool use_map = id_map && !id_map->empty();
     if (use_map)
@@ -392,11 +460,15 @@ parse_lammps_atoms_buffer(
         }
     }
 
-    // Hot loop - parse atoms
     size_t i = 0;
     uint64_t* ids_ptr = data.atom_ids.data();
     uint8_t* types_ptr = data.atom_types.data();
     double* pos_ptr = data.atom_positions.data();
+
+    // Prefetch write destinations
+    PREFETCH_WRITE(ids_ptr);
+    PREFETCH_WRITE(types_ptr);
+    PREFETCH_WRITE(pos_ptr);
 
     while (LIKELY(i < natoms && p < end))
     {
@@ -406,6 +478,13 @@ parse_lammps_atoms_buffer(
         double xyz[3] = { 0.0, 0.0, 0.0 };
 
         p = parse_atom_fields(p, end, id, type, xyz, q);
+
+        // Prefetch next write location
+        if (LIKELY(i + 8 < natoms))
+        {
+            PREFETCH_WRITE(&ids_ptr[i + 8]);
+            PREFETCH_WRITE(&pos_ptr[3 * (i + 8)]);
+        }
 
         ids_ptr[i] = id;
 
@@ -431,13 +510,11 @@ parse_lammps_atoms_buffer(
 
         ++i;
 
-        // Skip to next line
-        while (LIKELY(p < end) && *p != '\n') ++p;
+        p = find_next_newline_simd(p, end);
         if (LIKELY(p < end) && *p == '\n') ++p;
     }
 }
 
-// Wrap in LammpsReader class to match Cython interface
 class LammpsReader
 {
 public:
