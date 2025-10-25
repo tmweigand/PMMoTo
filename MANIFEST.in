@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
 recursive-include examples *
-recursive-include src/ *.pyx *.pxd *.py *.hpp *.h
+recursive-include src/ extern/ *.pyx *.pxd *.py *.hpp *.h
