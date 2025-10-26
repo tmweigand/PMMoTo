@@ -59,35 +59,33 @@ extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
     extra_link_args += ["-lm", "-lmvec"]
-    _try_add(cpp_compile_args, "-march=native")
-    _try_add(cpp_compile_args, "-mtune=native")
+    if os.environ.get("PMMOTO_NATIVE") == "1":
+        _try_add(cpp_compile_args, "-march=native")
+        _try_add(cpp_compile_args, "-mtune=native")
 
 if sys.platform == "darwin":
     machine = platform.machine()
 
-    # Always add standard macOS flags
+    # Standard macOS flags (portable)
     for f in ["-stdlib=libc++", "-mmacosx-version-min=10.9"]:
         base_compile_args.append(f)
         cpp_compile_args.append(f)
         extra_link_args.append(f)
 
-    if machine == "arm64":
-        # Prefer specific Apple CPUs; fall back to armv8*
-        for f in [
-            "-mcpu=apple-m3",
-            "-mcpu=apple-m2",
-            "-mcpu=apple-m1",
-            "-march=armv8.5-a",
-            "-march=armv8.4-a",
-            "-march=armv8-a",
-        ]:
-            if _flag_supported(f):
-                cpp_compile_args.append(f)
-                break
-        _try_add(cpp_compile_args, "-mtune=native")
-    elif machine == "x86_64":
-        # Only enable native on request; probe support
-        if os.environ.get("PMMOTO_NATIVE") == "1":
+    # Only add CPU-specific flags when explicitly requested AND supported
+    if os.environ.get("PMMOTO_NATIVE") == "1":
+        if machine == "arm64":
+            for f in [
+                "-mcpu=native",
+                "-march=armv9-a",
+                "-march=armv8.5-a",
+                "-march=armv8.4-a",
+                "-march=armv8-a",
+            ]:
+                if _flag_supported(f):
+                    cpp_compile_args.append(f)
+                    break
+        elif machine == "x86_64":
             _try_add(cpp_compile_args, "-march=native")
             _try_add(cpp_compile_args, "-mtune=native")
 
@@ -97,6 +95,12 @@ dr_compile_args = cpp_compile_args[:] + [
     "-ftree-vectorize",
     "-funroll-loops",
 ]
+
+# Optional: show flags in CI for debugging
+if os.environ.get("PMMOTO_SHOW_FLAGS") == "1":
+    print("cpp_compile_args:", cpp_compile_args)
+    print("dr_compile_args:", dr_compile_args)
+    print("extra_link_args:", extra_link_args)
 
 ext_modules = [
     Extension(
