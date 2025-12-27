@@ -1,7 +1,7 @@
 # Testing
 pytest>=8.1
 pytest-cov>=2.12.1
-pytest-mpi @ git+https://github.com/orausch/pytest-mpi.git@master
+pytest-mpi-tmweigand>=0.7.0
 
 # Linting and formatting
 ruff>=0.3.0
