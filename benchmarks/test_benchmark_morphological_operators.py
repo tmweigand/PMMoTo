@@ -17,7 +17,7 @@ def setup():
     prob_zero = 0.3
     seed = 1
     sd = initialize(voxels)
-    img = domain_generation.gen_random_binary_grid(voxels, prob_zero, seed)
+    img = domain_generation.gen_img_random_binary(voxels, prob_zero, seed)
     return sd, img
 
 
