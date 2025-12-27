@@ -333,7 +333,8 @@ if __name__ == "__main__":
     )
 
     mask_color = uff_color + pmf_color
-    mask_name = ["Non-equilibrium pore space", "Equilibrium pore space"]
+    # mask_name = ["Non-equilibrium pore space", "Equilibrium pore space"]
+    mask_name = ["Equilibrium pore space", "Non-equilibrium pore space"]
     plot_pore_space(
         img_type_to_files_excluded["mask"],
         "mask",
