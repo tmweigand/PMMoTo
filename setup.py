@@ -8,6 +8,7 @@ import platform
 import os
 import subprocess
 import tempfile
+import shutil
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 import Cython.Compiler.Options
@@ -44,6 +45,43 @@ def _try_add(flags: list, flag: str, lang: str = "c++"):
         flags.append(flag)
 
 
+def _pkg_config(name: str):
+    try:
+        if (
+            shutil.which("pkg-config")
+            and subprocess.run(["pkg-config", "--exists", name]).returncode == 0
+        ):
+            cflags = (
+                subprocess.check_output(["pkg-config", "--cflags", name])
+                .decode()
+                .strip()
+                .split()
+            )
+            libs = (
+                subprocess.check_output(["pkg-config", "--libs", name])
+                .decode()
+                .strip()
+                .split()
+            )
+            return cflags, libs
+    except Exception:
+        pass
+    return [], []
+
+
+def find_libdeflate():
+    cflags, libs = _pkg_config("libdeflate")
+    if libs:
+        return cflags, libs, True
+    # Homebrew fallback
+    hb = "/opt/homebrew" if os.path.exists("/opt/homebrew") else "/usr/local"
+    inc = os.path.join(hb, "opt", "libdeflate", "include")
+    lib = os.path.join(hb, "opt", "libdeflate", "lib")
+    if os.path.isdir(inc) and os.path.isdir(lib):
+        return [f"-I{inc}"], [f"-L{lib}", "-ldeflate", f"-Wl,-rpath,{lib}"], True
+    return [], [], False
+
+
 # common fast flags
 base_compile_args = [
     "-O3",
@@ -58,7 +96,10 @@ cpp_compile_args = ["-std=c++17"] + base_compile_args[:]
 extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
-    extra_link_args += ["-lm", "-lmvec"]
+    extra_link_args += ["-lm"]
+    if _link_flag_supported("-lmvec"):
+        extra_link_args += ["-lmvec"]
+    extra_link_args += ["-ldl"]  # for dladdr/Dl_info
     if os.environ.get("PMMOTO_NATIVE") == "1":
         _try_add(cpp_compile_args, "-march=native")
         _try_add(cpp_compile_args, "-mtune=native")
@@ -96,11 +137,17 @@ dr_compile_args = cpp_compile_args[:] + [
     "-funroll-loops",
 ]
 
-# Optional: show flags in CI for debugging
+# Prefer libdeflate; fallback to zlib
+ld_cflags, ld_libs, have_ld = find_libdeflate()
+if have_ld:
+    dr_compile_args = dr_compile_args + ["-DHAVE_LIBDEFLATE=1"]
+
+# Optional debug
 if os.environ.get("PMMOTO_SHOW_FLAGS") == "1":
     print("cpp_compile_args:", cpp_compile_args)
     print("dr_compile_args:", dr_compile_args)
     print("extra_link_args:", extra_link_args)
+    print("libdeflate:", have_ld, ld_cflags, ld_libs)
 
 ext_modules = [
     Extension(
@@ -135,10 +182,9 @@ ext_modules = [
         "pmmoto.io._data_read",
         ["src/pmmoto/io/_data_read.pyx"],
         include_dirs=["src/pmmoto/io", "extern/fast_float/include"],
-        libraries=["z"],
         language="c++",
-        extra_compile_args=dr_compile_args,
-        extra_link_args=extra_link_args,
+        extra_compile_args=dr_compile_args + ld_cflags,
+        extra_link_args=extra_link_args + (ld_libs if have_ld else ["-lz"]),
     ),
     Extension(
         "pmmoto.particles._particles",
