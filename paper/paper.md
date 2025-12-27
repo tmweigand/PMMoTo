@@ -19,7 +19,7 @@ bibliography: paper.bib
 
 # Summary
 
-The Porous Media Morphology and Topology Toolkit (PMMoTo) is a software tool designed to help researchers analyze and understand porous structures and how their features influence behavior at larger scales. A porous medium is any solid material that contains pores, for example, soil, membranes, skin, and many other natural and engineered materials. In fact, porosity is often a function of spatial scale; all materials have some degree of porosity, you just need to zoom in. The morphology (i.e. the shape and structure) and topology (i.e., the connectivity and spatial relations) of a porous structure govern larger scale behavior. By characterizing these structures, PMMoTo enables researchers to better understand emergent behaviors and develop more predictive models of porous systems.
+The Porous Media Morphology and Topology Toolkit (PMMoTo, https://tmweigand.github.io/PMMoTo/index.html) is a software tool designed to help researchers analyze and understand porous structures and how their features influence behavior at larger scales. A porous medium is any solid material that contains pores, for example, soil, membranes, skin, and many other natural and engineered materials. In fact, porosity is often a function of spatial scale; all materials have some degree of porosity, you just need to zoom in. The morphology (i.e. the shape and structure) and topology (i.e., the connectivity and spatial relations) of a porous structure govern larger scale behavior. By characterizing these structures, PMMoTo enables researchers to better understand emergent behaviors and develop more predictive models of porous systems.
 
 # Statement of Need
 
@@ -33,6 +33,6 @@ Recently, PMMoTo was used to generate and analyze highly resolved probabilistic 
 
 # Acknowledgements
 
-Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Portions have this work have been supported by NIEHS Superfund Grant (P42-ES031007) and and computing resources from XSEDE/ACCESS (CTS200041).
+Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Special thanks to Emily Jane Bernath for the design of logos and for her encouragement and support. Portions of have this work have been supported by NIEHS Superfund Grant (P42-ES031007) and and computing resources from XSEDE/ACCESS (CTS200041).
 
 # References
