@@ -2,11 +2,22 @@ name: Tests
 
 on:
   push:
+    branches: [main]
+    tags: ["v*"]
   pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -15,20 +26,13 @@ jobs:
         mpi: [mpich, openmpi]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          cache: "pip"
 
       - name: Install MPI
         run: |
@@ -36,14 +40,14 @@ jobs:
             sudo apt update
             if [ "${{ matrix.mpi }}" = "mpich" ]; then
               sudo apt install -y mpich libmpich-dev zlib1g-dev
-            elif [ "${{ matrix.mpi }}" = "openmpi" ]; then
+            else
               sudo apt install -y openmpi-bin libopenmpi-dev zlib1g-dev
             fi
-          elif [ "$RUNNER_OS" = "macOS" ]; then
+          else
             brew update
             if [ "${{ matrix.mpi }}" = "mpich" ]; then
               brew install mpich zlib
-            elif [ "${{ matrix.mpi }}" = "openmpi" ]; then
+            else
               brew install open-mpi zlib
             fi
           fi

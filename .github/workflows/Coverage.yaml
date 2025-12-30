@@ -1,35 +1,51 @@
 name: Coverage
 
 on:
-  - push
-  - pull_request
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   coverage:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       matrix:
         os: [macos-14]
         python-version: ["3.11"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
       - name: Install dependencies
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            sudo apt update
-            sudo apt install -y libmpich-dev zlib1g-dev
+            sudo apt-get update
+            sudo apt-get install -y libmpich-dev zlib1g-dev
           elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew update
             brew install mpich zlib
           fi
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions
+
       - name: Run coverage
         run: tox -e coverage
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
