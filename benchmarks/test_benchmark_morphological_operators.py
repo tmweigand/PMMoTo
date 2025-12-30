@@ -1,9 +1,10 @@
 """Benchmark tests for PMMoTo morphological operators."""
 
+import pytest
+
 from pmmoto import domain_generation
 from pmmoto import filters
 from pmmoto import initialize
-import pytest
 
 
 def setup():
@@ -21,7 +22,7 @@ def setup():
     return sd, img
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group="morph_small_radius")
 def test_morph_addition_fft_small_r(benchmark):
     """Benchmark morphological addition (FFT method, small radius).
 
@@ -41,7 +42,7 @@ def test_morph_addition_fft_small_r(benchmark):
     )
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group="morph_large_radius")
 def test_morph_addition_fft_large_r(benchmark):
     """Benchmark morphological addition (FFT method, large radius).
 
@@ -61,7 +62,7 @@ def test_morph_addition_fft_large_r(benchmark):
     )
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group="morph_small_radius")
 def test_morph_addition_edt_small_r(benchmark):
     """Benchmark morphological addition (EDT method, small radius).
 
@@ -81,7 +82,7 @@ def test_morph_addition_edt_small_r(benchmark):
     )
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group="morph_large_radius")
 def test_morph_addition_edt_large_r(benchmark):
     """Benchmark morphological addition (EDT method, large radius).
 

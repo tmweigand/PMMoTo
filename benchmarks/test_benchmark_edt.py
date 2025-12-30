@@ -1,12 +1,22 @@
 """Benchmark tests for PMMoTo and edt distance transform implementations."""
 
-import edt
 import pytest
 from pmmoto import domain_generation
 from pmmoto import filters
 
+try:
+    import edt
+except ModuleNotFoundError as e:
+    raise RuntimeError(
+        "The 'edt' module is required for this benchmark. "
+        "Make sure you have installed PMMoTo with the '[dev]' extras:\n\n"
+        "    pip install -e '.[dev]'\n"
+        "or\n"
+        "    pip install pmmoto[dev]"
+    ) from e
 
-@pytest.mark.benchmark
+
+@pytest.mark.benchmark(group="edt")
 def test_pmmoto_edt(benchmark):
     """Benchmark the PMMoTo 3D Euclidean distance transform (non-periodic).
 
@@ -21,6 +31,7 @@ def test_pmmoto_edt(benchmark):
     _ = benchmark(filters.distance.edt3d, img, periodic=[False, False, False])
 
 
+@pytest.mark.benchmark(group="edt")
 def test_pmmoto_periodic_edt(benchmark):
     """Benchmark the PMMoTo 3D Euclidean distance transform with periodic boundaries.
 
@@ -35,6 +46,7 @@ def test_pmmoto_periodic_edt(benchmark):
     _ = benchmark(filters.distance.edt3d, img, periodic=[True, True, True])
 
 
+@pytest.mark.benchmark(group="edt")
 def test_edt(benchmark):
     """Benchmark the reference edt.edt distance transform implementation.
 
