@@ -28,10 +28,14 @@ RUN useradd -ms /bin/bash mpitest
 USER mpitest
 WORKDIR /home/mpitest
 
+# Explicitly define HOME for Dockerfile linting and PATH correctness
+ENV HOME=/home/mpitest
+
 # Copy code into user's home
 COPY --chown=mpitest:mpitest ./ /home/mpitest/pmmoto
 
-ENV PATH="$MPI_DIR/bin:/.local/bin:$PATH"
+# Ensure MPI and user-installed Python scripts are available
+ENV PATH="$MPI_DIR/bin:$HOME/.local/bin:$PATH"
 ENV LD_LIBRARY_PATH="$MPI_DIR/lib:"
 
 CMD [ "tail", "-f", "/dev/null" ]

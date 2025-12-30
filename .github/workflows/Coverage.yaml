@@ -1,8 +1,13 @@
 name: Coverage
 
 on:
-  - push
-  - pull_request
+  pull_request:
+    branches:
+      - "**"
+
+  push:
+    branches:
+      - main
 
 jobs:
   coverage:

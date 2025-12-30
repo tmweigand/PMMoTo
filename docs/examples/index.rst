@@ -1,7 +1,7 @@
 Examples
 ========
 
-Examples demonstrating how to use PMMoTo for porous media analysis:
+Examples demonstrating how to use PMMoTo for porous media analysis and can be found at https://github.com/tmweigand/PMMoTo/tree/main/examples:
 
 .. toctree::
    :maxdepth: 1

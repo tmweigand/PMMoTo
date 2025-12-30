@@ -10,14 +10,11 @@ The **Porous Media Morphology and Topology (PMMoTo)** toolkit is an open-source 
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: User Guide
+   :maxdepth: 1
 
-   user_guide/installation
-   user_guide/quickstart
-   examples/index
+   user_guide/index
+   developer_guide/index
    references
-
 
 .. toctree::
    :maxdepth: 1
