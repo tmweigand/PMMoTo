@@ -11,14 +11,18 @@ import numpy
 
 Cython.Compiler.Options.annotate = True
 
-extra_compile_args = ["-std=c++17"]
+extra_compile_args = []
+
 if sys.platform == "win32":
+    # MSVC
     extra_compile_args += ["/std:c++17", "/O2"]
 else:
-    extra_compile_args += ["-std=c++17", "-O3", "-ffast-math", "-pthread"]
+    # GCC / Clang
+    extra_compile_args += ["-std=c++17", "-O3", "-pthread"]
 
 if sys.platform == "darwin":
-    extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
+    # Use modern libc++; do NOT pin to ancient macOS
+    extra_compile_args += ["-stdlib=libc++"]
 
 
 cmdclass = {}
