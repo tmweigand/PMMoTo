@@ -1,6 +1,6 @@
 [project]
 name = "pmmoto"
-version = "1.0.2"
+version = "1.0.3"
 description = "Porous Media Topology and Morphology Toolkit"
 
 license = { text = "MIT" }
