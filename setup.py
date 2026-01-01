@@ -89,8 +89,6 @@ ext_modules = [
     ),
 ]
 setup(
-    name="pmmoto",
-    version="1.0.4",
     ext_modules=cythonize(
         ext_modules,
         annotate=True,
