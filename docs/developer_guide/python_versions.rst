@@ -9,6 +9,7 @@ against:
     - Python 3.10
     - Python 3.11
     - Python 3.12
+    - Python 3.13
 
 The recommended and supported way to manage multiple Python versions is
 to use ``pyenv``.
@@ -61,9 +62,10 @@ Install the required Python versions:
    pyenv install 3.10.14
    pyenv install 3.11.9
    pyenv install 3.12.3
+   pyenv install 3.13.5
 
 Exact patch versions are not critical, but should correspond to the
-``py310``, ``py311``, and ``py312`` environments defined in ``tox.ini``.
+``py310``, ``py311``, ``py312``, and ``py313`` environments defined in ``tox.ini``.
 
 Linux
 -----
@@ -127,6 +129,7 @@ Install the required Python versions:
    pyenv install 3.10.14
    pyenv install 3.11.9
    pyenv install 3.12.3
+   pyenv install 3.13.5
 
 Project Configuration
 ---------------------
@@ -135,7 +138,7 @@ From the root of the repository, configure the local Python versions:
 
 .. code-block:: shell
 
-   pyenv local 3.10.14 3.11.9 3.12.3
+   pyenv local 3.10.14 3.11.9 3.12.3 3.13.5
 
 This creates a ``.python-version`` file that ensures ``tox`` can locate
 all required interpreters.
@@ -147,6 +150,7 @@ Verify that the interpreters are available:
    which python3.10
    which python3.11
    which python3.12
+   which python3.13
 
 All paths should resolve to ``~/.pyenv/versions/...``.
 

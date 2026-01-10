@@ -70,7 +70,7 @@ class Multiphase(Generic[T]):
         local_img = utils.own_img(self.subdomain, img)
         local_voxel_count = np.count_nonzero(local_img == phase)
 
-        total_voxel_count: int = (
+        total_voxel_count: int = int(
             communication.all_reduce(local_voxel_count)
             if self.subdomain.domain.num_subdomains > 1
             else local_voxel_count

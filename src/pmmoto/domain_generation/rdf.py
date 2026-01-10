@@ -5,7 +5,7 @@ Provides classes and functions for reading, generating, and binning RDF data.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Any
 import numpy as np
 from numpy.typing import NDArray
 import warnings
@@ -40,8 +40,8 @@ class RDF:
         self,
         name: str,
         atom_id: int,
-        radii: NDArray[np.float64],
-        rdf: NDArray[np.float64],
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
     ):
         """Initialize RDF object.
 
@@ -101,8 +101,8 @@ class BoundedRDF(RDF):
         self,
         name: str,
         atom_id: int,
-        radii: NDArray[np.float64],
-        rdf: NDArray[np.float64],
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
         eps: float = 0,
     ):
         """Initialize Bounded_RDF object.
@@ -254,7 +254,7 @@ def bin_distances(
 
     """
     # Generate bins
-    binned_distance: dict[int, NDArray[np.float64]] = {}
+    binned_distance: dict[int, NDArray[np.floating[Any]]] = {}
     for label, atom_list in atoms.atom_map.items():
 
         # Ensure kd_tree built
