@@ -139,7 +139,9 @@ class BoundedRDF(RDF):
             eps=eps,
         )
 
-    def determine_bounds(self, rdf: NDArray[np.float64], eps: float = 0) -> list[int]:
+    def determine_bounds(
+        self, rdf: NDArray[np.floating[Any]], eps: float = 0
+    ) -> list[int]:
         """Get the r values of the bounded RDF such that g(r) > 0 : r : g(r) = 1.
 
         Args:
@@ -197,7 +199,10 @@ class BoundedRDF(RDF):
         return int(indices[0])
 
     def get_bounded_RDF_data(
-        self, radii: NDArray[np.float64], rdf: NDArray[np.float64], bounds: list[int]
+        self,
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
+        bounds: list[int],
     ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Set the bounds of the radial distribution function.
 
