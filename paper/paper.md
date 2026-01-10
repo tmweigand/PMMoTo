@@ -33,6 +33,6 @@ Recently, PMMoTo was used to generate and analyze highly resolved probabilistic 
 
 # Acknowledgements
 
-Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Special thanks to Emily Jane Bernath for the design of logos and for her encouragement and support. Portions of have this work have been supported by NIEHS Superfund Grant (P42-ES031007) and and computing resources from XSEDE/ACCESS (CTS200041).
+Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Special thanks to Emily Jane Bernath for the design of logos and for her encouragement and support. Portions of this work have been supported by NIEHS Superfund Grant (P42-ES031007) and and computing resources from XSEDE/ACCESS (CTS200041).
 
 # References
