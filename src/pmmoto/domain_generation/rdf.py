@@ -163,7 +163,7 @@ class BoundedRDF(RDF):
 
         return bounds
 
-    def find_min_radius(self, rdf: NDArray[np.float64], eps: float = 1e-3) -> int:
+    def find_min_radius(self, rdf: NDArray[np.floating[Any]], eps: float = 1e-3) -> int:
         """Find the smallest r value from the RDF data such that min r where g(r) < eps.
 
         Args:
@@ -203,7 +203,7 @@ class BoundedRDF(RDF):
         radii: NDArray[np.floating[Any]],
         rdf: NDArray[np.floating[Any]],
         bounds: list[int],
-    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    ) -> tuple[NDArray[np.floating[Any]], NDArray[np.floating[Any]]]:
         """Set the bounds of the radial distribution function.
 
         Args:
