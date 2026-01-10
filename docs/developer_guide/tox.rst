@@ -10,7 +10,7 @@ same mechanism used in continuous integration.
 Overview
 --------
 ``tox`` manages:
-    - Multiple Python versions (3.10, 3.11, 3.12)
+    - Multiple Python versions (3.10, 3.11, 3.12, 3.13)
     - Serial and MPI-enabled test execution
     - Linting, formatting, static type checking, and documentation checks
     - Coverage aggregation across MPI ranks
@@ -25,6 +25,7 @@ The test suite is exercised across the following dimensions:
     - Python 3.10
     - Python 3.11
     - Python 3.12
+    - Python 3.13
 
 **Execution modes**
     - Serial unit tests
@@ -68,7 +69,7 @@ Specific environments can be run using ``-e``:
 Unit and MPI Tests
 ------------------
 
-The default Python test environments (``py310``, ``py311``, ``py312``)
+The default Python test environments (``py310``, ``py311``, ``py312``, ``py313``)
 run both serial unit tests and MPI-enabled tests using multiple process counts using the ``pytest-mpi`` plugin. Internally, ``tox`` invokes MPI tests with different numbers of ranks to validate correctness under parallel execution.
 
 MPI Implementation Handling
@@ -139,7 +140,7 @@ selected auto-generated or external-interface modules.
 Python Version Management
 -------------------------
 
-Running the full ``tox`` matrix requires Python 3.10–3.12 to be
+Running the full ``tox`` matrix requires Python 3.10–3.13 to be
 available on the system. Installing and managing multiple Python
 versions is documented separately.
 

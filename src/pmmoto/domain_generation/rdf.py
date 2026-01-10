@@ -5,7 +5,7 @@ Provides classes and functions for reading, generating, and binning RDF data.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Any
 import numpy as np
 from numpy.typing import NDArray
 import warnings
@@ -40,8 +40,8 @@ class RDF:
         self,
         name: str,
         atom_id: int,
-        radii: NDArray[np.float64],
-        rdf: NDArray[np.float64],
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
     ):
         """Initialize RDF object.
 
@@ -101,8 +101,8 @@ class BoundedRDF(RDF):
         self,
         name: str,
         atom_id: int,
-        radii: NDArray[np.float64],
-        rdf: NDArray[np.float64],
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
         eps: float = 0,
     ):
         """Initialize Bounded_RDF object.
@@ -139,7 +139,9 @@ class BoundedRDF(RDF):
             eps=eps,
         )
 
-    def determine_bounds(self, rdf: NDArray[np.float64], eps: float = 0) -> list[int]:
+    def determine_bounds(
+        self, rdf: NDArray[np.floating[Any]], eps: float = 0
+    ) -> list[int]:
         """Get the r values of the bounded RDF such that g(r) > 0 : r : g(r) = 1.
 
         Args:
@@ -161,7 +163,7 @@ class BoundedRDF(RDF):
 
         return bounds
 
-    def find_min_radius(self, rdf: NDArray[np.float64], eps: float = 1e-3) -> int:
+    def find_min_radius(self, rdf: NDArray[np.floating[Any]], eps: float = 1e-3) -> int:
         """Find the smallest r value from the RDF data such that min r where g(r) < eps.
 
         Args:
@@ -197,8 +199,11 @@ class BoundedRDF(RDF):
         return int(indices[0])
 
     def get_bounded_RDF_data(
-        self, radii: NDArray[np.float64], rdf: NDArray[np.float64], bounds: list[int]
-    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        self,
+        radii: NDArray[np.floating[Any]],
+        rdf: NDArray[np.floating[Any]],
+        bounds: list[int],
+    ) -> tuple[NDArray[np.floating[Any]], NDArray[np.floating[Any]]]:
         """Set the bounds of the radial distribution function.
 
         Args:
@@ -254,7 +259,7 @@ def bin_distances(
 
     """
     # Generate bins
-    binned_distance: dict[int, NDArray[np.float64]] = {}
+    binned_distance: dict[int, NDArray[np.floating[Any]]] = {}
     for label, atom_list in atoms.atom_map.items():
 
         # Ensure kd_tree built

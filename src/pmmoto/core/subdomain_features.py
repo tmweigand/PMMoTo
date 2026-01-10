@@ -67,7 +67,7 @@ class SubdomainFeatures:
         """Collect Face"""
         ### Faces
         for feature in FEATURE_MAP.faces:
-            face_dim = np.nonzero(feature)[0][0]
+            face_dim = np.nonzero(np.asarray(feature))[0][0]
             if feature[face_dim] > 0:
                 side = 1
             else:
