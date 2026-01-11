@@ -9,7 +9,7 @@ There are two common ways to set up PMMoTo for development or testing:
 
    .. code-block:: bash
 
-      pip install -e '.[dev]'
+      pip install -e .[dev]
 
    **Requirements and behavior:**
 
