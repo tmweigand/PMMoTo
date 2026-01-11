@@ -104,6 +104,36 @@ def test_morphological_subtraction() -> None:
         )
 
 
+def test_morph_methods():
+    """Test to Correctness of Different Approaches"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    radius = 0.03333333333333334
+
+    morph_fft = pmmoto.filters.morphological_operators.subtraction(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    morph_no_fft = pmmoto.filters.morphological_operators.subtraction(
+        subdomain=sd, img=pm.img, radius=radius, fft=False
+    )
+
+    np.testing.assert_array_equal(morph_fft, morph_no_fft)
+
+    morph_fft = pmmoto.filters.morphological_operators.addition(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    morph_no_fft = pmmoto.filters.morphological_operators.addition(
+        subdomain=sd, img=pm.img, radius=radius, fft=False
+    )
+
+    np.testing.assert_array_equal(morph_fft, morph_no_fft)
+
+
 def morphological_operator(
     operator, rank, sd, img, subdomains, probe_radius, boundary_type, test_scipy=False
 ) -> None:

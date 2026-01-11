@@ -107,7 +107,7 @@ def porosimetry(
     if isinstance(radius, (int, float)):
         erosion_radius = radius
         dilation_radius = radius
-    elif isinstance(radius, list):
+    elif isinstance(radius, list) and len(radius) == 2:
         erosion_radius = radius[0]
         dilation_radius = radius[1]
     else:
@@ -196,9 +196,10 @@ def pore_size_distribution(
         global_max_edt = utils.determine_maximum(edt)
         rel_eps = 1e-6 * porous_media.max_distance
         global_max_edt = global_max_edt - rel_eps
-        radii = get_sizes(
-            np.min(subdomain.domain.resolution), global_max_edt, num_radii, "linear"
-        )
+
+        min_res = np.min(subdomain.domain.resolution)
+        r_min = np.nextafter(min_res, np.inf)
+        radii = get_sizes(r_min, global_max_edt, num_radii, "linear")
 
     morphological_operators.check_radii(subdomain, radii)
 
@@ -208,6 +209,7 @@ def pore_size_distribution(
             logging.info(
                 "Processing radius %i of %i with value: %f", n + 1, len(radii), radius
             )
+
         img_temp = porosimetry(
             subdomain=subdomain,
             porous_media=porous_media,
@@ -218,7 +220,9 @@ def pore_size_distribution(
 
         if np.any(img_temp):
             img_results = np.where(
-                (img_results == 0) & (img_temp == 1), radius, img_results
+                (porous_media.img == 1) & (img_results == 0) & (img_temp == 1),
+                radius,
+                img_results,
             )
 
     return img_results

@@ -137,10 +137,10 @@ def addition(
         _grid_distance = distance.edt3d(
             np.logical_not(halo_img),
             resolution=subdomain.domain.resolution,
-            squared=True,
+            squared=False,
         )
 
-        _grid_out = np.where((_grid_distance <= radius * radius), 1, 0).astype(np.uint8)
+        _grid_out = np.where((_grid_distance <= radius), 1, 0).astype(np.uint8)
 
     grid_out = utils.unpad(_grid_out, halo)
 
@@ -215,11 +215,12 @@ def subtraction(
             tuple(row) for row in (_pad * np.ones_like(halo))
         )  # Pads everything regardless of bcs
         _img_out = utils.unpad(_img, pad_tuple).astype(np.uint8)
+
     else:
         _img_distance = distance.edt3d(
-            halo_img, resolution=subdomain.domain.resolution, squared=True
+            halo_img, resolution=subdomain.domain.resolution, squared=False
         )
-        _img_out = np.where((_img_distance <= radius * radius), 0, 1).astype(np.uint8)
+        _img_out = np.where((_img_distance <= radius), 0, 1).astype(np.uint8)
 
     img_out = utils.unpad(_img_out, halo)
     img_out = subdomain.set_wall_bcs(img_out)

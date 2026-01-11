@@ -24,11 +24,6 @@ def test_connect_components(
     img[:, 5, :] = 0
     img[:, :, 5] = 0
 
-    # if rank == 0:
-    #     pmmoto.io.output.save_img(
-    #         "data_out/cc_domain", img, resolution=sd.domain.resolution
-    #     )
-
     subdomains = (2, 2, 2)
     sd_local, local_img = pmmoto.domain_generation.deconstruct_img(
         sd,
@@ -40,10 +35,6 @@ def test_connect_components(
     cc, label_count = pmmoto.filters.connected_components.connect_components(
         local_img, sd_local
     )
-
-    # pmmoto.io.output.save_img(
-    #     "data_out/test_cc", sd_local, local_img, additional_img={"cc": cc}
-    # )
 
     connected_labels = pmmoto.filters.connected_components.inlet_outlet_labels(
         sd_local, cc
