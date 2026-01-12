@@ -14,6 +14,7 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 from libcpp.unordered_map cimport unordered_map
 
+from ..core import boundary_types
 from .spheres cimport SphereList
 from .cylinders cimport CylinderList
 from .particle_list cimport Box
@@ -23,7 +24,7 @@ from ..core import communication
 __all__ = ["_initialize_atoms","_initialize_spheres","_initialize_cylinders"]
 
 
-def create_box(bounds):
+def create_box(bounds,boundary_type = None):
     """
     Convert a tuple of tuples ((min_x, max_x), (min_y, max_y), (min_z, max_z))
     into a C++ Box structure in Cython.
@@ -34,6 +35,14 @@ def create_box(bounds):
     box.min[0], box.max[0] = bounds[0]
     box.min[1], box.max[1] = bounds[1]
     box.min[2], box.max[2] = bounds[2]
+
+    if boundary_type is not None:
+        box.lower_periodic[0] = 1 if boundary_type[0][0] == boundary_types.BoundaryType.PERIODIC else 0
+        box.upper_periodic[0] = 1 if boundary_type[0][1] == boundary_types.BoundaryType.PERIODIC else 0
+        box.lower_periodic[1] = 1 if boundary_type[1][0] == boundary_types.BoundaryType.PERIODIC else 0
+        box.upper_periodic[1] = 1 if boundary_type[1][1] == boundary_types.BoundaryType.PERIODIC else 0
+        box.lower_periodic[2] = 1 if boundary_type[2][0] == boundary_types.BoundaryType.PERIODIC else 0
+        box.upper_periodic[2] = 1 if boundary_type[2][1] == boundary_types.BoundaryType.PERIODIC else 0
 
     return box
 
@@ -208,8 +217,8 @@ cdef class PyAtomList:
         """
         cdef Box _domain_box, _subdomain_box
 
-        _domain_box = create_box(subdomain.domain.box)
-        _subdomain_box = create_box(subdomain.box)
+        _domain_box = create_box(subdomain.domain.box,subdomain.domain.boundary_types)
+        _subdomain_box = create_box(subdomain.box,subdomain.domain.boundary_types)
 
         self._atom_list.get().add_periodic_atoms(_domain_box, _subdomain_box)
 
@@ -309,8 +318,8 @@ cdef class PySphereList:
         """
         cdef Box _domain_box,_subdomain_box
 
-        _domain_box = create_box(subdomain.domain.box)
-        _subdomain_box = create_box(subdomain.box)
+        _domain_box = create_box(subdomain.domain.box,subdomain.domain.boundary_types)
+        _subdomain_box = create_box(subdomain.box,subdomain.domain.boundary_types)
 
         self._sphere_list.get().add_periodic_spheres(_domain_box,_subdomain_box)
 

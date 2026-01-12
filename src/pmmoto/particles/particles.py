@@ -56,6 +56,12 @@ def _load_uff_data(file_name: None | str = None) -> dict[str | int, tuple[int, f
         - Atom Name
         - Atomic Number (i.e. 1 = H, 6 = C)
 
+    If file is provided, format is:
+        Header
+        AtomicNumber Name Diameter
+        AtomicNumber Name Diameter
+        AtomicNumber Name Diameter
+
     Args:
         file_name (str, optional): Path to UFF data file.
 
@@ -67,7 +73,7 @@ def _load_uff_data(file_name: None | str = None) -> dict[str | int, tuple[int, f
         element_table = atom_universal_force_field()
     else:
         element_table = {}
-        with open(file_name, "r") as file:
+        with open(file_name, "r", encoding="utf-8") as file:
             next(file)  # skip header
             for line in file:
                 parts = line.split()
@@ -118,8 +124,6 @@ def uff_radius(
             if num in all_uff_radii:
                 atomic_number, radius = all_uff_radii[num]
                 radii[atomic_number] = radius
-    else:
-        raise ValueError("Input data must be a list of atom names or atomic numbers.")
 
     return radii
 
@@ -127,9 +131,9 @@ def uff_radius(
 def initialize_atoms(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     atom_coordinates: NDArray[np.floating[Any]],
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     atom_ids: NDArray[np.integer[Any]],
-    atom_masses: None | NDArray[np.integer[Any]] = None,
+    atom_masses: None | dict[int, float] = None,
     by_type: bool = False,
     add_periodic: bool = False,
     set_own: bool = True,
@@ -141,7 +145,7 @@ def initialize_atoms(
     Args:
         subdomain: Domain subdivision object.
         atom_coordinates (np.ndarray): Array of shape (n_atoms, 3) with xyz coordinates.
-        atom_radii (dict or np.ndarray): Dictionary of atom types to radii or array.
+        atom_radii (dict): Dictionary of atom types to radii or array.
         atom_ids (np.ndarray): Array of atom type IDs.
         atom_masses (dict, optional): Dictionary of atom masses.
         by_type (bool, optional): Whether to organize atoms by type.
@@ -156,12 +160,6 @@ def initialize_atoms(
     """
     if not atom_coordinates.flags["C_CONTIGUOUS"]:
         atom_coordinates = np.ascontiguousarray(atom_coordinates)
-
-    if isinstance(atom_radii, np.ndarray) and not atom_radii.flags["C_CONTIGUOUS"]:
-        atom_radii = np.ascontiguousarray(atom_radii)
-
-    if not atom_ids.flags["C_CONTIGUOUS"]:
-        atom_ids = np.ascontiguousarray(atom_ids)
 
     # Initialize particles
     particles = _initialize_atoms(
@@ -209,7 +207,7 @@ def initialize_spheres(
         AtomMap: Python Class that wraps spheres. See _particles.pyx.
 
     """
-    if not radii:
+    if radii is None:
         _spheres = spheres[:, 0:3]
         radii = spheres[:, 3]
     else:

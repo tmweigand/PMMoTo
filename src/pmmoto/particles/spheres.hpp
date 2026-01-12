@@ -64,22 +64,29 @@ public:
     }
 
     /**
-     * @brief Determines if a particle crosses the outer box boundaries.
+     * @brief Determines if a particle crosses the outer box boundaries and has
+     * periodic boundary conditions
      * @param Sphere sphere to check
      * @param outerBox The outer periodic box dimensions
      * @return Array of bools indicating whether the particle crosses each axis
      * boundary.
      */
-    inline std::array<bool, 3> cross_boundary(const Box& box)
+    inline std::array<bool, 3> cross_boundary(const Box& box) const
     {
-        return {
-            coordinates[0] - radius < box.min[0] ||
-                coordinates[0] + radius > box.max[0],
-            coordinates[1] - radius < box.min[1] ||
-                coordinates[1] + radius > box.max[1],
-            coordinates[2] - radius < box.min[2] ||
-                coordinates[2] + radius > box.max[2],
-        };
+        std::array<bool, 3> crosses{};
+
+        for (std::size_t d = 0; d < 3; ++d)
+        {
+            const bool crosses_lower =
+                box.lower_periodic[d] && (coordinates[d] - radius < box.min[d]);
+
+            const bool crosses_upper =
+                box.upper_periodic[d] && (coordinates[d] + radius > box.max[d]);
+
+            crosses[d] = crosses_lower || crosses_upper;
+        }
+
+        return crosses;
     }
 
     /**
@@ -336,7 +343,7 @@ public:
      * @brief Applies periodic boundary conditions to spheres and retains
      only
      * those that intersect the inner box.
-     * @param domain Dimensions of domain via Box
+     * @param domain Dimensions of domain via Box with periodic boundary info
      * @param subdomain Dimensions of the subdomain vix Box
      */
     void add_periodic_spheres(Box& domain, const Box& subdomain)
@@ -344,16 +351,22 @@ public:
         domain.box_length();
         std::vector<Sphere> new_spheres;
         std::vector<Coords> new_coords;
+        static constexpr std::array<int, 3> shifts = { -1, 0, 1 };
         for (auto& sphere : spheres)
         {
             auto crosses = sphere.cross_boundary(domain);
 
-            for (int dx = -1; dx <= 1; ++dx)
+            for (int dx : shifts)
             {
-                for (int dy = -1; dy <= 1; ++dy)
+                if (dx != 0 && !crosses[0]) continue;
+
+                for (int dy : shifts)
                 {
-                    for (int dz = -1; dz <= 1; ++dz)
+                    if (dy != 0 && !crosses[1]) continue;
+
+                    for (int dz : shifts)
                     {
+                        if (dz != 0 && !crosses[2]) continue;
                         if (dx == 0 && dy == 0 && dz == 0)
                         {
                             if (sphere.intersects_box(sphere.coordinates,
@@ -370,9 +383,12 @@ public:
                             (dy != 0 && crosses[1]) || (dz != 0 && crosses[2]))
                         {
                             Coords periodic_sphere = {
-                                sphere.coordinates[0] + dx * domain.length[0],
-                                sphere.coordinates[1] + dy * domain.length[1],
-                                sphere.coordinates[2] + dz * domain.length[2],
+                                sphere.coordinates[0] +
+                                    dx * domain.length[0] * crosses[0],
+                                sphere.coordinates[1] +
+                                    dy * domain.length[1] * crosses[1],
+                                sphere.coordinates[2] +
+                                    dz * domain.length[2] * crosses[2],
                             };
                             if (Sphere::intersects_box(
                                     periodic_sphere, sphere.radius, subdomain))
