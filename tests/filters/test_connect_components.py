@@ -261,3 +261,117 @@ def test_inlet_connected_img() -> None:
 
     np.testing.assert_array_equal(labeled_image[12:15, 12:15, 12:15], 0)
     np.testing.assert_array_equal(labeled_image[0:10, 5:10, 5:10], 1)
+
+
+def test_outlet_connected_img() -> None:
+    """Test that only regions connected to the inlet are labeled as connected."""
+    voxels = (20, 20, 20)
+    outlet = ((1, 0), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels=voxels, outlet=outlet)
+
+    img = np.zeros(sd.voxels, dtype=np.uint8)
+    img[0:10, 5:10, 5:10] = 1
+    img[12:15, 12:15, 12:15] = 1
+
+    labeled_image = pmmoto.filters.connected_components.outlet_connected_img(sd, img)
+
+    np.testing.assert_array_equal(labeled_image[12:15, 12:15, 12:15], 0)
+    np.testing.assert_array_equal(labeled_image[0:10, 5:10, 5:10], 1)
+
+
+def test_phase_count():
+    """Test Phase Count with Isolated Spheres"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    labeled_img, _ = pmmoto.filters.connected_components.connect_components(pm.img, sd)
+
+    img_to_label_map = pmmoto.filters.connected_components.gen_img_to_label_map(
+        pm.img, labeled_img
+    )
+
+    phase_count = pmmoto.filters.connected_components.phase_count(img_to_label_map)
+
+    assert phase_count == {1: 1, 0: 1}
+
+    # Two  disconnected spheres
+    spheres = np.array([[0.75, 0.75, 0.75, 0.1], [0.25, 0.25, 0.25, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    labeled_img, _ = pmmoto.filters.connected_components.connect_components(pm.img, sd)
+
+    img_to_label_map = pmmoto.filters.connected_components.gen_img_to_label_map(
+        pm.img, labeled_img
+    )
+
+    phase_count = pmmoto.filters.connected_components.phase_count(img_to_label_map)
+
+    assert phase_count == {1: 2, 0: 1}
+
+
+def test_inlet_outlet_connected_img() -> None:
+    """Test that only regions connected to the inlet are labeled as connected."""
+    voxels = (20, 20, 20)
+    inlet = ((1, 0), (0, 0), (0, 0))
+    outlet = ((0, 1), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels=voxels, inlet=inlet, outlet=outlet)
+
+    img = np.zeros(sd.voxels, dtype=np.uint8)
+    img[:, 2:4, 5:10] = 1
+    img[:, 6:8, 1:2] = 2
+
+    pmmoto.io.save_img("data_out/test_cc", sd, img)
+
+    labeled_image = pmmoto.filters.connected_components.inlet_outlet_connected_img(
+        sd, img
+    )
+
+    np.testing.assert_array_equal(labeled_image[:, 2:4, 5:10], 1)
+    np.testing.assert_array_equal(labeled_image[:, 6:8, 1:2], 2)
+
+    inlet_outlet_connections = (
+        pmmoto.filters.connected_components.inlet_outlet_connections(sd, labeled_image)
+    )
+
+    assert inlet_outlet_connections == [1, 2]
+
+    # Only consider phase=2
+    labeled_image = pmmoto.filters.connected_components.inlet_outlet_connected_img(
+        sd, img, phase=2
+    )
+
+    np.testing.assert_array_equal(labeled_image[:, 2:4, 5:10], 0)
+    np.testing.assert_array_equal(labeled_image[:, 6:8, 1:2], 2)
+
+    inlet_outlet_connections = (
+        pmmoto.filters.connected_components.inlet_outlet_connections(sd, labeled_image)
+    )
+
+    assert inlet_outlet_connections == [2]
+
+
+def test_isolated_img():
+    """Test isolated image"""
+    voxels = (30, 30, 30)
+    inlet = ((1, 0), (0, 0), (0, 0))
+    outlet = ((0, 1), (0, 0), (0, 0))
+    sd = pmmoto.initialize(voxels, inlet=inlet, outlet=outlet)
+
+    img = np.zeros(sd.voxels, dtype=np.uint8)
+    img[1:3, 2:4, 5:10] = 1
+    img[6:9, 6:8, 1:2] = 2
+    img[:, 6:8, 3:4] = 3
+
+    labeled_image = pmmoto.filters.connected_components.isolated_img(sd, img)
+
+    np.testing.assert_array_equal(labeled_image[1:3, 2:4, 5:10], 1)
+    np.testing.assert_array_equal(labeled_image[6:9, 6:8, 1:2], 2)
+    np.testing.assert_array_equal(labeled_image[:, 6:8, 3:4], 0)
+
+    labeled_image = pmmoto.filters.connected_components.isolated_img(sd, img, phase=2)
+
+    np.testing.assert_array_equal(labeled_image[1:3, 2:4, 5:10], 0)
+    np.testing.assert_array_equal(labeled_image[6:9, 6:8, 1:2], 2)
+    np.testing.assert_array_equal(labeled_image[:, 6:8, 3:4], 0)
