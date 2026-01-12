@@ -35,8 +35,7 @@ __all__ = [
 
 def raise_error() -> None:
     """Exit gracefully by finalizing MPI and exiting the program."""
-    MPI.Finalize()
-    sys.exit()
+    sys.exit(1)
 
 
 def check_img_for_solid(subdomain: Subdomain, img: NDArray[T]) -> None:
