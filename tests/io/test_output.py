@@ -141,12 +141,12 @@ def test_save_extended_img(tmp_path):
     assert expected_file.exists()
 
 
-@pytest.mark.mpi(min_size=2)
+@pytest.mark.mpi(min_size=8)
 def test_save_img_parallel_2(tmp_path):
     """Tests saving of img"""
     comm = MPI.COMM_WORLD
 
-    subdomains = (2, 1, 1)
+    subdomains = (2, 2, 2)
     sd = pmmoto.initialize((10, 10, 10), subdomains=subdomains, rank=comm.Get_rank())
     img = np.zeros(sd.voxels)
     img2 = np.zeros(sd.voxels)
