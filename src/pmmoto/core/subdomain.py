@@ -326,25 +326,35 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
         return tuple(origin)
 
-    def get_img_index(self, coordinates: tuple[float, ...]) -> tuple[int, ...] | None:
+    def get_img_index(self, coordinates: tuple[float, ...]) -> tuple[int, ...]:
         """Given coordinates, return the corresponding index in the img array.
 
         Args:
             coordinates (tuple[float, float, float]): The (x, y, z) coordinates.
 
         Returns:
-            tuple[int, int, int] or None: The (i, j, k) index in the img array,
-            or None if out of bounds.
+            tuple[int, int, int]: The (i, j, k) index in the img array.
+
+        Raises:
+            ValueError: If any coordinate is outside the domain bounds.
 
         """
         indices = [0] * len(coordinates)
         for dim, coord in enumerate(coordinates):
-            # Calculate the index based on the coordinate, origin, and resolution
-            indices[dim] = int((coord - self.box[dim][0]) / self.domain.resolution[dim])
+            lower, upper = self.box[dim]
+            res = self.domain.resolution[dim]
 
-            # Ensure the index is within bounds
-            if indices[dim] < 0 or indices[dim] >= self.voxels[dim]:
-                return None
+            if coord < lower:
+                raise ValueError(
+                    f"Coordinate {coord} in dimension {dim} is below lower bound {lower}."
+                )
+
+            if coord >= upper:
+                raise ValueError(
+                    f"Coordinate {coord} in dimension {dim} is above upper bound {upper}."
+                )
+
+            indices[dim] = int((coord - lower) / res)
 
         return tuple(indices)
 
