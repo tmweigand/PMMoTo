@@ -1,7 +1,8 @@
 """test_subdomain_features.py"""
 
-import numpy as np
 import pmmoto
+import pytest
+import numpy as np
 
 
 def generate_padded_subdomain(
@@ -55,8 +56,18 @@ def test_subdomain():
     for feature_id, feature in features.items():
         if feature_id == (0, 0, -1):
             assert feature.boundary_type == pmmoto.BoundaryType.PERIODIC
+            assert (
+                sd_features.get_boundary_type(feature_id)
+                == pmmoto.BoundaryType.PERIODIC
+            )
         else:
             assert feature.boundary_type == pmmoto.BoundaryType.INTERNAL
+
+    periodic_features = sd_features.collect_periodic_features()
+    assert periodic_features == [(0, 0, -1)]
+
+    periodic_correction = sd_features.collect_periodic_corrections()
+    assert periodic_correction == {(0, 0, -1): (0, 0, 1)}
 
 
 def test_subdomain_2():
@@ -162,168 +173,27 @@ def test_subdomain_3():
     np.testing.assert_array_equal(own_voxels, [3, 36, 1, 34, 1, 34])
 
 
-# def test_collect_features() -> None:
-#     """Test for subdomain features"""
-#     rank = 0
-#     pad = (1, 1, 1)
-#     reservoir_voxels = 0
-#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+def test_get_feature_member():
+    """Tests for get info of a specific feature"""
+    rank = 0
+    pad = (1, 1, 1)
+    reservoir_voxels = 3
+    sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
+    sd_features = pmmoto.core.subdomain_features.SubdomainFeatures(
+        sd, sd.voxels, sd.pad
+    )
 
-#     features = pmmoto.core.subdomain_features.SubdomainFeatures(sd, sd.voxels, sd.pad)
+    feature_member = sd_features.get_feature_member((1, 0, 0), "feature_id")
+    assert feature_member == (1, 0, 0)
 
-#     print(features)
+    feature_member = sd_features.get_feature_member((1, 0, 1), "feature_id")
+    assert feature_member == (1, 0, 1)
 
-#     # assert len(features["faces"]) == 6
-#     # assert len(features["edges"]) == 12
-#     # assert len(features["corners"]) == 8
+    feature_member = sd_features.get_feature_member((1, -1, 1), "feature_id")
+    assert feature_member == (1, -1, 1)
 
+    with pytest.raises(KeyError):
+        sd_features.get_feature_member((1, -2, 1), "error")
 
-# def test_feature_voxels_face():
-#     """Test get_feature_voxels"""
-#     feature_id = (-1, 0, 0)
-#     voxels = (10, 10, 10)
-#     pad = [[0, 0], [0, 0], [0, 0]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[0, 1], [0, 10], [0, 10]])
-#     )
-
-#     feature_id = (-1, 0, 0)
-#     voxels = (10, 10, 10)
-#     pad = [[1, 1], [1, 1], [1, 1]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
-#     )
-
-#     feature_id = (-1, 0, 0)
-#     voxels = (10, 10, 10)
-#     pad = [[4, 4], [2, 2], [3, 3]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     print(feature_voxels["own"])
-#     print(feature_voxels["neighbor"])
-
-#     # np.testing.assert_array_equal(
-#     #     feature_voxels["own"], np.array([[1, 2], [1, 9], [1, 9]])
-#     # )
-
-#     # np.testing.assert_array_equal(
-#     #     feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [1, 9]])
-#     # )
-
-
-# def test_feature_voxels_edge():
-#     """Test get_feature_voxels"""
-#     feature_id = (-1, 0, 1)
-#     voxels = (10, 10, 10)
-#     pad = [[0, 0], [0, 0], [0, 0]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[0, 1], [0, 10], [9, 10]])
-#     )
-
-#     feature_id = (-1, 0, 1)
-#     voxels = (10, 10, 10)
-#     pad = [[1, 1], [1, 1], [1, 1]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[1, 2], [1, 9], [8, 9]])
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["neighbor"], np.array([[0, 1], [1, 9], [9, 10]])
-#     )
-
-
-# def test_feature_voxels_corner():
-#     """Test get_feature_voxels"""
-#     feature_id = (1, 1, -1)
-#     voxels = (10, 10, 10)
-#     pad = [[0, 0], [0, 0], [0, 0]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[9, 10], [9, 10], [0, 1]])
-#     )
-
-#     feature_id = (1, 1, -1)
-#     voxels = (10, 10, 10)
-#     pad = [[1, 1], [1, 1], [1, 1]]
-
-#     feature_voxels = pmmoto.core.subdomain_features.get_feature_voxels(
-#         feature_id=feature_id, voxels=voxels, pad=pad
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["own"], np.array([[8, 9], [8, 9], [1, 2]])
-#     )
-
-#     np.testing.assert_array_equal(
-#         feature_voxels["neighbor"], np.array([[9, 10], [9, 10], [0, 1]])
-#     )
-
-
-# def test_collect_periodic_features():
-#     """Check function that loops through the subdomain features
-
-#     Returns a list of all of the periodic ones.
-#     """
-#     rank = 26
-#     pad = (1, 1, 1)
-#     reservoir_voxels = 0
-#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
-
-#     periodic_features = pmmoto.core.subdomain_features.collect_periodic_features(
-#         sd.features
-#     )
-
-#     np.testing.assert_equal(periodic_features, [(0, 0, 1)])
-
-
-# def test_collect_periodic_corrections():
-#     """Check function that loops through the subdomain features.
-
-#     Returns a list of all of the periodic corrections.
-#     """
-#     rank = 26
-#     pad = (1, 1, 1)
-#     reservoir_voxels = 0
-#     sd = generate_padded_subdomain(rank, pad, reservoir_voxels)
-
-#     periodic_corrections = pmmoto.core.subdomain_features.collect_periodic_corrections(
-#         sd.features
-#     )
-
-#     np.testing.assert_equal(
-#         periodic_corrections,
-#         {
-#             (0, 0, 1): (0, 0, -1),
-#         },
-#     )
+    with pytest.raises(AttributeError):
+        sd_features.get_feature_member((1, -1, 1), "error")
