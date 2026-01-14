@@ -80,6 +80,9 @@ def test_subdomain() -> None:
     own_voxels = sd.get_own_voxels()
     np.testing.assert_array_equal(own_voxels, [1, 34, 1, 34, 1, 34])
 
+    ext_pad, _ = sd.extend_padding((10, 10, 10))
+    assert ext_pad == ((10, 10), (10, 10), (10, 10))
+
 
 def test_subdomain_2() -> None:
     """Test for subdomain"""
@@ -129,6 +132,9 @@ def test_subdomain_2() -> None:
 
     own_voxels = sd.get_own_voxels()
     np.testing.assert_array_equal(own_voxels, [2, 36, 2, 36, 2, 36])
+
+    ext_pad, _ = sd.extend_padding((10, 10, 10))
+    assert ext_pad == ((10, 0), (10, 0), (10, 10))
 
 
 def test_subdomain_3() -> None:
@@ -217,3 +223,71 @@ def test_own_voxels() -> None:
         inlet=inlet,
     )
     np.testing.assert_array_equal(sd.get_own_voxels(), [10, 20, 0, 10, 0, 10])
+
+
+def test_extended_padding():
+    """Tests for adding more padding to image"""
+    boundary_types = (
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+    )
+    subdomains = (2, 2, 2)
+    voxels = (10, 10, 10)
+
+    sd = pmmoto.initialize(
+        voxels=voxels,
+        subdomains=subdomains,
+        boundary_types=boundary_types,
+        rank=0,
+        pad=(0, 0, 0),
+    )
+
+    extend_sd_pad, _ = sd.extend_padding((2, 2, 2))
+
+    np.testing.assert_array_equal(extend_sd_pad, ((0, 2), (0, 2), (0, 2)))
+
+    sd = pmmoto.initialize(
+        voxels=voxels,
+        subdomains=subdomains,
+        boundary_types=boundary_types,
+        rank=1,
+        pad=(0, 0, 0),
+    )
+
+    extend_sd_pad, _ = sd.extend_padding((2, 2, 2))
+
+    np.testing.assert_array_equal(extend_sd_pad, ((0, 2), (0, 2), (2, 0)))
+
+
+def test_update_reservoir():
+    """Tests for updating reservoir"""
+    boundary_types = (
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
+    subdomains = (2, 2, 2)
+    voxels = (10, 10, 10)
+    inlet = ((True, False), (False, False), (False, False))
+
+    reservoir_voxels = 3
+    sd = pmmoto.initialize(
+        voxels=voxels,
+        subdomains=subdomains,
+        boundary_types=boundary_types,
+        rank=0,
+        pad=(5, 5, 5),
+        reservoir_voxels=reservoir_voxels,
+        inlet=inlet,
+    )
+
+    img = np.zeros(sd.voxels)
+
+    res_value = 2
+    res_update_img = sd.update_reservoir(img, res_value)
+
+    np.testing.assert_array_equal(
+        res_update_img[0:reservoir_voxels, :, :],
+        res_value * np.ones([3, sd.voxels[1], sd.voxels[2]]),
+    )
