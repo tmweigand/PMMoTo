@@ -111,10 +111,6 @@ def py_read_lammps_atoms(
         if input_file.endswith(".gz")
         else open(input_file, "r", encoding="utf-8")
     )
-    # if input_file.endswith(".gz"):
-    #     domain_file = gzip.open(input_file, "rt")
-    # else:
-    #     domain_file = open(input_file, "r", encoding="utf-8")
 
     charges: dict[int, list[float]] = {}
 
@@ -175,6 +171,7 @@ def read_lammps_atoms(
         tuple: (positions, types, domain, timestep)
 
     """
+    io_utils.check_file(input_file)
     positions, types, domain, timestep = _data_read.read_lammps_atoms(
         input_file, type_map
     )

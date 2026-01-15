@@ -218,7 +218,7 @@ def gen_pm_atom_domain(
 def gen_pm_atom_file(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     lammps_file: str,
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     type_map: None | dict[tuple[int, float], int] = None,
     add_periodic: bool = False,
     kd: bool = False,
