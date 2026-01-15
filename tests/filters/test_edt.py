@@ -247,7 +247,11 @@ def test_periodic_3d() -> None:
         ],
     )
 
-    edt_pmmoto = pmmoto.filters.distance.edt3d(img, periodic=[True, True, True])
+    edt_pmmoto_sq = pmmoto.filters.distance.edt3d(
+        img, periodic=[True, True, True], squared=True
+    )
+
+    edt_pmmoto = np.asarray(np.sqrt(edt_pmmoto_sq))
 
     np.testing.assert_array_almost_equal(
         edt_pmmoto,
@@ -328,7 +332,6 @@ def test_periodic_3d_2() -> None:
     )
 
     resolution = (1, 0.32325245, 233)
-    # resolution = (1, 1, 1)
 
     ## Ensure the edt of the img and periodic img are not equal
     edt_periodic_img = distance_transform_edt(periodic_img, sampling=resolution)
@@ -361,3 +364,56 @@ def test_edt_single_non_periodic():
     edt = pmmoto.filters.distance.edt(img, sd)
 
     assert np.max(edt) < 1.0
+
+
+def test_edt_1d():
+    """Test eroor for 1d img"""
+    img = np.ones(4)
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.distance.edt(img)
+
+
+def test_boundary_hull_error():
+    """Tests for dimension error"""
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.zeros(sd.voxels)
+    og_img = img
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.distance.euclidean_distance_transform.get_boundary_hull(
+            subdomain=sd, img=img, og_img=og_img, dimension=4
+        )
+
+
+def test_get_nearest_boundary_distance():
+    """Test eroor for 1d img"""
+    sd = pmmoto.initialize((5, 5, 5))
+    img = np.zeros(sd.voxels, dtype=np.uint8)
+    img[0, :, :] = 2
+
+    boundary_distances = pmmoto.filters.distance.euclidean_distance_transform.get_nearest_boundary_distance(
+        subdomain=sd, img=img, label=2, dimension=0
+    )
+    np.testing.assert_array_equal(boundary_distances[(-1, 0, 0)], np.zeros([5, 5]))
+    np.testing.assert_array_equal(boundary_distances[(1, 0, 0)], 4 * np.ones([5, 5]))
+
+    boundary_distances = pmmoto.filters.distance.euclidean_distance_transform.get_nearest_boundary_distance(
+        subdomain=sd,
+        img=img,
+        label=2,
+        dimension=0,
+        which_voxels="own",
+        distance_to="pad",
+    )
+    np.testing.assert_array_equal(boundary_distances[(-1, 0, 0)], np.zeros([5, 5]))
+    np.testing.assert_array_equal(boundary_distances[(1, 0, 0)], 4 * np.ones([5, 5]))
+
+    boundary_distances = pmmoto.filters.distance.euclidean_distance_transform.get_nearest_boundary_distance(
+        subdomain=sd,
+        img=img,
+        label=2,
+        dimension=0,
+        which_voxels="own",
+        distance_to="neighbor",
+    )
+    np.testing.assert_array_equal(boundary_distances[(-1, 0, 0)], np.ones([5, 5]))
+    np.testing.assert_array_equal(boundary_distances[(1, 0, 0)], 5 * np.ones([5, 5]))
