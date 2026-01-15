@@ -26,3 +26,5 @@ def test_domain() -> None:
     assert pmmoto_domain.outlet == outlet
     assert pmmoto_domain.length == (23.0, 146.20999999999998, 5.85841)
     assert pmmoto_domain.periodic
+
+    assert pmmoto_domain.get_origin() == (77, -45, -9.0)
