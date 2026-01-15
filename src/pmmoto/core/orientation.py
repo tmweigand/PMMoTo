@@ -99,15 +99,12 @@ class FaceEdgeCornerMap:
             idx = tuple(abs(i) for i in d).index(1)
 
             # Determine argument order based on primary axis
-            if self.dim == 3:
-                if idx == 0:
-                    arg_order = (0, 1, 2)
-                elif idx == 1:
-                    arg_order = (1, 0, 2)
-                else:
-                    arg_order = (2, 0, 1)
+            if idx == 0:
+                arg_order = (0, 1, 2)
+            elif idx == 1:
+                arg_order = (1, 0, 2)
             else:
-                arg_order = tuple(range(self.dim))
+                arg_order = (2, 0, 1)
 
             opp = tuple(-x for x in d)
             direction = -1 if any(x > 0 for x in d) else 1

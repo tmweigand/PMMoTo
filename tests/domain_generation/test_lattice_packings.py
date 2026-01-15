@@ -4,6 +4,18 @@ import pmmoto
 import numpy as np
 
 
+def test_base_class():
+    """Test for bass class"""
+    sd = pmmoto.initialize(voxels=(10, 10, 10))
+    bc = pmmoto.domain_generation.lattice_packings.Lattice(sd, 1)
+    np.testing.assert_array_equal(
+        bc.get_basis_vectors(),
+        np.array([]),
+    )
+
+    assert bc.get_radius() == 0.0
+
+
 def test_simple_cubic():
     """Test for Simple Cubic Packings"""
     sd = pmmoto.initialize(voxels=(10, 10, 10))
