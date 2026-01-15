@@ -607,3 +607,24 @@ def test_count_label_voxels():
         np.int64(1): np.int64(8),
         np.int64(8): np.int64(1),
     }
+
+
+def test_local_to_global_labeling_max_label_fallback():
+    # One rank, zero labels
+    all_matches = [{}]  # no boundary matches
+    all_counts = [0]  # zero local labels
+    boundary_map = {}  # empty boundary map
+    boundary_label_count = -5  # > 0 so fallback is meaningful
+
+    final_map, max_label = pmmoto.core.voxels.local_to_global_labeling(
+        all_matches=all_matches,
+        all_counts=all_counts,
+        boundary_map=boundary_map,
+        boundary_label_count=boundary_label_count,
+    )
+
+    # Mapping should still include label 0
+    assert final_map == {0: {0: np.uint64(0)}}
+
+    # This is the branch we are testing
+    assert max_label == boundary_label_count
