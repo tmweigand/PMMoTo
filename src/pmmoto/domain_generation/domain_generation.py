@@ -150,7 +150,7 @@ def gen_pm_spheres_domain(
         pm.img = np.logical_not(pm.img).astype(np.uint8)
 
     pm.img = subdomain.set_wall_bcs(pm.img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -177,7 +177,7 @@ def gen_pm_cylinders(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -210,7 +210,7 @@ def gen_pm_atom_domain(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -252,7 +252,7 @@ def gen_pm_atom_file(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -277,7 +277,7 @@ def gen_pm_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], r_y, r_z
     )
     pm = porousmedia.gen_pm(subdomain, _img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
     if subdomain.domain.num_subdomains > 1:
         pm.img = communication.update_buffer(subdomain, pm.img)
 

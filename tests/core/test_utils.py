@@ -146,13 +146,27 @@ def test_check_img_for_solid() -> None:
     sd = pmmoto.initialize((10, 10, 10))
     img = np.zeros(sd.voxels)
 
-    pmmoto.core.utils.check_img_for_solid(sd, img)
+    assert pmmoto.core.utils.check_img_for_solid(sd, img)
 
 
-@pytest.mark.xfail
 def test_check_img_for_solid_fail() -> None:
     """Ensure solid-0 exists on image"""
     sd = pmmoto.initialize((10, 10, 10))
     img = np.ones(sd.voxels)
 
-    pmmoto.core.utils.check_img_for_solid(sd, img)
+    assert not pmmoto.core.utils.check_img_for_solid(sd, img)
+
+
+def test_check_subdomain_condition():
+    """Tests utility for checking info about subdomains"""
+    sd = pmmoto.initialize((5, 5, 5))
+    num_voxels = np.prod(sd.voxels)
+    with pytest.raises(SystemExit) as excinfo:
+        pmmoto.core.utils.check_subdomain_condition(
+            subdomain=sd,
+            condition_fn=lambda s, b: np.prod(s.voxels) == b,
+            args=(num_voxels,),
+            error_message=("Skip"),
+            error_args=(),
+        )
+    assert excinfo.value.code == 1
