@@ -1,0 +1,326 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Connected Pathways in Random Porous Media" href="connected_pathways.html" />
+    <link rel="prev" title="Drainage of an Ink Bottle" href="drainage_inkbottle.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user_guide/index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="drainage_inkbottle.html">Drainage of an Ink Bottle</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-import-modules">Step 1: Import Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-load-sphere-pack-geometry">Step 2: Load Sphere Pack Geometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-initialize-simulation-domain">Step 3: Initialize Simulation Domain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-generate-the-porous-media">Step 4: Generate the Porous Media</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-perform-a-euclidean-distance-transform">Step 5: Perform a Euclidean Distance Transform</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-determine-the-pore-size-distribution">Step 6: Determine the Pore Size Distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-7-generate-psd-plot">Step 7: Generate PSD Plot</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-8-analysis-on-inverted-pore-space">Step 8: Analysis on Inverted Pore Space</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-9-save-images">Step 9: Save Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output">Output</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="connected_pathways.html">Connected Pathways in Random Porous Media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="md_porous_media.html">Porous Structure from Molecular Dynamics Simulations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../user_guide/index.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Examples</a></li>
+      <li class="breadcrumb-item active">Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/sphere_pack_psd.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="euclidean-distance-transform-and-pore-size-distribution-of-a-sphere-pack">
+<h1>Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack<a class="headerlink" href="#euclidean-distance-transform-and-pore-size-distribution-of-a-sphere-pack" title="Link to this heading"></a></h1>
+<p>This example demonstrates how to compute a <strong>Euclidean distance transform</strong> and a <strong>pore size distribution (PSD)</strong> of a sphere pack using PMMoTo.</p>
+<p>To run this example with 8 MPI processes:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">8</span><span class="w"> </span>python<span class="w"> </span>examples/sphere_pack_psd/sphere_pack_psd.py
+</pre></div>
+</div>
+<section id="step-1-import-modules">
+<h2>Step 1: Import Modules<a class="headerlink" href="#step-1-import-modules" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MPI</span></code> is needed to determine the rank of each process.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pmmoto</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-load-sphere-pack-geometry">
+<h2>Step 2: Load Sphere Pack Geometry<a class="headerlink" href="#step-2-load-sphere-pack-geometry" title="Link to this heading"></a></h2>
+<p>The sphere pack geometry file defines the simulation domain extents and the positions and radii of individual spheres. The format of the file is:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">domain_x_min</span> <span class="n">domain_x_max</span>
+<span class="n">domain_y_min</span> <span class="n">domain_y_max</span>
+<span class="n">domain_z_min</span> <span class="n">domain_z_max</span>
+<span class="n">sphere_1_x</span> <span class="n">sphere_1_y</span> <span class="n">sphere_1_z</span> <span class="n">sphere_1_radius</span>
+<span class="n">sphere_2_x</span> <span class="n">sphere_2_y</span> <span class="n">sphere_2_z</span> <span class="n">sphere_2_radius</span>
+<span class="n">sphere_3_x</span> <span class="n">sphere_3_y</span> <span class="n">sphere_3_z</span> <span class="n">sphere_3_radius</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<ul>
+<li><p>The first three lines define the domain extents for each axis</p></li>
+<li><p>Each subsequent line defines a sphere with:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Center coordinates: <cite>x</cite>, <cite>y</cite>, <cite>z</cite></p></li>
+<li><p>Radius: <cite>r</cite></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p><em>Example:</em></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.0 40.0
+0.0 40.0
+0.0 40.0
+10.0 10.0 10.0 4.5
+25.0 20.0 18.0 5.0
+30.0 30.0 10.0 3.0
+</pre></div>
+</div>
+<p>To initialize the spheres and domain box, the sphere pack geometry file is passed to the function <code class="docutils literal notranslate"><span class="pre">read_sphere_pack_xyzr_domain</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sphere_pack_file</span> <span class="o">=</span> <span class="s2">&quot;examples/sphere_pack_psd/sphere_pack.in&quot;</span>
+<span class="n">spheres</span><span class="p">,</span> <span class="n">domain_box</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">data_read</span><span class="o">.</span><span class="n">read_sphere_pack_xyzr_domain</span><span class="p">(</span>
+    <span class="n">sphere_pack_file</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-initialize-simulation-domain">
+<h2>Step 3: Initialize Simulation Domain<a class="headerlink" href="#step-3-initialize-simulation-domain" title="Link to this heading"></a></h2>
+<p>To initialize PMMoTo, the following parameters must be specified for this example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels</span></code>: the number of voxels in each dimension for the image representing the porous structure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rank</span></code>: the MPI rank of the current process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">subdomains</span></code>: the number of subdomains in each dimension</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box</span></code>: the physical size of the simulation domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundary_types</span></code>: the boundary conditions used for the images</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="n">rank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+
+<span class="n">voxels</span> <span class="o">=</span> <span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="mi">401</span><span class="p">,</span> <span class="mi">401</span><span class="p">)</span>
+<span class="n">subdomains</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">boundary</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">PERIODIC</span>
+<span class="n">boundary_types</span> <span class="o">=</span> <span class="p">(</span>
+   <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+   <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+   <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">sd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+    <span class="n">voxels</span><span class="o">=</span><span class="n">voxels</span><span class="p">,</span>
+    <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span>
+    <span class="n">subdomains</span><span class="o">=</span><span class="n">subdomains</span><span class="p">,</span>
+    <span class="n">box</span><span class="o">=</span><span class="n">domain_box</span><span class="p">,</span>
+    <span class="n">boundary_types</span><span class="o">=</span><span class="n">boundary_types</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The domain is decomposed into eight subdomains and is shown below. By default, each subdomain shares 1 voxel with its neighbor subdomains.</p>
+<a class="only-light reference internal image-reference" href="../_images/subdomains2.png"><img alt="Domain" class="align-center only-light" src="../_images/subdomains2.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-4-generate-the-porous-media">
+<h2>Step 4: Generate the Porous Media<a class="headerlink" href="#step-4-generate-the-porous-media" title="Link to this heading"></a></h2>
+<p>To generate the porous structure for a sphere pack, the function <code class="docutils literal notranslate"><span class="pre">gen_pm_spheres_domain</span></code> is called with the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object and <code class="docutils literal notranslate"><span class="pre">spheres</span></code> as inputs. The <code class="docutils literal notranslate"><span class="pre">invert</span></code> parameter determines whether the <code class="docutils literal notranslate"><span class="pre">spheres</span></code> are considered solid (i.e., 0) or pore space (i.e., 1). In this example, we treat the spheres as solids by setting <code class="docutils literal notranslate"><span class="pre">invert=False</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_pm_spheres_domain</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">spheres</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The pore space is shown below where the subdomain with <code class="docutils literal notranslate"><span class="pre">rank</span> <span class="pre">=</span> <span class="pre">5</span></code> has been omitted:</p>
+<a class="only-light reference internal image-reference" href="../_images/pore_space1.png"><img alt="Pore Space" class="align-center only-light" src="../_images/pore_space1.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-5-perform-a-euclidean-distance-transform">
+<h2>Step 5: Perform a Euclidean Distance Transform<a class="headerlink" href="#step-5-perform-a-euclidean-distance-transform" title="Link to this heading"></a></h2>
+<p>The Euclidean distance transform computes the distance from every pore voxel to the nearest solid voxel and is central to many morphological analyses. The function <code class="docutils literal notranslate"><span class="pre">edt</span></code> is called and the image of the porous structure <code class="docutils literal notranslate"><span class="pre">PorousMedia.img</span></code> and the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> are passed in. The Euclidean distance transform implementation in PMMoTo is an extension of the work of <span id="id1">[<a class="reference internal" href="../references.html#id6" title="William Silversmith and Pavlo Hilei. Seung-lab/euclidean-distance-transform-3d: zenodo release. March 2024. URL: https://doi.org/10.5281/zenodo.10815871, doi:10.5281/zenodo.10815871.">4</a>]</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dist</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">edt</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">img</span><span class="p">,</span><span class="n">sd</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The distance transform of the sphere pack is shown below.</p>
+<a class="only-light reference internal image-reference" href="../_images/distance.png"><img alt="Domain" class="align-center only-light" src="../_images/distance.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-6-determine-the-pore-size-distribution">
+<h2>Step 6: Determine the Pore Size Distribution<a class="headerlink" href="#step-6-determine-the-pore-size-distribution" title="Link to this heading"></a></h2>
+<p>The pore size distribution of a porous structure represents the largest sphere that can fully fit at each pore voxel. The function <code class="docutils literal notranslate"><span class="pre">pore_size_distribution</span></code> generates an image representing this distribution. A list of sphere radii can be passed to the function. If <code class="docutils literal notranslate"><span class="pre">radii</span></code> is not specified, a Euclidean distance transform is performed, and a list of radii is generated spanning from the image resolution up to the maximum observed distance, controlled by <code class="docutils literal notranslate"><span class="pre">num_radii</span></code>. Additionally, by setting <code class="docutils literal notranslate"><span class="pre">inlet=True</span></code>, the pore size distribution is computed only for voxels connected to the inlet.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">psd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">porosimetry</span><span class="o">.</span><span class="n">pore_size_distribution</span><span class="p">(</span>
+      <span class="n">sd</span><span class="p">,</span> <span class="n">pm</span><span class="p">,</span> <span class="n">num_radii</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">inlet</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The pore size distribution of the sphere pack is shown below.</p>
+<a class="only-light reference internal image-reference" href="../_images/psd.png"><img alt="Domain" class="align-center only-light" src="../_images/psd.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-7-generate-psd-plot">
+<h2>Step 7: Generate PSD Plot<a class="headerlink" href="#step-7-generate-psd-plot" title="Link to this heading"></a></h2>
+<p>To generate a histogram of pore sizes, the function <code class="docutils literal notranslate"><span class="pre">plot_pore_size_distribution</span></code> is called and the <code class="docutils literal notranslate"><span class="pre">file_name</span></code>,  <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object, the pore size distribution image, and <code class="docutils literal notranslate"><span class="pre">plot_type</span></code> as either <code class="docutils literal notranslate"><span class="pre">&quot;pdf&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;cdf&quot;</span></code> are specified.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">porosimetry</span><span class="o">.</span><span class="n">plot_pore_size_distribution</span><span class="p">(</span>
+    <span class="s2">&quot;examples/sphere_pack_psd/pm&quot;</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;pdf&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<a class="only-light reference internal image-reference" href="../_images/pm_pore_size_distribution.png"><img alt="Domain" class="align-center only-light" src="../_images/pm_pore_size_distribution.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-8-analysis-on-inverted-pore-space">
+<h2>Step 8: Analysis on Inverted Pore Space<a class="headerlink" href="#step-8-analysis-on-inverted-pore-space" title="Link to this heading"></a></h2>
+<p>As a check, the spheres will be considered the pore space. To accomplish this, a new <code class="docutils literal notranslate"><span class="pre">PorousMedia</span></code> object is created and <code class="docutils literal notranslate"><span class="pre">invert=True</span></code> inverts the porous media so that the spheres represent the pore space. The Euclidean distance transform can also be calculated and accessed by <code class="docutils literal notranslate"><span class="pre">PorousMedia.distance</span></code>. The pore size distribution of the inverted pore space is also determined.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">invert_pm</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_pm_spheres_domain</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">spheres</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">invert_psd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">porosimetry</span><span class="o">.</span><span class="n">pore_size_distribution</span><span class="p">(</span>
+     <span class="n">sd</span><span class="p">,</span> <span class="n">invert_pm</span><span class="p">,</span> <span class="n">num_radii</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">inlet</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="n">invert_distance</span> <span class="o">=</span> <span class="n">invert_pm</span><span class="o">.</span><span class="n">distance</span>
+
+<span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">porosimetry</span><span class="o">.</span><span class="n">plot_pore_size_distribution</span><span class="p">(</span>
+    <span class="s2">&quot;examples/sphere_pack_psd/inverted_pm&quot;</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">invert_psd</span><span class="p">,</span> <span class="n">num_radii</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">inlet</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The sphere pack consists of spheres with a uniform radius of 1.0 and the inverted pore space is:</p>
+<a class="only-light reference internal image-reference" href="../_images/inverted_pore_space.png"><img alt="Inverted Pore Space" class="align-center only-light" src="../_images/inverted_pore_space.png" style="width: 60%;" />
+</a>
+<p>The Euclidean distance transforms determines the distance to the nearest solid voxel so the centers of every pore should equal 1.0</p>
+<a class="only-light reference internal image-reference" href="../_images/invert_distance.png"><img alt="Inverted Pore Space Distance" class="align-center only-light" src="../_images/invert_distance.png" style="width: 60%;" />
+</a>
+<p>The pore size distribution image should equal 1.0 for every pore voxel.</p>
+<a class="only-light reference internal image-reference" href="../_images/invert_psd.png"><img alt="Inverted Pore Space PSD" class="align-center only-light" src="../_images/invert_psd.png" style="width: 60%;" />
+</a>
+<p>The pore size distribution correctly estimates that maximum radius of 1.0 with some numerical artifacts that may be resolved with improved resolution (i.e., more voxels).</p>
+<a class="only-light reference internal image-reference" href="../_images/inverted_pm_pore_size_distribution.png"><img alt="Domain" class="align-center only-light" src="../_images/inverted_pm_pore_size_distribution.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-9-save-images">
+<h2>Step 9: Save Images<a class="headerlink" href="#step-9-save-images" title="Link to this heading"></a></h2>
+<p>This will save both the original and inverted pore space images, as well as the Euclidean distance transforms and pore size distribution images.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">save_img</span><span class="p">(</span>
+    <span class="n">file_name</span><span class="o">=</span><span class="s2">&quot;examples/sphere_pack_psd/image&quot;</span><span class="p">,</span>
+    <span class="n">subdomain</span><span class="o">=</span><span class="n">sd</span><span class="p">,</span>
+    <span class="n">img</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">img</span><span class="p">,</span>
+    <span class="n">additional_img</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;psd&quot;</span><span class="p">:</span> <span class="n">psd</span><span class="p">,</span>
+        <span class="s2">&quot;dist&quot;</span><span class="p">:</span> <span class="n">dist</span><span class="p">,</span>
+        <span class="s2">&quot;invert_pm&quot;</span><span class="p">:</span> <span class="n">invert_pm</span><span class="o">.</span><span class="n">img</span><span class="p">,</span>
+        <span class="s2">&quot;invert_dist&quot;</span><span class="p">:</span> <span class="n">invert_distance</span><span class="p">,</span>
+        <span class="s2">&quot;invert_psd&quot;</span><span class="p">:</span> <span class="n">invert_psd</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="output">
+<h2>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h2>
+<p>The expected output from a successful run is:</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">image.pvti</span></code> and a folder <code class="code docutils literal notranslate"><span class="pre">image_proc</span></code> with eight <code class="code docutils literal notranslate"><span class="pre">.vti</span></code> files which can be opened in <strong>Paraview</strong></p></li>
+<li><p>Two <code class="code docutils literal notranslate"><span class="pre">.png</span></code> files of a pdf of the pore size distribution.</p></li>
+</ul>
+<p>The code used to generate the plots in this example is located at <code class="code docutils literal notranslate"><span class="pre">examples/sphere_pack_psd/plot_sphere_pack_psd.py</span></code> and must be run with <code class="code docutils literal notranslate"><span class="pre">pvpython</span></code>, ParaView’s Python interpreter.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="drainage_inkbottle.html" class="btn btn-neutral float-left" title="Drainage of an Ink Bottle" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="connected_pathways.html" class="btn btn-neutral float-right" title="Connected Pathways in Random Porous Media" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

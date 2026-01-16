@@ -1,0 +1,278 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connected Pathways in Random Porous Media &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Porous Structure from Molecular Dynamics Simulations" href="md_porous_media.html" />
+    <link rel="prev" title="Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack" href="sphere_pack_psd.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user_guide/index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="drainage_inkbottle.html">Drainage of an Ink Bottle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphere_pack_psd.html">Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Connected Pathways in Random Porous Media</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-import-modules">Step 1: Import Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-domain-setup">Step 2: Domain Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-generate-random-porous-media">Step 3: Generate Random Porous Media</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-domain-decomposition">Step 4: Domain Decomposition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-label-connected-components">Step 5: Label Connected Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-inlet-outlet-connectivity">Step 6: Inlet/Outlet Connectivity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#inlet-connected-voxels">Inlet-Connected Voxels</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#outlet-connected-voxels">Outlet-Connected Voxels</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connected-pathway-voxels-inlet-and-outlet">Connected Pathway Voxels (Inlet and Outlet)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#isolated-voxels">Isolated Voxels</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-7-save-outputs">Step 7: Save Outputs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output">Output</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="md_porous_media.html">Porous Structure from Molecular Dynamics Simulations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../user_guide/index.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Examples</a></li>
+      <li class="breadcrumb-item active">Connected Pathways in Random Porous Media</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/connected_pathways.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="connected-pathways-in-random-porous-media">
+<h1>Connected Pathways in Random Porous Media<a class="headerlink" href="#connected-pathways-in-random-porous-media" title="Link to this heading"></a></h1>
+<p>This example demonstrates how to identify connected pathways and isolated pores through a <strong>connected components</strong> analysis. The algorithm in PMMoTo is a extension of the Python package <code class="docutils literal notranslate"><span class="pre">cc3d</span></code> <span id="id1">[<a class="reference internal" href="../references.html#id7" title="William Silversmith. seung-lab/connected-components-3d: Zenodo Release v1. September 2021. doi:10.5281/zenodo.5535251.">5</a>]</span> for distributed memory systems and periodic porous structures.</p>
+<p>To run this example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">4</span><span class="w"> </span>python<span class="w"> </span>examples/connected_pathways/connected_pathways.py
+</pre></div>
+</div>
+<section id="step-1-import-modules">
+<h2>Step 1: Import Modules<a class="headerlink" href="#step-1-import-modules" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pmmoto</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-domain-setup">
+<h2>Step 2: Domain Setup<a class="headerlink" href="#step-2-domain-setup" title="Link to this heading"></a></h2>
+<p>To initialize PMMoTo, the following parameters must be specified for this example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels</span></code>: the number of voxels in each dimension for the image representing the porous structure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundary_types</span></code>: the boundary conditions applied during the simulation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rank</span></code>: the MPI rank of the current process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box</span></code>: the physical size of the simulation domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inlet</span></code> and <code class="docutils literal notranslate"><span class="pre">outlet</span></code>: the designated inflow and outflow faces</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">subdomains</span></code>: the number of subdomains in each dimension</p></li>
+</ul>
+<p>For this example, we will analyze a porous structure that is thin in the z-dimension to allow for easier visualization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pmmoto</span>
+<span class="n">voxels</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">boundary</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span>
+<span class="n">boundary_types</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+     <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+     <span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">box</span> <span class="o">=</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+<span class="n">inlet</span> <span class="o">=</span> <span class="p">((</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+<span class="n">outlet</span> <span class="o">=</span> <span class="p">((</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+<span class="n">subdomains</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">sd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+     <span class="n">voxels</span><span class="p">,</span> <span class="n">boundary_types</span><span class="o">=</span><span class="n">boundary_types</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">subdomains</span><span class="o">=</span><span class="n">subdomains</span><span class="p">,</span> <span class="n">box</span><span class="o">=</span><span class="n">box</span><span class="p">,</span> <span class="n">inlet</span><span class="o">=</span><span class="n">inlet</span><span class="p">,</span> <span class="n">outlet</span><span class="o">=</span><span class="n">outlet</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The domain decomposed into four subdomains is shown below.</p>
+<a class="only-light reference internal image-reference" href="../_images/subdomains.png"><img alt="Domain" class="align-center only-light" src="../_images/subdomains.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-3-generate-random-porous-media">
+<h2>Step 3: Generate Random Porous Media<a class="headerlink" href="#step-3-generate-random-porous-media" title="Link to this heading"></a></h2>
+<p>While memory-inefficient and generally discouraged, PMMoTo supports reading or generating an entire image and then transferring ownership to the subdomain (i.e., after domain decomposition). To demonstrate this behavior in this example, each process will generate a full image of the entire domain, which will then be decomposed. For this reason, <code class="docutils literal notranslate"><span class="pre">subdomain.domain.voxels</span></code> is passed to the domain generation function instead of <code class="docutils literal notranslate"><span class="pre">subdomain.voxels</span></code>, which only represents the number of voxels owned by the local process.</p>
+<p>The porous structure is generated using the function <code class="docutils literal notranslate"><span class="pre">gen_img_smoothed_random_binary</span></code>. The total number of domain voxels is specified, and to ensure that an identical image is created on each process, the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter is set. The <code class="docutils literal notranslate"><span class="pre">p_zero</span></code> parameter controls the porosity of the structure and represents the probability of a voxel being a pore. The <code class="docutils literal notranslate"><span class="pre">smoothness</span></code> parameter determines the degree of spatial smoothing applied to the image.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_img_smoothed_random_binary</span><span class="p">(</span>
+    <span class="n">sd</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">voxels</span><span class="p">,</span> <span class="n">p_zero</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">smoothness</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">8</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<a class="only-light reference internal image-reference" href="../_images/pore_space.png"><img alt="Domain" class="align-center only-light" src="../_images/pore_space.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-4-domain-decomposition">
+<h2>Step 4: Domain Decomposition<a class="headerlink" href="#step-4-domain-decomposition" title="Link to this heading"></a></h2>
+<p>To deconstruct the image so that each process saves only the portion it is responsible for, the <code class="docutils literal notranslate"><span class="pre">deconstruct_img</span></code> function is called. This function takes the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object, the full image, the subdomain map, and the process rank as inputs.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sd</span><span class="p">,</span> <span class="n">img_sd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">deconstruct_img</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">subdomains</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The dimensions of <code class="docutils literal notranslate"><span class="pre">img_sd</span></code> are now smaller than those of <code class="docutils literal notranslate"><span class="pre">img</span></code>, as it contains only the portion of the domain assigned to the current process.</p>
+</section>
+<section id="step-5-label-connected-components">
+<h2>Step 5: Label Connected Components<a class="headerlink" href="#step-5-label-connected-components" title="Link to this heading"></a></h2>
+<p>The function <code class="docutils literal notranslate"><span class="pre">connect_components</span></code> in PMMoTo performs a connected components analysis which yields a labeled image where voxels of the same label are connected as well as the total number of labels. The default (and currently only) connectivity option in PMMoTo is 26-connected, meaning voxels are considered connected if they share a face, edge, or corner. Other common connectivity schemes include 18-connected (faces and edges) and 6-connected (faces only).8-connected (i.e., faces).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cc</span><span class="p">,</span> <span class="n">label_count</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">connected_components</span><span class="o">.</span><span class="n">connect_components</span><span class="p">(</span><span class="n">img_sd</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="only-light reference internal image-reference" href="../_images/pore_space_labels.png"><img alt="Domain" class="align-center only-light" src="../_images/pore_space_labels.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-6-inlet-outlet-connectivity">
+<h2>Step 6: Inlet/Outlet Connectivity<a class="headerlink" href="#step-6-inlet-outlet-connectivity" title="Link to this heading"></a></h2>
+<p>The labeled image returned by <code class="docutils literal notranslate"><span class="pre">connect_components</span></code> can be analyzed to determine which labels are connected to the inlet and/or outlet of the domain. A voxel is considered connected to the inlet or outlet if it lies on the corresponding face of the domain. If a labeled set of voxels spans both the inlet and outlet faces, it represents a connected pathway through the domain. In contrast, if a labeled set is not connected to either the inlet or outlet, the labeled set is isolated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inlet_img</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">connected_components</span><span class="o">.</span><span class="n">inlet_connected_img</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">img_sd</span><span class="p">)</span>
+<span class="n">outlet_img</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">connected_components</span><span class="o">.</span><span class="n">outlet_connected_img</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">img_sd</span><span class="p">)</span>
+<span class="n">inlet_outlet_img</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">connected_components</span><span class="o">.</span><span class="n">inlet_outlet_connected_img</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">img_sd</span><span class="p">)</span>
+<span class="n">isolated_img</span> <span class="o">=</span>
+</pre></div>
+</div>
+</section>
+<section id="inlet-connected-voxels">
+<h2>Inlet-Connected Voxels<a class="headerlink" href="#inlet-connected-voxels" title="Link to this heading"></a></h2>
+<p>These voxels are connected to the <strong>inlet</strong>:</p>
+<a class="only-light reference internal image-reference" href="../_images/inlet_pore_space.png"><img alt="Inlet-connected domain" class="align-center only-light" src="../_images/inlet_pore_space.png" style="width: 60%;" />
+</a>
+<div style="margin-top: 2em;"></div></section>
+<section id="outlet-connected-voxels">
+<h2>Outlet-Connected Voxels<a class="headerlink" href="#outlet-connected-voxels" title="Link to this heading"></a></h2>
+<p>These voxels are connected to the <strong>outlet</strong>:</p>
+<a class="only-light reference internal image-reference" href="../_images/outlet_pore_space.png"><img alt="Outlet-connected domain" class="align-center only-light" src="../_images/outlet_pore_space.png" style="width: 60%;" />
+</a>
+<div style="margin-top: 2em;"></div></section>
+<section id="connected-pathway-voxels-inlet-and-outlet">
+<h2>Connected Pathway Voxels (Inlet and Outlet)<a class="headerlink" href="#connected-pathway-voxels-inlet-and-outlet" title="Link to this heading"></a></h2>
+<p>These voxels are connected to <strong>both</strong> the inlet and outlet (i.e., a connected path):</p>
+<a class="only-light reference internal image-reference" href="../_images/inlet_outlet_pore_space.png"><img alt="Fully connected domain" class="align-center only-light" src="../_images/inlet_outlet_pore_space.png" style="width: 60%;" />
+</a>
+<div style="margin-top: 2em;"></div></section>
+<section id="isolated-voxels">
+<h2>Isolated Voxels<a class="headerlink" href="#isolated-voxels" title="Link to this heading"></a></h2>
+<p>These voxels are connected to <strong>neither</strong> the inlet and outlet:</p>
+<a class="only-light reference internal image-reference" href="../_images/isolated_pore_space.png"><img alt="Domain" class="align-center only-light" src="../_images/isolated_pore_space.png" style="width: 60%;" />
+</a>
+<div style="margin-top: 2em;"></div></section>
+<section id="step-7-save-outputs">
+<h2>Step 7: Save Outputs<a class="headerlink" href="#step-7-save-outputs" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">save_img</span><span class="p">(</span>
+    <span class="s2">&quot;examples/connected_pathways/image&quot;</span><span class="p">,</span>
+    <span class="n">sd</span><span class="p">,</span>
+    <span class="n">img_sd</span><span class="p">,</span>
+    <span class="n">additional_img</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;cc&quot;</span><span class="p">:</span> <span class="n">cc</span><span class="p">,</span>
+        <span class="s2">&quot;inlet_img&quot;</span><span class="p">:</span> <span class="n">inlet_img</span><span class="p">,</span>
+        <span class="s2">&quot;outlet_img&quot;</span><span class="p">:</span> <span class="n">outlet_img</span><span class="p">,</span>
+        <span class="s2">&quot;inlet_outlet_img&quot;</span><span class="p">:</span> <span class="n">inlet_outlet_img</span><span class="p">,</span>
+        <span class="s2">&quot;isolated_img&quot;</span><span class="p">:</span> <span class="n">isolated_img</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="output">
+<h2>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h2>
+<p>The expected output from a successful run is:</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">image.pvti</span></code> and a folder <code class="code docutils literal notranslate"><span class="pre">image_proc</span></code> with eight <code class="code docutils literal notranslate"><span class="pre">.vti</span></code> files, all of which can be opened in <strong>Paraview</strong></p></li>
+</ul>
+<p>The code used to generate the plots in this example is located at <code class="code docutils literal notranslate"><span class="pre">examples/connected_pathways/plot_connected_pathways.py</span></code> and must be run with <code class="code docutils literal notranslate"><span class="pre">pvpython</span></code>, ParaView’s Python interpreter.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sphere_pack_psd.html" class="btn btn-neutral float-left" title="Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="md_porous_media.html" class="btn btn-neutral float-right" title="Porous Structure from Molecular Dynamics Simulations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

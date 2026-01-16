@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Managing Python Versions &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Testing" href="testing.html" />
+    <link rel="prev" title="Installation for Development" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation for Development</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Managing Python Versions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-pyenv">Why pyenv?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#macos-os-x">macOS (OS X)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installing-pyenv">Installing pyenv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-python-versions">Installing Python Versions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#linux">Linux</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Installing pyenv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Installing Python Versions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#project-configuration">Project Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tox.html">Tox-Based Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs.html">Building the Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing to PMMoTo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating and Uploading Releases to PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Linux Testing with Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Developer Guide</a></li>
+      <li class="breadcrumb-item active">Managing Python Versions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_guide/python_versions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="managing-python-versions">
+<h1>Managing Python Versions<a class="headerlink" href="#managing-python-versions" title="Link to this heading"></a></h1>
+<p>Running the full <code class="docutils literal notranslate"><span class="pre">tox</span></code> test matrix requires multiple Python versions
+to be available on the local system. This project currently tests
+against:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Python 3.10</p></li>
+<li><p>Python 3.11</p></li>
+<li><p>Python 3.12</p></li>
+<li><p>Python 3.13</p></li>
+</ul>
+</div></blockquote>
+<p>The recommended and supported way to manage multiple Python versions is
+to use <code class="docutils literal notranslate"><span class="pre">pyenv</span></code>.</p>
+<section id="why-pyenv">
+<h2>Why pyenv?<a class="headerlink" href="#why-pyenv" title="Link to this heading"></a></h2>
+<p>The built-in <code class="docutils literal notranslate"><span class="pre">venv</span></code> module can only create virtual environments from
+an already-installed Python interpreter. It cannot install or manage
+multiple Python versions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">pyenv</span></code> allows multiple Python interpreters to be installed side by
+side and selected on a per-project basis. <code class="docutils literal notranslate"><span class="pre">tox</span></code> then uses these
+interpreters to automatically create isolated virtual environments.</p>
+</section>
+<section id="macos-os-x">
+<h2>macOS (OS X)<a class="headerlink" href="#macos-os-x" title="Link to this heading"></a></h2>
+<section id="installing-pyenv">
+<h3>Installing pyenv<a class="headerlink" href="#installing-pyenv" title="Link to this heading"></a></h3>
+<p>Install <code class="docutils literal notranslate"><span class="pre">pyenv</span></code> using Homebrew:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>pyenv
+</pre></div>
+</div>
+<p>Add the following to your shell configuration file
+(e.g. <code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code> or <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYENV_ROOT</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.pyenv&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PYENV_ROOT</span><span class="s2">/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+<span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>pyenv<span class="w"> </span>init<span class="w"> </span>-<span class="k">)</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Restart your shell and verify the installation:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pyenv<span class="w"> </span>--version
+</pre></div>
+</div>
+</section>
+<section id="installing-python-versions">
+<h3>Installing Python Versions<a class="headerlink" href="#installing-python-versions" title="Link to this heading"></a></h3>
+<p>Install the required Python versions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.10.14
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.11.9
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.12.3
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.13.5
+</pre></div>
+</div>
+<p>Exact patch versions are not critical, but should correspond to the
+<code class="docutils literal notranslate"><span class="pre">py310</span></code>, <code class="docutils literal notranslate"><span class="pre">py311</span></code>, <code class="docutils literal notranslate"><span class="pre">py312</span></code>, and <code class="docutils literal notranslate"><span class="pre">py313</span></code> environments defined in <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code>.</p>
+</section>
+</section>
+<section id="linux">
+<h2>Linux<a class="headerlink" href="#linux" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>Installing pyenv<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>On Linux, <code class="docutils literal notranslate"><span class="pre">pyenv</span></code> builds Python from source and requires several
+system dependencies.</p>
+<p>Install dependencies (example for Debian/Ubuntu):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>build-essential<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>curl<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>git<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libssl-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>zlib1g-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libbz2-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libreadline-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libsqlite3-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libncursesw5-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>xz-utils<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>tk-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxml2-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxmlsec1-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libffi-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>liblzma-dev
+</pre></div>
+</div>
+<p>Install <code class="docutils literal notranslate"><span class="pre">pyenv</span></code> using the official installer:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>https://pyenv.run<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+</pre></div>
+</div>
+<p>Add the following to your shell configuration file
+(e.g. <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code> or <code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYENV_ROOT</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.pyenv&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PYENV_ROOT</span><span class="s2">/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+<span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>pyenv<span class="w"> </span>init<span class="w"> </span>-<span class="k">)</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Restart your shell and verify the installation:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pyenv<span class="w"> </span>--version
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3>Installing Python Versions<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>Install the required Python versions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.10.14
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.11.9
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.12.3
+pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.13.5
+</pre></div>
+</div>
+</section>
+</section>
+<section id="project-configuration">
+<h2>Project Configuration<a class="headerlink" href="#project-configuration" title="Link to this heading"></a></h2>
+<p>From the root of the repository, configure the local Python versions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pyenv<span class="w"> </span><span class="nb">local</span><span class="w"> </span><span class="m">3</span>.10.14<span class="w"> </span><span class="m">3</span>.11.9<span class="w"> </span><span class="m">3</span>.12.3<span class="w"> </span><span class="m">3</span>.13.5
+</pre></div>
+</div>
+<p>This creates a <code class="docutils literal notranslate"><span class="pre">.python-version</span></code> file that ensures <code class="docutils literal notranslate"><span class="pre">tox</span></code> can locate
+all required interpreters.</p>
+<p>Verify that the interpreters are available:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>which<span class="w"> </span>python3.10
+which<span class="w"> </span>python3.11
+which<span class="w"> </span>python3.12
+which<span class="w"> </span>python3.13
+</pre></div>
+</div>
+<p>All paths should resolve to <code class="docutils literal notranslate"><span class="pre">~/.pyenv/versions/...</span></code>.</p>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<p>Once the required Python versions are installed, <code class="docutils literal notranslate"><span class="pre">tox</span></code> can be used to
+run the full test and quality-check matrix.</p>
+<p>See <a class="reference internal" href="tox.html"><span class="doc">Tox-Based Testing</span></a> for details.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation for Development" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing.html" class="btn btn-neutral float-right" title="Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

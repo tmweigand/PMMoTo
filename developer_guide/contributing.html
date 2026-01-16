@@ -1,0 +1,210 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing to PMMoTo &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Creating and Uploading Releases to PyPI" href="release.html" />
+    <link rel="prev" title="Building the Documentation" href="docs.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation for Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python_versions.html">Managing Python Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tox.html">Tox-Based Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs.html">Building the Documentation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Contributing to PMMoTo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#making-changes">Making Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-and-quality-checks">Testing and Quality Checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#submitting-your-contribution">Submitting Your Contribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-of-conduct">Code of Conduct</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating and Uploading Releases to PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Linux Testing with Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Developer Guide</a></li>
+      <li class="breadcrumb-item active">Contributing to PMMoTo</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_guide/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing-to-pmmoto">
+<h1>Contributing to PMMoTo<a class="headerlink" href="#contributing-to-pmmoto" title="Link to this heading"></a></h1>
+<p>Thank you for your interest in contributing to PMMoTo! Community contributions are welcome and encouraged. This guide describes the recommended workflow for contributing code, documentation, or tests.</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><strong>Fork the repository</strong></p>
+<p>Fork the PMMoTo repository on GitHub to your own account.</p>
+</li>
+<li><p><strong>Clone your fork</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/your-username/pmmoto.git
+<span class="nb">cd</span><span class="w"> </span>pmmoto
+</pre></div>
+</div>
+</li>
+<li><p><strong>Set up a development environment</strong></p>
+<p>Follow the instructions in <a class="reference internal" href="installation.html"><span class="doc">Installation for Development</span></a>.
+Details on supported Python versions and platform-specific setup are documented in <a class="reference internal" href="python_versions.html"><span class="doc">Managing Python Versions</span></a>.</p>
+</li>
+<li><p><strong>Create a feature branch</strong></p>
+<p>Always create a new branch for your work:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/your-feature-name
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="making-changes">
+<h2>Making Changes<a class="headerlink" href="#making-changes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Keep changes focused and logically scoped.</p></li>
+<li><p>Follow existing coding style and project conventions.</p></li>
+<li><p>Add or update tests when modifying functionality.</p></li>
+<li><p>Update documentation where relevant.</p></li>
+</ul>
+<p>If you are unsure about design choices or scope, opening an issue for discussion before implementing large changes is encouraged.</p>
+</section>
+<section id="testing-and-quality-checks">
+<h2>Testing and Quality Checks<a class="headerlink" href="#testing-and-quality-checks" title="Link to this heading"></a></h2>
+<p>Before submitting a contribution, run the full test and quality-check suite:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tox
+</pre></div>
+</div>
+<p>This runs the same checks enforced in continuous integration, including tests, linting, and coverage.</p>
+</section>
+<section id="submitting-your-contribution">
+<h2>Submitting Your Contribution<a class="headerlink" href="#submitting-your-contribution" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><strong>Commit your changes</strong></p>
+<p>Write clear, descriptive commit messages:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Add feature: concise description&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Push to your fork</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/your-feature-name
+</pre></div>
+</div>
+</li>
+<li><p><strong>Open a pull request</strong></p>
+<dl class="simple">
+<dt>Create a pull request against the main PMMoTo repository and describe:</dt><dd><ul class="simple">
+<li><p>what the change does</p></li>
+<li><p>why it is needed</p></li>
+<li><p>any relevant issues it addresses</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<p>Maintainers may request revisions before merging.</p>
+</section>
+<section id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Link to this heading"></a></h2>
+<p>All contributors are expected to follow the project’s <a class="reference internal" href="code_of_conduct.html"><span class="doc">Code of Conduct</span></a> in all interactions.</p>
+<p>Thank you for helping improve PMMoTo!</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docs.html" class="btn btn-neutral float-left" title="Building the Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="release.html" class="btn btn-neutral float-right" title="Creating and Uploading Releases to PyPI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

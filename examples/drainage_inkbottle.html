@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drainage of an Ink Bottle &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack" href="sphere_pack_psd.html" />
+    <link rel="prev" title="Examples" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user_guide/index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Examples</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Drainage of an Ink Bottle</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-import-modules">Step 1: Import Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-initialize-pmmoto">Step 2: Initialize PMMoTo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-generate-ink-bottle-geometry">Step 3: Generate Ink Bottle Geometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-initialize-multiphase-system">Step 4: Initialize Multiphase System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-define-capillary-pressure-range">Step 5: Define Capillary Pressure Range</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-perform-standard-morphological-drainage">Step 6: Perform Standard Morphological Drainage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-7-save-images">Step 7: Save Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-8-drainage-with-contact-angle">Step 8: Drainage with Contact Angle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-9-plot-results">Step 9: Plot Results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output">Output</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="sphere_pack_psd.html">Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="connected_pathways.html">Connected Pathways in Random Porous Media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="md_porous_media.html">Porous Structure from Molecular Dynamics Simulations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../user_guide/index.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Examples</a></li>
+      <li class="breadcrumb-item active">Drainage of an Ink Bottle</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/drainage_inkbottle.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="drainage-of-an-ink-bottle">
+<h1>Drainage of an Ink Bottle<a class="headerlink" href="#drainage-of-an-ink-bottle" title="Link to this heading"></a></h1>
+<p>This example demonstrates a morphological drainage simulation of an ink bottle using PMMoTo. A morphological drainage simulation uses morphologic methods such as erosion and dilation to approximate equilibrium states of the displacement of a wetting phase by a non-wetting phase in a porous structure. For the simulation, a porous structure and capillary pressure are specified and the equilibrium state (as a multiphase image) and wetting-phase saturation is output.  Two drainage approaches are examined in this example:</p>
+<ul class="simple">
+<li><p>A standard morphological approach <span id="id1">[<a class="reference internal" href="../references.html#id2" title="Markus Hilpert and Cass T Miller. Pore-morphology-based simulation of drainage in totally wetting porous media. Advances in water resources, 24(3-4):243–255, 2001.">1</a>]</span></p></li>
+<li><p>An extension to the standard approach where the contact angle can be specified <span id="id2">[<a class="reference internal" href="../references.html#id3" title="Volker Paul Schulz, Jürgen Becker, Andreas Wiegmann, Partha P Mukherjee, and Chao-Yang Wang. Modeling of two-phase behavior in the gas diffusion medium of pefcs via full morphology approach. Journal of the electrochemical society, 154(4):B419, 2007.">2</a>]</span></p></li>
+</ul>
+<p>To run this example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">2</span><span class="w"> </span>python<span class="w"> </span>examples/drainage_inkbottle/drainage_inkbottle.py
+</pre></div>
+</div>
+<section id="step-1-import-modules">
+<h2>Step 1: Import Modules<a class="headerlink" href="#step-1-import-modules" title="Link to this heading"></a></h2>
+<p>This script requires <code class="docutils literal notranslate"><span class="pre">MPI</span></code> for parallelism, however, <code class="docutils literal notranslate"><span class="pre">pmmoto</span></code> handles all communication. <code class="docutils literal notranslate"><span class="pre">numpy</span></code> is needed to generate an list of capillary pressures for the simulations and <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> is used for plotting.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pmmoto</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-initialize-pmmoto">
+<h2>Step 2: Initialize PMMoTo<a class="headerlink" href="#step-2-initialize-pmmoto" title="Link to this heading"></a></h2>
+<p>To initialize PMMoTo, several parameters must be specified:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels</span></code>: the number of voxels in each dimension for the image representing the porous structure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reservoir_voxels</span></code>: the number of voxels added to the inlet</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">subdomains</span></code>: the number of subdomains in each dimension</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundary_types</span></code>: the boundary conditions applied during the simulation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inlet</span></code> and <code class="docutils literal notranslate"><span class="pre">outlet</span></code>: the designated inflow and outflow faces</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box</span></code>: the physical size of the simulation domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rank</span></code>: the MPI rank of the current process</p></li>
+</ul>
+<p>These parameters collectively define the system’s geometry, boundary conditions, and how it is partitioned across processes for the morphological drainage simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="c1"># Domain voxel resolution.</span>
+ <span class="c1"># Must be a 3-tuple as only 3D is currently supported.</span>
+ <span class="n">voxels</span> <span class="o">=</span> <span class="p">(</span><span class="mi">560</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+
+ <span class="c1"># Number of voxels allocated for the inlet reservoir region.</span>
+ <span class="n">reservoir_voxels</span> <span class="o">=</span> <span class="mi">20</span>
+
+ <span class="c1"># Domain decomposition across MPI ranks.</span>
+ <span class="c1"># The product of subdomain counts must match the number of MPI processes.</span>
+ <span class="n">subdomains</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+ <span class="c1"># Physical extent of the domain in each dimension: (min, max)</span>
+ <span class="n">box</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">14.0</span><span class="p">),</span>  <span class="c1"># x-dimension</span>
+     <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># y-dimension</span>
+     <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># z-dimension</span>
+ <span class="p">)</span>
+
+ <span class="c1"># Boundary conditions for each face (−, +) per axis.</span>
+ <span class="c1"># Options:</span>
+ <span class="c1">#   - END:     Nothing assumed</span>
+ <span class="c1">#   - WALL:    Solid, impermeable boundary added to image</span>
+ <span class="c1">#   - PERIODIC: Wraparound — both faces of the axis must be periodic</span>
+ <span class="n">boundary_types</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">),</span>  <span class="c1"># x</span>
+     <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">),</span>  <span class="c1"># y</span>
+     <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">),</span>  <span class="c1"># z</span>
+ <span class="p">)</span>
+
+ <span class="c1"># Inlet boundary condition: (−, +) per axis</span>
+ <span class="c1"># Used to specify where fluid enters the domain</span>
+ <span class="n">inlet</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>  <span class="c1"># x: fluid enters from the +x face</span>
+     <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># y: no inlet</span>
+     <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># z: no inlet</span>
+ <span class="p">)</span>
+
+ <span class="c1"># Outlet boundary condition: (−, +) per axis</span>
+ <span class="c1"># Used to specify where fluid exits the domain</span>
+ <span class="n">outlet</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># x: fluid exits from the −x face</span>
+     <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># y: no outlet</span>
+     <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>  <span class="c1"># z: no outlet</span>
+ <span class="p">)</span>
+
+<span class="n">sd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+     <span class="n">voxels</span><span class="o">=</span><span class="n">voxels</span><span class="p">,</span>
+     <span class="n">box</span><span class="o">=</span><span class="n">box</span><span class="p">,</span>
+     <span class="n">boundary_types</span><span class="o">=</span><span class="n">boundary_types</span><span class="p">,</span>
+     <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span>
+     <span class="n">subdomains</span><span class="o">=</span><span class="n">subdomains</span><span class="p">,</span>
+     <span class="n">inlet</span><span class="o">=</span><span class="n">inlet</span><span class="p">,</span>
+     <span class="n">outlet</span><span class="o">=</span><span class="n">outlet</span><span class="p">,</span>
+     <span class="n">reservoir_voxels</span><span class="o">=</span><span class="n">reservoir_voxels</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The outline of the domain, which consists of two subdomains, is shown below:</p>
+<a class="only-light reference internal image-reference" href="../_images/subdomains1.png"><img alt="Domain" class="align-center only-light" src="../_images/subdomains1.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-3-generate-ink-bottle-geometry">
+<h2>Step 3: Generate Ink Bottle Geometry<a class="headerlink" href="#step-3-generate-ink-bottle-geometry" title="Link to this heading"></a></h2>
+<p>The porous structure for this example is an ink bottle as described in <span id="id3">[<a class="reference internal" href="../references.html#id4" title="CT Miller, K Bruning, CL Talbot, JE McClure, and WG Gray. Nonhysteretic capillary pressure in two-fluid porous medium systems: definition, evaluation, validation, and dynamics. Water Resources Research, 55(8):6825–6849, 2019.">3</a>]</span> and is constructed by a surface of revolution around the x axis, where the radius of the cross section, <cite>r(x)</cite>, is</p>
+<div class="math notranslate nohighlight">
+\[r(x)=0.01\cos(0.01x) + 0.5\sin(x) + 0.75 \quad \forall x \in [0,14].\]</div>
+<p>A voxel is labeled as a pore voxel (i.e., assigned a value of 1) if the radial distance of its centroid from the x-axis is less than <cite>r(x)</cite>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">domain_generation</span></code> module in PMMoTo provides the <code class="docutils literal notranslate"><span class="pre">PorousMedia</span></code> object and includes functionality to generate the ink bottle geometry.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_pm_inkbottle</span><span class="p">(</span><span class="n">sd</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The pore voxels and reservoir voxels for the ink bottle:</p>
+<a class="only-light reference internal image-reference" href="../_images/ink_bottle.png"><img alt="Ink bottle pore geometry" class="align-center only-light" src="../_images/ink_bottle.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-4-initialize-multiphase-system">
+<h2>Step 4: Initialize Multiphase System<a class="headerlink" href="#step-4-initialize-multiphase-system" title="Link to this heading"></a></h2>
+<p>A drainage simulation estimates the equilibrium state of a multiphase system, where two immiscible fluids occupy the pore space. A <code class="docutils literal notranslate"><span class="pre">Multiphase</span></code> object is initialized, and the pore space is initially filled with the wetting phase (fluid ID = 2).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mp</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_mp_constant</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-define-capillary-pressure-range">
+<h2>Step 5: Define Capillary Pressure Range<a class="headerlink" href="#step-5-define-capillary-pressure-range" title="Link to this heading"></a></h2>
+<p>Multiple equilibrium states exist for most multiphase systems, and they depend on the porous structure as well as the properties and interactions of the fluids. In the standard morphological approach, the contact angle is restricted to zero, and the resulting equilibrium states are determined by the capillary pressure and the surface tension.</p>
+<p>A sequence of capillary pressures is created that are designed to capture behavior for the ink bottle geometry.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">capillary_pressure</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span> <span class="o">**</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="mf">7.6</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-perform-standard-morphological-drainage">
+<h2>Step 6: Perform Standard Morphological Drainage<a class="headerlink" href="#step-6-perform-standard-morphological-drainage" title="Link to this heading"></a></h2>
+<p>To perform the simulation, the following parameters are needed:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Multiphase</span></code>: object that includes the initial fluid configuration.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">capillary_pressure</span></code>: capillary pressures used to determine equilibrium states.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code>: surface tension, with units <span class="math notranslate nohighlight">\(\mathrm{mass}/\mathrm{seconds}^2\)</span>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">method</span></code>: specifies which drainage approach to use.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save</span></code>: where to save the <code class="docutils literal notranslate"><span class="pre">Multiphase</span></code> image at every capillary pressure.</p></li>
+</ul>
+<p>The output of this function is the predicted equilibrium saturation at a given capillary pressure.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w_saturation_standard</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">equilibrium_distribution</span><span class="o">.</span><span class="n">drainage</span><span class="p">(</span>
+   <span class="n">mp</span><span class="p">,</span> <span class="n">capillary_pressure</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-7-save-images">
+<h2>Step 7: Save Images<a class="headerlink" href="#step-7-save-images" title="Link to this heading"></a></h2>
+<p>When <code class="code docutils literal notranslate"><span class="pre">save=False</span></code>, the <code class="docutils literal notranslate"><span class="pre">Multiphase</span></code> image is only available at the last provided capillary pressure. Both the <code class="docutils literal notranslate"><span class="pre">PorousMedia</span></code> and <code class="docutils literal notranslate"><span class="pre">Multiphase</span></code> images can be accessed via the <code class="docutils literal notranslate"><span class="pre">.img</span></code> attribute, which contains the corresponding <code class="docutils literal notranslate"><span class="pre">numpy</span></code> arrays. These are passed to the <code class="docutils literal notranslate"><span class="pre">save_img</span></code> function as well as a <code class="docutils literal notranslate"><span class="pre">file_name</span></code> and the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">save_img</span><span class="p">(</span>
+    <span class="n">file_name</span><span class="o">=</span><span class="s2">&quot;examples/drainage_inkbottle/image&quot;</span><span class="p">,</span>
+    <span class="n">subdomain</span><span class="o">=</span><span class="n">sd</span><span class="p">,</span>
+    <span class="n">img</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">img</span><span class="p">,</span>
+    <span class="n">additional_img</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mp_img&quot;</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">img</span><span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>A cross-section of the multiphase image which depicts the fluid configuration at the last capillary pressure is shown below:</p>
+<a class="only-light reference internal image-reference" href="../_images/standard_drainage.png"><img alt="Multiphase image" class="align-center only-light" src="../_images/standard_drainage.png" style="width: 60%;" />
+</a>
+</section>
+<section id="step-8-drainage-with-contact-angle">
+<h2>Step 8: Drainage with Contact Angle<a class="headerlink" href="#step-8-drainage-with-contact-angle" title="Link to this heading"></a></h2>
+<p>The other available approach is an extension of the standard morphological method and allows for specification of the contact angle between the solid and fluid phases. First, we refill the pore space with the wetting fluid (fluid id = 2) and run the contact angle model where we set <code class="docutils literal notranslate"><span class="pre">contact_angle</span></code> to 20° and change the <code class="docutils literal notranslate"><span class="pre">method</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mp</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_mp_constant</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">w_saturation_contact_angle</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">equilibrium_distribution</span><span class="o">.</span><span class="n">drainage</span><span class="p">(</span>
+    <span class="n">mp</span><span class="p">,</span> <span class="n">capillary_pressure</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">contact_angle</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;contact_angle&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-9-plot-results">
+<h2>Step 9: Plot Results<a class="headerlink" href="#step-9-plot-results" title="Link to this heading"></a></h2>
+<p>To assess the impacts of contact angle and compare the wetting-phase saturations predicted by the two methods, a plot is generated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w_saturation_standard</span><span class="p">,</span> <span class="n">capillary_pressure</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Standard Method&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w_saturation_contact_angle</span><span class="p">,</span> <span class="n">capillary_pressure</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Contact Angle Method&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Wetting Phase Saturation&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Capillary Pressure&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;examples/drainage_inkbottle/saturation_pressure_plot.png&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="only-light reference internal image-reference" href="../_images/saturation_pressure_plot.png"><img alt="Capillary pressure curves" class="align-center only-light" src="../_images/saturation_pressure_plot.png" style="width: 60%;" />
+</a>
+</section>
+<section id="output">
+<h2>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h2>
+<p>The expected output from a successful run is:</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">image.pvti</span></code> and a folder <code class="code docutils literal notranslate"><span class="pre">image_proc</span></code> with two <code class="code docutils literal notranslate"><span class="pre">.vti</span></code> files which can be opened in <strong>Paraview</strong></p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">saturation_pressure_plot.png</span></code>: Plot of capillary pressure vs. saturation.</p></li>
+</ul>
+<p>The code used to generate the plots in this example is located at <code class="code docutils literal notranslate"><span class="pre">examples/drainage_inkbottle/plot_drainage_inkbottle.py</span></code> and must be run with <code class="code docutils literal notranslate"><span class="pre">pvpython</span></code>, ParaView’s Python interpreter.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sphere_pack_psd.html" class="btn btn-neutral float-right" title="Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,589 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto package &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pmmoto.analysis package" href="pmmoto.analysis.html" />
+    <link rel="prev" title="pmmoto" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pmmoto package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pmmoto.BoundaryType"><code class="docutils literal notranslate"><span class="pre">BoundaryType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pmmoto.BoundaryType.END"><code class="docutils literal notranslate"><span class="pre">BoundaryType.END</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pmmoto.BoundaryType.INTERNAL"><code class="docutils literal notranslate"><span class="pre">BoundaryType.INTERNAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pmmoto.BoundaryType.PERIODIC"><code class="docutils literal notranslate"><span class="pre">BoundaryType.PERIODIC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pmmoto.BoundaryType.WALL"><code class="docutils literal notranslate"><span class="pre">BoundaryType.WALL</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+      <li class="breadcrumb-item active">pmmoto package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pmmoto.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pmmoto">
+<span id="pmmoto-package"></span><h1>pmmoto package<a class="headerlink" href="#module-pmmoto" title="Link to this heading"></a></h1>
+<p>PMMoTo package initialization.</p>
+<p>This module sets up the logger and imports all major subpackages,
+making core functionality available at the top level.</p>
+<dl class="simple">
+<dt>Exports:</dt><dd><ul class="simple">
+<li><p>logger: The package-level logger.</p></li>
+<li><p>initialize: Main initialization function for PMMoTo domains.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.BoundaryType">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.</span></span><span class="sig-name descname"><span class="pre">BoundaryType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.BoundaryType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>Allowable boundary types.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pmmoto.BoundaryType.END">
+<span class="sig-name descname"><span class="pre">END</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'end'</span></span><a class="headerlink" href="#pmmoto.BoundaryType.END" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pmmoto.BoundaryType.INTERNAL">
+<span class="sig-name descname"><span class="pre">INTERNAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'internal'</span></span><a class="headerlink" href="#pmmoto.BoundaryType.INTERNAL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pmmoto.BoundaryType.PERIODIC">
+<span class="sig-name descname"><span class="pre">PERIODIC</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'periodic'</span></span><a class="headerlink" href="#pmmoto.BoundaryType.PERIODIC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pmmoto.BoundaryType.WALL">
+<span class="sig-name descname"><span class="pre">WALL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'wall'</span></span><a class="headerlink" href="#pmmoto.BoundaryType.WALL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.initialize">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.</span></span><span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voxels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((0,</span> <span class="pre">1.0),</span> <span class="pre">(0,</span> <span class="pre">1.0),</span> <span class="pre">(0,</span> <span class="pre">1))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pmmoto.BoundaryType" title="pmmoto.core.boundary_types.BoundaryType"><span class="pre">BoundaryType</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#pmmoto.BoundaryType" title="pmmoto.core.boundary_types.BoundaryType"><span class="pre">BoundaryType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((BoundaryType.END,</span> <span class="pre">BoundaryType.END),</span> <span class="pre">(BoundaryType.END,</span> <span class="pre">BoundaryType.END),</span> <span class="pre">(BoundaryType.END,</span> <span class="pre">BoundaryType.END))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inlet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((False,</span> <span class="pre">False),</span> <span class="pre">(False,</span> <span class="pre">False),</span> <span class="pre">(False,</span> <span class="pre">False))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((False,</span> <span class="pre">False),</span> <span class="pre">(False,</span> <span class="pre">False),</span> <span class="pre">(False,</span> <span class="pre">False))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reservoir_voxels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verlet_domains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></span><a class="headerlink" href="#pmmoto.initialize" title="Link to this definition"></a></dt>
+<dd><p>Initialize PMMoTo domain and subdomain classes and check for valid inputs.</p>
+</dd></dl>
+
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.analysis.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.analysis.html#module-pmmoto.analysis.average">pmmoto.analysis.average module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.analysis.html#pmmoto.analysis.average.average_image_along_axis"><code class="docutils literal notranslate"><span class="pre">average_image_along_axis()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.analysis.html#module-pmmoto.analysis.bins">pmmoto.analysis.bins module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.analysis.html#pmmoto.analysis.bins.count_locations"><code class="docutils literal notranslate"><span class="pre">count_locations()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.analysis.html#module-pmmoto.analysis.minkowski">pmmoto.analysis.minkowski module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.analysis.html#pmmoto.analysis.minkowski.functionals"><code class="docutils literal notranslate"><span class="pre">functionals()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.analysis.html#module-pmmoto.analysis.stats">pmmoto.analysis.stats module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.analysis.html#pmmoto.analysis.stats.get_maximum"><code class="docutils literal notranslate"><span class="pre">get_maximum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.analysis.html#pmmoto.analysis.stats.get_minimum"><code class="docutils literal notranslate"><span class="pre">get_minimum()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.boundary_types">pmmoto.core.boundary_types module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.boundary_types.boundary_order"><code class="docutils literal notranslate"><span class="pre">boundary_order()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.communication">pmmoto.core.communication module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.communication.all_gather"><code class="docutils literal notranslate"><span class="pre">all_gather()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.communication.all_reduce"><code class="docutils literal notranslate"><span class="pre">all_reduce()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.communication.communicate_features"><code class="docutils literal notranslate"><span class="pre">communicate_features()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.communication.gather"><code class="docutils literal notranslate"><span class="pre">gather()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.communication.update_buffer"><code class="docutils literal notranslate"><span class="pre">update_buffer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.domain">pmmoto.core.domain module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain"><code class="docutils literal notranslate"><span class="pre">Domain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.box"><code class="docutils literal notranslate"><span class="pre">Domain.box</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.boundary_types"><code class="docutils literal notranslate"><span class="pre">Domain.boundary_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.inlet"><code class="docutils literal notranslate"><span class="pre">Domain.inlet</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.outlet"><code class="docutils literal notranslate"><span class="pre">Domain.outlet</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.dims"><code class="docutils literal notranslate"><span class="pre">Domain.dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.volume"><code class="docutils literal notranslate"><span class="pre">Domain.volume</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.periodic"><code class="docutils literal notranslate"><span class="pre">Domain.periodic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.length"><code class="docutils literal notranslate"><span class="pre">Domain.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.get_length"><code class="docutils literal notranslate"><span class="pre">Domain.get_length()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.get_origin"><code class="docutils literal notranslate"><span class="pre">Domain.get_origin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.get_volume"><code class="docutils literal notranslate"><span class="pre">Domain.get_volume()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain.Domain.periodic_check"><code class="docutils literal notranslate"><span class="pre">Domain.periodic_check()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.domain_decompose">pmmoto.core.domain_decompose module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_decompose.DecomposedDomain"><code class="docutils literal notranslate"><span class="pre">DecomposedDomain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_decompose.DecomposedDomain.from_discretized_domain"><code class="docutils literal notranslate"><span class="pre">DecomposedDomain.from_discretized_domain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_decompose.DecomposedDomain.gen_map"><code class="docutils literal notranslate"><span class="pre">DecomposedDomain.gen_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_decompose.DecomposedDomain.get_neighbor_ranks"><code class="docutils literal notranslate"><span class="pre">DecomposedDomain.get_neighbor_ranks()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.domain_discretization">pmmoto.core.domain_discretization module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_discretization.DiscretizedDomain"><code class="docutils literal notranslate"><span class="pre">DiscretizedDomain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_discretization.DiscretizedDomain.from_domain"><code class="docutils literal notranslate"><span class="pre">DiscretizedDomain.from_domain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_discretization.DiscretizedDomain.get_coords"><code class="docutils literal notranslate"><span class="pre">DiscretizedDomain.get_coords()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.domain_discretization.DiscretizedDomain.get_resolution"><code class="docutils literal notranslate"><span class="pre">DiscretizedDomain.get_resolution()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.features">pmmoto.core.features module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Corner"><code class="docutils literal notranslate"><span class="pre">Corner</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Corner.get_periodic_correction"><code class="docutils literal notranslate"><span class="pre">Corner.get_periodic_correction()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Edge"><code class="docutils literal notranslate"><span class="pre">Edge</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Edge.get_periodic_correction"><code class="docutils literal notranslate"><span class="pre">Edge.get_periodic_correction()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face"><code class="docutils literal notranslate"><span class="pre">Face</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face.get_direction"><code class="docutils literal notranslate"><span class="pre">Face.get_direction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face.get_periodic_correction"><code class="docutils literal notranslate"><span class="pre">Face.get_periodic_correction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face.get_slice"><code class="docutils literal notranslate"><span class="pre">Face.get_slice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face.get_strides"><code class="docutils literal notranslate"><span class="pre">Face.get_strides()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Face.map_to_index"><code class="docutils literal notranslate"><span class="pre">Face.map_to_index()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature"><code class="docutils literal notranslate"><span class="pre">Feature</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.compute_lower_face"><code class="docutils literal notranslate"><span class="pre">Feature.compute_lower_face()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.compute_lower_neighbor"><code class="docutils literal notranslate"><span class="pre">Feature.compute_lower_neighbor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.compute_upper_face"><code class="docutils literal notranslate"><span class="pre">Feature.compute_upper_face()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.compute_upper_neighbor"><code class="docutils literal notranslate"><span class="pre">Feature.compute_upper_neighbor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.convert_feature_id"><code class="docutils literal notranslate"><span class="pre">Feature.convert_feature_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.get_voxels"><code class="docutils literal notranslate"><span class="pre">Feature.get_voxels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.features.Feature.is_periodic"><code class="docutils literal notranslate"><span class="pre">Feature.is_periodic()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.logging">pmmoto.core.logging module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.logging.MPIFormatter"><code class="docutils literal notranslate"><span class="pre">MPIFormatter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.logging.MPIFormatter.format"><code class="docutils literal notranslate"><span class="pre">MPIFormatter.format()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.logging.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.logging.setup_logger"><code class="docutils literal notranslate"><span class="pre">setup_logger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.orientation">pmmoto.core.orientation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.orientation.get_boundary_id"><code class="docutils literal notranslate"><span class="pre">get_boundary_id()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.pmmoto">pmmoto.core.pmmoto module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.subdomain">pmmoto.core.subdomain module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain"><code class="docutils literal notranslate"><span class="pre">Subdomain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.check_boundary_type"><code class="docutils literal notranslate"><span class="pre">Subdomain.check_boundary_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_boundary_types"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_boundary_types()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_box"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_box()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_centroid"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_centroid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_global_boundary"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_global_boundary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_img_index"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_img_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_index"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_inlet"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_inlet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_length"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_length()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_origin"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_origin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_outlet"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_outlet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_own_voxels"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_own_voxels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_radius"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_radius()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_start"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_start()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.get_voxels"><code class="docutils literal notranslate"><span class="pre">Subdomain.get_voxels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.periodic_check"><code class="docutils literal notranslate"><span class="pre">Subdomain.periodic_check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain.set_wall_bcs"><code class="docutils literal notranslate"><span class="pre">Subdomain.set_wall_bcs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.subdomain_features">pmmoto.core.subdomain_features module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.all_features"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.all_features</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.collect_features"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.collect_features()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.collect_periodic_corrections"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.collect_periodic_corrections()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.collect_periodic_features"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.collect_periodic_features()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.get_boundary_type"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.get_boundary_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.get_feature_member"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.get_feature_member()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.get_features"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.get_features()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.get_global_boundary"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.get_global_boundary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_features.SubdomainFeatures.set_feature_voxels"><code class="docutils literal notranslate"><span class="pre">SubdomainFeatures.set_feature_voxels()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.subdomain_padded">pmmoto.core.subdomain_padded module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.extend_padding"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.extend_padding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_own_voxels"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_own_voxels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_padded_box"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_padded_box()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_padded_start"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_padded_start()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_padded_voxels"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_padded_voxels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_padding"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_padding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.get_reservoir_padding"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.get_reservoir_padding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain.update_reservoir"><code class="docutils literal notranslate"><span class="pre">PaddedSubdomain.update_reservoir()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.subdomain_verlet">pmmoto.core.subdomain_verlet module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain.get_maximum_diameter"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain.get_maximum_diameter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain.get_verlet_box"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain.get_verlet_box()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain.get_verlet_centroid"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain.get_verlet_centroid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain.get_verlet_loop"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain.get_verlet_loop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain.get_verlet_voxels"><code class="docutils literal notranslate"><span class="pre">VerletSubdomain.get_verlet_voxels()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.utils">pmmoto.core.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.bin_image"><code class="docutils literal notranslate"><span class="pre">bin_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.constant_pad_img"><code class="docutils literal notranslate"><span class="pre">constant_pad_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.determine_maximum"><code class="docutils literal notranslate"><span class="pre">determine_maximum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.own_img"><code class="docutils literal notranslate"><span class="pre">own_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.phase_exists"><code class="docutils literal notranslate"><span class="pre">phase_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.utils.unpad"><code class="docutils literal notranslate"><span class="pre">unpad()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.core.html#module-pmmoto.core.voxels">pmmoto.core.voxels module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.count_label_voxels"><code class="docutils literal notranslate"><span class="pre">count_label_voxels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.gen_img_to_label_map"><code class="docutils literal notranslate"><span class="pre">gen_img_to_label_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.gen_inlet_label_map"><code class="docutils literal notranslate"><span class="pre">gen_inlet_label_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.gen_outlet_label_map"><code class="docutils literal notranslate"><span class="pre">gen_outlet_label_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.get_boundary_voxels"><code class="docutils literal notranslate"><span class="pre">get_boundary_voxels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.get_id"><code class="docutils literal notranslate"><span class="pre">get_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.get_nearest_boundary_index"><code class="docutils literal notranslate"><span class="pre">get_nearest_boundary_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.match_global_boundary_voxels"><code class="docutils literal notranslate"><span class="pre">match_global_boundary_voxels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.match_neighbor_boundary_voxels"><code class="docutils literal notranslate"><span class="pre">match_neighbor_boundary_voxels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.voxels.renumber_image"><code class="docutils literal notranslate"><span class="pre">renumber_image()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.deconstruct_img"><code class="docutils literal notranslate"><span class="pre">deconstruct_img()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_img_linear"><code class="docutils literal notranslate"><span class="pre">gen_img_linear()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_img_random_binary"><code class="docutils literal notranslate"><span class="pre">gen_img_random_binary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_img_smoothed_random_binary"><code class="docutils literal notranslate"><span class="pre">gen_img_smoothed_random_binary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_mp_constant"><code class="docutils literal notranslate"><span class="pre">gen_mp_constant()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_pm_atom_domain"><code class="docutils literal notranslate"><span class="pre">gen_pm_atom_domain()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_pm_atom_file"><code class="docutils literal notranslate"><span class="pre">gen_pm_atom_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_pm_cylinders"><code class="docutils literal notranslate"><span class="pre">gen_pm_cylinders()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_pm_inkbottle"><code class="docutils literal notranslate"><span class="pre">gen_pm_inkbottle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.gen_pm_spheres_domain"><code class="docutils literal notranslate"><span class="pre">gen_pm_spheres_domain()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#module-pmmoto.domain_generation.domain_generation">pmmoto.domain_generation.domain_generation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.deconstruct_img"><code class="docutils literal notranslate"><span class="pre">deconstruct_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_img_linear"><code class="docutils literal notranslate"><span class="pre">gen_img_linear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_img_random_binary"><code class="docutils literal notranslate"><span class="pre">gen_img_random_binary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary"><code class="docutils literal notranslate"><span class="pre">gen_img_smoothed_random_binary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_mp_constant"><code class="docutils literal notranslate"><span class="pre">gen_mp_constant()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_pm_atom_domain"><code class="docutils literal notranslate"><span class="pre">gen_pm_atom_domain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_pm_atom_file"><code class="docutils literal notranslate"><span class="pre">gen_pm_atom_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_pm_cylinders"><code class="docutils literal notranslate"><span class="pre">gen_pm_cylinders()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_pm_inkbottle"><code class="docutils literal notranslate"><span class="pre">gen_pm_inkbottle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.domain_generation.gen_pm_spheres_domain"><code class="docutils literal notranslate"><span class="pre">gen_pm_spheres_domain()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#module-pmmoto.domain_generation.lattice_packings">pmmoto.domain_generation.lattice_packings module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic"><code class="docutils literal notranslate"><span class="pre">BodyCenteredCubic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_basis_vectors"><code class="docutils literal notranslate"><span class="pre">BodyCenteredCubic.get_basis_vectors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_coordination_number"><code class="docutils literal notranslate"><span class="pre">BodyCenteredCubic.get_coordination_number()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_packing_efficiency"><code class="docutils literal notranslate"><span class="pre">BodyCenteredCubic.get_packing_efficiency()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_radius"><code class="docutils literal notranslate"><span class="pre">BodyCenteredCubic.get_radius()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic"><code class="docutils literal notranslate"><span class="pre">FaceCenteredCubic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_basis_vectors"><code class="docutils literal notranslate"><span class="pre">FaceCenteredCubic.get_basis_vectors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_coordination_number"><code class="docutils literal notranslate"><span class="pre">FaceCenteredCubic.get_coordination_number()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_packing_efficiency"><code class="docutils literal notranslate"><span class="pre">FaceCenteredCubic.get_packing_efficiency()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_radius"><code class="docutils literal notranslate"><span class="pre">FaceCenteredCubic.get_radius()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.Lattice"><code class="docutils literal notranslate"><span class="pre">Lattice</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.Lattice.generate_lattice"><code class="docutils literal notranslate"><span class="pre">Lattice.generate_lattice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.Lattice.get_basis_vectors"><code class="docutils literal notranslate"><span class="pre">Lattice.get_basis_vectors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.Lattice.get_radius"><code class="docutils literal notranslate"><span class="pre">Lattice.get_radius()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.SimpleCubic"><code class="docutils literal notranslate"><span class="pre">SimpleCubic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_basis_vectors"><code class="docutils literal notranslate"><span class="pre">SimpleCubic.get_basis_vectors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_coordination_number"><code class="docutils literal notranslate"><span class="pre">SimpleCubic.get_coordination_number()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_packing_efficiency"><code class="docutils literal notranslate"><span class="pre">SimpleCubic.get_packing_efficiency()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_radius"><code class="docutils literal notranslate"><span class="pre">SimpleCubic.get_radius()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#module-pmmoto.domain_generation.multiphase">pmmoto.domain_generation.multiphase module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase"><code class="docutils literal notranslate"><span class="pre">Multiphase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase.get_pc"><code class="docutils literal notranslate"><span class="pre">Multiphase.get_pc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius"><code class="docutils literal notranslate"><span class="pre">Multiphase.get_probe_radius()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase.get_saturation"><code class="docutils literal notranslate"><span class="pre">Multiphase.get_saturation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase.get_volume_fraction"><code class="docutils literal notranslate"><span class="pre">Multiphase.get_volume_fraction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.multiphase.Multiphase.update_img"><code class="docutils literal notranslate"><span class="pre">Multiphase.update_img()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#module-pmmoto.domain_generation.porousmedia">pmmoto.domain_generation.porousmedia module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia"><code class="docutils literal notranslate"><span class="pre">PorousMedia</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia.distance"><code class="docutils literal notranslate"><span class="pre">PorousMedia.distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia.max_distance"><code class="docutils literal notranslate"><span class="pre">PorousMedia.max_distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia.porosity"><code class="docutils literal notranslate"><span class="pre">PorousMedia.porosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia.set_distance"><code class="docutils literal notranslate"><span class="pre">PorousMedia.set_distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.PorousMedia.set_porosity"><code class="docutils literal notranslate"><span class="pre">PorousMedia.set_porosity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.porousmedia.gen_pm"><code class="docutils literal notranslate"><span class="pre">gen_pm()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.domain_generation.html#module-pmmoto.domain_generation.rdf">pmmoto.domain_generation.rdf module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.domain_generation.html#pmmoto.domain_generation.rdf.bin_distances"><code class="docutils literal notranslate"><span class="pre">bin_distances()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.distance.html">pmmoto.filters.distance package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.distance.html#pmmoto.filters.distance.edt"><code class="docutils literal notranslate"><span class="pre">edt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.distance.html#pmmoto.filters.distance.edt2d"><code class="docutils literal notranslate"><span class="pre">edt2d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.distance.html#pmmoto.filters.distance.edt3d"><code class="docutils literal notranslate"><span class="pre">edt3d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.distance.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.distance.html#module-pmmoto.filters.distance.euclidean_distance_transform">pmmoto.filters.distance.euclidean_distance_transform module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#module-pmmoto.filters.connected_components">pmmoto.filters.connected_components module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.connect_components"><code class="docutils literal notranslate"><span class="pre">connect_components()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.gen_img_to_label_map"><code class="docutils literal notranslate"><span class="pre">gen_img_to_label_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.inlet_connected_img"><code class="docutils literal notranslate"><span class="pre">inlet_connected_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.inlet_outlet_connected_img"><code class="docutils literal notranslate"><span class="pre">inlet_outlet_connected_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.isolated_img"><code class="docutils literal notranslate"><span class="pre">isolated_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.outlet_connected_img"><code class="docutils literal notranslate"><span class="pre">outlet_connected_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.connected_components.phase_count"><code class="docutils literal notranslate"><span class="pre">phase_count()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#module-pmmoto.filters.equilibrium_distribution">pmmoto.filters.equilibrium_distribution module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.equilibrium_distribution.drainage"><code class="docutils literal notranslate"><span class="pre">drainage()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#module-pmmoto.filters.morphological_operators">pmmoto.filters.morphological_operators module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.addition"><code class="docutils literal notranslate"><span class="pre">addition()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.closing"><code class="docutils literal notranslate"><span class="pre">closing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.dilate"><code class="docutils literal notranslate"><span class="pre">dilate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.erode"><code class="docutils literal notranslate"><span class="pre">erode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.gen_struct_element"><code class="docutils literal notranslate"><span class="pre">gen_struct_element()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.gen_struct_ratio"><code class="docutils literal notranslate"><span class="pre">gen_struct_ratio()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.opening"><code class="docutils literal notranslate"><span class="pre">opening()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.morphological_operators.subtraction"><code class="docutils literal notranslate"><span class="pre">subtraction()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.filters.html#module-pmmoto.filters.porosimetry">pmmoto.filters.porosimetry module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.porosimetry.get_sizes"><code class="docutils literal notranslate"><span class="pre">get_sizes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.porosimetry.plot_pore_size_distribution"><code class="docutils literal notranslate"><span class="pre">plot_pore_size_distribution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.porosimetry.pore_size_distribution"><code class="docutils literal notranslate"><span class="pre">pore_size_distribution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.filters.html#pmmoto.filters.porosimetry.porosimetry"><code class="docutils literal notranslate"><span class="pre">porosimetry()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.py_read_lammps_atoms"><code class="docutils literal notranslate"><span class="pre">py_read_lammps_atoms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.read_atom_map"><code class="docutils literal notranslate"><span class="pre">read_atom_map()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.read_binned_distances_rdf"><code class="docutils literal notranslate"><span class="pre">read_binned_distances_rdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.read_lammps_atoms"><code class="docutils literal notranslate"><span class="pre">read_lammps_atoms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.read_rdf"><code class="docutils literal notranslate"><span class="pre">read_rdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.read_sphere_pack_xyzr_domain"><code class="docutils literal notranslate"><span class="pre">read_sphere_pack_xyzr_domain()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.save_extended_img_data_parallel"><code class="docutils literal notranslate"><span class="pre">save_extended_img_data_parallel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.save_img"><code class="docutils literal notranslate"><span class="pre">save_img()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.save_particle_data"><code class="docutils literal notranslate"><span class="pre">save_particle_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html">pmmoto.io.evtk package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.evtk">pmmoto.io.evtk.evtk module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.hl">pmmoto.io.evtk.hl module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.vtk">pmmoto.io.evtk.vtk module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.xml">pmmoto.io.evtk.xml module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#module-pmmoto.io.data_read">pmmoto.io.data_read module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.py_read_lammps_atoms"><code class="docutils literal notranslate"><span class="pre">py_read_lammps_atoms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.read_atom_map"><code class="docutils literal notranslate"><span class="pre">read_atom_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.read_binned_distances_rdf"><code class="docutils literal notranslate"><span class="pre">read_binned_distances_rdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.read_lammps_atoms"><code class="docutils literal notranslate"><span class="pre">read_lammps_atoms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.read_rdf"><code class="docutils literal notranslate"><span class="pre">read_rdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.data_read.read_sphere_pack_xyzr_domain"><code class="docutils literal notranslate"><span class="pre">read_sphere_pack_xyzr_domain()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#module-pmmoto.io.io_utils">pmmoto.io.io_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.io_utils.check_file"><code class="docutils literal notranslate"><span class="pre">check_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.io_utils.check_file_path"><code class="docutils literal notranslate"><span class="pre">check_file_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.io_utils.check_folder"><code class="docutils literal notranslate"><span class="pre">check_folder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.io_utils.check_num_files"><code class="docutils literal notranslate"><span class="pre">check_num_files()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.html#module-pmmoto.io.output">pmmoto.io.output module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.output.save_extended_img_data_parallel"><code class="docutils literal notranslate"><span class="pre">save_extended_img_data_parallel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.output.save_img"><code class="docutils literal notranslate"><span class="pre">save_img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.html#pmmoto.io.output.save_particle_data"><code class="docutils literal notranslate"><span class="pre">save_particle_data()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.convert_atoms_elements_to_ids"><code class="docutils literal notranslate"><span class="pre">convert_atoms_elements_to_ids()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.initialize_atoms"><code class="docutils literal notranslate"><span class="pre">initialize_atoms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.initialize_spheres"><code class="docutils literal notranslate"><span class="pre">initialize_spheres()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.uff_radius"><code class="docutils literal notranslate"><span class="pre">uff_radius()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#module-pmmoto.particles.atom_universal_force_field">pmmoto.particles.atom_universal_force_field module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.atom_universal_force_field.atom_universal_force_field"><code class="docutils literal notranslate"><span class="pre">atom_universal_force_field()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.particles.html#module-pmmoto.particles.particles">pmmoto.particles.particles module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.particles.convert_atoms_elements_to_ids"><code class="docutils literal notranslate"><span class="pre">convert_atoms_elements_to_ids()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.particles.initialize_atoms"><code class="docutils literal notranslate"><span class="pre">initialize_atoms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.particles.initialize_cylinders"><code class="docutils literal notranslate"><span class="pre">initialize_cylinders()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.particles.initialize_spheres"><code class="docutils literal notranslate"><span class="pre">initialize_spheres()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.particles.html#pmmoto.particles.particles.uff_radius"><code class="docutils literal notranslate"><span class="pre">uff_radius()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="pmmoto" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmmoto.analysis.html" class="btn btn-neutral float-right" title="pmmoto.analysis package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
