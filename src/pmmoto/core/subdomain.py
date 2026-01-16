@@ -346,12 +346,14 @@ class Subdomain(domain_discretization.DiscretizedDomain):
 
             if coord < lower:
                 raise ValueError(
-                    f"Coordinate {coord} in dimension {dim} is below lower bound {lower}."
+                    f"Coordinate {coord} in dimension {dim} is below "
+                    f"lower bound {lower}."
                 )
 
             if coord >= upper:
                 raise ValueError(
-                    f"Coordinate {coord} in dimension {dim} is above upper bound {upper}."
+                    f"Coordinate {coord} in dimension {dim} is above "
+                    f"upper bound {upper}."
                 )
 
             indices[dim] = int((coord - lower) / res)

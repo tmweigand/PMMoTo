@@ -287,7 +287,7 @@ def communicate_features(
     return recv_data
 
 
-def _waitall(requests):
+def _waitall(requests) -> None:
     MPI.Request.waitall(requests)
 
 

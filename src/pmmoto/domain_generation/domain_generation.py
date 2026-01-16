@@ -185,7 +185,7 @@ def gen_pm_cylinders(
 def gen_pm_atom_domain(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     atom_locations: NDArray[np.floating[Any]],
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     atom_types: NDArray[np.integer[Any]],
     kd: bool = False,
 ) -> porousmedia.PorousMedia:

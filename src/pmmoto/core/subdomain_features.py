@@ -217,7 +217,7 @@ class SubdomainFeatures:
 
         if not hasattr(feature_obj, member_name):
             raise AttributeError(
-                f"Feature {feature_id} ({type(feature_obj).__name__}) has no member '{member_name}'."
+                f"Feature {feature_id} ({type(feature_obj).__name__}) has no "
+                f"member '{member_name}'."
             )
-
         return getattr(feature_obj, member_name)
