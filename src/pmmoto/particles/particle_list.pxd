@@ -8,7 +8,7 @@ cdef extern from "particle_list.hpp":
 
 	cdef struct Box:
 		double[3] min,max,length
-		bool[3] lower_periodic,upper_periodic
+		bool[3] periodic
 
 	cdef cppclass Particle
 

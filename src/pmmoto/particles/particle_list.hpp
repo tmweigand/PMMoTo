@@ -16,8 +16,7 @@ using Coords = std::vector<double>;
 struct Box
 {
     double min[3], max[3], length[3];
-    bool lower_periodic[3] = { 0, 0, 0 };
-    bool upper_periodic[3] = { 0, 0, 0 };
+    bool periodic[3] = { false, false, false };
 
     // Function to update the lengths of the box
     void box_length()

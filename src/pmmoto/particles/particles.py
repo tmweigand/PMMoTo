@@ -171,7 +171,7 @@ def initialize_atoms(
         particles.trim_within(subdomain)
     if trim_intersecting:
         particles.trim_intersecting(subdomain)
-    if add_periodic:
+    if add_periodic and subdomain.domain.periodic_check():
         particles.add_periodic(subdomain)
     if set_own:
         particles.set_own(subdomain)
@@ -221,7 +221,7 @@ def initialize_spheres(
     if trim_within:
         particles.trim_within(subdomain)
 
-    if add_periodic:
+    if add_periodic and subdomain.domain.periodic_check():
         particles.add_periodic(subdomain)
 
     if set_own:
@@ -238,7 +238,7 @@ def initialize_cylinders(
 
     Args:
         subdomain (Subdomain | PaddedSubdomain | VerletSubdomain): pmmoto subdomain
-        cylinders (NDArray[np.floating[Any]]): aray of cylinder data
+        cylinders (NDArray[np.floating[Any]]): array of cylinder data
 
     Returns:
         PyCylinderList: _description_

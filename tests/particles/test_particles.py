@@ -441,6 +441,76 @@ def test_atom_initialization_periodic():
     )
 
 
+def test_atom_initialization_fully_periodic():
+    """Tests for periodic atoms for all sides"""
+    atom_coordinates = np.array([[0.01, 0.01, 0.01], [0.5, 0.5, 0.5]])
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 3])
+
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
+    sd = pmmoto.initialize((10, 10, 10), boundary_types=boundary_types)
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array(
+            [
+                [0.01, 0.01, 0.01, 0.2],
+                [0.01, 0.01, 1.01, 0.2],
+                [0.01, 1.01, 0.01, 0.2],
+                [0.01, 1.01, 1.01, 0.2],
+                [1.01, 0.01, 0.01, 0.2],
+                [1.01, 0.01, 1.01, 0.2],
+                [1.01, 1.01, 0.01, 0.2],
+                [1.01, 1.01, 1.01, 0.2],
+                [0.5, 0.5, 0.5, 0.05],
+            ]
+        ),
+    )
+
+
+def test_atom_initialization_periodic_none_add():
+    """Tests for periodic atoms where periodic boundaries but not atoms to add"""
+    atom_coordinates = np.array([[0.25, 0.25, 0.25], [0.5, 0.5, 0.5]])
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 3])
+
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+    )
+    sd = pmmoto.initialize((10, 10, 10), boundary_types=boundary_types)
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array([[0.25, 0.25, 0.25, 0.2], [0.5, 0.5, 0.5, 0.05]]),
+    )
+
+
 def test_init_sphere_trim():
     """Tests for trimming spheres"""
     sd = pmmoto.initialize((10, 10, 10))
