@@ -3,20 +3,6 @@
 import pmmoto
 
 
-def test_feature():
-    """Test the Feature base class"""
-    feature_id = (0, 0, 0)
-    neighbor_rank = 0
-    boundary_type = pmmoto.BoundaryType.END
-
-    _ = pmmoto.core.features.Feature(
-        dim=3,
-        feature_id=feature_id,
-        neighbor_rank=neighbor_rank,
-        boundary_type=boundary_type,
-    )
-
-
 def test_face():
     """Test the face feature class"""
     feature_id = (1, 0, 0)
@@ -30,6 +16,13 @@ def test_face():
     assert feature.info.opp == (-1, 0, 0)
     assert feature.boundary_type == "periodic"
     assert feature.get_periodic_correction() == (-1, 0, 0)
+    assert feature.convert_feature_id() == 17
+    assert feature.convert_feature_id(feature_id) == 17
+
+    strides = (10, 4, 5)
+    assert feature.get_strides(strides) == 10
+
+    assert feature.map_to_index() == 1
 
     feature_id = (0, -1, 0)
     neighbor_rank = [0]
@@ -42,6 +35,12 @@ def test_face():
     assert feature.info.opp == (0, 1, 0)
     assert feature.boundary_type == "end"
     assert feature.get_periodic_correction() == (0, 0, 0)
+    assert feature.convert_feature_id(feature_id) == 20
+
+    strides = (10, 4, 5)
+    assert feature.get_strides(strides) == 4
+
+    assert feature.map_to_index() == 2
 
 
 def test_edge():
@@ -57,6 +56,7 @@ def test_edge():
     assert feature.info.opp == (-1, -1, 0)
     assert feature.boundary_type == "periodic"
     assert feature.get_periodic_correction() == (-1, -1, 0)
+    assert feature.convert_feature_id(feature_id) == 14
 
     feature_id = (-1, 0, -1)
     neighbor_rank = [0, 2]
@@ -69,6 +69,7 @@ def test_edge():
     assert feature.info.opp == (1, 0, 1)
     assert feature.boundary_type == "end"
     assert feature.get_periodic_correction() == (0, 0, 0)
+    assert feature.convert_feature_id(feature_id) == 6
 
 
 def test_corner():
@@ -84,6 +85,7 @@ def test_corner():
     assert feature.info.opp == (-1, -1, 1)
     assert feature.boundary_type == "periodic"
     assert feature.get_periodic_correction() == (-1, -1, 1)
+    assert feature.convert_feature_id(feature_id) == 12
 
     feature_id = (-1, 1, -1)
     neighbor_rank = [0, 2]
@@ -96,3 +98,4 @@ def test_corner():
     assert feature.info.opp == (1, -1, 1)
     assert feature.boundary_type == "end"
     assert feature.get_periodic_correction() == (0, 0, 0)
+    assert feature.convert_feature_id(feature_id) == 3

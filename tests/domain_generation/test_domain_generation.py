@@ -1,8 +1,8 @@
 """test_domain_generation.py"""
 
+import pmmoto
 import pytest
 import numpy as np
-import pmmoto
 
 
 def test_pm_sphere() -> None:
@@ -75,7 +75,6 @@ def test_pm_atom_verlet() -> None:
     assert np.sum(pm.img) == 944
 
 
-@pytest.mark.figures
 def test_gen_random_binary_grid() -> None:
     """Test domain generation of a random binary grid"""
     voxels = (50, 50, 50)
@@ -83,19 +82,32 @@ def test_gen_random_binary_grid() -> None:
     img = pmmoto.domain_generation.domain_generation.gen_img_random_binary(
         voxels, p_zero=0.2, seed=1
     )
-    # pmmoto.io.output.save_img("data_out/test_random_binary_grid", img)
+
+    assert img.shape == (50, 50, 50)
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.domain_generation.domain_generation.gen_img_random_binary(
+            voxels, p_zero=1.5, seed=1
+        )
 
 
-@pytest.mark.figures
 def test_gen_smoothed_random_binary_grid() -> None:
     """Test domain generation of a random binary grid"""
     voxels = (100, 100, 100)
-
     img = pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary(
         voxels, p_zero=0.5, smoothness=2.0, seed=1
     )
+    assert img.shape == (100, 100, 100)
 
-    # pmmoto.io.output.save_img("data_out/test_smoothed_random_binary_grid", img)
+    with pytest.raises(ValueError):
+        _ = pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary(
+            voxels, p_zero=1.5, smoothness=2.0, seed=1
+        )
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary(
+            voxels, p_zero=0.5, smoothness=-5, seed=1
+        )
 
 
 def test_gen_cylinders() -> None:
@@ -109,13 +121,36 @@ def test_gen_cylinders() -> None:
     )
 
     pm = pmmoto.domain_generation.gen_pm_cylinders(sd, cylinder)
-
-    # pmmoto.io.output.save_img("data_out/cylinders", pm.img, sd.domain.resolution)
-
-    # assert np.sum(pm.img) == 944
+    assert np.sum(pm.img) == 893668
 
 
-@pytest.mark.mpi(min_size=8)
+def test_gen_pm_atom_file(tmp_path):
+    """Test generation of img from atom file"""
+    dummy_file = tmp_path / "dummy_lammps.data"
+    dummy_file.write_text(
+        """ITEM: TIMESTEP
+0
+ITEM: NUMBER OF ATOMS
+2
+ITEM: BOX BOUNDS pp pp pp
+0.0 10.0
+0.0 10.0
+0.0 10.0
+ITEM: ATOMS id mol type mass q x y z v_peratompress c_peratomvol[1]
+1 1 1 12.01 0.0 1.0 1.0 1.0 0.0 0.0
+2 1 2 16.0 0.0 2.0 2.0 2.0 0.0 0.0
+    """
+    )
+    sd = pmmoto.initialize((10, 10, 10), box=((0, 10), (0, 10), (0, 10)))
+
+    atom_radii = {1: 2, 2: 4}
+    pm = pmmoto.domain_generation.gen_pm_atom_file(
+        sd, str(dummy_file), atom_radii=atom_radii
+    )
+
+    assert pm.porosity == pytest.approx(0.84)
+
+
 def test_deconstruct_img():
     """Ensure expected behavior of deconstruct_grid"""
     boundary_types = (
@@ -123,16 +158,29 @@ def test_deconstruct_img():
         (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
         (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
     )
-    sd = pmmoto.initialize(voxels=(100, 100, 100), boundary_types=boundary_types)
+    subdomains = (2, 1, 1)
+    sd = pmmoto.initialize(
+        voxels=(4, 4, 4), boundary_types=boundary_types, subdomains=subdomains
+    )
 
     n = sd.domain.voxels[0]
     linear_values = np.linspace(0, n - 1, n, endpoint=True)
     img = np.ones(sd.domain.voxels) * linear_values
 
     subdomains, local_img = pmmoto.domain_generation.deconstruct_img(
-        sd, img, subdomains=(2, 2, 2)
+        sd, img, subdomains=(2, 1, 1)
     )
 
-    subdomains, local_img = pmmoto.domain_generation.deconstruct_img(
-        sd, img, subdomains=(2, 2, 2), rank=2
-    )
+    keys = [0, 1]
+    shape = (4, 6, 6)
+    pattern = np.array([3.0, 0.0, 1.0, 2.0, 3.0, 0.0])
+
+    # Vectorized dictionary generation
+    expected_arrays = {k: np.tile(pattern, (shape[0], shape[1], 1)) for k in keys}
+
+    np.testing.assert_array_equal(local_img[0], expected_arrays[0])
+    np.testing.assert_array_equal(local_img[1], expected_arrays[1])
+
+    with pytest.raises(ValueError):
+        img = np.zeros([2, 2, 2])
+        _ = pmmoto.domain_generation.deconstruct_img(sd, img, subdomains=(2, 1, 1))

@@ -1,9 +1,9 @@
 """test_voxels.py"""
 
-import numpy as np
 import pmmoto
 from pmmoto.core import _voxels
 import pytest
+import numpy as np
 
 
 def test_voxls_get_id() -> None:
@@ -344,3 +344,287 @@ def test_get_nearest_boundary_index_figure(generate_padded_subdomain) -> None:
                         img_out[nx, ny, int(index[nx, ny])] = 0
                     else:
                         img_out[nx, ny, 0] = 255
+
+
+def test_get_nearest_boundary_index_errors():
+    """Test for ensuring get_nearest_boundary_index works"""
+    sd = pmmoto.initialize((10, 10, 10))
+    img = pmmoto.domain_generation.gen_img_smoothed_random_binary(sd.voxels, 0.5, 5.0)
+    with pytest.raises(ValueError):
+        _ = pmmoto.core.voxels.get_nearest_boundary_index(
+            subdomain=sd, img=img, label=0, dimension=5
+        )
+
+    sd = pmmoto.initialize((10, 10, 10), return_subdomain=True)
+    with pytest.raises(TypeError):
+        _ = pmmoto.core.voxels.get_nearest_boundary_index(
+            subdomain=sd, img=img, label=0, which_voxels="own"
+        )
+
+
+def test_get_nearest_boundary_index_all() -> None:
+    """Test for ensuring get_nearest_boundary_index works"""
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.ones(sd.voxels, dtype=np.uint8)
+    img[0, :, :] = 0
+    img[:, 0, :] = 0
+    img[:, :, 0] = 0
+    img[-1, :, :] = 0
+    img[:, -1, :] = 0
+    img[:, :, -1] = 0
+    boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
+        subdomain=sd, img=img, label=0, which_voxels="all"
+    )
+
+    np.testing.assert_array_equal(boundary_index[(-1, 0, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, -1, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, -1)], np.zeros([10, 10]))
+
+    np.testing.assert_array_equal(boundary_index[(1, 0, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 1, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, 1)], 9 * np.ones([10, 10]))
+
+
+def test_get_nearest_boundary_index_own() -> None:
+    """Test for ensuring get_nearest_boundary_index works"""
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.ones(sd.voxels, dtype=np.uint8)
+    img[0, :, :] = 0
+    img[:, 0, :] = 0
+    img[:, :, 0] = 0
+    img[-1, :, :] = 0
+    img[:, -1, :] = 0
+    img[:, :, -1] = 0
+    boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
+        subdomain=sd, img=img, label=0, which_voxels="own"
+    )
+
+    np.testing.assert_array_equal(boundary_index[(-1, 0, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, -1, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, -1)], np.zeros([10, 10]))
+
+    np.testing.assert_array_equal(boundary_index[(1, 0, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 1, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, 1)], 9 * np.ones([10, 10]))
+
+
+def test_get_nearest_boundary_index_pad() -> None:
+    """Test for ensuring get_nearest_boundary_index works"""
+    sd = pmmoto.initialize((10, 10, 10))
+    img = np.ones(sd.voxels, dtype=np.uint8)
+    img[0, :, :] = 0
+    img[:, 0, :] = 0
+    img[:, :, 0] = 0
+    img[-1, :, :] = 0
+    img[:, -1, :] = 0
+    img[:, :, -1] = 0
+    boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
+        subdomain=sd, img=img, label=0, which_voxels="pad"
+    )
+
+    np.testing.assert_array_equal(boundary_index[(-1, 0, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, -1, 0)], np.zeros([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, -1)], np.zeros([10, 10]))
+
+    np.testing.assert_array_equal(boundary_index[(1, 0, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 1, 0)], 9 * np.ones([10, 10]))
+    np.testing.assert_array_equal(boundary_index[(0, 0, 1)], 9 * np.ones([10, 10]))
+
+    with pytest.raises(ValueError):
+        boundary_index = pmmoto.core.voxels.get_nearest_boundary_index(
+            subdomain=sd, img=img, label=0, which_voxels="pad", dimension=4
+        )
+
+
+def test_get_boundary_voxels():
+    """Test for extracting values at boundary features"""
+    b_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+    )
+    sd = pmmoto.initialize((4, 4, 4), boundary_types=b_types)
+    img = np.arange(np.prod(sd.voxels)).reshape(sd.voxels)
+
+    boundary_voxels = pmmoto.core.voxels.get_boundary_voxels(sd, img)
+
+    expected = {
+        (-1, 0, 0): {
+            "own": np.array(
+                [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+            ),
+            "neighbor": np.array(
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], dtype=int
+            ),
+        },
+        (0, -1, 0): {
+            "own": np.array(
+                [16, 17, 18, 19, 32, 33, 34, 35, 48, 49, 50, 51, 64, 65, 66, 67]
+            ),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, 0, -1): {
+            "own": np.array(
+                [16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76]
+            ),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, 0, 1): {
+            "own": np.array(
+                [19, 23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71, 75, 79]
+            ),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, 1, 0): {
+            "own": np.array(
+                [28, 29, 30, 31, 44, 45, 46, 47, 60, 61, 62, 63, 76, 77, 78, 79]
+            ),
+            "neighbor": np.array([], dtype=int),
+        },
+        (1, 0, 0): {
+            "own": np.array(
+                [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79]
+            ),
+            "neighbor": np.array(
+                [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95],
+                dtype=int,
+            ),
+        },
+        (-1, -1, 0): {
+            "own": np.array([16, 17, 18, 19]),
+            "neighbor": np.array(
+                [],
+                dtype=int,
+            ),
+        },
+        (-1, 0, -1): {
+            "own": np.array([16, 20, 24, 28]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (-1, 0, 1): {
+            "own": np.array([19, 23, 27, 31]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (-1, 1, 0): {
+            "own": np.array([28, 29, 30, 31]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, -1, -1): {
+            "own": np.array([16, 32, 48, 64]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, -1, 1): {
+            "own": np.array([19, 35, 51, 67]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, 1, -1): {
+            "own": np.array([28, 44, 60, 76]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (0, 1, 1): {
+            "own": np.array([31, 47, 63, 79]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (1, -1, 0): {
+            "own": np.array([64, 65, 66, 67]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (1, 0, -1): {
+            "own": np.array([64, 68, 72, 76]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (1, 0, 1): {
+            "own": np.array([67, 71, 75, 79]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (1, 1, 0): {
+            "own": np.array([76, 77, 78, 79]),
+            "neighbor": np.array([], dtype=int),
+        },
+        (-1, -1, -1): {"own": np.array([16]), "neighbor": np.array([], dtype=int)},
+        (-1, -1, 1): {"own": np.array([19]), "neighbor": np.array([], dtype=int)},
+        (-1, 1, -1): {"own": np.array([28]), "neighbor": np.array([], dtype=int)},
+        (-1, 1, 1): {"own": np.array([31]), "neighbor": np.array([], dtype=int)},
+        (1, -1, -1): {"own": np.array([64]), "neighbor": np.array([], dtype=int)},
+        (1, -1, 1): {"own": np.array([67]), "neighbor": np.array([], dtype=int)},
+        (1, 1, -1): {"own": np.array([76]), "neighbor": np.array([], dtype=int)},
+        (1, 1, 1): {"own": np.array([79]), "neighbor": np.array([], dtype=int)},
+    }
+
+    assert boundary_voxels.keys() == expected.keys()
+
+    for key in expected:
+        np.testing.assert_array_equal(boundary_voxels[key]["own"], expected[key]["own"])
+        np.testing.assert_array_equal(
+            boundary_voxels[key]["neighbor"], expected[key]["neighbor"]
+        )
+
+
+def test_get_boundary_voxels_neighbors():
+    """Test for extracting values at boundary features"""
+    b_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+    )
+    sd = pmmoto.initialize((4, 4, 4), boundary_types=b_types)
+    img = np.arange(np.prod(sd.voxels)).reshape(sd.voxels)
+
+    boundary_voxels = pmmoto.core.voxels.get_boundary_voxels(
+        sd, img, neighbors_only=True
+    )
+
+    expected = {
+        (-1, 0, 0): {
+            "neighbor": np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        },
+        (1, 0, 0): {
+            "neighbor": np.array(
+                [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]
+            )
+        },
+    }
+
+    assert boundary_voxels.keys() == expected.keys()
+
+    for key in expected:
+        np.testing.assert_array_equal(
+            boundary_voxels[key]["neighbor"],
+            expected[key]["neighbor"],
+        )
+
+
+def test_count_label_voxels():
+    """Count the number of voxels of a given label"""
+    sd = pmmoto.initialize((5, 5, 5))
+    img = np.zeros(sd.voxels)
+    img[2:4, 2:4, 2:4] = 1
+    img[0:1, 0:1, 0:1] = 8
+    label_count = pmmoto.core.voxels.count_label_voxels(img)
+
+    assert label_count == {
+        np.int64(0): np.int64(116),
+        np.int64(1): np.int64(8),
+        np.int64(8): np.int64(1),
+    }
+
+
+def test_local_to_global_labeling_max_label_fallback():
+    # One rank, zero labels
+    all_matches = [{}]  # no boundary matches
+    all_counts = [0]  # zero local labels
+    boundary_map = {}  # empty boundary map
+    boundary_label_count = -5  # > 0 so fallback is meaningful
+
+    final_map, max_label = pmmoto.core.voxels.local_to_global_labeling(
+        all_matches=all_matches,
+        all_counts=all_counts,
+        boundary_map=boundary_map,
+        boundary_label_count=boundary_label_count,
+    )
+
+    # Mapping should still include label 0
+    assert final_map == {0: {0: np.uint64(0)}}
+
+    # This is the branch we are testing
+    assert max_label == boundary_label_count

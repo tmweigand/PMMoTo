@@ -1,7 +1,29 @@
 """test_multiphase.py"""
 
-import numpy as np
 import pmmoto
+import pytest
+import numpy as np
+
+
+def test_update_img():
+    """Tests updating of multiphase image"""
+    sd = pmmoto.initialize((5, 5, 5))
+    img = np.ones(sd.voxels, dtype=np.uint8)
+    pm = pmmoto.domain_generation.porousmedia.gen_pm(sd, img)
+    mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
+
+    np.testing.assert_array_equal(mp.img, 2 * np.ones(sd.voxels))
+
+    img = 3 * img
+    mp.update_img(img)
+    np.testing.assert_array_equal(mp.img, 3 * np.ones(sd.voxels))
+
+    sd = pmmoto.initialize((5, 5, 5), reservoir_voxels=5, return_subdomain=True)
+    pm = pmmoto.domain_generation.porousmedia.gen_pm(sd, img)
+    mp = pmmoto.domain_generation.gen_mp_constant(pm, 2)
+
+    with pytest.raises(TypeError):
+        _ = mp.update_img(img)
 
 
 def test_volume_fraction():
@@ -50,6 +72,11 @@ def test_get_radii():
     radius = pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius(p_c, gamma)
     assert radius == 1 / 3
 
+    p_c = 0
+    gamma = 0.5
+    radius = pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius(p_c, gamma)
+    assert radius == 0
+
 
 def test_radius_with_contact_angle():
     """Test if capillary pressures are converting to radii with contact angle"""
@@ -76,3 +103,13 @@ def test_radius_with_contact_angle():
         p_c, gamma, contact_angle
     )
     np.testing.assert_approx_equal(radius, 0.029051914)
+
+
+def test_get_pc():
+    """Test if capillary pressures are converting to radii correctly"""
+    p_c = 1
+    gamma = 1
+    radius = pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius(p_c, gamma)
+    assert radius == 2.0
+
+    assert pmmoto.domain_generation.multiphase.Multiphase.get_pc(radius, gamma) == p_c

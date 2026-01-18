@@ -79,7 +79,7 @@ def get_nearest_boundary_index(
         raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
 
     if which_voxels == "all":
-        return get_nearest_boundary_index_base(
+        return _get_nearest_boundary_index_base(
             subdomain=subdomain,
             img=img,
             label=label,
@@ -92,7 +92,7 @@ def get_nearest_boundary_index(
                 f"VerletSubdomain, but got {type(subdomain).__name__}."
             )
 
-        return get_nearest_boundary_index_extended(
+        return _get_nearest_boundary_index_extended(
             subdomain=subdomain,
             img=img,
             label=label,
@@ -101,7 +101,7 @@ def get_nearest_boundary_index(
         )
 
 
-def get_nearest_boundary_index_base(
+def _get_nearest_boundary_index_base(
     subdomain: Subdomain,
     img: NDArray[T],
     label: int,
@@ -124,7 +124,7 @@ def get_nearest_boundary_index_base(
     return boundary_index
 
 
-def get_nearest_boundary_index_extended(
+def _get_nearest_boundary_index_extended(
     subdomain: PaddedSubdomain | VerletSubdomain,
     img: NDArray[T],
     label: int,
@@ -132,9 +132,6 @@ def get_nearest_boundary_index_extended(
     which_voxels: Literal["all", "own", "pad"] = "all",
 ) -> dict[tuple[int, ...], NDArray[T]]:
     """Get nearest boundary index with padding support."""
-    if dimension is not None and dimension not in {0, 1, 2}:
-        raise ValueError("`dimension` must be an integer (0, 1, or 2) or None.")
-
     boundary_index: dict[tuple[int, ...], NDArray[T]] = {}
 
     for feature_id, feature in subdomain.features.faces.items():
@@ -191,7 +188,7 @@ def get_boundary_voxels(
 
     types = ["own", "neighbor"]
     for feature_id, feature in subdomain.features.all_features:
-        if neighbors_only and feature.neighbor_rank < -1:
+        if neighbors_only and feature.neighbor_rank <= -1:
             continue
         out_voxels[feature_id] = {}
         for _type in types:
@@ -239,7 +236,7 @@ def gen_img_to_label_map(img: NDArray[INT], labels: NDArray[INT2]) -> dict[INT2,
     return _voxels.gen_img_to_label_map(img, labels)
 
 
-def count_label_voxels(img: NDArray[T], map: dict[int, int]) -> dict[int, int]:
+def count_label_voxels(img: NDArray[T]) -> dict[int, int]:
     """Count the number of voxels for each label in the grid.
 
     Args:
@@ -250,9 +247,10 @@ def count_label_voxels(img: NDArray[T], map: dict[int, int]) -> dict[int, int]:
         None
 
     """
-    _map = _voxels.count_label_voxels(img, map)
+    labels, counts = np.unique(img, return_counts=True)
+    map_out = dict(zip(labels.astype(int), counts.astype(int)))
 
-    return _map
+    return map_out
 
 
 def match_neighbor_boundary_voxels(

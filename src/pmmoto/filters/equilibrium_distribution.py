@@ -30,6 +30,7 @@ def drainage(
     method: Literal["standard", "contact_angle", "extended_contact_angle"] = "standard",
     mode: Literal["morph", "hybrid", "distance"] = "hybrid",
     save: bool = False,
+    out_folder: str = "drainage_out",
 ) -> NDArray[np.float64]:
     """Simulate morphological drainage for a multiphase system.
 
@@ -45,6 +46,7 @@ def drainage(
         method (str, optional): Drainage method.
         mode (str, optional): Morphological approach mode.
         save (bool, optional): If True, save intermediate results.
+        out_folder (str, optional): Location for saving images
 
     Returns:
         np.ndarray: Wetting phase saturation at each capillary pressure.
@@ -67,23 +69,20 @@ def drainage(
         if contact_angle != 0:
             raise ValueError("The standard approach requires a zero contact angle!")
         approach = _standard_method
-        update_img = True
     elif method == "contact_angle":
         if contact_angle == 0:
             logging.warning(
-                "The contact angle is zero."
+                "The contact angle is zero. "
                 "This will yield same results as the standard approach."
             )
         approach = _contact_angle_method
-        update_img = True
     elif method == "extended_contact_angle":
         if contact_angle == 0:
             logging.warning(
-                "The contact angle is zero."
+                "The contact angle is zero. "
                 "This will yield same results as the standard approach."
             )
         approach = _extended_contact_angle_method
-        update_img = True
     else:
         raise ValueError(f"{method} is not implemented. ")
 
@@ -102,19 +101,14 @@ def drainage(
         )
 
         # Update the phase distribution
-        if update_img:
-            multiphase.update_img(
-                np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
-            )
-            mp_img = multiphase.img
-        else:
-            mp_img = np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
+        multiphase.update_img(
+            np.where((morph == 1) & (w_connected == 2), 1, multiphase.img)
+        )
+        mp_img = multiphase.img
 
         if save:
-            file_out = (
-                f"drainage_results/capillary_pressure_{capillary_pressure:.3f}".replace(
-                    ".", "_"
-                )
+            file_out = out_folder + (
+                f"/capillary_pressure_{capillary_pressure:.3f}".replace(".", "_")
             )
             save_img(
                 file_out,

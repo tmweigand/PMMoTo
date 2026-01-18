@@ -150,7 +150,7 @@ def gen_pm_spheres_domain(
         pm.img = np.logical_not(pm.img).astype(np.uint8)
 
     pm.img = subdomain.set_wall_bcs(pm.img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -177,7 +177,7 @@ def gen_pm_cylinders(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
     pm.img = subdomain.set_wall_bcs(pm.img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -185,7 +185,7 @@ def gen_pm_cylinders(
 def gen_pm_atom_domain(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     atom_locations: NDArray[np.floating[Any]],
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     atom_types: NDArray[np.integer[Any]],
     kd: bool = False,
 ) -> porousmedia.PorousMedia:
@@ -210,7 +210,7 @@ def gen_pm_atom_domain(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -218,7 +218,7 @@ def gen_pm_atom_domain(
 def gen_pm_atom_file(
     subdomain: Subdomain | PaddedSubdomain | VerletSubdomain,
     lammps_file: str,
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     type_map: None | dict[tuple[int, float], int] = None,
     add_periodic: bool = False,
     kd: bool = False,
@@ -252,7 +252,7 @@ def gen_pm_atom_file(
     pm = porousmedia.gen_pm(subdomain, img)
     pm.img = communication.update_buffer(subdomain, pm.img)
 
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
 
     return pm
 
@@ -277,7 +277,7 @@ def gen_pm_inkbottle(
         subdomain.coords[0], subdomain.coords[1], subdomain.coords[2], r_y, r_z
     )
     pm = porousmedia.gen_pm(subdomain, _img)
-    utils.check_img_for_solid(subdomain, pm.img)
+    _ = utils.check_img_for_solid(subdomain, pm.img)
     if subdomain.domain.num_subdomains > 1:
         pm.img = communication.update_buffer(subdomain, pm.img)
 

@@ -14,6 +14,7 @@ def test_global_min() -> None:
 
     img[0, 0, 0] = -3
     assert pmmoto.analysis.stats.get_minimum(sd, img) == -3
+    assert pmmoto.analysis.stats.get_minimum(sd, img, own=False) == -3
 
 
 def test_global_max() -> None:
@@ -24,6 +25,7 @@ def test_global_max() -> None:
 
     img[0, 0, 0] = 3
     assert pmmoto.analysis.stats.get_maximum(sd, img) == 3
+    assert pmmoto.analysis.stats.get_maximum(sd, img, own=False) == 3
 
 
 @pytest.mark.mpi(min_size=8)
@@ -39,6 +41,7 @@ def test_global_min_parallel() -> None:
 
     img[3, 3, 3] = -rank
     assert pmmoto.analysis.stats.get_minimum(sd, img) == -7
+    assert pmmoto.analysis.stats.get_minimum(sd, img, own=False) == -7
 
 
 @pytest.mark.mpi(min_size=8)
@@ -54,3 +57,4 @@ def test_global_max_parallel() -> None:
 
     img[1, 1, 1] = rank
     assert pmmoto.analysis.stats.get_maximum(sd, img) == 7
+    assert pmmoto.analysis.stats.get_minimum(sd, img, own=False) == 0

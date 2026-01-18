@@ -137,8 +137,6 @@ class PaddedSubdomain(subdomain.Subdomain):
             if ind == 0:
                 if btypes[0] == BoundaryType.END:
                     lower = 0
-                elif btypes[0] == BoundaryType.WALL and self.pad[dim][0] == 0:
-                    lower = 1
                 elif btypes[0] == BoundaryType.WALL and self.pad[dim][0] == 1:
                     lower = 0
                 else:
@@ -150,8 +148,6 @@ class PaddedSubdomain(subdomain.Subdomain):
             if ind == n_subdomains - 1:
                 if btypes[1] == BoundaryType.END:
                     upper = 0
-                elif btypes[1] == BoundaryType.WALL and self.pad[dim][1] == 0:
-                    upper = 1
                 elif btypes[1] == BoundaryType.WALL and self.pad[dim][1] == 1:
                     upper = 0
                 else:

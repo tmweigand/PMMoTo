@@ -1,7 +1,7 @@
 """communication.py"""
 
 from __future__ import annotations
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -287,7 +287,16 @@ def communicate_features(
     return recv_data
 
 
-def send_recv(rank: int, data_per_process: dict[int, Any]) -> dict[int, Any]:
+def _waitall(requests) -> None:
+    MPI.Request.waitall(requests)
+
+
+def send_recv(
+    rank: int,
+    data_per_process: dict[int, Any],
+    comm: MPI.Intracomm = MPI.COMM_WORLD,
+    waitall_func: Callable[[list[Any]], None] = lambda requests: _waitall(requests),
+) -> dict[int, Any]:
     """Perform non-blocking sends and receives for inter-process communication.
 
     Uses a two-phase communication pattern to avoid deadlocks.
@@ -295,6 +304,8 @@ def send_recv(rank: int, data_per_process: dict[int, Any]) -> dict[int, Any]:
     Args:
         rank (int): The rank of the current process.
         data_per_process (dict): Data to send to each process.
+        comm (MPI.Intracomm, optional): MPI communicator. Defaults to MPI.COMM_WORLD.
+        waitall_func(Callable): Function for waitall
 
     Returns:
         dict: Data received from each process.
@@ -310,24 +321,25 @@ def send_recv(rank: int, data_per_process: dict[int, Any]) -> dict[int, Any]:
                 send_requests[n_proc] = comm.isend(
                     data_per_process[n_proc], dest=n_proc
                 )
-            except Exception as e:
-                print(f"Error sending to process {n_proc}: {e}")
-                raise
+            except RuntimeError as e:
+                raise RuntimeError(
+                    f"MPI isend failed for destination rank {n_proc}"
+                ) from e
 
     # Second phase: Receive from all processes
     for n_proc in data_per_process:
         if n_proc != rank:
             try:
                 receive_data[n_proc] = comm.recv(source=n_proc)
-            except Exception as e:
-                print(f"Error receiving from process {n_proc}: {e}")
-                raise
+            except RuntimeError as e:
+                raise RuntimeError(
+                    f"MPI recv failed for destination rank {n_proc}"
+                ) from e
 
     # Wait for all sends to complete
     try:
-        MPI.Request.waitall(list(send_requests.values()))
+        waitall_func(list(send_requests.values()))
     except Exception as e:
-        print(f"Error completing send requests: {e}")
-        raise
+        raise RuntimeError(f"Error completing send requests: {e}") from e
 
     return receive_data

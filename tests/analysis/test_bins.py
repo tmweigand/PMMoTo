@@ -46,9 +46,79 @@ def test_bin() -> None:
     np.testing.assert_array_equal(bin.values, np.zeros(num_bins))
 
     ones = np.ones(num_bins)
+    bin.set_values(ones)
+    np.testing.assert_array_equal(bin.values, ones)
+
     bin = pmmoto.analysis.bins.Bin(start=start, end=end, num_bins=num_bins, values=ones)
 
     np.testing.assert_array_equal(bin.values, ones)
+
+
+def test_bin_volume():
+    """Tests volume calculation"""
+    bin = pmmoto.analysis.bins.Bin(start=0, end=1, num_bins=1)
+    bin_volume = bin.calculate_volume(radial_volume=True)
+
+    assert bin_volume == pmmoto.analysis.bins.radial_bin_volume(1)
+
+
+def test_bin_rdf():
+    """Tests rdf generation"""
+    num_bins = 10
+    bin = pmmoto.analysis.bins.Bin(start=0, end=1, num_bins=num_bins)
+    rdf = bin.generate_rdf()
+
+    np.testing.assert_array_equal(rdf, np.zeros(num_bins))
+
+    bin = pmmoto.analysis.bins.Bin(
+        start=0, end=1, num_bins=num_bins, values=np.ones(num_bins)
+    )
+    rdf = bin.generate_rdf()
+
+    np.testing.assert_array_almost_equal(
+        rdf,
+        np.array(
+            [
+                100.0,
+                14.28571429,
+                5.26315789,
+                2.7027027,
+                1.63934426,
+                1.0989011,
+                0.78740157,
+                0.59171598,
+                0.46082949,
+                0.36900369,
+            ]
+        ),
+    )
+
+
+def test_bin_save(tmp_path):
+    """Tests bin save"""
+    bin = pmmoto.analysis.bins.Bin(start=0, end=1, num_bins=5, name="test_bin")
+
+    sd = pmmoto.initialize((5, 5, 5))
+    bin.save_bin(sd, str(tmp_path) + "/")
+
+    # Check file was created
+    expected_file = tmp_path / "bin_test_bin.txt"
+    assert expected_file.exists()
+
+    # Check file content
+    data = np.loadtxt(str(expected_file))
+    assert data.shape == (5, 2)
+
+
+def test_bin_save_not_rank_1(tmp_path):
+    sd = pmmoto.initialize((5, 5, 5))
+    sd.rank = 1
+    bin = pmmoto.analysis.bins.Bin(start=0, end=1, num_bins=5, name="test_bin")
+    bin.save_bin(sd, str(tmp_path) + "/")
+
+    # Check file was not created
+    expected_file = tmp_path / "bin_test_bin.txt"
+    assert not expected_file.exists()
 
 
 def test_bins() -> None:
@@ -64,6 +134,69 @@ def test_bins() -> None:
 
     assert bins.bins[1].width == 0.12
     assert bins.bins[5].width == 0.036
+
+    values = {1: np.zeros(num_bins[0]), 5: np.ones(num_bins[1])}
+    bins.update_bins(values)
+    np.testing.assert_array_equal(bins.bins[1].values, np.zeros(num_bins[0]))
+    np.testing.assert_array_equal(bins.bins[5].values, np.ones(num_bins[1]))
+
+
+def test_bins_save(tmp_path):
+    """Tests bin save"""
+    start = [0, 1]
+    end = [3, 2.8]
+    num_bins = [25, 50]
+    labels = [1, 5]
+
+    bins = pmmoto.analysis.bins.Bins(
+        starts=start,
+        ends=end,
+        num_bins=num_bins,
+        labels=labels,
+        names=["test_bin_1", "test_bin_2"],
+    )
+    sd = pmmoto.initialize((5, 5, 5))
+    bins.save_bins(sd, str(tmp_path) + "/")
+
+    # Check files was created
+    expected_file_1 = tmp_path / "bins_test_bin_1.txt"
+    assert expected_file_1.exists()
+
+    expected_file_2 = tmp_path / "bins_test_bin_2.txt"
+    assert expected_file_2.exists()
+
+    # Check files content
+    data = np.loadtxt(str(expected_file_1))
+    assert data.shape == (25, 2)
+
+    data = np.loadtxt(str(expected_file_2))
+    assert data.shape == (50, 2)
+
+
+def test_bins_save_not_rank_1(tmp_path):
+    """Tests bin save"""
+    start = [0, 1]
+    end = [3, 2.8]
+    num_bins = [25, 50]
+    labels = [1, 5]
+
+    bins = pmmoto.analysis.bins.Bins(
+        starts=start,
+        ends=end,
+        num_bins=num_bins,
+        labels=labels,
+        names=["test_bin_1", "test_bin_2"],
+    )
+    sd = pmmoto.initialize((5, 5, 5))
+    sd.rank = 1
+    bins.save_bins(sd, str(tmp_path) + "/")
+
+    # Check files was created
+    expected_file_1 = tmp_path / "bins_test_bin_1.txt"
+    assert not expected_file_1.exists()
+
+    expected_file_2 = tmp_path / "bins_test_bin_2.txt"
+    assert not expected_file_2.exists()
 
 
 def test_count_locations():

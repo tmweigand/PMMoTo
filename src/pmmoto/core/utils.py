@@ -35,24 +35,29 @@ __all__ = [
 
 def raise_error() -> None:
     """Exit gracefully by finalizing MPI and exiting the program."""
-    MPI.Finalize()
-    sys.exit()
+    sys.exit(1)
 
 
-def check_img_for_solid(subdomain: Subdomain, img: NDArray[T]) -> None:
+def check_img_for_solid(subdomain: Subdomain, img: NDArray[T]) -> bool:
     """Warn if a subdomain contains only pore voxels (no solid).
 
     Args:
         subdomain: Subdomain object with rank and voxels attributes.
         img (np.ndarray): Image array.
 
+    Returns:
+        bool: If image contains a solid
+
     """
-    if np.sum(img) == np.prod(subdomain.voxels):
+    check = np.sum(img) != np.prod(subdomain.voxels)
+    if check:
         logger.warning(
             "Many functions in pmmoto require one solid voxel in each subdomain. "
             "Process with rank: %i is all pores.",
             subdomain.rank,
         )
+
+    return check
 
 
 def unpad(img: NDArray[T], pad: tuple[tuple[int, int], ...]) -> NDArray[T]:

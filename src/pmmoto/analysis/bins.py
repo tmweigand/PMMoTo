@@ -153,6 +153,8 @@ class Bin:
         if subdomain.rank != 0:
             return  # Only the root process saves the bins
 
+        assert self.name is not None
+
         # Create output directory if it doesn't exist
         io_utils.check_file_path(folder)
 

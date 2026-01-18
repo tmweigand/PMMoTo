@@ -14,7 +14,7 @@ The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Pyth
 
 ## Website
 
-[PMMoTo Website: https://tmweigand.github.io/PMMoTo/](https://tmweigand.github.io/PMMoTo/)
+PMMoTo Website: [https://tmweigand.github.io/PMMoTo/](https://tmweigand.github.io/PMMoTo/)
 
 ## Installation
 
@@ -35,7 +35,9 @@ The Porous Media Morphology and Topology (PMMoTo) toolkit is an open-source Pyth
    pip install .
    ```
 
-### Development
+### Development - including testing
+
+For detailed instructions, see https://tmweigand.github.io/PMMoTo/developer_guide/installation.html
 
 1. **Clone the repository:**
 

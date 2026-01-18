@@ -35,6 +35,11 @@ If you're installing from source for the first time:
    cd pmmoto
    pip install -e .
 
+.. note::
+   For testing of PMMoTo, the developer mode ``dev`` must be specified to install the necessary dependencies. Please see :doc:`../developer_guide/installation` for detailed instructions. 
+
+
+
 To visualize PMMoTo's `.vti` and `.vtp` output files, install `ParaView <https://www.paraview.org/>`_.
 
 - On macOS:
@@ -49,4 +54,5 @@ To visualize PMMoTo's `.vti` and `.vtp` output files, install `ParaView <https:/
 
      sudo apt install paraview
 
-- Or download the latest version directly from: https://www.paraview.org/download/
+.. note::
+   For some systems, the latest executable version of ParaView may be required and can be found at: https://www.paraview.org/download/ 

@@ -1,4 +1,4 @@
-"""Ineput/Output Utility Functions"""
+"""io_utils.py"""
 
 import os
 from ..core import utils
@@ -61,7 +61,7 @@ def check_file_path(
 
 
 def check_num_files(num_files: int, size: int) -> None:
-    """Check makesure num_files is equal to mpi.size"""
+    """Check make sure num_files is equal to mpi.size"""
     if num_files != size:
         print(f"Error: Number of Procs {(size)} Must Be Same As When Written")
         utils.raise_error()

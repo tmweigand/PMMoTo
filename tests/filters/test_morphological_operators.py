@@ -1,10 +1,10 @@
 """test_morphology.py"""
 
+import pmmoto
+import pytest
 import scipy.ndimage
 import numpy as np
-import pmmoto
 from mpi4py import MPI
-import pytest
 
 
 def test_gen_struct_ratio() -> None:
@@ -15,6 +15,16 @@ def test_gen_struct_ratio() -> None:
 
     np.testing.assert_equal(struct_ratio, [2, 2, 2])
 
+    with pytest.raises(ValueError):
+        pmmoto.filters.morphological_operators.gen_struct_ratio(
+            resolution=[0.5], radius=1
+        )
+
+    with pytest.raises(ValueError):
+        pmmoto.filters.morphological_operators.gen_struct_ratio(
+            resolution=[0.5, 0.5, 0.5], radius=0.1
+        )
+
 
 def test_gen_struct_element() -> None:
     """Generate a spherical/circular structuring element"""
@@ -23,6 +33,21 @@ def test_gen_struct_element() -> None:
     )
 
     assert np.sum(struct_element) == 123
+
+    with pytest.raises(ValueError):
+        pmmoto.filters.morphological_operators.gen_struct_element(
+            resolution=[0.5], radius=1
+        )
+
+    with pytest.raises(ValueError):
+        pmmoto.filters.morphological_operators.gen_struct_element(
+            resolution=[0.5, 0.5, 0.5], radius=0.1
+        )
+
+    with pytest.raises(ValueError):
+        pmmoto.filters.morphological_operators.gen_struct_element(
+            resolution=[0.5, 0.25, 0.5], radius=0.1
+        )
 
 
 @pytest.mark.mpi(min_size=8)
@@ -102,6 +127,69 @@ def test_morphological_subtraction() -> None:
             boundary_type,
             test_scipy=False,
         )
+
+
+def test_morph_methods():
+    """Test to Correctness of Different Approaches"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    radius = 0.03333333333333334
+
+    morph_fft = pmmoto.filters.morphological_operators.subtraction(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    morph_no_fft = pmmoto.filters.morphological_operators.subtraction(
+        subdomain=sd, img=pm.img, radius=radius, fft=False
+    )
+
+    np.testing.assert_array_equal(morph_fft, morph_no_fft)
+
+    morph_erode = pmmoto.filters.morphological_operators.erode(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    np.testing.assert_array_equal(morph_fft, morph_erode)
+
+    morph_fft = pmmoto.filters.morphological_operators.addition(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    morph_no_fft = pmmoto.filters.morphological_operators.addition(
+        subdomain=sd, img=pm.img, radius=radius, fft=False
+    )
+
+    np.testing.assert_array_equal(morph_fft, morph_no_fft)
+
+    morph_dilate = pmmoto.filters.morphological_operators.dilate(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+    np.testing.assert_array_equal(morph_fft, morph_dilate)
+
+    morph_open = pmmoto.filters.morphological_operators.opening(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    np.testing.assert_array_equal(
+        morph_open,
+        pmmoto.filters.morphological_operators.addition(
+            subdomain=sd, img=morph_erode, radius=radius, fft=True
+        ),
+    )
+
+    morph_close = pmmoto.filters.morphological_operators.closing(
+        subdomain=sd, img=pm.img, radius=radius, fft=True
+    )
+
+    np.testing.assert_array_equal(
+        morph_close,
+        pmmoto.filters.morphological_operators.subtraction(
+            subdomain=sd, img=morph_dilate, radius=radius, fft=True
+        ),
+    )
 
 
 def morphological_operator(
