@@ -14,7 +14,6 @@ from ..io import io_utils
 from . import morphological_operators
 from . import connected_components
 
-
 if TYPE_CHECKING:
     from ..core.subdomain_padded import PaddedSubdomain
     from ..core.subdomain_verlet import VerletSubdomain

@@ -17,7 +17,6 @@ from ..core.subdomain_verlet import VerletSubdomain
 from . import io_utils
 from . import evtk
 
-
 T = TypeVar("T", bound=np.generic)
 
 comm = MPI.COMM_WORLD
