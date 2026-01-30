@@ -11,7 +11,7 @@ authors:
     orcid: 0000-0003-4880-3331
     affiliation: 1
 affiliations:
-  - name: Department of Environmental Sciences and Engineering, University of North Carolina at Chapel Hill
+  - name: Department of Environmental Sciences and Engineering, University of North Carolina at Chapel Hill, North Carolina, United States of America
     index: 1
 date: 13 July 2025
 bibliography: paper.bib
@@ -19,7 +19,7 @@ bibliography: paper.bib
 
 # Summary
 
-The Porous Media Morphology and Topology Toolkit (PMMoTo, https://tmweigand.github.io/PMMoTo/index.html) is a software tool designed to help researchers analyze and understand porous structures and how their features influence behavior at larger scales. A porous medium is any solid material that contains pores, for example, soil, membranes, skin, and many other natural and engineered materials. In fact, porosity is often a function of spatial scale; all materials have some degree of porosity, you just need to zoom in. The morphology (i.e. the shape and structure) and topology (i.e., the connectivity and spatial relations) of a porous structure govern larger scale behavior. By characterizing these structures, PMMoTo enables researchers to better understand emergent behaviors and develop more predictive models of porous systems.
+The Porous Media Morphology and Topology Toolkit (PMMoTo, https://tmweigand.github.io/PMMoTo/index.html) is a software tool designed to help researchers analyze and understand porous structures and how their features influence behavior at larger scales. A porous medium is any solid material that contains pores, for example, soil, membranes, skin, and many other natural and engineered materials. In fact, porosity is often a function of spatial scale; all materials have some degree of porosity — you just need to zoom in. The morphology (i.e., the shape and structure) and topology (i.e., the connectivity and spatial relations) of a porous structure govern larger scale behavior. By characterizing these structures, PMMoTo enables researchers to better understand emergent behaviors and develop more predictive models of porous systems.
 
 # Statement of Need
 
@@ -29,12 +29,12 @@ PMMoTo includes parallel implementations of common morphological operations, wit
 
 # Research Application
 
-Recently, PMMoTo was used to generate and analyze highly resolved probabilistic porous structures derived from molecular dynamics (MD) simulations [@Vickers_Weigand_etal_22;@Weigand_Vickers_etal_25] using a voxel resolution of 0.05 Å to produce a domain with 49.5 billion voxels (\autoref{fig:1}). These simulations were conducted to investigate water transport through reverse osmosis polyamide membranes and assess assumptions regarding the nature of the polyamide structure. With support from observed simulation data, ephemeral water-accessible pathways (i.e. transiently connected pathways that span form the inlet to the outlet of the membrane) were identified. While it is well understood that polyamide membranes are water permeable, PMMoTo enables a novel computational approach that links atomistic simulations to larger scale observations through morphological and topological analysis of the porous structure. This approach aims to improve our understanding of transport across spatial scales and to support the design of improved membranes.
+Recently, PMMoTo was used to generate and analyze highly resolved probabilistic porous structures derived from molecular dynamics (MD) simulations [@Vickers_Weigand_etal_22;@Weigand_Vickers_etal_25] using a voxel resolution of 0.05 Å to produce a domain with 49.5 billion voxels (\autoref{fig:1}). These simulations were conducted to investigate water transport through reverse osmosis polyamide membranes and assess assumptions regarding the nature of the polyamide structure. With support from observed simulation data, ephemeral water-accessible pathways (i.e., transiently connected pathways that span from the inlet to the outlet of the membrane) were identified. While it is well understood that polyamide membranes are water permeable, PMMoTo enables a novel computational approach that links atomistic simulations to larger scale observations through morphological and topological analysis of the porous structure. This approach aims to improve our understanding of transport across spatial scales and to support the design of improved membranes.
 
 ![Comparison of porous structures under different assumptions about atom size for simulated polyamide membranes. PMMoTo provides tools to generate and analyze such porous structures. [@Weigand_Vickers_etal_25]. \label{fig:1}](images/comparison_pore_space.png)
 
 # Acknowledgements
 
-Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Special thanks to Emily Jane Bernath for the design of logos and for her encouragement and support. Portions of this work have been supported by NIEHS Superfund Grant (P42-ES031007) and and computing resources from XSEDE/ACCESS (CTS200041).
+Thank you to Cass T. Miller, Orlando Coronell, Riley Vickers, Kelsey Bruning, and Andrew van Jotcham for support, assistance, and ideas in the development of PMMoTo. Special thanks to Emily Jane Bernath for the design of logos and for her encouragement and support. Portions of this work have been supported by NIEHS Superfund Grant (P42-ES031007) and computing resources from XSEDE/ACCESS (CTS200041).
 
 # References
