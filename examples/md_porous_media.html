@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Porous Structure from Molecular Dynamics Simulations &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Developer Guide" href="../developer_guide/index.html" />
+    <link rel="prev" title="Connected Pathways in Random Porous Media" href="connected_pathways.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user_guide/index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="drainage_inkbottle.html">Drainage of an Ink Bottle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sphere_pack_psd.html">Euclidean Distance Transform and Pore Size Distribution of a Sphere Pack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="connected_pathways.html">Connected Pathways in Random Porous Media</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Porous Structure from Molecular Dynamics Simulations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-import-modules">Step 1: Import Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-initialize-md-domain">Step 2: Initialize MD Domain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-equilibrium-radii">Step 3: Equilibrium Radii</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-non-equilibrium-radii">Step 4: Non-equilibrium Radii</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-water-accessible-porous-structure">Step 5: Water Accessible Porous Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-water-occupiable-porous-structure">Step 5: Water Occupiable Porous Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-comparison-of-approaches">Step 6: Comparison of Approaches</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output">Output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../user_guide/index.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Examples</a></li>
+      <li class="breadcrumb-item active">Porous Structure from Molecular Dynamics Simulations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/md_porous_media.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="porous-structure-from-molecular-dynamics-simulations">
+<h1>Porous Structure from Molecular Dynamics Simulations<a class="headerlink" href="#porous-structure-from-molecular-dynamics-simulations" title="Link to this heading"></a></h1>
+<p>This example demonstrates how to generate a porous structure from molecular dynamics (MD) simulations using two approaches to determine atomic radii:</p>
+<ol class="arabic simple">
+<li><p><strong>Non-equilibrium radii</strong>, derived from the radial distribution function (RDF) computed during non-equilibrium MD simulations.</p></li>
+<li><p><strong>Equilibrium radii</strong> estimated from the Columbic radius of water by the Universal Force Field (UFF).</p></li>
+</ol>
+<p>This example uses MD simulation data <span id="id1">[<a class="reference internal" href="../references.html#id8" title="Riley Vickers, Timothy M. Weigand, Cass T. Miller, and Orlando Coronell. Molecular methods for assessing the morphology, topology, and performance of polyamide membranes. Journal of Membrane Science, 644:120110, 2022. URL: https://www.sciencedirect.com/science/article/pii/S0376738821010504, doi:https://doi.org/10.1016/j.memsci.2021.120110.">6</a>]</span> of water permeation through a polyamide reverse osmosis membrane that consists of M-phenylenediamine (MPD), trimesoyl chloride (TMC), and water.</p>
+<p>To run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">8</span><span class="w"> </span>python<span class="w"> </span>examples/md_porous_media/md_porous_media.py
+</pre></div>
+</div>
+<section id="step-1-import-modules">
+<h2>Step 1: Import Modules<a class="headerlink" href="#step-1-import-modules" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pmmoto</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-initialize-md-domain">
+<h2>Step 2: Initialize MD Domain<a class="headerlink" href="#step-2-initialize-md-domain" title="Link to this heading"></a></h2>
+<p>The input parameters for PMMoTo match the MD simulation parameters. To initialize PMMoTo, the following parameters must be specified for this example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">voxels</span></code>: the number of voxels in each dimension for the image representing the porous structure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box</span></code>: the physical size of the simulation domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rank</span></code>: the MPI rank of the current process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">subdomains</span></code>: the number of subdomains in each dimension</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundary_types</span></code>: the boundary conditions applied during the simulation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">verlet_domains</span></code>: the number of Verlet domains for each <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inlet</span></code> and <code class="docutils literal notranslate"><span class="pre">outlet</span></code>: the designated inflow and outflow faces</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">verlet_domains</span></code> specify how to subdivide a subdomain into smaller regions to optimize domain generation by reducing the number of particles or atoms that must be checked during computations. Conducting a numerical study to determine the optimal number of Verlet domains can significantly reduce compute times for systems with a large number of atoms. Note that the optimal value depends on the hardware and computational environment.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">initialize_domain</span><span class="p">(</span><span class="n">voxels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Initialize the membrane domain&quot;&quot;&quot;</span>
+   <span class="n">subdomains</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+   <span class="c1"># Full domain with reservoirs</span>
+   <span class="n">box</span> <span class="o">=</span> <span class="p">[</span>
+      <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">176</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">176</span><span class="p">],</span>
+      <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+   <span class="p">]</span>
+
+   <span class="n">sd</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+      <span class="n">voxels</span><span class="o">=</span><span class="n">voxels</span><span class="p">,</span>
+      <span class="n">box</span><span class="o">=</span><span class="n">box</span><span class="p">,</span>
+      <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span>
+      <span class="n">subdomains</span><span class="o">=</span><span class="n">subdomains</span><span class="p">,</span>
+      <span class="n">boundary_types</span><span class="o">=</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">END</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="n">verlet_domains</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+      <span class="n">inlet</span><span class="o">=</span><span class="p">((</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
+      <span class="n">outlet</span><span class="o">=</span><span class="p">((</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+   <span class="p">)</span>
+
+   <span class="k">return</span> <span class="n">sd</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-equilibrium-radii">
+<h2>Step 3: Equilibrium Radii<a class="headerlink" href="#step-3-equilibrium-radii" title="Link to this heading"></a></h2>
+<p>The <strong>equilibrium approach</strong> for reconstructing a porous structure from MD simulations uses the van der Waals surface, based on element-specific radii defined by the Universal Force Field (UFF) <span id="id2">[<a class="reference internal" href="../references.html#id5" title="Lev Sarkisov, Rocio Bueno-Perez, Mythili Sutharson, and David Fairen-Jimenez. Materials informatics with poreblazer v4. 0 and the csd mof database. Chemistry of Materials, 32(23):9849–9867, 2020.">7</a>]</span>. In the MD simulations in this work, four elements are needed to represent the MPD and TMC, namely carbon,  nitrogen, oxygen, and hydrogen.</p>
+<p>Additionally, as we are interested in water-accessible pathways, an additional 1.4 Å is added to each atom radius, accounting for the Columbic radius of water.</p>
+<p><code class="docutils literal notranslate"><span class="pre">atom_folder</span></code> is a text file with the following format:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>File Format:</dt><dd><p>atom_id, element_name, atom_name</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Each line represents one atom, with:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">atom_id</span></code>: An integer ID corresponding to the atom in the simulation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">element_name</span></code>: The atomic symbol (e.g., <code class="docutils literal notranslate"><span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">O</span></code>, <code class="docutils literal notranslate"><span class="pre">H</span></code>, <code class="docutils literal notranslate"><span class="pre">N</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">atom_name</span></code>: A user-defined or simulation-specific atom label (e.g., <code class="docutils literal notranslate"><span class="pre">CA</span></code>, <code class="docutils literal notranslate"><span class="pre">OW</span></code>).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">determine_uff_radii</span><span class="p">(</span><span class="n">atom_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Collect the radii given a pmf cutoff&quot;&quot;&quot;</span>
+   <span class="n">atom_map</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">data_read</span><span class="o">.</span><span class="n">read_atom_map</span><span class="p">(</span><span class="n">atom_folder</span> <span class="o">+</span> <span class="s2">&quot;atom_map.txt&quot;</span><span class="p">)</span>
+   <span class="n">radii</span> <span class="o">=</span> <span class="p">{}</span>
+   <span class="k">for</span> <span class="n">atom_id</span><span class="p">,</span> <span class="n">atom_data</span> <span class="ow">in</span> <span class="n">atom_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+      <span class="n">radii</span><span class="p">[</span><span class="n">atom_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">pmmoto</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">uff_radius</span><span class="p">(</span><span class="n">atom_names</span><span class="o">=</span><span class="n">atom_data</span><span class="p">[</span><span class="s2">&quot;element&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span>
+               <span class="mi">0</span>
+            <span class="p">]</span>
+            <span class="o">+</span> <span class="n">radius</span>
+      <span class="p">)</span>
+
+   <span class="k">return</span> <span class="n">radii</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-non-equilibrium-radii">
+<h2>Step 4: Non-equilibrium Radii<a class="headerlink" href="#step-4-non-equilibrium-radii" title="Link to this heading"></a></h2>
+<p>This example is based on a non-equilibrium MD simulation of water permeation through a reverse osmosis membrane. Using PMMoTo, distances between water molecules and the atoms comprising the polyamide were binned, and radial distribution functions (RDFs) were generated from the simulation data for the 17 unique atom types of MPD and TMC.</p>
+<p>To reconstruct the porous structure of the membrane, the <strong>potential of mean force</strong> is calculated from the RDFs as:</p>
+<div class="math notranslate nohighlight">
+\[G(r) = -k_B T \ln{g(r)}\]</div>
+<p>The potential of mean force is provided at discrete distances, and linear interpolation is used to assign an effective radius for each unique atom type corresponding to a specified PMF threshold. This approach improves the physical relevance of the reconstructed porous structure.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">determine_pmf_radii</span><span class="p">(</span><span class="n">atom_folder</span><span class="p">,</span> <span class="n">pmf_value</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Collect the radii given a pmf cutoff&quot;&quot;&quot;</span>
+   <span class="n">_</span><span class="p">,</span> <span class="n">rdf</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">data_read</span><span class="o">.</span><span class="n">read_binned_distances_rdf</span><span class="p">(</span><span class="n">atom_folder</span><span class="p">)</span>
+
+   <span class="n">bounded_rdf</span> <span class="o">=</span> <span class="p">{}</span>
+   <span class="k">for</span> <span class="n">_id</span><span class="p">,</span> <span class="n">_rdf</span> <span class="ow">in</span> <span class="n">rdf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+      <span class="n">bounded_rdf</span><span class="p">[</span><span class="n">_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">rdf</span><span class="o">.</span><span class="n">BoundedRDF</span><span class="o">.</span><span class="n">from_rdf</span><span class="p">(</span>
+            <span class="n">_rdf</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1.0e-3</span>
+      <span class="p">)</span>
+
+   <span class="n">pmf_radii</span> <span class="o">=</span> <span class="p">{}</span>
+   <span class="k">for</span> <span class="n">atom_id</span><span class="p">,</span> <span class="n">_rdf</span> <span class="ow">in</span> <span class="n">bounded_rdf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+      <span class="n">pmf_radii</span><span class="p">[</span><span class="n">atom_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">_rdf</span><span class="o">.</span><span class="n">interpolate_radius_from_pmf</span><span class="p">(</span><span class="n">pmf_value</span><span class="p">)</span>
+
+   <span class="k">return</span> <span class="n">pmf_radii</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-water-accessible-porous-structure">
+<h2>Step 5: Water Accessible Porous Structure<a class="headerlink" href="#step-5-water-accessible-porous-structure" title="Link to this heading"></a></h2>
+<p>The function <code class="docutils literal notranslate"><span class="pre">gen_pm_atom_file</span></code> is used to generate the porous structure from atom coordinates and atom radii by treating the atoms as spheres. THe input to the function includes the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object, an input file specifying the atom location (and other identifying information), the atom radii to be used, and any additional information needed to map from the MD output files to atom ids.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">domain_generation</span><span class="o">.</span><span class="n">gen_pm_atom_file</span><span class="p">(</span>
+    <span class="n">subdomain</span><span class="o">=</span><span class="n">sd</span><span class="p">,</span>
+    <span class="n">lammps_file</span><span class="o">=</span><span class="n">membrane_file</span><span class="p">,</span>
+    <span class="n">atom_radii</span><span class="o">=</span><span class="n">radii</span><span class="p">,</span>
+    <span class="n">type_map</span><span class="o">=</span><span class="n">atom_id_charge_map</span><span class="p">,</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-water-occupiable-porous-structure">
+<h2>Step 5: Water Occupiable Porous Structure<a class="headerlink" href="#step-5-water-occupiable-porous-structure" title="Link to this heading"></a></h2>
+<p>In this example, the Columbic radius of water was added to the <strong>equilibrium approach</strong> and the <strong>non-equilibrium approach</strong> radii accounted for water as well, but in a data driven manner. To determine the water occupiable porous structure, a morphological dilation (or addition) is performed on the pore space bu calling the <code class="docutils literal notranslate"><span class="pre">dilate</span></code> function and proving the <code class="docutils literal notranslate"><span class="pre">Subdomain</span></code> object, the image of the porous structure, and the radius use for the dilation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span><span class="o">.</span><span class="n">img</span> <span class="o">=</span> <span class="n">pmmoto</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">morphological_operators</span><span class="o">.</span><span class="n">dilate</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="n">pm</span><span class="o">.</span><span class="n">img</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-comparison-of-approaches">
+<h2>Step 6: Comparison of Approaches<a class="headerlink" href="#step-6-comparison-of-approaches" title="Link to this heading"></a></h2>
+<p>The <strong>equilibrium approach</strong> reconstruction the porous structure where atoms are only differentiated by element type:</p>
+<a class="only-light reference internal image-reference" href="../_images/uff_pore_space.png"><img alt="Equilibrium pore space" class="align-center only-light" src="../_images/uff_pore_space.png" style="width: 60%;" />
+</a>
+<p>In contrast, the <strong>non-equilibrium approach</strong> uses atom radii derived from radial distribution functions and the potential of mean force (PMF). In this example, a PMF threshold of <code class="docutils literal notranslate"><span class="pre">G</span> <span class="pre">=</span> <span class="pre">17</span></code> is used which is near the upper bound of observed data and represents a highly porous structure.</p>
+<a class="only-light reference internal image-reference" href="../_images/pmf_pore_space.png"><img alt="Non-equilibrium pore space" class="align-center only-light" src="../_images/pmf_pore_space.png" style="width: 60%;" />
+</a>
+<p>For direct visual comparison, the two reconstructions are shown side-by-side:</p>
+<a class="only-light reference internal image-reference" href="../_images/comparison_pore_space.png"><img alt="Comparison of approaches" class="align-center only-light" src="../_images/comparison_pore_space.png" style="width: 60%;" />
+</a>
+<p>The bar chart below compares the radii for each atom type used in the two methods.</p>
+<a class="only-light reference internal image-reference" href="../_images/radii_comparison.png"><img alt="Radii comparison" class="align-center only-light" src="../_images/radii_comparison.png" style="width: 80%;" />
+</a>
+</section>
+<section id="output">
+<h2>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h2>
+<p>The expected output from a successful run is:</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">image.pvti</span></code> and a folder <code class="code docutils literal notranslate"><span class="pre">image_proc</span></code> with eight <code class="code docutils literal notranslate"><span class="pre">.vti</span></code> files, all of which can be opened in <strong>Paraview</strong></p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">radii_comparison.png</span></code> A bar plot comparing the atom radii for the two methods.</p></li>
+</ul>
+<p>The code used to generate the plots in this example is located at <code class="code docutils literal notranslate"><span class="pre">examples/connected_pathways/plot_connected_pathways.py</span></code> and must be run with <code class="code docutils literal notranslate"><span class="pre">pvpython</span></code>, ParaView’s Python interpreter.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="connected_pathways.html" class="btn btn-neutral float-left" title="Connected Pathways in Random Porous Media" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../developer_guide/index.html" class="btn btn-neutral float-right" title="Developer Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

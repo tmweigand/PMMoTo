@@ -1,0 +1,968 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto.domain_generation package &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pmmoto.filters package" href="pmmoto.filters.html" />
+    <link rel="prev" title="pmmoto.core package" href="pmmoto.core.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pmmoto.html">pmmoto package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.BoundaryType"><code class="docutils literal notranslate"><span class="pre">BoundaryType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pmmoto.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+          <li class="breadcrumb-item"><a href="pmmoto.html">pmmoto package</a></li>
+      <li class="breadcrumb-item active">pmmoto.domain_generation package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pmmoto.domain_generation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pmmoto.domain_generation">
+<span id="pmmoto-domain-generation-package"></span><h1>pmmoto.domain_generation package<a class="headerlink" href="#module-pmmoto.domain_generation" title="Link to this heading"></a></h1>
+<p>Initialize the domain_generation subpackage for PMMoTo.</p>
+<p>Provides porous media, multiphase, and domain generation utilities.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.deconstruct_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">deconstruct_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reservoir_voxels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.deconstruct_img" title="Link to this definition"></a></dt>
+<dd><p>Deconstruct  and image from a single process to multiple subdomains and images</p>
+<p>The shape of the img must equal subdomain.domain.voxels!</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_img_linear">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_linear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_img_linear" title="Link to this definition"></a></dt>
+<dd><p>Generate an image that varies linearly from 0 to N-1 along a given dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the output image.</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – Dimension along which to vary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Linear image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_img_random_binary">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_random_binary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_zero</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_img_random_binary" title="Link to this definition"></a></dt>
+<dd><p>Generate a random binary grid with specified probability for zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the binary grid (e.g., (depth, rows, columns)).</p></li>
+<li><p><strong>p_zero</strong> (<em>float</em>) – Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed for the random number generator.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Random binary grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_img_smoothed_random_binary">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_smoothed_random_binary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_zero</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_img_smoothed_random_binary" title="Link to this definition"></a></dt>
+<dd><p>Generate a smoothed random binary grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the binary grid.</p></li>
+<li><p><strong>p_zero</strong> (<em>float</em>) – Probability of a 0 occurring.</p></li>
+<li><p><strong>smoothness</strong> (<em>float</em>) – Controls the smoothness of the output grid.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed for the random number generator.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Smoothed random binary grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_mp_constant">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_mp_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">porous_media</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluid_phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.multiphase.Multiphase" title="pmmoto.domain_generation.multiphase.Multiphase"><span class="pre">Multiphase</span></a><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_mp_constant" title="Link to this definition"></a></dt>
+<dd><p>Set the pore space to a specific fluid phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>porous_media</strong> – PorousMedia object.</p></li>
+<li><p><strong>fluid_phase</strong> (<em>int</em><em>, </em><em>optional</em>) – Fluid phase to assign.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized multiphase object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.multiphase.Multiphase" title="pmmoto.domain_generation.multiphase.Multiphase">Multiphase</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_pm_atom_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_atom_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_locations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_pm_atom_domain" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from atom data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>atom_locations</strong> – Atom coordinates.</p></li>
+<li><p><strong>atom_radii</strong> – Atom radii.</p></li>
+<li><p><strong>atom_types</strong> – Atom types.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_pm_atom_file">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_atom_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lammps_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_pm_atom_file" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from a LAMMPS atom file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lammps_file</strong> (<em>str</em>) – Path to LAMMPS atom file.</p></li>
+<li><p><strong>atom_radii</strong> – Atom radii.</p></li>
+<li><p><strong>type_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of atom types.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic atoms.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_pm_cylinders">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_cylinders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cylinders</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_pm_cylinders" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from cylinder data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>cylinders</strong> – Cylinder data array.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_pm_inkbottle">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_inkbottle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_pm_inkbottle" title="Link to this definition"></a></dt>
+<dd><p>Generate an inkbottle-shaped porous media with reservoirs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>r_y</strong> (<em>float</em><em>, </em><em>optional</em>) – Elliptical scaling in y.</p></li>
+<li><p><strong>r_z</strong> (<em>float</em><em>, </em><em>optional</em>) – Elliptical scaling in z.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.gen_pm_spheres_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_spheres_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spheres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invert</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.gen_pm_spheres_domain" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from sphere data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>spheres</strong> – Sphere data array.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+<li><p><strong>invert</strong> – (bool, optional): Treat spheres as pores</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.domain_generation.domain_generation">
+<span id="pmmoto-domain-generation-domain-generation-module"></span><h2>pmmoto.domain_generation.domain_generation module<a class="headerlink" href="#module-pmmoto.domain_generation.domain_generation" title="Link to this heading"></a></h2>
+<p>domain_generation.py</p>
+<p>Functions for generating random, smoothed, and structured porous media images,
+as well as initializing PorousMedia and Multiphase objects for PMMoTo.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.deconstruct_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">deconstruct_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reservoir_voxels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.deconstruct_img" title="Link to this definition"></a></dt>
+<dd><p>Deconstruct  and image from a single process to multiple subdomains and images</p>
+<p>The shape of the img must equal subdomain.domain.voxels!</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_img_linear">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_linear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_img_linear" title="Link to this definition"></a></dt>
+<dd><p>Generate an image that varies linearly from 0 to N-1 along a given dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the output image.</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – Dimension along which to vary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Linear image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_img_random_binary">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_random_binary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_zero</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_img_random_binary" title="Link to this definition"></a></dt>
+<dd><p>Generate a random binary grid with specified probability for zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the binary grid (e.g., (depth, rows, columns)).</p></li>
+<li><p><strong>p_zero</strong> (<em>float</em>) – Probability of a 0 occurring. Probability of a 1 is 1 - p_zero.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed for the random number generator.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Random binary grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_img_smoothed_random_binary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_zero</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_img_smoothed_random_binary" title="Link to this definition"></a></dt>
+<dd><p>Generate a smoothed random binary grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em>) – Shape of the binary grid.</p></li>
+<li><p><strong>p_zero</strong> (<em>float</em>) – Probability of a 0 occurring.</p></li>
+<li><p><strong>smoothness</strong> (<em>float</em>) – Controls the smoothness of the output grid.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Seed for the random number generator.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Smoothed random binary grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_mp_constant">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_mp_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">porous_media</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluid_phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.multiphase.Multiphase" title="pmmoto.domain_generation.multiphase.Multiphase"><span class="pre">Multiphase</span></a><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_mp_constant" title="Link to this definition"></a></dt>
+<dd><p>Set the pore space to a specific fluid phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>porous_media</strong> – PorousMedia object.</p></li>
+<li><p><strong>fluid_phase</strong> (<em>int</em><em>, </em><em>optional</em>) – Fluid phase to assign.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized multiphase object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.multiphase.Multiphase" title="pmmoto.domain_generation.multiphase.Multiphase">Multiphase</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_pm_atom_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_atom_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_locations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_pm_atom_domain" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from atom data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>atom_locations</strong> – Atom coordinates.</p></li>
+<li><p><strong>atom_radii</strong> – Atom radii.</p></li>
+<li><p><strong>atom_types</strong> – Atom types.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_pm_atom_file">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_atom_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lammps_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_pm_atom_file" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from a LAMMPS atom file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lammps_file</strong> (<em>str</em>) – Path to LAMMPS atom file.</p></li>
+<li><p><strong>atom_radii</strong> – Atom radii.</p></li>
+<li><p><strong>type_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of atom types.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic atoms.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_pm_cylinders">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_cylinders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cylinders</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_pm_cylinders" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from cylinder data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>cylinders</strong> – Cylinder data array.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_pm_inkbottle">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_inkbottle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_pm_inkbottle" title="Link to this definition"></a></dt>
+<dd><p>Generate an inkbottle-shaped porous media with reservoirs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>r_y</strong> (<em>float</em><em>, </em><em>optional</em>) – Elliptical scaling in y.</p></li>
+<li><p><strong>r_z</strong> (<em>float</em><em>, </em><em>optional</em>) – Elliptical scaling in z.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.domain_generation.gen_pm_spheres_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.domain_generation.</span></span><span class="sig-name descname"><span class="pre">gen_pm_spheres_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spheres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invert</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.domain_generation.gen_pm_spheres_domain" title="Link to this definition"></a></dt>
+<dd><p>Generate binary porous media domain from sphere data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>spheres</strong> – Sphere data array.</p></li>
+<li><p><strong>kd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use KD-tree for efficiency.</p></li>
+<li><p><strong>invert</strong> – (bool, optional): Treat spheres as pores</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.domain_generation.lattice_packings">
+<span id="pmmoto-domain-generation-lattice-packings-module"></span><h2>pmmoto.domain_generation.lattice_packings module<a class="headerlink" href="#module-pmmoto.domain_generation.lattice_packings" title="Link to this heading"></a></h2>
+<p>lattice_packings.py</p>
+<p>Defines classes for generating common lattice packings (SC, BCC, FCC) for PMMoTo.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.BodyCenteredCubic">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.lattice_packings.</span></span><span class="sig-name descname"><span class="pre">BodyCenteredCubic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattice_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pmmoto.domain_generation.lattice_packings.Lattice" title="pmmoto.domain_generation.lattice_packings.Lattice"><code class="xref py py-class docutils literal notranslate"><span class="pre">Lattice</span></code></a></p>
+<p>Body Centered Cubic (BCC) lattice.</p>
+<p>Initialize a Lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lattice_constant</strong> (<em>float</em>) – Lattice constant (unit cell size).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_basis_vectors">
+<span class="sig-name descname"><span class="pre">get_basis_vectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_basis_vectors" title="Link to this definition"></a></dt>
+<dd><p>Return basis vectors for BCC lattice (corner and body center).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_coordination_number">
+<span class="sig-name descname"><span class="pre">get_coordination_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_coordination_number" title="Link to this definition"></a></dt>
+<dd><p>Return coordination number for BCC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_packing_efficiency">
+<span class="sig-name descname"><span class="pre">get_packing_efficiency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_packing_efficiency" title="Link to this definition"></a></dt>
+<dd><p>Return packing efficiency (percent) for BCC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_radius">
+<span class="sig-name descname"><span class="pre">get_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.BodyCenteredCubic.get_radius" title="Link to this definition"></a></dt>
+<dd><p>Return sphere radius for BCC lattice.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.FaceCenteredCubic">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.lattice_packings.</span></span><span class="sig-name descname"><span class="pre">FaceCenteredCubic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattice_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pmmoto.domain_generation.lattice_packings.Lattice" title="pmmoto.domain_generation.lattice_packings.Lattice"><code class="xref py py-class docutils literal notranslate"><span class="pre">Lattice</span></code></a></p>
+<p>Face Centered Cubic (FCC) lattice.</p>
+<p>Initialize a Lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lattice_constant</strong> (<em>float</em>) – Lattice constant (unit cell size).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_basis_vectors">
+<span class="sig-name descname"><span class="pre">get_basis_vectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_basis_vectors" title="Link to this definition"></a></dt>
+<dd><p>Return basis vectors for FCC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_coordination_number">
+<span class="sig-name descname"><span class="pre">get_coordination_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_coordination_number" title="Link to this definition"></a></dt>
+<dd><p>Return coordination number for FCC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_packing_efficiency">
+<span class="sig-name descname"><span class="pre">get_packing_efficiency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_packing_efficiency" title="Link to this definition"></a></dt>
+<dd><p>Return packing efficiency (percent) for FCC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_radius">
+<span class="sig-name descname"><span class="pre">get_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.FaceCenteredCubic.get_radius" title="Link to this definition"></a></dt>
+<dd><p>Return sphere radius for FCC lattice.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.Lattice">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.lattice_packings.</span></span><span class="sig-name descname"><span class="pre">Lattice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattice_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.Lattice" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for generating common lattice packings.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This currently adds more objects than needed.</p>
+</div>
+<p>Initialize a Lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lattice_constant</strong> (<em>float</em>) – Lattice constant (unit cell size).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.Lattice.generate_lattice">
+<span class="sig-name descname"><span class="pre">generate_lattice</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.Lattice.generate_lattice" title="Link to this definition"></a></dt>
+<dd><p>Generate a lattice for a given unit cell size and lattice type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array of shape (N, 4) of lattice points and sphere radius.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.Lattice.get_basis_vectors">
+<span class="sig-name descname"><span class="pre">get_basis_vectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.Lattice.get_basis_vectors" title="Link to this definition"></a></dt>
+<dd><p>Return the basis vectors for the lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array of basis vectors.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.Lattice.get_radius">
+<span class="sig-name descname"><span class="pre">get_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.Lattice.get_radius" title="Link to this definition"></a></dt>
+<dd><p>Return the sphere radius for the lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Sphere radius.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.SimpleCubic">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.lattice_packings.</span></span><span class="sig-name descname"><span class="pre">SimpleCubic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattice_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.SimpleCubic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pmmoto.domain_generation.lattice_packings.Lattice" title="pmmoto.domain_generation.lattice_packings.Lattice"><code class="xref py py-class docutils literal notranslate"><span class="pre">Lattice</span></code></a></p>
+<p>Simple Cubic (SC) lattice.</p>
+<p>Initialize a Lattice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>lattice_constant</strong> (<em>float</em>) – Lattice constant (unit cell size).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.SimpleCubic.get_basis_vectors">
+<span class="sig-name descname"><span class="pre">get_basis_vectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_basis_vectors" title="Link to this definition"></a></dt>
+<dd><p>Return basis vectors for SC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.SimpleCubic.get_coordination_number">
+<span class="sig-name descname"><span class="pre">get_coordination_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_coordination_number" title="Link to this definition"></a></dt>
+<dd><p>Return coordination number for SC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.SimpleCubic.get_packing_efficiency">
+<span class="sig-name descname"><span class="pre">get_packing_efficiency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_packing_efficiency" title="Link to this definition"></a></dt>
+<dd><p>Return packing efficiency (percent) for SC lattice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.lattice_packings.SimpleCubic.get_radius">
+<span class="sig-name descname"><span class="pre">get_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.lattice_packings.SimpleCubic.get_radius" title="Link to this definition"></a></dt>
+<dd><p>Return sphere radius for SC lattice.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.domain_generation.multiphase">
+<span id="pmmoto-domain-generation-multiphase-module"></span><h2>pmmoto.domain_generation.multiphase module<a class="headerlink" href="#module-pmmoto.domain_generation.multiphase" title="Link to this heading"></a></h2>
+<p>multiphase.py</p>
+<p>Defines the Multiphase class for handling multiphase images and related calculations.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.multiphase.</span></span><span class="sig-name descname"><span class="pre">Multiphase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">porous_media</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_phases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
+<p>Class for handling multiphase images and phase calculations.</p>
+<p>Initialize a Multiphase object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>porous_media</strong> – PorousMedia object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Multiphase image.</p></li>
+<li><p><strong>num_phases</strong> (<em>int</em>) – Number of phases.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase.get_pc">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_pc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase.get_pc" title="Link to this definition"></a></dt>
+<dd><p>Return the capillary pressure given a surface tension and radius.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>radius</strong> (<em>float</em>) – Probe radius.</p></li>
+<li><p><strong>gamma</strong> (<em>float</em><em>, </em><em>optional</em>) – Surface tension. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Capillary pressure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_probe_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact_angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase.get_probe_radius" title="Link to this definition"></a></dt>
+<dd><p>Return the probe radius.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pc</strong> (<em>float</em>) – Capillary pressure.</p></li>
+<li><p><strong>gamma</strong> (<em>float</em><em>, </em><em>optional</em>) – Surface tension. Defaults to 1.</p></li>
+<li><p><strong>contact_angle</strong> (<em>float</em><em>, </em><em>optional</em>) – Contact angle in degrees. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Probe radius.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase.get_saturation">
+<span class="sig-name descname"><span class="pre">get_saturation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase.get_saturation" title="Link to this definition"></a></dt>
+<dd><p>Calculate the saturation of a multiphase image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phase</strong> (<em>int</em>) – The phase ID to compute the saturation for.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Image to use. Defaults to self.img.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The saturation of the specified phase.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase.get_volume_fraction">
+<span class="sig-name descname"><span class="pre">get_volume_fraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase.get_volume_fraction" title="Link to this definition"></a></dt>
+<dd><p>Calculate the volume fraction of a given phase in a multiphase image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phase</strong> (<em>int</em>) – The phase ID to compute the volume fraction for.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Image to use. Defaults to self.img.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The volume fraction of the specified phase.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.multiphase.Multiphase.update_img">
+<span class="sig-name descname"><span class="pre">update_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.multiphase.Multiphase.update_img" title="Link to this definition"></a></dt>
+<dd><p>Update the multiphase image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>img</strong> (<em>np.ndarray</em>) – New multiphase image.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.domain_generation.porousmedia">
+<span id="pmmoto-domain-generation-porousmedia-module"></span><h2>pmmoto.domain_generation.porousmedia module<a class="headerlink" href="#module-pmmoto.domain_generation.porousmedia" title="Link to this heading"></a></h2>
+<p>porousmedia.py</p>
+<p>Defines the PorousMedia class for representing and analyzing porous media,
+including porosity and distance transform calculations.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.porousmedia.</span></span><span class="sig-name descname"><span class="pre">PorousMedia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Porous media class for storing image data and computing properties.</p>
+<p>Initialize a PorousMedia object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Binary image of the porous medium.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia.distance">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">distance</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia.distance" title="Link to this definition"></a></dt>
+<dd><p>Get the Euclidean distance transform of the porous medium.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Distance transform array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia.max_distance">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">max_distance</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia.max_distance" title="Link to this definition"></a></dt>
+<dd><p>Get the maximum distance from the distance transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Maximum distance value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia.porosity">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">porosity</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia.porosity" title="Link to this definition"></a></dt>
+<dd><p>Get the porosity of the porous medium.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Porosity value (fraction of pore voxels).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia.set_distance">
+<span class="sig-name descname"><span class="pre">set_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia.set_distance" title="Link to this definition"></a></dt>
+<dd><p>Calculate and set the Euclidean distance transform.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.PorousMedia.set_porosity">
+<span class="sig-name descname"><span class="pre">set_porosity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.PorousMedia.set_porosity" title="Link to this definition"></a></dt>
+<dd><p>Calculate and set the porosity of the porous medium.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.porousmedia.gen_pm">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.porousmedia.</span></span><span class="sig-name descname"><span class="pre">gen_pm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia"><span class="pre">PorousMedia</span></a></span></span><a class="headerlink" href="#pmmoto.domain_generation.porousmedia.gen_pm" title="Link to this definition"></a></dt>
+<dd><p>Initialize the PorousMedia class and set inlet/outlet/wall boundary conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Binary image of the porous medium.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized porous media object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pmmoto.domain_generation.porousmedia.PorousMedia" title="pmmoto.domain_generation.porousmedia.PorousMedia">PorousMedia</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.domain_generation.rdf">
+<span id="pmmoto-domain-generation-rdf-module"></span><h2>pmmoto.domain_generation.rdf module<a class="headerlink" href="#module-pmmoto.domain_generation.rdf" title="Link to this heading"></a></h2>
+<p>rdf.py</p>
+<p>Radial distribution function (RDF) utilities for PMMoTo.
+Provides classes and functions for reading, generating, and binning RDF data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.domain_generation.rdf.bin_distances">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.domain_generation.rdf.</span></span><span class="sig-name descname"><span class="pre">bin_distances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_atom_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PyAtomList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AtomMap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Bins</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.domain_generation.rdf.bin_distances" title="Link to this definition"></a></dt>
+<dd><p>Find atoms within a radius of probe atom and bin the distances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object containing rank information.</p></li>
+<li><p><strong>probe_atom_list</strong> – List of probe atoms to calculate RDF from.</p></li>
+<li><p><strong>atoms</strong> – AtomMap containing target atoms.</p></li>
+<li><p><strong>bins</strong> – RDFBins object containing binning information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None. Updates bins in-place with binned counts from all processes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmmoto.core.html" class="btn btn-neutral float-left" title="pmmoto.core package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmmoto.filters.html" class="btn btn-neutral float-right" title="pmmoto.filters package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

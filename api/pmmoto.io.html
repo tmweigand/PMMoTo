@@ -1,0 +1,733 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto.io package &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pmmoto.io.evtk package" href="pmmoto.io.evtk.html" />
+    <link rel="prev" title="pmmoto.filters.distance package" href="pmmoto.filters.distance.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pmmoto.html">pmmoto package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.BoundaryType"><code class="docutils literal notranslate"><span class="pre">BoundaryType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pmmoto.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pmmoto.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+          <li class="breadcrumb-item"><a href="pmmoto.html">pmmoto package</a></li>
+      <li class="breadcrumb-item active">pmmoto.io package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pmmoto.io.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pmmoto.io">
+<span id="pmmoto-io-package"></span><h1>pmmoto.io package<a class="headerlink" href="#module-pmmoto.io" title="Link to this heading"></a></h1>
+<p>Initialize the <cite>io</cite> subpackage for PMMoTo.</p>
+<p>Provides data reading and output utilities accessible directly from <cite>pmmoto.io</cite>.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.py_read_lammps_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">py_read_lammps_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_mass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.py_read_lammps_atoms" title="Link to this definition"></a></dt>
+<dd><p>Read atom positions from a LAMMPS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<em>str</em>) – Path to the LAMMPS file.</p></li>
+<li><p><strong>include_mass</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to include mass data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_position, atom_type, [masses,] domain_data)</dt><dd><ul class="simple">
+<li><p>atom_position (np.ndarray): Atom positions.</p></li>
+<li><p>atom_type (np.ndarray): Atom types.</p></li>
+<li><p>masses (np.ndarray, optional): Atom masses if include_mass is True.</p></li>
+<li><p>domain_data (np.ndarray): Domain bounding box.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.read_atom_map">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">read_atom_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.read_atom_map" title="Link to this definition"></a></dt>
+<dd><p>Read the atom mapping file.</p>
+<dl class="simple">
+<dt>File Format:</dt><dd><p>atom_id, element_name, atom_name</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_file</strong> (<em>str</em>) – Path to the atom map file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping from atom ID to element and atom name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.read_binned_distances_rdf">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">read_binned_distances_rdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">RDF</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.read_binned_distances_rdf" title="Link to this definition"></a></dt>
+<dd><p>Read a folder containing binned RDF data.</p>
+<dl class="simple">
+<dt>Folder must contain:</dt><dd><ul class="simple">
+<li><p>atom_map.txt</p></li>
+<li><p>Files for all listed atoms named ‘atom_name’.rdf</p></li>
+</ul>
+</dd>
+<dt>Each .rdf file format:</dt><dd><p>radial distance, rdf(r)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_folder</strong> (<em>str</em>) – Path to the folder.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_map, rdf_out)</dt><dd><ul class="simple">
+<li><p>atom_map (dict): Atom mapping.</p></li>
+<li><p>rdf_out (dict): Mapping from atom ID to RDF object.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.read_lammps_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">read_lammps_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.read_lammps_atoms" title="Link to this definition"></a></dt>
+<dd><p>Read atom positions and types from a LAMMPS file using C++ backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<em>str</em>) – Path to the LAMMPS file.</p></li>
+<li><p><strong>type_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of (type, charge) pairs to new types.
+Example: {(1, 0.4): 2, (1, -0.4): 3}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(positions, types, domain, timestep)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.read_rdf">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">read_rdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">RDF</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.read_rdf" title="Link to this definition"></a></dt>
+<dd><p>Read a folder containing radial distribution function (RDF) data.</p>
+<dl class="simple">
+<dt>Folder must contain:</dt><dd><ul class="simple">
+<li><p>atom_map.txt</p></li>
+<li><p>Files for all listed atoms named ‘atom_name’.rdf</p></li>
+</ul>
+</dd>
+<dt>Each .rdf file format:</dt><dd><p>radial distance, rdf(r)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_folder</strong> (<em>str</em>) – Path to the folder.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_map, rdf_out)</dt><dd><ul class="simple">
+<li><p>atom_map (dict): Atom mapping.</p></li>
+<li><p>rdf_out (dict): Mapping from atom ID to RDF object.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.read_sphere_pack_xyzr_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">read_sphere_pack_xyzr_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.read_sphere_pack_xyzr_domain" title="Link to this definition"></a></dt>
+<dd><p>Read a sphere pack file with x, y, z, radius and domain bounding box.</p>
+<dl class="simple">
+<dt>Input File Format:</dt><dd><p>x_min x_max
+y_min y_max
+z_min z_max
+x1 y1 z1 r1
+x2 y2 z2 r2
+…</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_file</strong> (<em>str</em>) – Path to the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(sphere_data, domain_data)</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>sphere_data (np.ndarray): Array of shape (N, 4) for sphere positions</dt><dd><p>and radii.</p>
+</dd>
+</dl>
+</li>
+<li><p>domain_data (tuple): Domain bounding box as ((x_min, x_max), …).</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.save_extended_img_data_parallel">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">save_extended_img_data_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((0,</span> <span class="pre">0),</span> <span class="pre">(0,</span> <span class="pre">0),</span> <span class="pre">(0,</span> <span class="pre">0))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.save_extended_img_data_parallel" title="Link to this definition"></a></dt>
+<dd><p>Save an image where img.shape &gt; subdomain.voxels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Image array.</p></li>
+<li><p><strong>extension</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Extension for each dimension.</p></li>
+<li><p><strong>additional_img</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional images to save.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.save_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">save_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.save_img" title="Link to this definition"></a></dt>
+<dd><p>Save image(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> (<em>dict</em>) – Dictionary of subdomain objects.</p></li>
+<li><p><strong>img</strong> (<em>dict</em>) – Dictionary of image arrays.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.save_particle_data">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.</span></span><span class="sig-name descname"><span class="pre">save_particle_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.save_particle_data" title="Link to this definition"></a></dt>
+<dd><p>Save particle data as VTK PolyData.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> – Subdomain object with rank attribute.</p></li>
+<li><p><strong>particles</strong> (<em>np.ndarray</em>) – Particle data array.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pmmoto.io.evtk.html">pmmoto.io.evtk package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.evtk.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.evtk">pmmoto.io.evtk.evtk module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.evtk.writeArrayToFile"><code class="docutils literal notranslate"><span class="pre">writeArrayToFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.evtk.writeArraysToFile"><code class="docutils literal notranslate"><span class="pre">writeArraysToFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.evtk.writeBlockSize"><code class="docutils literal notranslate"><span class="pre">writeBlockSize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.hl">pmmoto.io.evtk.hl module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.cylinderToVTK"><code class="docutils literal notranslate"><span class="pre">cylinderToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.gridToVTK"><code class="docutils literal notranslate"><span class="pre">gridToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.imageToVTK"><code class="docutils literal notranslate"><span class="pre">imageToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.linesToVTK"><code class="docutils literal notranslate"><span class="pre">linesToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.pointsToVTK"><code class="docutils literal notranslate"><span class="pre">pointsToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.pointsToVTKAsTIN"><code class="docutils literal notranslate"><span class="pre">pointsToVTKAsTIN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.polyLinesToVTK"><code class="docutils literal notranslate"><span class="pre">polyLinesToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.rectilinearToVTK"><code class="docutils literal notranslate"><span class="pre">rectilinearToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.structuredToVTK"><code class="docutils literal notranslate"><span class="pre">structuredToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.unstructuredGridToVTK"><code class="docutils literal notranslate"><span class="pre">unstructuredGridToVTK()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.writeParallelPoints"><code class="docutils literal notranslate"><span class="pre">writeParallelPoints()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.hl.writeParallelVTKGrid"><code class="docutils literal notranslate"><span class="pre">writeParallelVTKGrid()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.vtk">pmmoto.io.evtk.vtk module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkCellType"><code class="docutils literal notranslate"><span class="pre">VtkCellType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkDataType"><code class="docutils literal notranslate"><span class="pre">VtkDataType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile"><code class="docutils literal notranslate"><span class="pre">VtkFile</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.addComments"><code class="docutils literal notranslate"><span class="pre">VtkFile.addComments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.addData"><code class="docutils literal notranslate"><span class="pre">VtkFile.addData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.addHeader"><code class="docutils literal notranslate"><span class="pre">VtkFile.addHeader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.appendData"><code class="docutils literal notranslate"><span class="pre">VtkFile.appendData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.appendHeader"><code class="docutils literal notranslate"><span class="pre">VtkFile.appendHeader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.closeAppendedData"><code class="docutils literal notranslate"><span class="pre">VtkFile.closeAppendedData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.closeData"><code class="docutils literal notranslate"><span class="pre">VtkFile.closeData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.closeElement"><code class="docutils literal notranslate"><span class="pre">VtkFile.closeElement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.closeGrid"><code class="docutils literal notranslate"><span class="pre">VtkFile.closeGrid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.closePiece"><code class="docutils literal notranslate"><span class="pre">VtkFile.closePiece()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.getFileName"><code class="docutils literal notranslate"><span class="pre">VtkFile.getFileName()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.openAppendedData"><code class="docutils literal notranslate"><span class="pre">VtkFile.openAppendedData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.openData"><code class="docutils literal notranslate"><span class="pre">VtkFile.openData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.openElement"><code class="docutils literal notranslate"><span class="pre">VtkFile.openElement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.openGrid"><code class="docutils literal notranslate"><span class="pre">VtkFile.openGrid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.openPiece"><code class="docutils literal notranslate"><span class="pre">VtkFile.openPiece()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFile.save"><code class="docutils literal notranslate"><span class="pre">VtkFile.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkFileType"><code class="docutils literal notranslate"><span class="pre">VtkFileType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkGroup"><code class="docutils literal notranslate"><span class="pre">VtkGroup</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkGroup.addFile"><code class="docutils literal notranslate"><span class="pre">VtkGroup.addFile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkGroup.save"><code class="docutils literal notranslate"><span class="pre">VtkGroup.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.addHeader"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.addHeader()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.addPiece"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.addPiece()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.closeData"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.closeData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.closeElement"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.closeElement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.closeGrid"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.closeGrid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.getFileName"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.getFileName()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.openData"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.openData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.openElement"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.openElement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.openGrid"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.openGrid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFile.save"><code class="docutils literal notranslate"><span class="pre">VtkParallelFile.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.vtk.VtkParallelFileType"><code class="docutils literal notranslate"><span class="pre">VtkParallelFileType</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pmmoto.io.evtk.html#module-pmmoto.io.evtk.xml">pmmoto.io.evtk.xml module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter"><code class="docutils literal notranslate"><span class="pre">XmlWriter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.addAttributes"><code class="docutils literal notranslate"><span class="pre">XmlWriter.addAttributes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.addComment"><code class="docutils literal notranslate"><span class="pre">XmlWriter.addComment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.addDeclaration"><code class="docutils literal notranslate"><span class="pre">XmlWriter.addDeclaration()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.addText"><code class="docutils literal notranslate"><span class="pre">XmlWriter.addText()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.close"><code class="docutils literal notranslate"><span class="pre">XmlWriter.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.closeElement"><code class="docutils literal notranslate"><span class="pre">XmlWriter.closeElement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.evtk.html#pmmoto.io.evtk.xml.XmlWriter.openElement"><code class="docutils literal notranslate"><span class="pre">XmlWriter.openElement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.io.data_read">
+<span id="pmmoto-io-data-read-module"></span><h2>pmmoto.io.data_read module<a class="headerlink" href="#module-pmmoto.io.data_read" title="Link to this heading"></a></h2>
+<p>dataRead.py</p>
+<p>Provides functions for reading various simulation and atomistic data formats
+used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.py_read_lammps_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">py_read_lammps_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_mass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.py_read_lammps_atoms" title="Link to this definition"></a></dt>
+<dd><p>Read atom positions from a LAMMPS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<em>str</em>) – Path to the LAMMPS file.</p></li>
+<li><p><strong>include_mass</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to include mass data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_position, atom_type, [masses,] domain_data)</dt><dd><ul class="simple">
+<li><p>atom_position (np.ndarray): Atom positions.</p></li>
+<li><p>atom_type (np.ndarray): Atom types.</p></li>
+<li><p>masses (np.ndarray, optional): Atom masses if include_mass is True.</p></li>
+<li><p>domain_data (np.ndarray): Domain bounding box.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.read_atom_map">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">read_atom_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.read_atom_map" title="Link to this definition"></a></dt>
+<dd><p>Read the atom mapping file.</p>
+<dl class="simple">
+<dt>File Format:</dt><dd><p>atom_id, element_name, atom_name</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_file</strong> (<em>str</em>) – Path to the atom map file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping from atom ID to element and atom name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.read_binned_distances_rdf">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">read_binned_distances_rdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">RDF</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.read_binned_distances_rdf" title="Link to this definition"></a></dt>
+<dd><p>Read a folder containing binned RDF data.</p>
+<dl class="simple">
+<dt>Folder must contain:</dt><dd><ul class="simple">
+<li><p>atom_map.txt</p></li>
+<li><p>Files for all listed atoms named ‘atom_name’.rdf</p></li>
+</ul>
+</dd>
+<dt>Each .rdf file format:</dt><dd><p>radial distance, rdf(r)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_folder</strong> (<em>str</em>) – Path to the folder.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_map, rdf_out)</dt><dd><ul class="simple">
+<li><p>atom_map (dict): Atom mapping.</p></li>
+<li><p>rdf_out (dict): Mapping from atom ID to RDF object.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.read_lammps_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">read_lammps_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">uint8</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.read_lammps_atoms" title="Link to this definition"></a></dt>
+<dd><p>Read atom positions and types from a LAMMPS file using C++ backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<em>str</em>) – Path to the LAMMPS file.</p></li>
+<li><p><strong>type_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of (type, charge) pairs to new types.
+Example: {(1, 0.4): 2, (1, -0.4): 3}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(positions, types, domain, timestep)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.read_rdf">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">read_rdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">RDF</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.read_rdf" title="Link to this definition"></a></dt>
+<dd><p>Read a folder containing radial distribution function (RDF) data.</p>
+<dl class="simple">
+<dt>Folder must contain:</dt><dd><ul class="simple">
+<li><p>atom_map.txt</p></li>
+<li><p>Files for all listed atoms named ‘atom_name’.rdf</p></li>
+</ul>
+</dd>
+<dt>Each .rdf file format:</dt><dd><p>radial distance, rdf(r)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_folder</strong> (<em>str</em>) – Path to the folder.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(atom_map, rdf_out)</dt><dd><ul class="simple">
+<li><p>atom_map (dict): Atom mapping.</p></li>
+<li><p>rdf_out (dict): Mapping from atom ID to RDF object.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.data_read.read_sphere_pack_xyzr_domain">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.data_read.</span></span><span class="sig-name descname"><span class="pre">read_sphere_pack_xyzr_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.io.data_read.read_sphere_pack_xyzr_domain" title="Link to this definition"></a></dt>
+<dd><p>Read a sphere pack file with x, y, z, radius and domain bounding box.</p>
+<dl class="simple">
+<dt>Input File Format:</dt><dd><p>x_min x_max
+y_min y_max
+z_min z_max
+x1 y1 z1 r1
+x2 y2 z2 r2
+…</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_file</strong> (<em>str</em>) – Path to the input file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(sphere_data, domain_data)</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>sphere_data (np.ndarray): Array of shape (N, 4) for sphere positions</dt><dd><p>and radii.</p>
+</dd>
+</dl>
+</li>
+<li><p>domain_data (tuple): Domain bounding box as ((x_min, x_max), …).</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.io.io_utils">
+<span id="pmmoto-io-io-utils-module"></span><h2>pmmoto.io.io_utils module<a class="headerlink" href="#module-pmmoto.io.io_utils" title="Link to this heading"></a></h2>
+<p>io_utils.py</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.io_utils.check_file">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.io_utils.</span></span><span class="sig-name descname"><span class="pre">check_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.io_utils.check_file" title="Link to this definition"></a></dt>
+<dd><p>Check file name</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.io_utils.check_file_path">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.io_utils.</span></span><span class="sig-name descname"><span class="pre">check_file_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.io_utils.check_file_path" title="Link to this definition"></a></dt>
+<dd><p>Ensure the directory path(s) for the given file_name exist, creating them .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – The full file path or just a file name. If it contains directories,
+those directories will be checked and created if missing.</p></li>
+<li><p><strong>create_folder</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, also creates a folder with the name formed by concatenating <cite>file_name</cite>
+and <cite>extra_info</cite> (if provided), defaults to True.</p></li>
+<li><p><strong>extra_info</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Optional string appended to <cite>file_name</cite> to form an additional directory path
+to create.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>If <cite>file_name</cite> contains no directory component (i.e., just a file name),
+no directory will be created for the file itself, but if <cite>create_folder</cite> is True
+and <cite>extra_info</cite> is provided, a directory named <cite>file_name + extra_info</cite> will be
+created.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.io_utils.check_folder">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.io_utils.</span></span><span class="sig-name descname"><span class="pre">check_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.io_utils.check_folder" title="Link to this definition"></a></dt>
+<dd><p>Check to make sure folder exists</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.io_utils.check_num_files">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.io_utils.</span></span><span class="sig-name descname"><span class="pre">check_num_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.io_utils.check_num_files" title="Link to this definition"></a></dt>
+<dd><p>Check make sure num_files is equal to mpi.size</p>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.io.output">
+<span id="pmmoto-io-output-module"></span><h2>pmmoto.io.output module<a class="headerlink" href="#module-pmmoto.io.output" title="Link to this heading"></a></h2>
+<p>Output utilities for saving PMMoTo simulation data.</p>
+<p>This module provides functions to save particle and image data in VTK formats,
+supporting both serial and parallel output.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.output.save_extended_img_data_parallel">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.output.</span></span><span class="sig-name descname"><span class="pre">save_extended_img_data_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">((0,</span> <span class="pre">0),</span> <span class="pre">(0,</span> <span class="pre">0),</span> <span class="pre">(0,</span> <span class="pre">0))</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.output.save_extended_img_data_parallel" title="Link to this definition"></a></dt>
+<dd><p>Save an image where img.shape &gt; subdomain.voxels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Image array.</p></li>
+<li><p><strong>extension</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Extension for each dimension.</p></li>
+<li><p><strong>additional_img</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional images to save.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.output.save_img">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.output.</span></span><span class="sig-name descname"><span class="pre">save_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.output.save_img" title="Link to this definition"></a></dt>
+<dd><p>Save image(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> (<em>dict</em>) – Dictionary of subdomain objects.</p></li>
+<li><p><strong>img</strong> (<em>dict</em>) – Dictionary of image arrays.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.io.output.save_particle_data">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.io.output.</span></span><span class="sig-name descname"><span class="pre">save_particle_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.io.output.save_particle_data" title="Link to this definition"></a></dt>
+<dd><p>Save particle data as VTK PolyData.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – Output file base name.</p></li>
+<li><p><strong>subdomain</strong> – Subdomain object with rank attribute.</p></li>
+<li><p><strong>particles</strong> (<em>np.ndarray</em>) – Particle data array.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmmoto.filters.distance.html" class="btn btn-neutral float-left" title="pmmoto.filters.distance package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmmoto.io.evtk.html" class="btn btn-neutral float-right" title="pmmoto.io.evtk package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
