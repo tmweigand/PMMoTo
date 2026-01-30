@@ -76,9 +76,7 @@ class SubdomainFeatures:
             self.faces[feature] = Face(
                 feature_id=feature,
                 neighbor_rank=self.subdomain.neighbor_ranks[feature],
-                boundary_type=self.get_boundary_type(
-                    feature, self.subdomain.neighbor_ranks[feature]
-                ),
+                boundary_type=self.get_boundary_type(feature),
                 global_boundary=self.get_global_boundary(feature),
                 inlet=self.subdomain.inlet[face_dim][side],
                 outlet=self.subdomain.outlet[face_dim][side],
@@ -90,9 +88,7 @@ class SubdomainFeatures:
             self.edges[feature] = Edge(
                 feature_id=feature,
                 neighbor_rank=self.subdomain.neighbor_ranks[feature],
-                boundary_type=self.get_boundary_type(
-                    feature, self.subdomain.neighbor_ranks[feature]
-                ),
+                boundary_type=self.get_boundary_type(feature),
                 global_boundary=self.get_global_boundary(feature),
             )
 
@@ -102,9 +98,7 @@ class SubdomainFeatures:
             self.corners[feature] = Corner(
                 feature_id=feature,
                 neighbor_rank=self.subdomain.neighbor_ranks[feature],
-                boundary_type=self.get_boundary_type(
-                    feature, self.subdomain.neighbor_ranks[feature]
-                ),
+                boundary_type=self.get_boundary_type(feature),
                 global_boundary=self.get_global_boundary(feature),
             )
 
@@ -135,9 +129,7 @@ class SubdomainFeatures:
 
         return True
 
-    def get_boundary_type(
-        self, feature_id: tuple[int, ...], neighbor_rank: int
-    ) -> BoundaryType:
+    def get_boundary_type(self, feature_id: tuple[int, ...]) -> BoundaryType:
         """Determine the boundary type for a feature.
 
         For a feature to be on a domain boundary, the subdomain index must contain
@@ -147,7 +139,7 @@ class SubdomainFeatures:
             bool: If feature is on domain boundary
 
         """
-        if not self.get_global_boundary(feature_id) or neighbor_rank == 0:
+        if not self.get_global_boundary(feature_id):
             return BoundaryType.INTERNAL
 
         boundary_type = []
@@ -162,9 +154,6 @@ class SubdomainFeatures:
                 boundary_type.append(boundary_types[0])
             elif (ind == subdomains - 1) and (f_id == 1):
                 boundary_type.append(boundary_types[1])
-
-        if not boundary_type:
-            return BoundaryType.INTERNAL
 
         return boundary_order(boundary_type)
 
@@ -226,10 +215,9 @@ class SubdomainFeatures:
         else:
             raise KeyError(f"Feature ID {feature_id} not found in features.")
 
-        try:
-            return getattr(feature_obj, member_name)
-        except AttributeError:
+        if not hasattr(feature_obj, member_name):
             raise AttributeError(
-                f"Feature {feature_id} ({type(feature_obj).__name__})"
-                "has no member '{member_name}'."
+                f"Feature {feature_id} ({type(feature_obj).__name__}) has no "
+                f"member '{member_name}'."
             )
+        return getattr(feature_obj, member_name)

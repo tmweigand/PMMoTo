@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound=np.generic)
 
-__all__ = ["edt", "edt2d", "edt3d"]
+__all__ = ["edt", "edt2d", "edt3d", "get_boundary_hull"]
 
 
 def edt(

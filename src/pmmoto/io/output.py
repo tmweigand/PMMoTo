@@ -320,7 +320,6 @@ def _save_img_proc(
 
     io_utils.check_file_path(file_name)
     file_proc = file_name + "/" + file_name.split("/")[-1] + "_" + str(subdomain.rank)
-
     _save_img(file_proc, subdomain, img, additional_img)
 
 

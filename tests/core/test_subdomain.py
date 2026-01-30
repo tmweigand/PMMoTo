@@ -3,6 +3,7 @@
 import numpy as np
 
 import pmmoto
+import pytest
 
 
 def setup_domain(rank: int) -> pmmoto.core.subdomain.Subdomain:
@@ -60,6 +61,15 @@ def test_subdomain() -> None:
 
     assert sd.start == (33, 33, 0)
 
+    np.testing.assert_array_almost_equal(
+        sd.get_centroid(), np.array([88.385, 27.37395, -8.033362])
+    )
+
+    assert sd.get_radius() == pytest.approx(24.44044089145892)
+    assert sd.get_origin() == pytest.approx((84.59, 3.2493, -9))
+
+    np.testing.assert_array_equal(sd.get_own_voxels(), np.array([0, 33, 0, 33, 0, 33]))
+
 
 def test_subdomain_2() -> None:
     """Test for subdomain"""
@@ -92,6 +102,15 @@ def test_subdomain_2() -> None:
 
     assert sd.start == (66, 66, 66)
 
+    np.testing.assert_array_almost_equal(
+        sd.get_centroid(), np.array([96.09, 76.3543, -4.13752])
+    )
+
+    assert sd.get_radius() == pytest.approx(25.18106031241222)
+    assert sd.get_origin() == pytest.approx((92.18, 51.4986, -5.1334494))
+
+    np.testing.assert_array_equal(sd.get_own_voxels(), np.array([0, 34, 0, 34, 0, 34]))
+
 
 def test_subdomain_3() -> None:
     """Test for subdomain"""
@@ -119,6 +138,15 @@ def test_subdomain_3() -> None:
     np.testing.assert_array_equal(sd.outlet, ((0, 0), (0, 0), (0, 0)))
 
     assert sd.start == (0, 0, 0)
+
+    np.testing.assert_array_almost_equal(
+        sd.get_centroid(), np.array([80.795, -20.87535, -8.033362])
+    )
+
+    assert sd.get_radius() == pytest.approx(24.44044089145892)
+    assert sd.get_origin() == pytest.approx((77.0, -45.0, -9.0))
+
+    np.testing.assert_array_equal(sd.get_own_voxels(), np.array([0, 33, 0, 33, 0, 33]))
 
 
 def test_walls() -> None:
@@ -158,3 +186,9 @@ def test_get_img_index() -> None:
     assert sd.get_img_index((0.5, 0.5, 0.5)) == (5, 5, 5)
     assert sd.get_img_index((0.49, 0.49, 0.49)) == (4, 4, 4)
     assert sd.get_img_index((0.01, 0.99, 0.33)) == (0, 9, 3)
+
+    with pytest.raises(ValueError):
+        assert sd.get_img_index((-0.01, 0.99, 0.33))
+
+    with pytest.raises(ValueError):
+        assert sd.get_img_index((0.01, 0.99, 10.33))

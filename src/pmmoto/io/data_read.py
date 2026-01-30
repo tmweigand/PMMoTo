@@ -4,6 +4,7 @@ Provides functions for reading various simulation and atomistic data formats
 used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.
 """
 
+import os
 import gzip
 import numpy as np
 from numpy.typing import NDArray
@@ -61,12 +62,19 @@ def read_sphere_pack_xyzr_domain(
             domain_data[n_line, 0] = float(line.split(" ")[0])
             domain_data[n_line, 1] = float(line.split(" ")[1])
         else:  # Grab sphere
+
+            parts = line.split()
+            if len(parts) != 4:
+                raise ValueError(
+                    f"Invalid sphere line (expected 4 values): {line.strip()}"
+                )
             try:
-                for n in range(0, 4):
-                    sphere_data[count_sphere, n] = float(line.split(" ")[n])
-            except ValueError:
-                for n in range(0, 4):
-                    sphere_data[count_sphere, n] = float(line.split("\t")[n])
+                sphere_data[count_sphere] = [float(p) for p in parts]
+            except ValueError as exc:
+                raise ValueError(
+                    f"Non-numeric value in sphere line: {line.strip()}"
+                ) from exc
+
             count_sphere += 1
 
     domain_file.close()
@@ -98,10 +106,11 @@ def py_read_lammps_atoms(
     """
     io_utils.check_file(input_file)
 
-    if input_file.endswith(".gz"):
-        domain_file = gzip.open(input_file, "rt")
-    else:
-        domain_file = open(input_file, "r", encoding="utf-8")
+    domain_file = (
+        gzip.open(input_file, "rt")
+        if input_file.endswith(".gz")
+        else open(input_file, "r", encoding="utf-8")
+    )
 
     charges: dict[int, list[float]] = {}
 
@@ -162,6 +171,7 @@ def read_lammps_atoms(
         tuple: (positions, types, domain, timestep)
 
     """
+    io_utils.check_file(input_file)
     positions, types, domain, timestep = _data_read.read_lammps_atoms(
         input_file, type_map
     )
@@ -267,7 +277,7 @@ def read_binned_distances_rdf(
     io_utils.check_folder(input_folder)
 
     # Check for atom_map.txt
-    atom_map_file = input_folder + "atom_map.txt"
+    atom_map_file = os.path.join(input_folder, "atom_map.txt")
     io_utils.check_file(atom_map_file)
 
     atom_map = read_atom_map(atom_map_file)
@@ -275,7 +285,7 @@ def read_binned_distances_rdf(
     # Check rdf files found for all atoms
     rdf_out = {}
     for _id, atom_info in atom_map.items():
-        atom_file = input_folder + atom_info["name"] + ".rdf"
+        atom_file = os.path.join(input_folder, atom_info["name"] + ".rdf")
         io_utils.check_file(atom_file)
         _bins, binned_distances = np.genfromtxt(atom_file, skip_header=0, unpack=True)
 

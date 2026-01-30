@@ -64,22 +64,45 @@ public:
     }
 
     /**
-     * @brief Determines if a particle crosses the outer box boundaries.
-     * @param Sphere sphere to check
-     * @param outerBox The outer periodic box dimensions
+     * @brief Determines if a sphere crosses the boundaries of box
+     * @param box Box stuct
      * @return Array of bools indicating whether the particle crosses each axis
      * boundary.
      */
-    inline std::array<bool, 3> cross_boundary(const Box& box)
+    inline std::array<bool, 3> cross_boundary(const Box& box) const
     {
-        return {
-            coordinates[0] - radius < box.min[0] ||
-                coordinates[0] + radius > box.max[0],
-            coordinates[1] - radius < box.min[1] ||
-                coordinates[1] + radius > box.max[1],
-            coordinates[2] - radius < box.min[2] ||
-                coordinates[2] + radius > box.max[2],
-        };
+        std::array<bool, 3> crosses{};
+
+        for (std::size_t d = 0; d < 3; ++d)
+        {
+            const bool crosses_lower = coordinates[d] - radius < box.min[d];
+            const bool crosses_upper = coordinates[d] + radius > box.max[d];
+            crosses[d] = crosses_lower || crosses_upper;
+        }
+
+        return crosses;
+    }
+
+    /**
+     * @brief Determines whether a sphere extends beyond the box extents.
+     *
+     * This function performs a purely geometric check and does NOT consider
+     * periodicity or boundary conditions.
+     *
+     * @param box Axis-aligned bounding box
+     * @return Array indicating extension beyond box in each dimension
+     */
+    inline std::array<bool, 3> extends_outside_box(const Box& box) const
+    {
+        std::array<bool, 3> outside{};
+
+        for (std::size_t d = 0; d < 3; ++d)
+        {
+            outside[d] = (coordinates[d] - radius < box.min[d]) ||
+                         (coordinates[d] + radius > box.max[d]);
+        }
+
+        return outside;
     }
 
     /**
@@ -336,51 +359,45 @@ public:
      * @brief Applies periodic boundary conditions to spheres and retains
      only
      * those that intersect the inner box.
-     * @param domain Dimensions of domain via Box
+     * @param domain Dimensions of domain via Box with periodic boundary info
      * @param subdomain Dimensions of the subdomain vix Box
      */
-    void add_periodic_spheres(Box& domain, const Box& subdomain)
+    void add_periodic_spheres(const Box& domain, const Box& subdomain)
     {
-        domain.box_length();
         std::vector<Sphere> new_spheres;
         std::vector<Coords> new_coords;
-        for (auto& sphere : spheres)
+
+        static constexpr std::array<int, 3> shifts = { -1, 0, 1 };
+
+        for (const auto& sphere : spheres)
         {
-            auto crosses = sphere.cross_boundary(domain);
+            const auto extends = sphere.extends_outside_box(domain);
 
-            for (int dx = -1; dx <= 1; ++dx)
+            for (int dx : shifts)
             {
-                for (int dy = -1; dy <= 1; ++dy)
-                {
-                    for (int dz = -1; dz <= 1; ++dz)
-                    {
-                        if (dx == 0 && dy == 0 && dz == 0)
-                        {
-                            if (sphere.intersects_box(sphere.coordinates,
-                                                      sphere.radius,
-                                                      subdomain))
-                            {
-                                new_coords.push_back(sphere.coordinates);
-                                new_spheres.push_back(sphere);
-                            }
-                            continue; // Skip original sphere
-                        }
+                if (dx != 0 && !(extends[0] && domain.periodic[0])) continue;
 
-                        if ((dx != 0 && crosses[0]) ||
-                            (dy != 0 && crosses[1]) || (dz != 0 && crosses[2]))
+                for (int dy : shifts)
+                {
+                    if (dy != 0 && !(extends[1] && domain.periodic[1]))
+                        continue;
+
+                    for (int dz : shifts)
+                    {
+                        if (dz != 0 && !(extends[2] && domain.periodic[2]))
+                            continue;
+
+                        Coords image = sphere.coordinates;
+
+                        image[0] += dx * domain.length[0];
+                        image[1] += dy * domain.length[1];
+                        image[2] += dz * domain.length[2];
+
+                        if (Sphere::intersects_box(
+                                image, sphere.radius, subdomain))
                         {
-                            Coords periodic_sphere = {
-                                sphere.coordinates[0] + dx * domain.length[0],
-                                sphere.coordinates[1] + dy * domain.length[1],
-                                sphere.coordinates[2] + dz * domain.length[2],
-                            };
-                            if (Sphere::intersects_box(
-                                    periodic_sphere, sphere.radius, subdomain))
-                            {
-                                new_coords.push_back(periodic_sphere);
-                                new_spheres.push_back(
-                                    { periodic_sphere, sphere.radius });
-                            }
+                            new_coords.push_back(image);
+                            new_spheres.push_back({ image, sphere.radius });
                         }
                     }
                 }

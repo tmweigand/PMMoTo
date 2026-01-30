@@ -59,9 +59,9 @@ class PyCylinderList: ...
 
 def _initialize_atoms(
     atom_coordinates: NDArray[np.floating[Any]],
-    atom_radii: NDArray[np.floating[Any]],
+    atom_radii: dict[int, float],
     atom_ids: NDArray[np.integer[Any]],
-    atom_masses: None | NDArray[np.integer[Any]] = None,
+    atom_masses: None | dict[int, float] = None,
     by_type: bool = False,
 ) -> AtomMap: ...
 def _initialize_spheres(

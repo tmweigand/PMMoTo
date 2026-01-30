@@ -1,8 +1,9 @@
 """test_particles.py"""
 
+import pmmoto
+import pytest
 import numpy as np
 from mpi4py import MPI
-import pmmoto
 
 
 def test_particles():
@@ -159,8 +160,6 @@ def test_spheres():
 
     spheres.build_KDtree()
 
-    print(spheres.return_np_array())
-
 
 def test_cleanup():
     """Test deletion of particle lists"""
@@ -277,3 +276,263 @@ def test_count_own():
 
     assert atoms.size() == {1: 1, 3: 1, 15: 3}
     assert atoms.get_own_count() == {1: 1, 3: 1, 15: 2}
+
+
+def test_elements_to_ids():
+    """Tests for conversion"""
+    atom_elements = ["H", "C", "O", "N", "Cl"]
+
+    atom_ids = pmmoto.particles.convert_atoms_elements_to_ids(atom_elements)
+
+    np.testing.assert_array_equal(atom_ids, np.array([1, 6, 8, 7, 17]))
+
+
+def test_load_uff_data_from_custom_file(tmp_path):
+    """Test _load_uff_data with a custom UFF file"""
+    # Create a custom UFF file
+    uff_file = tmp_path / "custom_uff.txt"
+    uff_content = """AtomicNumber Name Diameter
+1 H 2.886
+6 C 3.851
+8 O 3.500
+7 N 3.660
+17 Cl
+"""
+    uff_file.write_text(uff_content)
+
+    # Load data from custom file
+    element_table = pmmoto.particles.particles._load_uff_data(str(uff_file))
+
+    # Test lookup by name
+    assert "H" in element_table
+    assert "C" in element_table
+    assert "O" in element_table
+    assert "N" in element_table
+    assert "Cl" not in element_table
+
+    # Test lookup by atomic number
+    assert 1 in element_table
+    assert 6 in element_table
+    assert 8 in element_table
+    assert 7 in element_table
+
+    # Test values (diameter should be halved to radius)
+    atomic_num_h, radius_h = element_table["H"]
+    assert atomic_num_h == 1
+    assert radius_h == pytest.approx(2.886 / 2.0)
+
+    atomic_num_c, radius_c = element_table[6]
+    assert atomic_num_c == 6
+    assert radius_c == pytest.approx(3.851 / 2.0)
+
+
+def test_uff_radius_inputs():
+    """Ensures correct behavior for inputs"""
+    atom_names = ["C", "H"]
+    atomic_numbers = [6, 1]
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.particles.uff_radius(atom_names, atomic_numbers)
+
+
+def test_atom_initialization_order():
+    """Test initialization of atoms"""
+    sd = pmmoto.initialize((10, 10, 10))
+    atom_coordinates = np.array([[0.0, 0.0, 0.0], [0, 1.0, 1.0], [0.5, 0.5, 0.5]])
+    atom_coordinates_f = np.array(atom_coordinates, order="F")
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 2, 3])
+
+    assert not atom_coordinates_f.flags["C_CONTIGUOUS"]
+
+    particles_c = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids
+    )
+
+    particles_f = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates_f, atom_radii, atom_ids
+    )
+
+    np.testing.assert_array_equal(
+        particles_c.return_np_array(), particles_f.return_np_array()
+    )
+
+
+def test_atom_initialization():
+    """Test initialization of atoms"""
+    sd = pmmoto.initialize((10, 10, 10))
+    atom_coordinates = np.array(
+        [[0.0, 0.0, 0.0], [0, 1.0, 1.0], [0.5, 0.5, 0.5], [1.1, 1.1, 1.1]]
+    )
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 2, 3, 1])
+
+    # Trim last atom
+    particles = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, trim_within=True
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array([[0.0, 0.0, 0.0, 0.2], [0.0, 1.0, 1.0, 0.1], [0.5, 0.5, 0.5, 0.05]]),
+    )
+
+    # Trim intersecting so keep last atom as intersects boundary
+    particles = pmmoto.particles.initialize_atoms(
+        sd, atom_coordinates, atom_radii, atom_ids, trim_intersecting=True
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 0.2],
+                [0.0, 1.0, 1.0, 0.1],
+                [0.5, 0.5, 0.5, 0.05],
+                [1.1, 1.1, 1.1, 0.2],
+            ]
+        ),
+    )
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        trim_within=True,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array([[0.0, 0.0, 0.0, 0.2], [0.0, 1.0, 1.0, 0.1], [0.5, 0.5, 0.5, 0.05]]),
+    )
+
+
+def test_atom_initialization_periodic():
+    """Tests for periodic atoms"""
+    atom_coordinates = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]])
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 3])
+
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+    )
+    sd = pmmoto.initialize((10, 10, 10), boundary_types=boundary_types)
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array([[0.0, 0.0, 0.0, 0.2], [1.0, 0.0, 0.0, 0.2], [0.5, 0.5, 0.5, 0.05]]),
+    )
+
+
+def test_atom_initialization_fully_periodic():
+    """Tests for periodic atoms for all sides"""
+    atom_coordinates = np.array([[0.01, 0.01, 0.01], [0.5, 0.5, 0.5]])
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 3])
+
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+    )
+    sd = pmmoto.initialize((10, 10, 10), boundary_types=boundary_types)
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array(
+            [
+                [0.01, 0.01, 0.01, 0.2],
+                [0.01, 0.01, 1.01, 0.2],
+                [0.01, 1.01, 0.01, 0.2],
+                [0.01, 1.01, 1.01, 0.2],
+                [1.01, 0.01, 0.01, 0.2],
+                [1.01, 0.01, 1.01, 0.2],
+                [1.01, 1.01, 0.01, 0.2],
+                [1.01, 1.01, 1.01, 0.2],
+                [0.5, 0.5, 0.5, 0.05],
+            ]
+        ),
+    )
+
+
+def test_atom_initialization_periodic_none_add():
+    """Tests for periodic atoms where periodic boundaries but not atoms to add"""
+    atom_coordinates = np.array([[0.25, 0.25, 0.25], [0.5, 0.5, 0.5]])
+
+    atom_radii = {1: 0.2, 2: 0.1, 3: 0.05}
+    atom_ids = np.array([1, 3])
+
+    boundary_types = (
+        (pmmoto.BoundaryType.PERIODIC, pmmoto.BoundaryType.PERIODIC),
+        (pmmoto.BoundaryType.END, pmmoto.BoundaryType.END),
+        (pmmoto.BoundaryType.WALL, pmmoto.BoundaryType.WALL),
+    )
+    sd = pmmoto.initialize((10, 10, 10), boundary_types=boundary_types)
+
+    # Trim within and add periodic but no periodic boundaries!
+    particles = pmmoto.particles.initialize_atoms(
+        sd,
+        atom_coordinates,
+        atom_radii,
+        atom_ids,
+        add_periodic=True,
+    )
+
+    np.testing.assert_array_equal(
+        particles.return_np_array(),
+        np.array([[0.25, 0.25, 0.25, 0.2], [0.5, 0.5, 0.5, 0.05]]),
+    )
+
+
+def test_init_sphere_trim():
+    """Tests for trimming spheres"""
+    sd = pmmoto.initialize((10, 10, 10))
+    spheres_in = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0, 1.0, 1.0],
+            [0.5, 0.5, 0.5],
+            [1.1, 1.1, 1.1],
+        ]
+    )
+    radii_in = np.array([1.0, 0.5, 0.2, 0.5])
+    spheres = pmmoto.particles.initialize_spheres(
+        sd, spheres_in, radii=radii_in, trim_within=True
+    )
+    np.testing.assert_array_equal(
+        spheres.return_np_array(),
+        np.array(
+            [
+                [0.0, 0.0, 0.0, 1.0],
+                [0, 1.0, 1.0, 0.5],
+                [0.5, 0.5, 0.5, 0.2],
+            ]
+        ),
+    )

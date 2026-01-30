@@ -209,11 +209,12 @@ class Face(Feature):
             int: The stride value corresponding to the active axis.
 
         """
+        out_stride = 0
         for feature_id, stride in zip(self.feature_id, strides):
             if feature_id != 0:
-                return stride
+                out_stride = stride
 
-        raise ValueError("All feature_id components are zero; no valid stride found.")
+        return out_stride
 
     def get_direction(self) -> bool:
         """Determine if the face is point in the forward direction.
@@ -255,15 +256,14 @@ class Face(Feature):
 
     def map_to_index(self) -> int:
         """Return the 1d-index for face."""
+        index = -1
         for dim, f_id in enumerate(self.feature_id):
             if f_id < 0:
-                return dim * 2
+                index = dim * 2
             elif f_id > 0:
-                return dim * 2 + 1
+                index = dim * 2 + 1
 
-        raise ValueError(
-            "Feature ID does not correspond to a face (no nonzero entries)."
-        )
+        return index
 
 
 class Edge(Feature):

@@ -3,7 +3,6 @@
 import pytest
 import pmmoto
 import numpy as np
-from mpi4py import MPI
 
 
 def test_porosimetry_sizes():
@@ -22,16 +21,23 @@ def test_porosimetry_sizes():
     values = pmmoto.filters.porosimetry.get_sizes(
         min_log_value, max_value, num_values, "log"
     )
-    # print(values)
-    # log test
+
     np.testing.assert_array_almost_equal(values, [10.0, 4.64158883, 2.15443469, 1.0])
 
 
-@pytest.mark.xfail
 def test_porosimetry_sizes_input_fail():
     """Ensuring checks are behaving correctly"""
-    _ = pmmoto.filters.porosimetry.get_sizes(5, 1, 5)
-    _ = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.porosimetry.get_sizes(5, 1, 5)
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.porosimetry.get_sizes(0, 10, 0)
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.porosimetry.get_sizes(0, 10, 5, spacing="log")
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.porosimetry.get_sizes(0, 10, 5, spacing="undefined")
 
 
 def test_modes():
@@ -55,12 +61,21 @@ def test_modes():
     )
 
     pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres)
-    morph = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "morph")
-    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "distance")
-    hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, "hybrid")
+    morph = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, mode="morph")
+    dt_mode = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, mode="distance")
+    hybrid = pmmoto.filters.porosimetry.porosimetry(sd, pm, radius, mode="hybrid")
+    diff_radii = pmmoto.filters.porosimetry.porosimetry(
+        sd, pm, [radius, radius], mode="morph"
+    )
 
     np.testing.assert_array_almost_equal(morph, dt_mode)
     np.testing.assert_array_almost_equal(morph, hybrid)
+    np.testing.assert_array_almost_equal(morph, diff_radii)
+
+    with pytest.raises(ValueError):
+        _ = pmmoto.filters.porosimetry.porosimetry(
+            sd, pm, [radius, radius, radius], mode="morph"
+        )
 
 
 def test_porosimetry_inlet():
@@ -84,58 +99,116 @@ def test_porosimetry_inlet():
         subdomain=sd, porous_media=pm, radius=radius, mode="morph", inlet=True
     )
 
+    assert not np.array_equal(morph_no_inlet, morph_inlet)
 
-@pytest.mark.skip
+
+def test_porosimetry():
+    """Test generation of pore size distribution"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    radius = 0.03333333333333334
+
+    hybrid_psd = pmmoto.filters.porosimetry.porosimetry(
+        subdomain=sd, porous_media=pm, radius=radius, mode="hybrid"
+    )
+    dist_psd = pmmoto.filters.porosimetry.porosimetry(
+        subdomain=sd, porous_media=pm, radius=radius, mode="distance"
+    )
+    morph_psd = pmmoto.filters.porosimetry.porosimetry(
+        subdomain=sd, porous_media=pm, radius=radius, mode="morph"
+    )
+
+    np.testing.assert_array_equal(hybrid_psd, dist_psd)
+    np.testing.assert_array_equal(hybrid_psd, morph_psd)
+
+
 def test_pore_size_distribution():
-    """Test generation of pore size distribution for an inkbottle"""
-    voxels = (560, 120, 120)
-    box = ((0.0, 14.0), (-1.5, 1.5), (-1.5, 1.5))
-    inlet = ((0, 1), (0, 0), (0, 0))
-    sd = pmmoto.initialize(voxels, box, inlet=inlet)
-    pm = pmmoto.domain_generation.gen_pm_inkbottle(sd)
-    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=True)
+    """Test generation of pore size distribution"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
 
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/inkbottle_ps_distribution",
-        sd,
-        pm.img,
-        additional_img={"psd": img, "edt": pm.distance},
+    hybrid_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, inlet=False, mode="hybrid"
+    )
+    dist_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, inlet=False, mode="distance"
+    )
+    morph_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, inlet=False, mode="morph"
     )
 
+    np.testing.assert_array_equal(hybrid_psd, dist_psd)
+    np.testing.assert_array_equal(hybrid_psd, morph_psd)
 
-@pytest.mark.skip
-def test_lammps_psd():
-    """Test for reading membrane files for psd."""
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-
-    lammps_file = "tests/test_data/LAMMPS/membranedata.gz"
-
-    positions, types, box, time = pmmoto.io.data_read.read_lammps_atoms(lammps_file)
-
-    unique_types = np.unique(types)
-    radii = {}
-    for _id in unique_types:
-        radii[_id] = 2
-
-    # ignore reservoirs
-    box[2] = [-100, 100]
-
-    sd = pmmoto.initialize(
-        voxels=(500, 500, 500),
-        box=box,
-        rank=rank,
-        subdomains=(2, 2, 2),
-        boundary_types=((2, 2), (2, 2), (2, 2)),
-        verlet_domains=[20, 20, 20],
+    radius = 0.03333333333333334
+    float_dist_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, radii=radius, inlet=False, mode="distance"
     )
 
-    pm = pmmoto.domain_generation.gen_pm_atom_domain(sd, positions, radii, types)
-    img = pmmoto.filters.porosimetry.pore_size_distribution(sd, pm, inlet=False)
-
-    pmmoto.io.output.save_img_data_parallel(
-        "data_out/membrane_binary_map",
-        sd,
-        pm.img,
-        additional_img={"psd": img},
+    radius = [0.03333333333333334]
+    list_dist_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, radii=radius, inlet=False, mode="distance"
     )
+
+    radius = np.array([0.03333333333333334])
+    np_dist_psd = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, radii=radius, inlet=False, mode="distance"
+    )
+
+    np.testing.assert_array_equal(float_dist_psd, list_dist_psd)
+    np.testing.assert_array_equal(float_dist_psd, np_dist_psd)
+
+
+def test_plot_pore_size_distribution_pdf(tmp_path):
+    """Test plot_pore_size_distribution with PDF mode"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    pore_size_img = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, num_radii=2, inlet=False, mode="hybrid"
+    )
+
+    output_file = str(tmp_path / "test_output")
+    pmmoto.filters.porosimetry.plot_pore_size_distribution(
+        file_name=output_file,
+        subdomain=sd,
+        pore_size_image=pore_size_img,
+        plot_type="pdf",
+    )
+
+    # Check that file was created (only on rank 0)
+    if sd.rank == 0:
+        expected_file = tmp_path / "test_output_pore_size_distribution.png"
+        assert expected_file.exists()
+
+
+def test_plot_pore_size_distribution_cdf(tmp_path):
+    """Test plot_pore_size_distribution with CDF mode"""
+    voxels = (30, 30, 30)
+    sd = pmmoto.initialize(voxels)
+    spheres = np.array([[0.5, 0.5, 0.5, 0.1]])
+    pm = pmmoto.domain_generation.gen_pm_spheres_domain(sd, spheres, invert=True)
+
+    pore_size_img = pmmoto.filters.porosimetry.pore_size_distribution(
+        sd, pm, num_radii=2, inlet=False, mode="hybrid"
+    )
+
+    output_file = str(tmp_path / "test_cdf_output")
+    pmmoto.filters.porosimetry.plot_pore_size_distribution(
+        file_name=output_file,
+        subdomain=sd,
+        pore_size_image=pore_size_img,
+        plot_type="cdf",
+    )
+
+    # Check that file was created (only on rank 0)
+    if sd.rank == 0:
+        expected_file = tmp_path / "test_cdf_output_pore_size_distribution.png"
+        assert expected_file.exists()

@@ -1,15 +1,21 @@
 """test_average.py"""
 
-import numpy as np
 import pmmoto
-from mpi4py import MPI
 import pytest
+from mpi4py import MPI
+import numpy as np
 
 
 def test_linear_1d() -> None:
     """Calculate the average of an image along a given dimension"""
     sd = pmmoto.initialize((10, 10, 10))
     img = pmmoto.domain_generation.gen_img_linear(sd.voxels, 0)
+
+    with pytest.raises(ValueError):
+        pmmoto.analysis.average.average_image_along_axis(sd, img, (0, 0))
+
+    with pytest.raises(ValueError):
+        pmmoto.analysis.average.average_image_along_axis(sd, img, (3, 0))
 
     average_1d = pmmoto.analysis.average.average_image_along_axis(sd, img, 0)
 

@@ -157,9 +157,9 @@ class BoundedRDF(RDF):
         bounds[0] = self.find_min_radius(rdf, eps)
         g_max = np.max(rdf)
         if g_max < 1.0:
-            bounds[1] = int(np.argmax(g_max))
+            bounds[1] = int(np.argmax(rdf))
         else:
-            bounds[1] = self.find_max_radius(1.0)
+            bounds[1] = self.find_max_radius(1.0, rdf)
 
         return bounds
 
@@ -170,31 +170,46 @@ class BoundedRDF(RDF):
             rdf (np.ndarray): Array of RDF values.
             eps (float, optional): Epsilon threshold.
 
+        Raises ValueError If no value of g(r) is smaller than eps.
+
         Returns:
             int: Index of minimum radius.
 
         """
         indices = np.where(rdf < eps)[0]
 
-        if len(indices) == 0:
-            return 0
+        if indices.size == 0:
+            raise ValueError(
+                f"No RDF values found below eps={eps}. " f"min(g(r))={np.min(rdf):.3e}"
+            )
 
         return int(indices[0])
 
-    def find_max_radius(self, rdf_value: float) -> int:
-        """Find the smallest r from the data so all g(r) values are non-zero after r.
+    def find_max_radius(
+        self,
+        rdf_value: float,
+        rdf: NDArray[np.floating[Any]],
+    ) -> int:
+        """Return the smallest index r such that g(r) > rdf_value.
 
         Args:
-            rdf_value: rdf value
+            rdf_value: rdf value for cutoff
+            rdf (np.ndarray): rdf values
+
+        Raises:
+            ValueError If g(r) never exceeds rdf_value.
 
         Returns:
             int: Index of maximum radius.
 
         """
-        find_r = rdf_value - self.rdf
-        indices = np.where([find_r < 0])[1]
-        if len(indices) == 0:
-            return 0
+        indices = np.flatnonzero(rdf > rdf_value)
+
+        if indices.size == 0:
+            raise ValueError(
+                f"RDF never exceeds rdf_value={rdf_value}. "
+                f"max(g(r))={np.max(rdf):.3e}"
+            )
 
         return int(indices[0])
 
