@@ -7,10 +7,10 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <zlib.h>
-#include <dlfcn.h>
 
 #include <algorithm>
 #include <charconv>
@@ -163,7 +163,7 @@ gzip_uncompressed_size_from_footer(const std::string& filename)
 }
 
 #ifdef HAVE_LIBDEFLATE
-  #include <libdeflate.h>
+#include <libdeflate.h>
 #endif
 
 static inline std::string
@@ -194,45 +194,53 @@ readGzipFile_fast_zlib(const std::string& filename)
 
     size_t actual = 0;
     libdeflate_result res = libdeflate_gzip_decompress(
-        dec,
-        comp.data(), comp.size(),
-        out.data(), out.size(),
-        &actual);
+        dec, comp.data(), comp.size(), out.data(), out.size(), &actual);
 
-    if (res == LIBDEFLATE_INSUFFICIENT_SPACE) {
+    if (res == LIBDEFLATE_INSUFFICIENT_SPACE)
+    {
         out.resize(out.size() * 2 + 65536);
         res = libdeflate_gzip_decompress(
-            dec,
-            comp.data(), comp.size(),
-            out.data(), out.size(),
-            &actual);
+            dec, comp.data(), comp.size(), out.data(), out.size(), &actual);
     }
     libdeflate_free_decompressor(dec);
 
-    if (res != LIBDEFLATE_SUCCESS) {
-        throw std::runtime_error("libdeflate_gzip_decompress failed: " + std::to_string(res));
+    if (res != LIBDEFLATE_SUCCESS)
+    {
+        throw std::runtime_error("libdeflate_gzip_decompress failed: " +
+                                 std::to_string(res));
     }
     out.resize(actual);
 
     auto t2 = clock::now();
 
-    if (std::getenv("PMMOTO_ZLIB_DEBUG")) {
-        auto ms = [](auto a, auto b) { return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count(); };
+    if (std::getenv("PMMOTO_ZLIB_DEBUG"))
+    {
+        auto ms = [](auto a, auto b)
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(b - a)
+                .count();
+        };
         const char* libpath = "?";
-    #if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__linux__)
         Dl_info info{};
-        if (dladdr((void*)&libdeflate_gzip_decompress, &info) && info.dli_fname) libpath = info.dli_fname;
-    #endif
-        std::fprintf(stderr, "[pmmoto.io] gz=%s read=%lldms inflate=%lldms zlib=libdeflate lib=%s\n",
-                     filename.c_str(), (long long)ms(t0, t1), (long long)ms(t1, t2), libpath);
+        if (dladdr((void*)&libdeflate_gzip_decompress, &info) && info.dli_fname)
+            libpath = info.dli_fname;
+#endif
+        std::fprintf(stderr,
+                     "[pmmoto.io] gz=%s read=%lldms inflate=%lldms "
+                     "zlib=libdeflate lib=%s\n",
+                     filename.c_str(),
+                     (long long)ms(t0, t1),
+                     (long long)ms(t1, t2),
+                     libpath);
         std::fflush(stderr);
     }
     return out;
 #else
     // Fallback: zlib inflate
-    size_t out_size = gzip_uncompressed_size_from_footer(filename);
-    std::string out;
-    out.resize(out_size);
+    // size_t out_size = gzip_uncompressed_size_from_footer(filename);
+    // std::string out;
+    // out.resize(out_size);
 
     z_stream strm{};
     strm.next_in = reinterpret_cast<Bytef*>(comp.data());
