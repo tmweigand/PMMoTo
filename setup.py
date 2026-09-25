@@ -85,7 +85,6 @@ def find_libdeflate():
 # common fast flags
 base_compile_args = [
     "-O3",
-    "-ffast-math",
     "-funroll-loops",
     "-fomit-frame-pointer",
     "-fno-math-errno",
