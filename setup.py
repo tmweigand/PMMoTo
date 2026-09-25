@@ -97,7 +97,7 @@ extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
     extra_link_args += ["-lm"]
-    if _link_flag_supported("-lmvec"):
+    if _flag_supported("-lmvec"):
         extra_link_args += ["-lmvec"]
     extra_link_args += ["-ldl"]  # for dladdr/Dl_info
     if os.environ.get("PMMOTO_NATIVE") == "1":
