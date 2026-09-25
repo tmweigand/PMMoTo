@@ -5,4 +5,6 @@ from numpy.typing import NDArray
 
 def read_lammps_atoms(
     filename: str, type_map: None | dict[tuple[int, float], int] = None
-) -> tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float]: ...
+) -> tuple[
+    NDArray[np.uint64], NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float
+]: ...

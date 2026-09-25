@@ -66,7 +66,7 @@ def test_lammps_file_read():
     assert len(types) == positions.shape[0]
     assert domain.shape == (3, 2)
 
-    c_positions, c_types, c_domain, time = pmmoto.io.data_read.read_lammps_atoms(
+    _, c_positions, c_types, c_domain, time = pmmoto.io.data_read.read_lammps_atoms(
         membrane_file
     )
 
