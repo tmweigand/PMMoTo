@@ -53,6 +53,7 @@ struct LammpsData
     std::vector<uint64_t> atom_ids;
     std::vector<uint8_t> atom_types;
     std::vector<double> atom_positions;
+    std::vector<double> atom_masses;
     std::vector<std::vector<double> > domain_data;
     double timestep = 0.0;
 };
@@ -427,8 +428,10 @@ parse_atom_fields(const char* p,
                   const char* end,
                   uint64_t& id_out,
                   int& type_out,
+                  double& mass,
                   double coords[3],
-                  double& charge_out)
+                  double& charge_out,
+                  bool unwrapped_coordinates)
 {
     // Prefetch next cache line (64 bytes ahead)
     PREFETCH_READ(p + 64);
@@ -440,15 +443,33 @@ parse_atom_fields(const char* p,
     p = skip_spaces(p, end);
     p = parse_int_ptr(p, end, type_out);
     p = skip_spaces(p, end);
-    p = skip_token(p, end);
+    p = parse_double_ptr(p, end, mass);
+    // p = skip_token(p, end);
     p = skip_spaces(p, end);
     p = parse_double_ptr(p, end, charge_out);
     p = skip_spaces(p, end);
-    p = parse_double_ptr(p, end, coords[0]);
-    p = skip_spaces(p, end);
-    p = parse_double_ptr(p, end, coords[1]);
-    p = skip_spaces(p, end);
-    p = parse_double_ptr(p, end, coords[2]);
+    if (!unwrapped_coordinates)
+    {
+        p = parse_double_ptr(p, end, coords[0]);
+        p = skip_spaces(p, end);
+        p = parse_double_ptr(p, end, coords[1]);
+        p = skip_spaces(p, end);
+        p = parse_double_ptr(p, end, coords[2]);
+    }
+    else
+    {
+        p = skip_token(p, end);
+        p = skip_spaces(p, end);
+        p = skip_token(p, end);
+        p = skip_spaces(p, end);
+        p = skip_token(p, end);
+        p = skip_spaces(p, end);
+        p = parse_double_ptr(p, end, coords[0]);
+        p = skip_spaces(p, end);
+        p = parse_double_ptr(p, end, coords[1]);
+        p = skip_spaces(p, end);
+        p = parse_double_ptr(p, end, coords[2]);
+    }
 
     return p;
 }
@@ -472,7 +493,8 @@ parse_lammps_atoms_buffer(
     const char* buf,
     const char* end,
     LammpsData& data,
-    const std::map<std::pair<int, double>, int>* id_map = nullptr)
+    const std::map<std::pair<int, double>, int>* id_map = nullptr,
+    bool unwrapped_coordinates = false)
 {
     const char* p = buf;
     const char* line_s = nullptr;
@@ -495,6 +517,7 @@ parse_lammps_atoms_buffer(
     data.atom_ids.resize(natoms);
     data.atom_types.resize(natoms);
     data.atom_positions.resize(3 * natoms);
+    data.atom_masses.resize(natoms);
     data.domain_data.resize(3, std::vector<double>(2));
 
     read_line(p, end, line_s, line_e);
@@ -527,11 +550,13 @@ parse_lammps_atoms_buffer(
     uint64_t* ids_ptr = data.atom_ids.data();
     uint8_t* types_ptr = data.atom_types.data();
     double* pos_ptr = data.atom_positions.data();
+    double* masses_ptr = data.atom_masses.data();
 
     // Prefetch write destinations
     PREFETCH_WRITE(ids_ptr);
     PREFETCH_WRITE(types_ptr);
     PREFETCH_WRITE(pos_ptr);
+    PREFETCH_WRITE(masses_ptr);
 
     while (LIKELY(i < natoms && p < end))
     {
@@ -539,8 +564,10 @@ parse_lammps_atoms_buffer(
         int type = 0;
         double q = 0.0;
         double xyz[3] = { 0.0, 0.0, 0.0 };
+        double mass = 0.0;
 
-        p = parse_atom_fields(p, end, id, type, xyz, q);
+        p = parse_atom_fields(
+            p, end, id, type, mass, xyz, q, unwrapped_coordinates);
 
         // Prefetch next write location
         if (LIKELY(i + 8 < natoms))
@@ -550,6 +577,7 @@ parse_lammps_atoms_buffer(
         }
 
         ids_ptr[i] = id;
+        masses_ptr[i] = mass;
 
         if (UNLIKELY(use_map))
         {
@@ -584,7 +612,8 @@ public:
     using AtomIdMap = std::map<std::pair<int, double>, int>;
 
     static LammpsData read_lammps_atoms(const std::string& filename,
-                                        const AtomIdMap* id_map = nullptr)
+                                        const AtomIdMap* id_map = nullptr,
+                                        bool unwrapped_coordinates = false)
     {
         LammpsData out;
 
@@ -592,15 +621,19 @@ public:
             filename.compare(filename.size() - 3, 3, ".gz") == 0)
         {
             std::string content = readGzipFile_fast_zlib(filename);
-            parse_lammps_atoms_buffer(
-                content.data(), content.data() + content.size(), out, id_map);
+            parse_lammps_atoms_buffer(content.data(),
+                                      content.data() + content.size(),
+                                      out,
+                                      id_map,
+                                      unwrapped_coordinates);
             return out;
         }
 
         MMapBuffer mm = map_file_readonly(filename);
         if (mm.ptr && mm.len)
         {
-            parse_lammps_atoms_buffer(mm.ptr, mm.ptr + mm.len, out, id_map);
+            parse_lammps_atoms_buffer(
+                mm.ptr, mm.ptr + mm.len, out, id_map, unwrapped_coordinates);
         }
         return out;
     }

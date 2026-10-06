@@ -36,7 +36,7 @@ cdef AtomIdMap dict_to_atom_id_map(object py_map):
         c_map.insert(entry)
     return c_map
 
-def read_lammps_atoms(str filename, type_map=None):
+def read_lammps_atoms(str filename, type_map=None, unwrapped_coordinates=False):
     cdef string cpp_filename = filename.encode('utf-8')
     cdef LammpsData data
     cdef const AtomIdMap* _type_map = NULL
@@ -53,7 +53,8 @@ def read_lammps_atoms(str filename, type_map=None):
             tmp_map = dict_to_atom_id_map(type_map)
             _type_map = &tmp_map
 
-    data = LammpsReader.read_lammps_atoms(cpp_filename,_type_map)
+    print("UNWRAPPED cython",unwrapped_coordinates)
+    data = LammpsReader.read_lammps_atoms(cpp_filename,_type_map, unwrapped_coordinates)
 
     cdef size_t n_atoms = data.atom_ids.size()
 
@@ -78,6 +79,13 @@ def read_lammps_atoms(str filename, type_map=None):
         dtype=np.uint8
     )
 
+    # Zero-copy view for masses
+    cdef double* masses_ptr = <double*> data.atom_masses.data()
+    atom_masses = np.frombuffer(
+        (<char*> masses_ptr)[:n_atoms * sizeof(double)],
+        dtype=np.float64
+    )
+
     domain = np.array(data.domain_data, dtype=np.float64)
 
-    return ids, positions, types, domain, data.timestep
+    return ids, positions, types, atom_masses, domain, data.timestep

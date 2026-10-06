@@ -158,7 +158,9 @@ def py_read_lammps_atoms(
 
 
 def read_lammps_atoms(
-    input_file: str, type_map: None | dict[tuple[int, float], int] = None
+    input_file: str,
+    type_map: None | dict[tuple[int, float], int] = None,
+    unwrapped_coordinates: bool = False,
 ) -> tuple[
     NDArray[np.uint64], NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float
 ]:
@@ -174,11 +176,12 @@ def read_lammps_atoms(
 
     """
     io_utils.check_file(input_file)
-    ids, positions, types, domain, timestep = _data_read.read_lammps_atoms(
-        input_file, type_map
+    print("UNWRAPPED", unwrapped_coordinates)
+    ids, positions, types, masses, domain, timestep = _data_read.read_lammps_atoms(
+        input_file, type_map, unwrapped_coordinates
     )
 
-    return ids, positions, types, domain, timestep
+    return ids, positions, types, masses, domain, timestep
 
 
 def read_atom_map(input_file: str) -> dict[int, dict[str, str]]:
