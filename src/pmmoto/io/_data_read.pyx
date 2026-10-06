@@ -53,7 +53,7 @@ def read_lammps_atoms(str filename, type_map=None, unwrapped_coordinates=False):
             tmp_map = dict_to_atom_id_map(type_map)
             _type_map = &tmp_map
 
-    print("UNWRAPPED cython",unwrapped_coordinates)
+    
     data = LammpsReader.read_lammps_atoms(cpp_filename,_type_map, unwrapped_coordinates)
 
     cdef size_t n_atoms = data.atom_ids.size()
