@@ -158,8 +158,14 @@ def py_read_lammps_atoms(
 
 
 def read_lammps_atoms(
-    input_file: str, type_map: None | dict[tuple[int, float], int] = None
-) -> tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float]:
+    input_file: str,
+    type_map: None | dict[tuple[int, float], int] = None,
+    unwrapped_coordinates: bool = False,
+    initial_iteration=None,
+    simulation_timestep=None,
+) -> tuple[
+    NDArray[np.uint64], NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float
+]:
     """Read atom positions and types from a LAMMPS file using C++ backend.
 
     Args:
@@ -172,11 +178,14 @@ def read_lammps_atoms(
 
     """
     io_utils.check_file(input_file)
-    positions, types, domain, timestep = _data_read.read_lammps_atoms(
-        input_file, type_map
+    ids, positions, types, masses, domain, timestep = _data_read.read_lammps_atoms(
+        input_file, type_map, unwrapped_coordinates
     )
 
-    return positions, types, domain, timestep
+    if timestep is not None and initial_iteration is not None:
+        timestep = (timestep - initial_iteration) * simulation_timestep
+
+    return ids, positions, types, masses, domain, timestep
 
 
 def read_atom_map(input_file: str) -> dict[int, dict[str, str]]:
