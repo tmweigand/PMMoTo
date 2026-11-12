@@ -23,16 +23,20 @@ if sys.platform == "win32":
 def _flag_supported(flag: str, lang: str = "c++") -> bool:
     compiler = os.environ.get("CXX", "clang++" if sys.platform == "darwin" else "c++")
     code = "int main(){return 0;}\n"
+
     with tempfile.TemporaryDirectory() as td:
-        src = os.path.join(td, "t.cc")
-        obj = os.path.join(td, "t.o")
+        src = os.path.join(td, "test.cc")
+        exe = os.path.join(td, "test")
+
         with open(src, "w") as f:
             f.write(code)
         try:
-            cmd = [compiler, "-Werror", "-x", lang, src, "-c", "-o", obj, flag]
+            cmd = [compiler, "-Werror", "-x", lang, src, "-o", exe, flag]
             return (
                 subprocess.run(
-                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                 ).returncode
                 == 0
             )
@@ -96,9 +100,15 @@ extra_link_args = ["-flto"]
 
 if sys.platform.startswith("linux"):
     extra_link_args += ["-lm"]
-    if _flag_supported("-lmvec"):
-        extra_link_args += ["-lmvec"]
+
+    # libmvec is a GNU glibc vector math library.
+    # It is not available in musl environments.
+    if platform.libc_ver()[0] == "glibc":
+        if _flag_supported("-lmvec"):
+            extra_link_args += ["-lmvec"]
+
     extra_link_args += ["-ldl"]  # for dladdr/Dl_info
+
     if os.environ.get("PMMOTO_NATIVE") == "1":
         _try_add(cpp_compile_args, "-march=native")
         _try_add(cpp_compile_args, "-mtune=native")
