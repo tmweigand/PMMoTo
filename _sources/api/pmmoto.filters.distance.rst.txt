@@ -1,0 +1,18 @@
+pmmoto.filters.distance package
+===============================
+
+.. automodule:: pmmoto.filters.distance
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+pmmoto.filters.distance.euclidean\_distance\_transform module
+-------------------------------------------------------------
+
+.. automodule:: pmmoto.filters.distance.euclidean_distance_transform
+   :members:
+   :show-inheritance:
+   :undoc-members:

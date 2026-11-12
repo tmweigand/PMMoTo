@@ -1,0 +1,192 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tox-Based Testing" href="tox.html" />
+    <link rel="prev" title="Managing Python Versions" href="python_versions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation for Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python_versions.html">Managing Python Versions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#single-python-workflow">Single-Python Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tox-workflow-recommended">Tox Workflow (Recommended)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tox.html">Tox-Based Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs.html">Building the Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing to PMMoTo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating and Uploading Releases to PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Linux Testing with Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Developer Guide</a></li>
+      <li class="breadcrumb-item active">Testing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_guide/testing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing">
+<h1>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h1>
+<dl class="simple">
+<dt>This project supports two testing workflows:</dt><dd><ul class="simple">
+<li><p>Running tests directly with a single Python interpreter</p></li>
+<li><p>Running the full multi-version and quality-check matrix using <code class="docutils literal notranslate"><span class="pre">tox</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<section id="single-python-workflow">
+<h2>Single-Python Workflow<a class="headerlink" href="#single-python-workflow" title="Link to this heading"></a></h2>
+<p>Run serial unit tests:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/
+</pre></div>
+</div>
+<p>MPI tests are marked with the pytest marker <code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.mpi()</span></code> and require the
+<code class="docutils literal notranslate"><span class="pre">pytest-mpi</span></code> plugin. Only tests decorated with this marker are executed when running MPI tests.
+For example, an MPI test function can be defined like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">mpi</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_parallel_function</span><span class="p">():</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>To run MPI tests with 8 processes:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mpiexec<span class="w"> </span>-n<span class="w"> </span><span class="m">8</span><span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>--only-mpi
+</pre></div>
+</div>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">--only-mpi</span></code> flag is implemented via <code class="docutils literal notranslate"><span class="pre">pytest-mpi</span></code>.</p></li>
+<li><p>Serial tests (without the marker) are skipped when using <code class="docutils literal notranslate"><span class="pre">--only-mpi</span></code>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On some shared systems, Open MPI may refuse to launch MPI jobs if the requested number of
+processes exceeds available CPU cores. In these cases, the <code class="docutils literal notranslate"><span class="pre">--oversubscribe</span></code> flag is required.
+The <code class="docutils literal notranslate"><span class="pre">tox</span></code> workflow handles this automatically, so you usually only need to worry about it
+when running <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> manually.</p>
+</div>
+</section>
+<section id="tox-workflow-recommended">
+<h2>Tox Workflow (Recommended)<a class="headerlink" href="#tox-workflow-recommended" title="Link to this heading"></a></h2>
+<p>To run the full test matrix:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tox
+</pre></div>
+</div>
+<dl class="simple">
+<dt>This runs:</dt><dd><ul class="simple">
+<li><p>Unit and MPI tests across all supported Python versions</p></li>
+<li><p>Linting, formatting, type checking, and coverage</p></li>
+</ul>
+</dd>
+</dl>
+<p>See <a class="reference internal" href="tox.html"><span class="doc">Tox-Based Testing</span></a> for details on the test matrix and available environments.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Running <code class="docutils literal notranslate"><span class="pre">tox</span></code> requires Python 3.10-3.12 for complete testing. See
+<a class="reference internal" href="python_versions.html"><span class="doc">Managing Python Versions</span></a> for installation instructions.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="python_versions.html" class="btn btn-neutral float-left" title="Managing Python Versions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tox.html" class="btn btn-neutral float-right" title="Tox-Based Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

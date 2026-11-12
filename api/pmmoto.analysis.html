@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto.analysis package &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pmmoto.core package" href="pmmoto.core.html" />
+    <link rel="prev" title="pmmoto package" href="pmmoto.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pmmoto.html">pmmoto package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.BoundaryType"><code class="docutils literal notranslate"><span class="pre">BoundaryType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pmmoto.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pmmoto.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.particles.html">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+          <li class="breadcrumb-item"><a href="pmmoto.html">pmmoto package</a></li>
+      <li class="breadcrumb-item active">pmmoto.analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pmmoto.analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pmmoto.analysis">
+<span id="pmmoto-analysis-package"></span><h1>pmmoto.analysis package<a class="headerlink" href="#module-pmmoto.analysis" title="Link to this heading"></a></h1>
+<p>Initialize the analysis subpackage for PMMoTo.</p>
+<p>Provides statistical, Minkowski, averaging, and binning analysis utilities.</p>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.analysis.average">
+<span id="pmmoto-analysis-average-module"></span><h2>pmmoto.analysis.average module<a class="headerlink" href="#module-pmmoto.analysis.average" title="Link to this heading"></a></h2>
+<p>average.py</p>
+<p>Functions for calculating averages of 3D images.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.analysis.average.average_image_along_axis">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.analysis.average.</span></span><span class="sig-name descname"><span class="pre">average_image_along_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.float64</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.analysis.average.average_image_along_axis" title="Link to this definition"></a></dt>
+<dd><p>Calculate the average of a 3D image along one or two dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – The subdomain object containing domain information</p></li>
+<li><p><strong>img</strong> – 3D numpy array representing the image</p></li>
+<li><p><strong>dimension</strong> – One or two dimensions along which to average (0=x, 1=y, 2=z)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reduced array (2D or 1D) of averaged values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.analysis.bins">
+<span id="pmmoto-analysis-bins-module"></span><h2>pmmoto.analysis.bins module<a class="headerlink" href="#module-pmmoto.analysis.bins" title="Link to this heading"></a></h2>
+<p>bins.py</p>
+<p>Bin utilities for PMMoTo, including 1D and radial bins, and distributed bin counting.</p>
+<p>This module provides classes and functions for binning data, such as atom locations,
+and for computing radial distribution functions (RDFs) and distributed bin statistics.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.analysis.bins.count_locations">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.analysis.bins.</span></span><span class="sig-name descname"><span class="pre">count_locations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Bin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pmmoto.analysis.bins.count_locations" title="Link to this definition"></a></dt>
+<dd><p>Count the number of atoms or objects in each bin.</p>
+<p>This function increments the bin values by counting the number of
+coordinates that fall into each bin along the specified dimension.
+If a subdomain is provided, the counts are summed across all processes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinates</strong> (<em>np.ndarray</em>) – Atom or object coordinates.</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>) – Dimension along which to bin.</p></li>
+<li><p><strong>bin</strong> (<em>Bin</em>) – Bin object. Results are stored in bin.values.</p></li>
+<li><p><strong>parallel</strong> (<em>bool</em>) – If the bins need to be summed in parallel</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Repeated calls to this function increment bin.values!</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.analysis.minkowski">
+<span id="pmmoto-analysis-minkowski-module"></span><h2>pmmoto.analysis.minkowski module<a class="headerlink" href="#module-pmmoto.analysis.minkowski" title="Link to this heading"></a></h2>
+<p>minkowski.py</p>
+<p>Minkowski functionals analysis for PMMoTo.</p>
+<p>This module provides routines to compute the four Minkowski functionals
+(volume, surface area, mean curvature, Euler characteristic) for a given
+binary image and a PMMoTo subdomain.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.analysis.minkowski.functionals">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.analysis.minkowski.</span></span><span class="sig-name descname"><span class="pre">functionals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.bool_</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.analysis.minkowski.functionals" title="Link to this definition"></a></dt>
+<dd><p>Calculate the Minkowski functionals for a subdomain.</p>
+<p>The algorithm skips the last index for boundary conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Subdomain object.</p></li>
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – Input binary image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(volume, surface_area, mean_curvature, euler_characteristic)</dt><dd><ul class="simple">
+<li><p>volume (float): Total volume of the pore space.</p></li>
+<li><p>surface_area (float): Total surface area of the pore space.</p></li>
+<li><p>mean_curvature (float): Integrated mean curvature of the pore space.</p></li>
+<li><p>euler_characteristic (float): Euler characteristic of the pore space.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The Minkowski functionals are defined as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}M_{0} (X) = \int_{X} d v, \\
+M_{1} (X) = \frac{1}{8} \int_{\delta X} d s, \\
+M_{2} (X) = \frac{1}{2 \pi^{2}} \int_{\delta X}  \frac{1}{2}
+    \left[\frac{1}{R_{1}} + \frac{1}{R_{2}}\right] d s, \\
+M_{3} (X) = \frac{3}{(4 \pi)^{2}} \int_{\delta X} \left[\frac{1}{R_{1}
+    R_{2}}\right] d s,\end{split}\]</div>
+<p>The returned values are computed for the “own” region of the subdomain,
+excluding padding and ghost regions, and are normalized by the voxel size.</p>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.analysis.stats">
+<span id="pmmoto-analysis-stats-module"></span><h2>pmmoto.analysis.stats module<a class="headerlink" href="#module-pmmoto.analysis.stats" title="Link to this heading"></a></h2>
+<p>Statistical analysis utilities for PMMoTo.</p>
+<p>Provides functions to compute global minimum and maximum values across subdomains.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.analysis.stats.get_maximum">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.analysis.stats.</span></span><span class="sig-name descname"><span class="pre">get_maximum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#pmmoto.analysis.stats.get_maximum" title="Link to this definition"></a></dt>
+<dd><p>Compute the global maximum value from a distributed image array.</p>
+<p>Depending on the <cite>own</cite> flag, the function either restricts the computation
+to the local portion of the image owned by the subdomain or uses the full image.
+If the domain is distributed across multiple subdomains, a parallel reduction is
+performed to obtain the global maximum.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> (<a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><em>Subdomain</em></a>) – The subdomain defining ownership within the domain.</p></li>
+<li><p><strong>img</strong> (<em>NDArray</em>) – The full image array containing data across all subdomains.</p></li>
+<li><p><strong>own</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, compute the maximum over the owned portion
+of the image only; otherwise, use the full image. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The global maximum value of the image, reduced across all processes
+if the domain is distributed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.analysis.stats.get_minimum">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.analysis.stats.</span></span><span class="sig-name descname"><span class="pre">get_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#pmmoto.analysis.stats.get_minimum" title="Link to this definition"></a></dt>
+<dd><p>Compute the global minimum value from a distributed image array.</p>
+<p>Depending on the <cite>own</cite> flag, the function either restricts the computation
+to the local portion of the image owned by the subdomain or uses the full image.
+If the domain is distributed across multiple subdomains, a parallel reduction is
+performed to obtain the global minimum.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> (<a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><em>Subdomain</em></a>) – The subdomain defining ownership within the domain.</p></li>
+<li><p><strong>img</strong> (<em>NDArray</em>) – The full image array containing data across all subdomains.</p></li>
+<li><p><strong>own</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, compute the minimum over the owned portion
+of the image only; otherwise, use the full image. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The global minimum value of the image, reduced across all processes
+if the domain is distributed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmmoto.html" class="btn btn-neutral float-left" title="pmmoto package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmmoto.core.html" class="btn btn-neutral float-right" title="pmmoto.core package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linux Testing with Docker &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Code of Conduct" href="code_of_conduct.html" />
+    <link rel="prev" title="Creating and Uploading Releases to PyPI" href="release.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation for Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python_versions.html">Managing Python Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tox.html">Tox-Based Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docs.html">Building the Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing to PMMoTo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating and Uploading Releases to PyPI</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Linux Testing with Docker</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-docker-is-used">Why Docker Is Used</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-the-docker-image">Building the Docker Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-docker-container">Running the Docker Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#accessing-the-container">Accessing the Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stopping-and-cleaning-up">Stopping and Cleaning Up</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">pmmoto</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Developer Guide</a></li>
+      <li class="breadcrumb-item active">Linux Testing with Docker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_guide/docker.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="linux-testing-with-docker">
+<h1>Linux Testing with Docker<a class="headerlink" href="#linux-testing-with-docker" title="Link to this heading"></a></h1>
+<p>This project includes a Docker-based workflow to enable testing in a Linux
+environment. This is primarily intended for development on macOS systems where
+Linux-specific behavior (e.g., MPI, filesystem semantics, or build tooling)
+cannot be tested natively.</p>
+<section id="why-docker-is-used">
+<h2>Why Docker Is Used<a class="headerlink" href="#why-docker-is-used" title="Link to this heading"></a></h2>
+<p>PMMoTo is developed primarily on macOS, but it targets Linux-based HPC and CI
+environments. Docker provides a lightweight and reproducible way to:</p>
+<ul class="simple">
+<li><p>Test Linux-only dependencies and build behavior</p></li>
+<li><p>Validate MPI-related functionality in a Linux environment</p></li>
+<li><p>Reproduce CI failures locally</p></li>
+<li><p>Avoid maintaining a separate Linux machine or virtual machine</p></li>
+</ul>
+<p>Using Docker ensures that tests closely match the environment used in GitHub
+Actions and production deployments.</p>
+</section>
+<section id="building-the-docker-image">
+<h2>Building the Docker Image<a class="headerlink" href="#building-the-docker-image" title="Link to this heading"></a></h2>
+<p>From the project root, build the Docker image:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>pmmoto-image<span class="w"> </span>.
+</pre></div>
+</div>
+<p>This command:</p>
+<ul class="simple">
+<li><p>Uses the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> in the repository root</p></li>
+<li><p>Installs all required system and Python dependencies</p></li>
+<li><p>Creates a reusable Linux testing environment</p></li>
+</ul>
+</section>
+<section id="running-the-docker-container">
+<h2>Running the Docker Container<a class="headerlink" href="#running-the-docker-container" title="Link to this heading"></a></h2>
+<p>Start a container and mount the local project directory:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>pmmoto-container<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/home/mpitest/pmmoto<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pmmoto-image
+</pre></div>
+</div>
+<p>This will:</p>
+<ul class="simple">
+<li><p>Run the container in detached mode (<code class="docutils literal notranslate"><span class="pre">-d</span></code>)</p></li>
+<li><p>Mount the current working directory into the container</p></li>
+<li><p>Allow code changes on the host to be immediately visible inside the container</p></li>
+</ul>
+<p>The container can be reused across multiple test runs.</p>
+</section>
+<section id="accessing-the-container">
+<h2>Accessing the Container<a class="headerlink" href="#accessing-the-container" title="Link to this heading"></a></h2>
+<p>To open an interactive shell inside the running container:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>pmmoto-container<span class="w"> </span>bash
+</pre></div>
+</div>
+<p>Once inside, navigate to the mounted project directory:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/home/mpitest/pmmoto
+</pre></div>
+</div>
+<p>From here, you can run tests, build wheels, or execute MPI commands as you would
+on a native Linux system.</p>
+</section>
+<section id="stopping-and-cleaning-up">
+<h2>Stopping and Cleaning Up<a class="headerlink" href="#stopping-and-cleaning-up" title="Link to this heading"></a></h2>
+<p>Stop the container:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>stop<span class="w"> </span>pmmoto-container
+</pre></div>
+</div>
+<p>Remove the container:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>rm<span class="w"> </span>pmmoto-container
+</pre></div>
+</div>
+<p>If needed, remove the image:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>rmi<span class="w"> </span>pmmoto-image
+</pre></div>
+</div>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Docker is intended for <strong>local Linux testing only</strong>, not production use.</p></li>
+<li><p>The mounted volume allows rapid iteration without rebuilding the image.</p></li>
+<li><p>If system dependencies change, rebuild the image to ensure consistency.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="release.html" class="btn btn-neutral float-left" title="Creating and Uploading Releases to PyPI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="code_of_conduct.html" class="btn btn-neutral float-right" title="Code of Conduct" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

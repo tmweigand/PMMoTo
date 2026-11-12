@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pmmoto.particles package &mdash; PMMoTo 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=02ca0aaa" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+    <link rel="shortcut icon" href="../_static/logo.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="pmmoto.io.evtk package" href="pmmoto.io.evtk.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PMMoTo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pmmoto</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pmmoto.html">pmmoto package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.BoundaryType"><code class="docutils literal notranslate"><span class="pre">BoundaryType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pmmoto.html#pmmoto.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pmmoto.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.analysis.html">pmmoto.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.core.html">pmmoto.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.domain_generation.html">pmmoto.domain_generation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.filters.html">pmmoto.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pmmoto.io.html">pmmoto.io package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pmmoto.particles package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PMMoTo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pmmoto</a></li>
+          <li class="breadcrumb-item"><a href="pmmoto.html">pmmoto package</a></li>
+      <li class="breadcrumb-item active">pmmoto.particles package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pmmoto.particles.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pmmoto.particles">
+<span id="pmmoto-particles-package"></span><h1>pmmoto.particles package<a class="headerlink" href="#module-pmmoto.particles" title="Link to this heading"></a></h1>
+<p>Initialize the particles subpackage for PMMoTo.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.convert_atoms_elements_to_ids">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.</span></span><span class="sig-name descname"><span class="pre">convert_atoms_elements_to_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.particles.convert_atoms_elements_to_ids" title="Link to this definition"></a></dt>
+<dd><p>Convert a list of atom names (C, H, N, O, etc.) to atomic IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>atom_elements</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of atom element names.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of atomic numbers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.initialize_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.</span></span><span class="sig-name descname"><span class="pre">initialize_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_masses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_intersecting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_within</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AtomMap</span></span></span><a class="headerlink" href="#pmmoto.particles.initialize_atoms" title="Link to this definition"></a></dt>
+<dd><p>Initialize a list of particles efficiently with memory management.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Domain subdivision object.</p></li>
+<li><p><strong>atom_coordinates</strong> (<em>np.ndarray</em>) – Array of shape (n_atoms, 3) with xyz coordinates.</p></li>
+<li><p><strong>atom_radii</strong> (<em>dict</em>) – Dictionary of atom types to radii or array.</p></li>
+<li><p><strong>atom_ids</strong> (<em>np.ndarray</em>) – Array of atom type IDs.</p></li>
+<li><p><strong>atom_masses</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of atom masses.</p></li>
+<li><p><strong>by_type</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to organize atoms by type.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic images at boundaries.</p></li>
+<li><p><strong>set_own</strong> (<em>bool</em><em>, </em><em>optional</em>) – Mark particles owned by this subdomain.</p></li>
+<li><p><strong>trim_intersecting</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles intersecting boundary.</p></li>
+<li><p><strong>trim_within</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles fully within boundary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Python Class that wraps atoms. See _particles.pyx.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.initialize_spheres">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.</span></span><span class="sig-name descname"><span class="pre">initialize_spheres</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spheres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_intersecting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_within</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PySphereList</span></span></span><a class="headerlink" href="#pmmoto.particles.initialize_spheres" title="Link to this definition"></a></dt>
+<dd><p>Initialize a list of spheres.</p>
+<p>Particles that do not cross the subdomain boundary are deleted.
+If add_periodic: particles that cross the domain boundary will be added.
+If set_own: particles owned by a subdomain will be identified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Domain subdivision object.</p></li>
+<li><p><strong>spheres</strong> (<em>np.ndarray</em>) – Array of sphere positions and radii.</p></li>
+<li><p><strong>radii</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array of radii if not included in spheres.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic images at boundaries.</p></li>
+<li><p><strong>set_own</strong> (<em>bool</em><em>, </em><em>optional</em>) – Mark particles owned by this subdomain.</p></li>
+<li><p><strong>trim_intersecting</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles intersecting boundary.</p></li>
+<li><p><strong>trim_within</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles fully within boundary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Python Class that wraps spheres. See _particles.pyx.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AtomMap</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.uff_radius">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.</span></span><span class="sig-name descname"><span class="pre">uff_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.particles.uff_radius" title="Link to this definition"></a></dt>
+<dd><p>Collect the radius by Atom Name or Atomic Number, but not both.</p>
+<p>Units of radii are Angstroms!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atom_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – List of element names.</p></li>
+<li><p><strong>atomic_numbers</strong> (<em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – List of atomic numbers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping atomic numbers to their radii.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, float]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both or neither atom_names and atomic_numbers are provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pmmoto.particles.atom_universal_force_field">
+<span id="pmmoto-particles-atom-universal-force-field-module"></span><h2>pmmoto.particles.atom_universal_force_field module<a class="headerlink" href="#module-pmmoto.particles.atom_universal_force_field" title="Link to this heading"></a></h2>
+<p>Universal force field atom radii data for PMMoTo.</p>
+<p>Provides a dictionary mapping element names or atomic numbers to
+(atomic_number, radius) pairs, where radius is sigma/2 in Angstroms.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.atom_universal_force_field.atom_universal_force_field">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.atom_universal_force_field.</span></span><span class="sig-name descname"><span class="pre">atom_universal_force_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.particles.atom_universal_force_field.atom_universal_force_field" title="Link to this definition"></a></dt>
+<dd><p>Return universal force field data for atom radii.</p>
+<p>Provides a dictionary mapping element names or atomic numbers to
+(atomic_number, sigma/2) pairs, sigma is in Angstroms</p>
+<blockquote>
+<div><p>and divided by 2 to yield radius.</p>
+</div></blockquote>
+<p>Data source:
+<a class="reference external" href="https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms">https://github.com/SarkisovGitHub/PoreBlazer/blob/main/src/UFF.atoms</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mapping of element names or atomic numbers to (atomic_number, radius).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pmmoto.particles.particles">
+<span id="pmmoto-particles-particles-module"></span><h2>pmmoto.particles.particles module<a class="headerlink" href="#module-pmmoto.particles.particles" title="Link to this heading"></a></h2>
+<p>particles.py</p>
+<p>Particle initialization and utility functions for PMMoTo.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.particles.convert_atoms_elements_to_ids">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.particles.</span></span><span class="sig-name descname"><span class="pre">convert_atoms_elements_to_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.particles.particles.convert_atoms_elements_to_ids" title="Link to this definition"></a></dt>
+<dd><p>Convert a list of atom names (C, H, N, O, etc.) to atomic IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>atom_elements</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of atom element names.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of atomic numbers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.particles.initialize_atoms">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.particles.</span></span><span class="sig-name descname"><span class="pre">initialize_atoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.integer</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_masses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_intersecting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_within</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AtomMap</span></span></span><a class="headerlink" href="#pmmoto.particles.particles.initialize_atoms" title="Link to this definition"></a></dt>
+<dd><p>Initialize a list of particles efficiently with memory management.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Domain subdivision object.</p></li>
+<li><p><strong>atom_coordinates</strong> (<em>np.ndarray</em>) – Array of shape (n_atoms, 3) with xyz coordinates.</p></li>
+<li><p><strong>atom_radii</strong> (<em>dict</em>) – Dictionary of atom types to radii or array.</p></li>
+<li><p><strong>atom_ids</strong> (<em>np.ndarray</em>) – Array of atom type IDs.</p></li>
+<li><p><strong>atom_masses</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of atom masses.</p></li>
+<li><p><strong>by_type</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to organize atoms by type.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic images at boundaries.</p></li>
+<li><p><strong>set_own</strong> (<em>bool</em><em>, </em><em>optional</em>) – Mark particles owned by this subdomain.</p></li>
+<li><p><strong>trim_intersecting</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles intersecting boundary.</p></li>
+<li><p><strong>trim_within</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles fully within boundary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Python Class that wraps atoms. See _particles.pyx.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.particles.initialize_cylinders">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.particles.</span></span><span class="sig-name descname"><span class="pre">initialize_cylinders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cylinders</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PyCylinderList</span></span></span><a class="headerlink" href="#pmmoto.particles.particles.initialize_cylinders" title="Link to this definition"></a></dt>
+<dd><p>Initialize a list of cylindersd</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> (<a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><em>Subdomain</em></a><em> | </em><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><em>PaddedSubdomain</em></a><em> | </em><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><em>VerletSubdomain</em></a>) – pmmoto subdomain</p></li>
+<li><p><strong>cylinders</strong> (<em>NDArray</em><em>[</em><em>np.floating</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – array of cylinder data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PyCylinderList</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.particles.initialize_spheres">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.particles.</span></span><span class="sig-name descname"><span class="pre">initialize_spheres</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subdomain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain.Subdomain" title="pmmoto.core.subdomain.Subdomain"><span class="pre">Subdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_padded.PaddedSubdomain" title="pmmoto.core.subdomain_padded.PaddedSubdomain"><span class="pre">PaddedSubdomain</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pmmoto.core.html#pmmoto.core.subdomain_verlet.VerletSubdomain" title="pmmoto.core.subdomain_verlet.VerletSubdomain"><span class="pre">VerletSubdomain</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spheres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">np.floating</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_own</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_intersecting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_within</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PySphereList</span></span></span><a class="headerlink" href="#pmmoto.particles.particles.initialize_spheres" title="Link to this definition"></a></dt>
+<dd><p>Initialize a list of spheres.</p>
+<p>Particles that do not cross the subdomain boundary are deleted.
+If add_periodic: particles that cross the domain boundary will be added.
+If set_own: particles owned by a subdomain will be identified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subdomain</strong> – Domain subdivision object.</p></li>
+<li><p><strong>spheres</strong> (<em>np.ndarray</em>) – Array of sphere positions and radii.</p></li>
+<li><p><strong>radii</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array of radii if not included in spheres.</p></li>
+<li><p><strong>add_periodic</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add periodic images at boundaries.</p></li>
+<li><p><strong>set_own</strong> (<em>bool</em><em>, </em><em>optional</em>) – Mark particles owned by this subdomain.</p></li>
+<li><p><strong>trim_intersecting</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles intersecting boundary.</p></li>
+<li><p><strong>trim_within</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove particles fully within boundary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Python Class that wraps spheres. See _particles.pyx.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AtomMap</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pmmoto.particles.particles.uff_radius">
+<span class="sig-prename descclassname"><span class="pre">pmmoto.particles.particles.</span></span><span class="sig-name descname"><span class="pre">uff_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pmmoto.particles.particles.uff_radius" title="Link to this definition"></a></dt>
+<dd><p>Collect the radius by Atom Name or Atomic Number, but not both.</p>
+<p>Units of radii are Angstroms!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atom_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – List of element names.</p></li>
+<li><p><strong>atomic_numbers</strong> (<em>List</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – List of atomic numbers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping atomic numbers to their radii.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, float]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both or neither atom_names and atomic_numbers are provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmmoto.io.evtk.html" class="btn btn-neutral float-left" title="pmmoto.io.evtk package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy M. Weigand.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
