@@ -6,8 +6,9 @@ used in PMMoTo, including sphere packs, LAMMPS files, atom maps, and RDF data.
 
 import os
 import gzip
+from typing import Any
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 from . import _data_read
 from . import io_utils
 from ..domain_generation import rdf
@@ -17,6 +18,7 @@ __all__ = [
     "read_sphere_pack_xyzr_domain",
     "py_read_lammps_atoms",
     "read_lammps_atoms",
+    "map_types_by_charge",
     "read_atom_map",
     "read_rdf",
     "read_binned_distances_rdf",
@@ -158,25 +160,76 @@ def py_read_lammps_atoms(
 
 
 def read_lammps_atoms(
-    input_file: str, type_map: None | dict[tuple[int, float], int] = None
-) -> tuple[NDArray[np.double], NDArray[np.uint8], NDArray[np.double], float]:
-    """Read atom positions and types from a LAMMPS file using C++ backend.
+    input_file: str,
+    data_columns: dict[str, DTypeLike],
+    initial_iteration: int | None = None,
+    simulation_timestep: float | None = None,
+) -> tuple[dict[str, NDArray[Any]], NDArray[np.double], float]:
+    """Read selected atom data_columns from a LAMMPS dump file using C++ backend.
+
+    Column names are matched against the "ITEM: ATOMS" header line, so files
+    with any column layout can be read. Other columns in the file are skipped.
 
     Args:
-        input_file (str): Path to the LAMMPS file.
-        type_map (dict, optional): Mapping of (type, charge) pairs to new types.
-            Example: {(1, 0.4): 2, (1, -0.4): 3}
+        input_file (str): Path to the LAMMPS file (optionally gzipped).
+        data_columns (dict): Column name -> dtype of the columns to read. Integer
+            dtypes are parsed as integers, floating dtypes as doubles.
+            Example: {"id": int, "type": np.uint8, "q": float, "x": float}
+        initial_iteration (int, optional): Iteration to measure time from.
+        simulation_timestep (float, optional): Time per iteration; required
+            with initial_iteration.
 
     Returns:
-        tuple: (positions, types, domain, timestep)
+        tuple: (data, domain, timestep)
+            - data (dict): Column name -> array of values for every atom.
+            - domain (np.ndarray): Domain bounding box, shape (3, 2).
+            - timestep (float): Timestep of the file, or simulation time if
+              initial_iteration and simulation_timestep are given.
 
     """
     io_utils.check_file(input_file)
-    positions, types, domain, timestep = _data_read.read_lammps_atoms(
-        input_file, type_map
-    )
+    data, domain, timestep = _data_read.read_lammps_atoms(input_file, data_columns)
 
-    return positions, types, domain, timestep
+    if initial_iteration is not None:
+        if simulation_timestep is None:
+            raise ValueError("simulation_timestep is required with initial_iteration")
+        timestep = (timestep - initial_iteration) * simulation_timestep
+
+    return data, domain, timestep
+
+
+def map_types_by_charge(
+    types: NDArray[np.integer[Any]],
+    charges: NDArray[np.floating[Any]],
+    type_map: dict[tuple[int, float], int],
+) -> NDArray[np.integer[Any]]:
+    """Map (type, charge) pairs of atoms to new type values.
+
+    Args:
+        types (np.ndarray): Atom types.
+        charges (np.ndarray): Atom charges.
+        type_map (dict): Mapping of (type, charge) pairs to new types.
+            Example: {(1, 0.4): 2, (1, -0.4): 3}
+
+    Returns:
+        np.ndarray: Mapped types with the dtype of `types`.
+
+    Raises:
+        ValueError: If an atom has a (type, charge) pair not in `type_map`.
+
+    """
+    mapped = np.zeros_like(types)
+    found = np.zeros(types.shape, dtype=bool)
+    for (old_type, charge), new_type in type_map.items():
+        match = (types == old_type) & (charges == charge)
+        mapped[match] = new_type
+        found |= match
+
+    if not found.all():
+        bad = np.flatnonzero(~found)[0]
+        raise ValueError(f"No mapping for type/charge: ({types[bad]}, {charges[bad]})")
+
+    return mapped
 
 
 def read_atom_map(input_file: str) -> dict[int, dict[str, str]]:

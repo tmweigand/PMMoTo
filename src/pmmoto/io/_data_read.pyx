@@ -2,46 +2,64 @@ import numpy as np
 cimport numpy as np
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from libcpp.map cimport map
-from libcpp.pair cimport pair
+from libc.string cimport memcpy
 
-# Initialize numpy
 np.import_array()
 
-def read_lammps_atoms(str filename, type_map=None):
+def read_lammps_atoms(str filename, dict data_columns):
+    """Read the requested data_columns of a LAMMPS dump file.
+
+    data_columns maps a column name (as in the "ITEM: ATOMS" header) to a dtype.
+    Integer dtypes are parsed as integers, floating dtypes as doubles.
+    Returns (dict name -> array, domain, timestep).
     """
-    Read LAMMPS atom data from file
-    
-    Args:
-        filename (str): Path to LAMMPS data file
-        type_map (dict, optional): Mapping of (type, charge) pairs to new types
-            Example: {(1, 0.4): 2, (1, -0.4): 3}
-        
-    Returns:
-        tuple: (positions, types, domain_data, timestep)
-            - positions: np.ndarray of shape (n_atoms, 3)
-            - types: np.ndarray of shape (n_atoms,)
-            - domain_data: np.ndarray of shape (3, 2)
-            - timestep: float
-    """
-    # Convert Python string to C++ string
     cdef string cpp_filename = filename.encode('utf-8')
-    
-    # Convert Python dict to C++ map if provided
-    cdef map[pair[int, double], int] cpp_type_map
-    if type_map is not None:
-        cpp_type_map = type_map
-    
-    # Call C++ function
+    cdef vector[LammpsColumnSpec] specs
+    cdef LammpsColumnSpec spec
     cdef LammpsData data
-    if type_map is not None:
-        data = LammpsReader.read_lammps_atoms_with_map(cpp_filename, cpp_type_map)
-    else:
-        data = LammpsReader.read_lammps_atoms(cpp_filename)
-    
-    # Convert C++ vectors to numpy arrays
-    cdef np.ndarray[double, ndim=2] positions = np.array(data.atom_positions)
-    cdef np.ndarray[long, ndim=1] types = np.array(data.atom_types)
-    cdef np.ndarray[double, ndim=2] domain = np.array(data.domain_data)
-    
-    return positions, types, domain, data.timestep
+    cdef size_t j, n
+    cdef np.int64_t[::1] int_view
+    cdef np.float64_t[::1] double_view
+    cdef dict dtypes = {}
+
+    if not data_columns:
+        raise ValueError("columns must contain at least one column")
+
+    for name, dtype in data_columns.items():
+        if not isinstance(name, str):
+            raise TypeError(f"Column names must be str, got {type(name).__name__}")
+        np_dtype = np.dtype(dtype)
+        if np_dtype.kind in "biu":
+            spec.is_int = True
+        elif np_dtype.kind == "f":
+            spec.is_int = False
+        else:
+            raise TypeError(
+                f"Unsupported dtype {np_dtype} for column '{name}'; use int or float"
+            )
+        spec.name = name.encode('utf-8')
+        specs.push_back(spec)
+        dtypes[name] = np_dtype
+
+    data = LammpsReader.read_lammps_atoms(cpp_filename, specs)
+
+    result = {}
+    for j in range(data.data_columns.size()):
+        name = data.data_columns[j].name.decode('utf-8')
+        if data.data_columns[j].is_int:
+            n = data.data_columns[j].int_values.size()
+            values = np.empty(n, dtype=np.int64)
+            if n > 0:
+                int_view = values
+                memcpy(&int_view[0], data.data_columns[j].int_values.data(), n * sizeof(np.int64_t))
+        else:
+            n = data.data_columns[j].double_values.size()
+            values = np.empty(n, dtype=np.float64)
+            if n > 0:
+                double_view = values
+                memcpy(&double_view[0], data.data_columns[j].double_values.data(), n * sizeof(np.float64_t))
+        result[name] = values.astype(dtypes[name], copy=False)
+
+    domain = np.array(data.domain_data, dtype=np.float64)
+
+    return result, domain, data.timestep

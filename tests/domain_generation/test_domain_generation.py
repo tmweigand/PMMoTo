@@ -127,8 +127,7 @@ def test_gen_cylinders() -> None:
 def test_gen_pm_atom_file(tmp_path):
     """Test generation of img from atom file"""
     dummy_file = tmp_path / "dummy_lammps.data"
-    dummy_file.write_text(
-        """ITEM: TIMESTEP
+    dummy_file.write_text("""ITEM: TIMESTEP
 0
 ITEM: NUMBER OF ATOMS
 2
@@ -139,8 +138,7 @@ ITEM: BOX BOUNDS pp pp pp
 ITEM: ATOMS id mol type mass q x y z v_peratompress c_peratomvol[1]
 1 1 1 12.01 0.0 1.0 1.0 1.0 0.0 0.0
 2 1 2 16.0 0.0 2.0 2.0 2.0 0.0 0.0
-    """
-    )
+    """)
     sd = pmmoto.initialize((10, 10, 10), box=((0, 10), (0, 10), (0, 10)))
 
     atom_radii = {1: 2, 2: 4}
@@ -148,6 +146,33 @@ ITEM: ATOMS id mol type mass q x y z v_peratompress c_peratomvol[1]
         sd, str(dummy_file), atom_radii=atom_radii
     )
 
+    assert pm.porosity == pytest.approx(0.84)
+
+
+def test_gen_pm_atom_file_columns_and_type_map(tmp_path):
+    """Test atom file with a different column layout and a (type, charge) map"""
+    dummy_file = tmp_path / "dummy_lammps.data"
+    dummy_file.write_text("""ITEM: TIMESTEP
+0
+ITEM: NUMBER OF ATOMS
+2
+ITEM: BOX BOUNDS pp pp pp
+0.0 10.0
+0.0 10.0
+0.0 10.0
+ITEM: ATOMS id q type z y x
+1 0.5 1 1.0 1.0 1.0
+2 -0.5 1 2.0 2.0 2.0
+""")
+    sd = pmmoto.initialize((10, 10, 10), box=((0, 10), (0, 10), (0, 10)))
+
+    pm = pmmoto.domain_generation.gen_pm_atom_file(
+        sd,
+        str(dummy_file),
+        atom_radii={1: 2, 2: 4},
+        type_map={(1, 0.5): 1, (1, -0.5): 2},
+        data_columns={"type": np.uint8, "q": float, "x": float, "y": float, "z": float},
+    )
     assert pm.porosity == pytest.approx(0.84)
 
 

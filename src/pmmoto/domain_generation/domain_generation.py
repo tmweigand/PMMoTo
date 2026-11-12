@@ -7,7 +7,7 @@ as well as initializing PorousMedia and Multiphase objects for PMMoTo.
 from __future__ import annotations
 from typing import TypeVar, Any
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 from scipy.ndimage import gaussian_filter
 from . import _domain_generation
 from . import porousmedia
@@ -78,7 +78,7 @@ def gen_img_smoothed_random_binary(
         np.ndarray: Smoothed random binary grid.
 
     """
-    if not (0 <= p_zero <= 1):
+    if not 0 <= p_zero <= 1:
         raise ValueError("Probability p_zero must be between 0 and 1.")
     if smoothness < 0:
         raise ValueError("Smoothness must be a non-negative value.")
@@ -222,6 +222,7 @@ def gen_pm_atom_file(
     type_map: None | dict[tuple[int, float], int] = None,
     add_periodic: bool = False,
     kd: bool = False,
+    data_columns: None | dict[str, DTypeLike] = None,
 ) -> porousmedia.PorousMedia:
     """Generate binary porous media domain from a LAMMPS atom file.
 
@@ -229,15 +230,28 @@ def gen_pm_atom_file(
         subdomain: Subdomain object.
         lammps_file (str): Path to LAMMPS atom file.
         atom_radii: Atom radii.
-        type_map (dict, optional): Mapping of atom types.
+        type_map (dict, optional): Mapping of (type, charge) to atom types.
         add_periodic (bool, optional): Add periodic atoms.
         kd (bool, optional): Use KD-tree for efficiency.
+        data_columns (dict, optional): LAMMPS columns to read (name -> dtype). Must
+            include "type", "x", "y", "z" (and "q" if type_map is given).
+            Defaults to exactly those.
 
     Returns:
         PorousMedia: Initialized porous media object.
 
     """
-    positions, types, _, _ = data_read.read_lammps_atoms(lammps_file, type_map)
+    if data_columns is None:
+        data_columns = {"type": np.uint8, "x": float, "y": float, "z": float}
+        if type_map is not None:
+            data_columns["q"] = float
+
+    atom_data, _, _ = data_read.read_lammps_atoms(lammps_file, data_columns)
+
+    positions = np.column_stack([atom_data["x"], atom_data["y"], atom_data["z"]])
+    types = atom_data["type"]
+    if type_map is not None:
+        types = data_read.map_types_by_charge(types, atom_data["q"], type_map)
 
     _atoms = particles.initialize_atoms(
         subdomain=subdomain,
