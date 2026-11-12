@@ -48,12 +48,26 @@
 #define PREFETCH_WRITE(addr) ((void)0)
 #endif
 
+// A requested column: name as it appears in the "ITEM: ATOMS" header and
+// whether to parse it as an integer (int64) or a floating point (double).
+struct LammpsColumnSpec
+{
+    std::string name;
+    bool is_int = false;
+};
+
+// Only the vector matching is_int is populated.
+struct LammpsColumn
+{
+    std::string name;
+    bool is_int = false;
+    std::vector<int64_t> int_values;
+    std::vector<double> double_values;
+};
+
 struct LammpsData
 {
-    std::vector<uint64_t> atom_ids;
-    std::vector<uint8_t> atom_types;
-    std::vector<double> atom_positions;
-    std::vector<double> atom_masses;
+    std::vector<LammpsColumn> data_columns; // same order as the requested specs
     std::vector<std::vector<double> > domain_data;
     double timestep = 0.0;
 };
@@ -396,7 +410,7 @@ parse_uint64_ptr(const char* p, const char* end, uint64_t& out)
 }
 
 static inline const char*
-parse_int_ptr(const char* p, const char* end, int& out)
+parse_int_ptr(const char* p, const char* end, int64_t& out)
 {
     auto res = std::from_chars(p, end, out);
     return res.ptr;
@@ -422,89 +436,32 @@ read_line(const char*& p,
     if (UNLIKELY(line_end > line_start && *(line_end - 1) == '\r')) --line_end;
 }
 
-// Batch parse with prefetching
-static inline const char*
-parse_atom_fields(const char* p,
-                  const char* end,
-                  uint64_t& id_out,
-                  int& type_out,
-                  double& mass,
-                  double coords[3],
-                  double& charge_out,
-                  bool include_mass,
-                  bool unwrapped_coordinates)
+static inline std::vector<std::string>
+split_tokens(const char* p, const char* end)
 {
-    // Prefetch next cache line (64 bytes ahead)
-    PREFETCH_READ(p + 64);
-
-    p = skip_spaces(p, end);
-    p = parse_uint64_ptr(p, end, id_out);
-    p = skip_spaces(p, end);
-    p = skip_token(p, end);
-    p = skip_spaces(p, end);
-    p = parse_int_ptr(p, end, type_out);
-    p = skip_spaces(p, end);
-
-    if (include_mass)
+    std::vector<std::string> out;
+    while (true)
     {
-        p = parse_double_ptr(p, end, mass);
+        p = skip_spaces(p, end);
+        if (p >= end) break;
+        const char* t = skip_token(p, end);
+        out.emplace_back(p, t);
+        p = t;
     }
-    else
-    {
-        p = skip_token(p, end);
-    }
-    p = skip_spaces(p, end);
-
-    p = parse_double_ptr(p, end, charge_out);
-    p = skip_spaces(p, end);
-    if (!unwrapped_coordinates)
-    {
-        p = parse_double_ptr(p, end, coords[0]);
-        p = skip_spaces(p, end);
-        p = parse_double_ptr(p, end, coords[1]);
-        p = skip_spaces(p, end);
-        p = parse_double_ptr(p, end, coords[2]);
-    }
-    else
-    {
-        p = skip_token(p, end);
-        p = skip_spaces(p, end);
-        p = skip_token(p, end);
-        p = skip_spaces(p, end);
-        p = skip_token(p, end);
-        p = skip_spaces(p, end);
-        p = parse_double_ptr(p, end, coords[0]);
-        p = skip_spaces(p, end);
-        p = parse_double_ptr(p, end, coords[1]);
-        p = skip_spaces(p, end);
-        p = parse_double_ptr(p, end, coords[2]);
-    }
-
-    return p;
+    return out;
 }
 
-struct PairHash
+static inline bool
+is_token_end(const char* p, const char* end)
 {
-    std::size_t operator()(const std::pair<int, double>& p) const noexcept
-    {
-        uint64_t dbits;
-        static_assert(sizeof(double) == sizeof(uint64_t),
-                      "double must be 64-bit");
-        std::memcpy(&dbits, &p.second, sizeof(dbits));
-        std::size_t h1 = std::hash<int>{}(p.first);
-        std::size_t h2 = std::hash<uint64_t>{}(dbits);
-        return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
-    }
-};
+    return p >= end || *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n';
+}
 
 static inline void
-parse_lammps_atoms_buffer(
-    const char* buf,
-    const char* end,
-    LammpsData& data,
-    const std::map<std::pair<int, double>, int>* id_map = nullptr,
-    bool include_mass = false,
-    bool unwrapped_coordinates = false)
+parse_lammps_atoms_buffer(const char* buf,
+                          const char* end,
+                          LammpsData& data,
+                          const std::vector<LammpsColumnSpec>& specs)
 {
     const char* p = buf;
     const char* line_s = nullptr;
@@ -524,10 +481,6 @@ parse_lammps_atoms_buffer(
     parse_uint64_ptr(line_s, line_e, natoms_u);
     size_t natoms = static_cast<size_t>(natoms_u);
 
-    data.atom_ids.resize(natoms);
-    data.atom_types.resize(natoms);
-    data.atom_positions.resize(3 * natoms);
-    data.atom_masses.resize(natoms);
     data.domain_data.resize(3, std::vector<double>(2));
 
     read_line(p, end, line_s, line_e);
@@ -543,95 +496,108 @@ parse_lammps_atoms_buffer(
         data.domain_data[i][1] = hi;
     }
 
+    // "ITEM: ATOMS <col> <col> ..." names the columns of every atom line
     read_line(p, end, line_s, line_e);
-
-    std::unordered_map<std::pair<int, double>, int, PairHash> fast_map;
-    const bool use_map = id_map && !id_map->empty();
-    if (use_map)
+    static const char atoms_prefix[] = "ITEM: ATOMS";
+    const size_t prefix_len = sizeof(atoms_prefix) - 1;
+    if (UNLIKELY(static_cast<size_t>(line_e - line_s) < prefix_len ||
+                 std::memcmp(line_s, atoms_prefix, prefix_len) != 0))
     {
-        fast_map.reserve(id_map->size() * 2);
-        for (const auto& kv : *id_map)
+        throw std::invalid_argument(
+            "Expected 'ITEM: ATOMS' header line in LAMMPS file");
+    }
+    const std::vector<std::string> header =
+        split_tokens(line_s + prefix_len, line_e);
+
+    // Map file column index -> requested column index (-1 if not requested)
+    std::vector<int> requested_of_col(header.size(), -1);
+    size_t last_col = 0;
+    for (size_t r = 0; r < specs.size(); ++r)
+    {
+        auto it = std::find(header.begin(), header.end(), specs[r].name);
+        if (UNLIKELY(it == header.end()))
         {
-            fast_map.emplace(kv.first, kv.second);
+            throw std::invalid_argument("Column '" + specs[r].name +
+                                        "' not found in LAMMPS file header");
         }
+        size_t col = static_cast<size_t>(it - header.begin());
+        requested_of_col[col] = static_cast<int>(r);
+        last_col = std::max(last_col, col);
     }
 
-    size_t i = 0;
-    uint64_t* ids_ptr = data.atom_ids.data();
-    uint8_t* types_ptr = data.atom_types.data();
-    double* pos_ptr = data.atom_positions.data();
-    double* masses_ptr = data.atom_masses.data();
-
-    // Prefetch write destinations
-    PREFETCH_WRITE(ids_ptr);
-    PREFETCH_WRITE(types_ptr);
-    PREFETCH_WRITE(pos_ptr);
-    PREFETCH_WRITE(masses_ptr);
-
-    while (LIKELY(i < natoms && p < end))
+    data.data_columns.resize(specs.size());
+    std::vector<int64_t*> int_ptrs(specs.size(), nullptr);
+    std::vector<double*> double_ptrs(specs.size(), nullptr);
+    for (size_t r = 0; r < specs.size(); ++r)
     {
-        uint64_t id = 0;
-        int type = 0;
-        double q = 0.0;
-        double xyz[3] = { 0.0, 0.0, 0.0 };
-        double mass = 0.0;
-
-        p = parse_atom_fields(p,
-                              end,
-                              id,
-                              type,
-                              mass,
-                              xyz,
-                              q,
-                              include_mass,
-                              unwrapped_coordinates);
-
-        // Prefetch next write location
-        if (LIKELY(i + 8 < natoms))
+        LammpsColumn& col = data.data_columns[r];
+        col.name = specs[r].name;
+        col.is_int = specs[r].is_int;
+        if (col.is_int)
         {
-            PREFETCH_WRITE(&ids_ptr[i + 8]);
-            PREFETCH_WRITE(&pos_ptr[3 * (i + 8)]);
-        }
-
-        ids_ptr[i] = id;
-        masses_ptr[i] = mass;
-
-        if (UNLIKELY(use_map))
-        {
-            auto it = fast_map.find({ type, q });
-            if (UNLIKELY(it == fast_map.end()))
-            {
-                throw std::runtime_error("No mapping for type/charge: type=" +
-                                         std::to_string(type));
-            }
-            types_ptr[i] = static_cast<uint8_t>(it->second);
+            col.int_values.resize(natoms);
+            int_ptrs[r] = col.int_values.data();
         }
         else
         {
-            types_ptr[i] = static_cast<uint8_t>(type);
+            col.double_values.resize(natoms);
+            double_ptrs[r] = col.double_values.data();
         }
+    }
 
-        size_t base = 3 * i;
-        pos_ptr[base + 0] = xyz[0];
-        pos_ptr[base + 1] = xyz[1];
-        pos_ptr[base + 2] = xyz[2];
+    for (size_t i = 0; i < natoms; ++i)
+    {
+        if (UNLIKELY(p >= end))
+        {
+            throw std::invalid_argument(
+                "LAMMPS file declares " + std::to_string(natoms) +
+                " atoms but ends after " + std::to_string(i));
+        }
+        read_line(p, end, line_s, line_e);
+        PREFETCH_READ(p + 64);
 
-        ++i;
+        const char* q = line_s;
+        for (size_t c = 0; c <= last_col; ++c)
+        {
+            q = skip_spaces(q, line_e);
+            if (UNLIKELY(q >= line_e))
+            {
+                throw std::invalid_argument(
+                    "Atom line " + std::to_string(i) +
+                    " has fewer columns than the file header");
+            }
 
-        p = find_next_newline_simd(p, end);
-        if (LIKELY(p < end) && *p == '\n') ++p;
+            const int r = requested_of_col[c];
+            if (r < 0)
+            {
+                q = skip_token(q, line_e);
+                continue;
+            }
+
+            const char* next;
+            if (specs[r].is_int)
+                next = parse_int_ptr(q, line_e, int_ptrs[r][i]);
+            else
+                next = parse_double_ptr(q, line_e, double_ptrs[r][i]);
+
+            if (UNLIKELY(next == q || !is_token_end(next, line_e)))
+            {
+                throw std::invalid_argument(
+                    "Could not parse column '" + specs[r].name + "' as " +
+                    (specs[r].is_int ? "int" : "double") + " on atom line " +
+                    std::to_string(i));
+            }
+            q = next;
+        }
     }
 }
 
 class LammpsReader
 {
 public:
-    using AtomIdMap = std::map<std::pair<int, double>, int>;
-
-    static LammpsData read_lammps_atoms(const std::string& filename,
-                                        const AtomIdMap* id_map = nullptr,
-                                        bool include_mass = false,
-                                        bool unwrapped_coordinates = false)
+    static LammpsData
+    read_lammps_atoms(const std::string& filename,
+                      const std::vector<LammpsColumnSpec>& specs)
     {
         LammpsData out;
 
@@ -639,25 +605,17 @@ public:
             filename.compare(filename.size() - 3, 3, ".gz") == 0)
         {
             std::string content = readGzipFile_fast_zlib(filename);
-            parse_lammps_atoms_buffer(content.data(),
-                                      content.data() + content.size(),
-                                      out,
-                                      id_map,
-                                      include_mass,
-                                      unwrapped_coordinates);
+            parse_lammps_atoms_buffer(
+                content.data(), content.data() + content.size(), out, specs);
             return out;
         }
 
         MMapBuffer mm = map_file_readonly(filename);
-        if (mm.ptr && mm.len)
+        if (UNLIKELY(!mm.ptr || !mm.len))
         {
-            parse_lammps_atoms_buffer(mm.ptr,
-                                      mm.ptr + mm.len,
-                                      out,
-                                      id_map,
-                                      include_mass,
-                                      unwrapped_coordinates);
+            throw std::invalid_argument("LAMMPS file is empty: " + filename);
         }
+        parse_lammps_atoms_buffer(mm.ptr, mm.ptr + mm.len, out, specs);
         return out;
     }
 };

@@ -16,7 +16,8 @@ dist/
 data_out/
 env/*
 .tox/
-
+*.pvti
+*.png
 
 # Sphinx build
 docs/_build/

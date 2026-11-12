@@ -1,18 +1,9 @@
 """interface to _data_read.pyx"""
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 
 def read_lammps_atoms(
     filename: str,
-    type_map: None | dict[tuple[int, float], int] = None,
-    include_mass: bool = False,
-    unwrapped_coordinates: bool = False,
-) -> tuple[
-    NDArray[np.uint64],
-    NDArray[np.double],
-    NDArray[np.uint8],
-    NDArray[np.double],
-    NDArray[np.double],
-    float,
-]: ...
+    data_columns: dict[str, DTypeLike],
+) -> tuple[dict[str, NDArray[np.generic]], NDArray[np.double], float]: ...

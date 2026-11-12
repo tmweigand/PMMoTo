@@ -1,25 +1,25 @@
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from libcpp.map cimport map
-from libcpp.pair cimport pair
 from libcpp cimport bool
-from libc.stdint cimport uint64_t,uint8_t
-
-ctypedef map[pair[int, double], int] AtomIdMap
-
-cdef class AtomIdMapWrapper:
-    cdef AtomIdMap* _c_map_ptr
+from libc.stdint cimport int64_t
 
 cdef extern from "data_read.hpp":
 
+    cdef struct LammpsColumnSpec:
+        string name
+        bool is_int
+
+    cdef struct LammpsColumn:
+        string name
+        bool is_int
+        vector[int64_t] int_values
+        vector[double] double_values
+
     cdef struct LammpsData:
-        vector[double] atom_positions
-        vector[uint64_t] atom_ids
-        vector[uint8_t] atom_types
-        vector[double] atom_masses
+        vector[LammpsColumn] data_columns
         vector[vector[double]] domain_data
         double timestep
 
     cdef cppclass LammpsReader:
         @staticmethod
-        LammpsData read_lammps_atoms(const string& filename, const AtomIdMap* id_map, bool include_mass, bool unwrapped_coordinates)
+        LammpsData read_lammps_atoms(const string& filename, const vector[LammpsColumnSpec]& specs) except +

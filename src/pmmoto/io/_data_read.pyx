@@ -1,91 +1,65 @@
 import numpy as np
 cimport numpy as np
 from libcpp.string cimport string
-from libcpp.map cimport map
-from libcpp.pair cimport pair
-from libc.stdint cimport uint64_t,uint8_t
+from libcpp.vector cimport vector
+from libc.string cimport memcpy
 
 np.import_array()
 
-cdef class AtomIdMapWrapper:
-    def __cinit__(self):
-        self._c_map_ptr = new AtomIdMap()
+def read_lammps_atoms(str filename, dict data_columns):
+    """Read the requested data_columns of a LAMMPS dump file.
 
-    def __dealloc__(self):
-        if self._c_map_ptr is not NULL:
-            del self._c_map_ptr
-            self._c_map_ptr = NULL
-
-# Convert Python dict[(int,float)->int] -> C++ AtomIdMap (returned by value)
-cdef AtomIdMap dict_to_atom_id_map(object py_map):
-    cdef AtomIdMap c_map
-    cdef object py_items = py_map.items()
-    cdef object py_key, py_val
-    cdef int k_type
-    cdef double k_charge
-    cdef int v
-    cdef pair[int, double] pkey
-    cdef pair[pair[int, double], int] entry
-    for py_key, py_val in py_items:
-        # expect py_key to be a (int, float) tuple
-        k_type = <int>py_key[0]
-        k_charge = <double>py_key[1]
-        v = <int>py_val
-        pkey = pair[int, double](k_type, k_charge)
-        entry = pair[pair[int, double], int](pkey, v)
-        c_map.insert(entry)
-    return c_map
-
-def read_lammps_atoms(str filename, type_map=None, include_mass = False,unwrapped_coordinates=False):
+    data_columns maps a column name (as in the "ITEM: ATOMS" header) to a dtype.
+    Integer dtypes are parsed as integers, floating dtypes as doubles.
+    Returns (dict name -> array, domain, timestep).
+    """
     cdef string cpp_filename = filename.encode('utf-8')
+    cdef vector[LammpsColumnSpec] specs
+    cdef LammpsColumnSpec spec
     cdef LammpsData data
-    cdef const AtomIdMap* _type_map = NULL
-    cdef AtomIdMap tmp_map
-    cdef AtomIdMapWrapper wrapper
+    cdef size_t j, n
+    cdef np.int64_t[::1] int_view
+    cdef np.float64_t[::1] double_view
+    cdef dict dtypes = {}
 
-    if type_map is not None:
-        # if user passed our wrapper, use its pointer directly
-        if isinstance(type_map, AtomIdMapWrapper):
-            wrapper = <AtomIdMapWrapper> type_map
-            _type_map = wrapper._c_map_ptr
+    if not data_columns:
+        raise ValueError("columns must contain at least one column")
+
+    for name, dtype in data_columns.items():
+        if not isinstance(name, str):
+            raise TypeError(f"Column names must be str, got {type(name).__name__}")
+        np_dtype = np.dtype(dtype)
+        if np_dtype.kind in "biu":
+            spec.is_int = True
+        elif np_dtype.kind == "f":
+            spec.is_int = False
         else:
-            # convert Python dict to C++ map and pass pointer to it
-            tmp_map = dict_to_atom_id_map(type_map)
-            _type_map = &tmp_map
+            raise TypeError(
+                f"Unsupported dtype {np_dtype} for column '{name}'; use int or float"
+            )
+        spec.name = name.encode('utf-8')
+        specs.push_back(spec)
+        dtypes[name] = np_dtype
 
-    
-    data = LammpsReader.read_lammps_atoms(cpp_filename,_type_map, include_mass,unwrapped_coordinates)
+    data = LammpsReader.read_lammps_atoms(cpp_filename, specs)
 
-    cdef size_t n_atoms = data.atom_ids.size()
-
-    # Zero-copy view of the C++ double vector
-    cdef double* pos_ptr = data.atom_positions.data()
-    cdef np.ndarray[np.double_t, ndim=2] positions = np.frombuffer(
-        (<char*> pos_ptr)[:n_atoms * 3 * sizeof(double)],
-        dtype=np.float64
-    ).reshape(n_atoms, 3)
-
-    # Zero-copy view for atom_ids
-    cdef uint64_t* ids_ptr = <uint64_t*> data.atom_ids.data()
-    ids = np.frombuffer(
-        (<char*> ids_ptr)[:n_atoms * sizeof(uint64_t)],
-        dtype=np.uint64
-    )
-
-    # Zero-copy view for atom_types
-    cdef uint8_t* types_ptr = <uint8_t*> data.atom_types.data()
-    types = np.frombuffer(
-        (<char*> types_ptr)[:n_atoms * sizeof(uint8_t)],
-        dtype=np.uint8
-    )
-
-    # Zero-copy view for masses
-    cdef double* masses_ptr = <double*> data.atom_masses.data()
-    atom_masses = np.frombuffer(
-        (<char*> masses_ptr)[:n_atoms * sizeof(double)],
-        dtype=np.float64
-    )
+    result = {}
+    for j in range(data.data_columns.size()):
+        name = data.data_columns[j].name.decode('utf-8')
+        if data.data_columns[j].is_int:
+            n = data.data_columns[j].int_values.size()
+            values = np.empty(n, dtype=np.int64)
+            if n > 0:
+                int_view = values
+                memcpy(&int_view[0], data.data_columns[j].int_values.data(), n * sizeof(np.int64_t))
+        else:
+            n = data.data_columns[j].double_values.size()
+            values = np.empty(n, dtype=np.float64)
+            if n > 0:
+                double_view = values
+                memcpy(&double_view[0], data.data_columns[j].double_values.data(), n * sizeof(np.float64_t))
+        result[name] = values.astype(dtypes[name], copy=False)
 
     domain = np.array(data.domain_data, dtype=np.float64)
 
-    return ids, positions, types, atom_masses, domain, data.timestep
+    return result, domain, data.timestep
